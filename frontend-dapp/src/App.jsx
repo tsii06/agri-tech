@@ -3,9 +3,9 @@ import { ethers } from "ethers";
 import { getContract } from "./utils/contract";
 
 const Role = {
-  PRODUCTEUR: 0,
-  COLLECTEUR: 1,
-  EXPORTATEUR: 2
+  // PRODUCTEUR: 0,
+  COLLECTEUR: 0,
+  EXPORTATEUR: 1
 };
 
 function App() {
@@ -99,7 +99,7 @@ function App() {
         isCollecteur: acteurInfo.role.toString() === "1"
       });
 
-      if (acteurInfo.role.toString() !== "1") {
+      if (acteurInfo.role.toString() !== "0") {
         alert("Vous devez être un collecteur pour ajouter un produit");
         return;
       }
@@ -160,9 +160,8 @@ function App() {
 
   const getRoleName = (roleNumber) => {
     const roles = {
-      0: "PRODUCTEUR",
-      1: "COLLECTEUR",
-      2: "EXPORTATEUR"
+      0: "COLLECTEUR",
+      1: "EXPORTATEUR"
     };
     return roles[roleNumber] || "INCONNU";
   };
@@ -254,9 +253,8 @@ function App() {
                   onChange={(e) => setRoleChoisi(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
-                  <option value="0">PRODUCTEUR</option>
-                  <option value="1">COLLECTEUR</option>
-                  <option value="2">EXPORTATEUR</option>
+                  <option value="0">COLLECTEUR</option>
+                  <option value="1">EXPORTATEUR</option>
                 </select>
               </div>
               <button

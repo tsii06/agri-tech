@@ -157,6 +157,10 @@ contract CollecteurExportateurContrat {
         commandes[_idCommande].statutTransport = _statut;
         emit StatutTransportMisAJour(_idCommande, _statut);
     }
+
+    // Pour enlever les erreurs eth_call
+    fallback() external payable {}
+    receive() external payable {}
 }
 
 interface ProducteurEnPhaseCulture {

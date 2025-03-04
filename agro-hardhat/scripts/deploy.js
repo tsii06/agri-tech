@@ -18,7 +18,7 @@ async function main() {
     await proCult.connect(producteur).creerParcelle("bon", "sur brulis", "latitude", "longitude", "nomProduit", "12/12/25", "certificate");
 
     console.log("le deployer : ", onwer.address);
-    console.log('adresse du contrat proCult : ',await colExp.getAddress());
+    console.log('adresse du contrat colExp : ',await colExp.getAddress());
 }
 
 main()
