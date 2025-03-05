@@ -8,6 +8,7 @@ import ValiderProduit from "./pages/ValiderProduit";
 import EffectuerPaiement from "./pages/EffectuerPaiement";
 import EnregistrerCondition from "./pages/EnregistrerCondition";
 import MettreAJourTransport from "./pages/MettreAJourTransport";
+import MesCommandes from "./pages/MesCommandes";
 import "./App.css";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
             <Route path="/ajout-produit" element={<AjoutProduit />} />
             <Route path="/ajout-acteur" element={<AjoutActeur />} />
             <Route path="/liste-produits" element={<ListeProduits />} />
+            <Route path="/mes-commandes" element={<MesCommandes />} />
             <Route path="/passer-commande/:id" element={<PasserCommande />} />
             <Route path="/valider-produit/:id" element={<ValiderProduit />} />
             <Route path="/effectuer-paiement/:id" element={<EffectuerPaiement />} />

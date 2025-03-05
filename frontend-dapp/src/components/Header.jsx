@@ -7,15 +7,69 @@ function Header() {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
 
+  const verifierConnexionInitiale = async () => {
+    if (window.ethereum) {
+      try {
+        // Vérifier si des comptes sont déjà connectés
+        const accounts = await window.ethereum.request({
+          method: 'eth_accounts'
+        });
+        
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+          await verifierActeur(accounts[0]);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la connexion initiale:", error);
+      }
+    }
+  };
+
   const connectWallet = async () => {
     if (window.ethereum) {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-      setAccount(userAddress);
-      await verifierActeur(userAddress);
+      try {
+        // Demander à l'utilisateur de choisir un compte
+        await window.ethereum.request({
+          method: 'wallet_requestPermissions',
+          params: [{ eth_accounts: {} }]
+        });
+        
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const userAddress = await signer.getAddress();
+        setAccount(userAddress);
+        await verifierActeur(userAddress);
+      } catch (error) {
+        console.error("Erreur de connexion:", error);
+        alert("Erreur lors de la connexion au wallet");
+      }
     } else {
       alert("Installe Metamask !");
+    }
+  };
+
+  const changerCompte = async () => {
+    if (window.ethereum) {
+      try {
+        // Forcer l'ouverture de MetaMask pour sélectionner un compte
+        await window.ethereum.request({
+          method: 'wallet_requestPermissions',
+          params: [{ eth_accounts: {} }]
+        });
+        
+        // Récupérer le nouveau compte sélectionné
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        });
+        
+        if (accounts[0]) {
+          setAccount(accounts[0]);
+          await verifierActeur(accounts[0]);
+        }
+      } catch (error) {
+        console.error("Erreur lors du changement de compte:", error);
+        alert("Erreur lors du changement de compte");
+      }
     }
   };
 
@@ -50,6 +104,10 @@ function Header() {
   };
 
   useEffect(() => {
+    // Vérifier la connexion initiale au chargement de la page
+    verifierConnexionInitiale();
+
+    // Écouter les changements de compte
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length > 0) {
@@ -60,7 +118,20 @@ function Header() {
           setRole(null);
         }
       });
+
+      // Écouter les changements de chaîne
+      window.ethereum.on("chainChanged", () => {
+        window.location.reload();
+      });
     }
+
+    // Nettoyage des listeners lors du démontage du composant
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener("accountsChanged", () => {});
+        window.ethereum.removeListener("chainChanged", () => {});
+      }
+    };
   }, []);
 
   const getNavigationLinks = () => {
@@ -136,9 +207,15 @@ function Header() {
                     }`}
                   ></div>
                 </div>
+                <button
+                  onClick={changerCompte}
+                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  Changer de compte
+                </button>
                 <Link
                   to="/ajout-acteur"
-                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="px-4 py-2 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                 >
                   Nouvel acteur
                 </Link>
