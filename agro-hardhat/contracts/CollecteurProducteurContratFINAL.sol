@@ -205,4 +205,8 @@ contract CollecteurProducteurContratFINAL {
         parcelles[_idParcelle].paiements.push(Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp));
         emit PaiementEnregistre(_idParcelle, compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
     }
+
+    // corrige l'erreur eth_call
+    receive() external payable {}
+    fallback() external payable {}
 }

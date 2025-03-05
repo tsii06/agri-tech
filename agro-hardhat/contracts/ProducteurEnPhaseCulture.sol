@@ -221,6 +221,8 @@ contract ProducteurEnPhaseCulture {
         string memory dateRecolte,
         string memory certificatPhytosanitaire
     ) {
+        // l'idParcelle doit etre existant
+        require(_idParcelle <= compteurParcelles, "Ce parcelle n'existe pas");
         Parcelle storage parcelle = parcelles[_idParcelle];
         return (
             parcelle.qualiteSemence,
@@ -232,4 +234,8 @@ contract ProducteurEnPhaseCulture {
             parcelle.certificatPhytosanitaire
         );
     }
+
+    // corrige l'erreur eth_call
+    receive() external payable {}
+    fallback() external payable {}
 }
