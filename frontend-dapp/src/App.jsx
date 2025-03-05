@@ -9,6 +9,11 @@ import EffectuerPaiement from "./pages/EffectuerPaiement";
 import EnregistrerCondition from "./pages/EnregistrerCondition";
 import MettreAJourTransport from "./pages/MettreAJourTransport";
 import MesCommandes from "./pages/MesCommandes";
+import CreerParcelle from "./pages/CreerParcelle";
+import MesParcelles from "./pages/MesParcelles";
+import PhotosParcelle from "./pages/PhotosParcelle";
+import IntrantsParcelle from "./pages/IntrantsParcelle";
+import InspectionsParcelle from "./pages/InspectionsParcelle";
 import "./App.css";
 
 function App() {
@@ -27,6 +32,11 @@ function App() {
             <Route path="/effectuer-paiement/:id" element={<EffectuerPaiement />} />
             <Route path="/enregistrer-condition/:id" element={<EnregistrerCondition />} />
             <Route path="/mettre-a-jour-transport/:id" element={<MettreAJourTransport />} />
+            <Route path="/creer-parcelle" element={<CreerParcelle />} />
+            <Route path="/mes-parcelles" element={<MesParcelles />} />
+            <Route path="/parcelle/:id/photos" element={<PhotosParcelle />} />
+            <Route path="/parcelle/:id/intrants" element={<IntrantsParcelle />} />
+            <Route path="/parcelle/:id/inspections" element={<InspectionsParcelle />} />
             <Route path="/" element={
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="bg-white rounded-lg shadow-md p-6">

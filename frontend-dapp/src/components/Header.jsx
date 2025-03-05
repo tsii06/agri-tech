@@ -96,9 +96,12 @@ function Header() {
 
   const getRoleName = (roleNumber) => {
     const roles = {
-      0: "COLLECTEUR",
-      1: "EXPORTATEUR",
-      2: "TRANSPORTEUR"
+      0: "PRODUCTEUR",
+      1: "FOURNISSEUR",
+      2: "CERTIFICATEUR",
+      3: "COLLECTEUR",
+      4: "AUDITEUR",
+      5: "TRANSPORTEUR"
     };
     return roles[roleNumber] || "INCONNU";
   };
@@ -149,17 +152,33 @@ function Header() {
     }
 
     switch (role) {
-      case 0: // Collecteur
+      case 0: // Producteur
+        return [
+          { to: "/mes-parcelles", text: "Mes Parcelles" },
+          { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
+          ...commonLinks
+        ];
+      case 1: // Fournisseur
+        return [
+          ...commonLinks,
+          { to: "/mes-parcelles", text: "Gérer les Intrants" }
+        ];
+      case 2: // Certificateur
+        return [
+          ...commonLinks,
+          { to: "/mes-parcelles", text: "Contrôle Phytosanitaire" }
+        ];
+      case 3: // Collecteur
         return [
           { to: "/ajout-produit", text: "Ajouter Produit" },
           ...commonLinks
         ];
-      case 1: // Exportateur
+      case 4: // Auditeur
         return [
           ...commonLinks,
-          { to: "/mes-commandes", text: "Mes Commandes" }
+          { to: "/mes-parcelles", text: "Inspections" }
         ];
-      case 2: // Transporteur
+      case 5: // Transporteur
         return [
           ...commonLinks,
           { to: "/conditions-transport", text: "Conditions Transport" }
