@@ -81,7 +81,7 @@ function Header() {
   const verifierActeur = async (userAddress) => {
     try {
       const contract = await getContract();
-      const acteur = await contract.getActeur(userAddress);
+      const acteur = await contract.acteurs(userAddress);
       
       if (acteur.addr !== ethers.ZeroAddress) {
         const roleNumber = Number(acteur.role);

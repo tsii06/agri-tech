@@ -17,8 +17,8 @@ function MesParcelles() {
       const contract = await getContract();
       
       // Récupérer le compteur de parcelles en utilisant la méthode appropriée
-      const compteurParcellesResult = await contract.compteurParcelles();
-      const compteurParcelles = compteurParcellesResult.toNumber();
+      const compteurParcelles = await contract.compteurParcelles();
+      // const compteurParcelles = compteurParcellesResult.toNumber();
       console.log("Nombre de parcelles:", compteurParcelles);
 
       if (compteurParcelles === 0) {
@@ -108,7 +108,7 @@ function MesParcelles() {
         <h2 className="text-2xl font-bold">Mes Parcelles</h2>
         <div className="space-x-4">
           <button
-            onClick={creerParcelleParDefaut}
+            // onClick={creerParcelleParDefaut}
             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
           >
             Créer Parcelle Test
