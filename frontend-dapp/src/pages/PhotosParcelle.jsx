@@ -17,7 +17,8 @@ function PhotosParcelle() {
     try {
       const contract = await getContract();
       const photosData = await contract.getPhotos(id);
-      setPhotos(photosData);
+      console.log("photoData : ", Object.values(photosData));
+      setPhotos(Object.values(photosData));
     } catch (error) {
       console.error("Erreur lors du chargement des photos:", error);
       alert("Erreur lors du chargement des photos");
@@ -91,7 +92,7 @@ function PhotosParcelle() {
                 alt={`Photo ${index + 1} de la parcelle ${id}`}
                 className="w-full h-48 object-cover"
                 onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/400x300?text=Image+non+disponible";
+                  // e.target.src = "https://via.placeholder.com/400x300?text=Image+non+disponible";
                 }}
               />
               <div className="p-4">
