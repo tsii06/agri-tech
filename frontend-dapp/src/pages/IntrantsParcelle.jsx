@@ -20,7 +20,8 @@ function IntrantsParcelle() {
     try {
       const contract = await getContract();
       const intrantsData = await contract.getIntrants(id);
-      setIntrants(intrantsData);
+      // intrantsData est encore un objet il faut la convertir
+      setIntrants(Object.values(intrantsData));
     } catch (error) {
       console.error("Erreur lors du chargement des intrants:", error);
       alert("Erreur lors du chargement des intrants");

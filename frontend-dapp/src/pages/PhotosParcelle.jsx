@@ -17,7 +17,7 @@ function PhotosParcelle() {
     try {
       const contract = await getContract();
       const photosData = await contract.getPhotos(id);
-      console.log("photoData : ", Object.values(photosData));
+      // photosData est encore un objet alors il faut la convertir
       setPhotos(Object.values(photosData));
     } catch (error) {
       console.error("Erreur lors du chargement des photos:", error);
