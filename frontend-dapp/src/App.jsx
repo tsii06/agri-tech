@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useState } from "react";
+
 import Header from "./components/Header";
 import AjoutProduit from "./pages/AjoutProduit";
 import AjoutActeur from "./pages/AjoutActeur";
@@ -17,14 +19,17 @@ import InspectionsParcelle from "./pages/InspectionsParcelle";
 import "./App.css";
 
 function App() {
+  // actualise les pages si elle change
+  const [state,setState] = useState({});
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
-        <Header />
+        <Header state={state} />
         <main className="pt-4">
           <Routes>
             <Route path="/ajout-produit" element={<AjoutProduit />} />
-            <Route path="/ajout-acteur" element={<AjoutActeur />} />
+            <Route path="/ajout-acteur" element={<AjoutActeur setState={setState} />} />
             <Route path="/liste-produits" element={<ListeProduits />} />
             <Route path="/mes-commandes" element={<MesCommandes />} />
             <Route path="/passer-commande/:id" element={<PasserCommande />} />

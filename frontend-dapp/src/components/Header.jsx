@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { getContract } from "../utils/contract";
 import { Link } from "react-router-dom";
 
-function Header() {
+function Header({ state }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
 
@@ -135,7 +135,7 @@ function Header() {
         window.ethereum.removeListener("chainChanged", () => {});
       }
     };
-  }, []);
+  }, [state]);
 
   const getNavigationLinks = () => {
     if (!account) return [];

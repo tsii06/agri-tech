@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getContract } from "../utils/contract";
 
-function AjoutActeur() {
+function AjoutActeur({ setState }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
@@ -53,6 +53,7 @@ function AjoutActeur() {
       await tx.wait();
       
       alert("Acteur enregistré avec succès !");
+      setState({});
       navigate("/");
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
