@@ -17,7 +17,8 @@ function InspectionsParcelle() {
     try {
       const contract = await getContract();
       const inspectionsData = await contract.getInspections(id);
-      setInspections(inspectionsData);
+      // inspectionsData est un objet, il faut la convertir
+      setInspections(Object.values(inspectionsData));
     } catch (error) {
       console.error("Erreur lors du chargement des inspections:", error);
       alert("Erreur lors du chargement des inspections");
@@ -103,7 +104,7 @@ function InspectionsParcelle() {
                   </p>
                 </div>
                 <span className="text-sm text-gray-500">
-                  {new Date(inspection.timestamp * 1000).toLocaleString()}
+                  {new Date(parseInt(inspection.timestamp) * 1000).toLocaleString()}
                 </span>
               </div>
               <div className="prose max-w-none">
