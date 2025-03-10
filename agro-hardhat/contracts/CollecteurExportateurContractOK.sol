@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract CollecteurExportateurContrat {
-    enum Role { Collecteur, Exportateur, Transporteur }
+    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
     enum StatutProduit { EnAttente, Valide, Rejete }
     enum StatutTransport { EnCours, Livre }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }

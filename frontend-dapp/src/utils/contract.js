@@ -53,18 +53,14 @@ export async function getContract() {
   return getProducteurContract();
 }
 
-export async function executeContractMethod(method, ...args) {
+// il faut preciser quelle contrat utiliser
+export async function executeContractMethod(contrat, method, ...args) {
   try {
-    const contract = await getContract();
-    const provider = contract.runner.provider;
+    const provider = contrat.runner.provider;
     await provider.ready;
 
-    const tx = await method.apply(contract, args);
-    
-    if (tx.wait) {
-      await tx.wait(2);
-    }
-    
+    const tx = await method.apply(contrat, args);
+
     return tx;
   } catch (error) {
     console.error("Erreur lors de l'exécution de la méthode:", error);

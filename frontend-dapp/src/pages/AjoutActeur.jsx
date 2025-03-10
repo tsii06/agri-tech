@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getContract } from "../utils/contract";
+import { getContract,getCollecteurContract } from "../utils/contract";
 
 function AjoutActeur({ setState }) {
   const navigate = useNavigate();
@@ -21,11 +21,19 @@ function AjoutActeur({ setState }) {
     setLoading(true);
 
     try {
+      // enregistre l'acteur dans les deux contrats
       const contract = await getContract();
+      const contratCE = await getCollecteurContract();
+
+      const txCE = await contratCE.enregistrerActeur(
+        await window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => accounts[0]),
+        parseInt(selectedRole)
+      );
       const tx = await contract.enregistrerActeur(
         await window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => accounts[0]),
         parseInt(selectedRole)
       );
+      await txCE.wait();
       await tx.wait();
       
       alert("Acteur enregistré avec succès !");

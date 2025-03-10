@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract CollecteurProducteurContratFINAL {
-    enum Role { Producteur, Collecteur, Certificateur, Transporteur }
+    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur }
     enum Etape { PreCulture, Culture, Recolte, Transport }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }
 

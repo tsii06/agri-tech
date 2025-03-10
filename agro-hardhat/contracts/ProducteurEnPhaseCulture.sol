@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract ProducteurEnPhaseCulture {
-    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur }
+    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
     enum Etape { PreCulture, Culture, Recolte, Transport }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }
 

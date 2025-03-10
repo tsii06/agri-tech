@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { ethers } from "ethers";
-import { getContract, executeContractMethod } from "../utils/contract";
+import { getContract, executeContractMethod, getCollecteurContract } from "../utils/contract";
 
 function AjoutProduit() {
-  const [nomProduit, setNomProduit] = useState("Café Arabica");
   const [quantiteProduit, setQuantiteProduit] = useState("100");
   const [prixProduit, setPrixProduit] = useState("0.01");
   const [idParcelle, setIdParcelle] = useState("1");
@@ -14,35 +13,36 @@ function AjoutProduit() {
   const ajouterNouveauProduit = async () => {
     try {
       setIsLoading(true);
-      const contract = await getContract();
-      const provider = contract.runner.provider;
+      const contractCE = await getCollecteurContract();
+      const provider = contractCE.runner.provider;
       const signer = await provider.getSigner();
       const account = await signer.getAddress();
 
-      const acteurInfo = await executeContractMethod(contract.acteurs, account);
+      const acteurInfo = await executeContractMethod(contractCE, contractCE.acteurs, account);
       
-      if (acteurInfo.role.toString() !== "0") {
+      if (acteurInfo.role.toString() !== "3") {
         alert("Vous devez être un collecteur pour ajouter un produit");
         return;
       }
 
       const prixEnWei = ethers.parseEther(prixProduit);
       
-      await executeContractMethod(
-        contract.ajouterProduit,
+      const tx = await executeContractMethod(
+        contractCE,
+        contractCE.ajouterProduit,
         BigInt(idParcelle),
         BigInt(quantiteProduit),
-        prixProduit,
+        prixEnWei,
         {
           gasLimit: 500000,
           from: account
         }
       );
+      await tx.wait();
 
       alert("Produit ajouté avec succès !");
 
       // Réinitialiser les champs
-      setNomProduit("Café Arabica");
       setQuantiteProduit("100");
       setPrixProduit("0.01");
       setIdParcelle("1");
@@ -61,15 +61,6 @@ function AjoutProduit() {
  <div className="container py-4">
       <div className="card shadow-sm p-4">
         <h2 className="h5 mb-3">Ajouter un nouveau produit</h2>
-        <div className="mb-3">
-          <label className="form-label">Nom du produit</label>
-          <input
-            type="text"
-            value={nomProduit}
-            onChange={(e) => setNomProduit(e.target.value)}
-            className="form-control"
-          />
-        </div>
         <div className="mb-3">
           <label className="form-label">Quantité</label>
           <input
