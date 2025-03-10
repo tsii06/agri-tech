@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getContract } from "../utils/contract";
+import { getCollecteurContract } from "../utils/contract";
 
 function ListeProduits() {
   const [produits, setProduits] = useState([]);
@@ -9,7 +9,7 @@ function ListeProduits() {
 
   const chargerProduits = async () => {
     try {
-      const contract = await getContract();
+      const contract = await getCollecteurContract();
       const provider = contract.runner.provider;
       const signer = await provider.getSigner();
       const account = await signer.getAddress();
