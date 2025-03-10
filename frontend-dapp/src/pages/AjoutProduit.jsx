@@ -19,7 +19,7 @@ function AjoutProduit() {
       const signer = await provider.getSigner();
       const account = await signer.getAddress();
 
-      const acteurInfo = await executeContractMethod(contract.getActeur, account);
+      const acteurInfo = await executeContractMethod(contract.acteurs, account);
       
       if (acteurInfo.role.toString() !== "0") {
         alert("Vous devez être un collecteur pour ajouter un produit");
@@ -32,7 +32,7 @@ function AjoutProduit() {
         contract.ajouterProduit,
         BigInt(idParcelle),
         BigInt(quantiteProduit),
-        prixEnWei,
+        prixProduit,
         {
           gasLimit: 500000,
           from: account
@@ -50,7 +50,7 @@ function AjoutProduit() {
       setCertificat("CERT123");
 
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Erreur ajout produit:", error);
       alert(`Erreur: ${error.message}`);
     } finally {
       setIsLoading(false);
