@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import AjoutProduit from "./pages/AjoutProduit";
 import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/ListeProduits";
@@ -16,44 +17,44 @@ import MesParcelles from "./pages/MesParcelles";
 import PhotosParcelle from "./pages/PhotosParcelle";
 import IntrantsParcelle from "./pages/IntrantsParcelle";
 import InspectionsParcelle from "./pages/InspectionsParcelle";
-import "./App.css";
 
 function App() {
-  // actualise les pages si elle change
-  const [state,setState] = useState({});
+  const [state, setState] = useState({});
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100">
-        <Header state={state} />
-        <main className="pt-4">
-          <Routes>
-            <Route path="/ajout-produit" element={<AjoutProduit />} />
-            <Route path="/ajout-acteur" element={<AjoutActeur setState={setState} />} />
-            <Route path="/liste-produits" element={<ListeProduits />} />
-            <Route path="/mes-commandes" element={<MesCommandes />} />
-            <Route path="/passer-commande/:id" element={<PasserCommande />} />
-            <Route path="/valider-produit/:id" element={<ValiderProduit />} />
-            <Route path="/effectuer-paiement/:id" element={<EffectuerPaiement />} />
-            <Route path="/enregistrer-condition/:id" element={<EnregistrerCondition />} />
-            <Route path="/mettre-a-jour-transport/:id" element={<MettreAJourTransport />} />
-            <Route path="/creer-parcelle" element={<CreerParcelle />} />
-            <Route path="/mes-parcelles" element={<MesParcelles />} />
-            <Route path="/parcelle/:id/photos" element={<PhotosParcelle />} />
-            <Route path="/parcelle/:id/intrants" element={<IntrantsParcelle />} />
-            <Route path="/parcelle/:id/inspections" element={<InspectionsParcelle />} />
-            <Route path="/" element={
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-4">Bienvenue sur la DApp Collecteur Exportateur</h2>
-                  <p className="text-gray-600">
-                    Cette application permet de gérer les produits et les acteurs de la chaîne d'approvisionnement.
-                  </p>
+      <div className="d-flex flex-column min-vh-100">
+        <Routes>
+          <Route path="/" element={<Header state={state} />}>
+            <Route index element={
+              <div className="row justify-content-center">
+                <div className="col-md-8">
+                  <div className="card shadow-sm">
+                    <div className="card-body">
+                      <p className="card-text text-muted">
+                        Cette application permet de gérer les produits et les acteurs de la chaîne d'approvisionnement.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             } />
-          </Routes>
-        </main>
+            <Route path="ajout-produit" element={<AjoutProduit />} />
+            <Route path="ajout-acteur" element={<AjoutActeur setState={setState} />} />
+            <Route path="liste-produits" element={<ListeProduits />} />
+            <Route path="mes-commandes" element={<MesCommandes />} />
+            <Route path="passer-commande/:id" element={<PasserCommande />} />
+            <Route path="valider-produit/:id" element={<ValiderProduit />} />
+            <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
+            <Route path="enregistrer-condition/:id" element={<EnregistrerCondition />} />
+            <Route path="mettre-a-jour-transport/:id" element={<MettreAJourTransport />} />
+            <Route path="creer-parcelle" element={<CreerParcelle />} />
+            <Route path="mes-parcelles" element={<MesParcelles />} />
+            <Route path="parcelle/:id/photos" element={<PhotosParcelle />} />
+            <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
+            <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
+          </Route>
+        </Routes>
       </div>
     </Router>
   );

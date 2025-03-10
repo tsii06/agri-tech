@@ -57,43 +57,45 @@ function ListeProduits() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Liste des Produits</h2>
+    <div className="container py-4">
+      <div className="card p-4 shadow-sm">
+        <h2 className="h5 mb-3">Liste des Produits</h2>
         {isLoading ? (
           <div className="text-center">Chargement...</div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="row g-3">
             {produits.map((produit) => (
-              <div key={produit.id} className="border rounded-lg p-4 shadow-sm">
-                <h3 className="font-semibold text-lg mb-2">{produit.nom}</h3>
-                <div className="space-y-2 text-sm">
-                  <p>Quantité: {produit.quantite}</p>
-                  <p>Prix: {produit.prix} ETH</p>
-                  <p>Parcelle ID: {produit.idParcelle}</p>
-                  <p className={`font-semibold ${
-                    produit.statut === 1 ? 'text-green-600' : 
-                    produit.statut === 2 ? 'text-red-600' : 'text-yellow-600'
-                  }`}>
-                    Statut: {getStatutProduit(produit.statut)}
-                  </p>
-                </div>
-                {role === 1 && produit.statut === 0 && (
-                  <div className="mt-4 space-x-2">
-                    <button 
-                      onClick={() => window.location.href = `/valider-produit/${produit.id}`}
-                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                    >
-                      Valider
-                    </button>
-                    <button 
-                      onClick={() => window.location.href = `/passer-commande/${produit.id}`}
-                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Commander
-                    </button>
+              <div key={produit.id} className="col-md-4">
+                <div className="card border shadow-sm p-3">
+                  <h5 className="card-title">{produit.nom}</h5>
+                  <div className="card-text small">
+                    <p><strong>Quantité:</strong> {produit.quantite}</p>
+                    <p><strong>Prix:</strong> {produit.prix} ETH</p>
+                    <p><strong>Parcelle ID:</strong> {produit.idParcelle}</p>
+                    <p className={`fw-semibold ${
+                      produit.statut === 1 ? 'text-success' : 
+                      produit.statut === 2 ? 'text-danger' : 'text-warning'
+                    }`}>
+                      <strong>Statut:</strong> {getStatutProduit(produit.statut)}
+                    </p>
                   </div>
-                )}
+                  {role === 1 && produit.statut === 0 && (
+                    <div className="mt-3 d-flex gap-2">
+                      <a 
+                        href={`/valider-produit/${produit.id}`}
+                        className="btn btn-sm btn-success"
+                      >
+                        Valider
+                      </a>
+                      <a 
+                        href={`/passer-commande/${produit.id}`}
+                        className="btn btn-sm btn-primary"
+                      >
+                        Commander
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

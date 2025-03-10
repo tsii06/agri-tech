@@ -65,36 +65,28 @@ function ValiderProduit() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Valider le produit</h2>
-        <div className="mb-6">
-          <h3 className="font-semibold">Détails du produit :</h3>
-          <p>Nom: {produit.nom}</p>
-          <p>Quantité: {produit.quantite}</p>
-          <p>Prix: {produit.prix} ETH</p>
-          <p>ID Parcelle: {produit.idParcelle}</p>
+    <div className="container py-4">
+      <div className="card p-4 shadow-sm">
+        <h2 className="h5 mb-3">Valider le produit</h2>
+        <div className="mb-3">
+          <h5 className="fw-semibold">Détails du produit :</h5>
+          <p><strong>Nom:</strong> {produit.nom}</p>
+          <p><strong>Quantité:</strong> {produit.quantite}</p>
+          <p><strong>Prix:</strong> {produit.prix} ETH</p>
+          <p><strong>ID Parcelle:</strong> {produit.idParcelle}</p>
         </div>
-        <div className="space-x-4">
+        <div className="d-flex gap-2">
           <button
             onClick={() => handleValidation(true)}
             disabled={isProcessing}
-            className={`px-4 py-2 text-white rounded-lg transition-colors ${
-              isProcessing
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            className={`btn ${isProcessing ? "btn-secondary disabled" : "btn-success"}`}
           >
             {isProcessing ? "Traitement..." : "Valider"}
           </button>
           <button
             onClick={() => handleValidation(false)}
             disabled={isProcessing}
-            className={`px-4 py-2 text-white rounded-lg transition-colors ${
-              isProcessing
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
+            className={`btn ${isProcessing ? "btn-secondary disabled" : "btn-danger"}`}
           >
             {isProcessing ? "Traitement..." : "Refuser"}
           </button>

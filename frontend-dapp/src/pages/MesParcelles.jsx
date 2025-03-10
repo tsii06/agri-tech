@@ -103,115 +103,52 @@ function MesParcelles() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Mes Parcelles</h2>
-        <div className="space-x-4">
-          <button
-            // onClick={creerParcelleParDefaut}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-          >
-            Créer Parcelle Test
-          </button>
-          <Link
-            to="/creer-parcelle"
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-          >
-            Nouvelle Parcelle
-          </Link>
+    <div className="container py-4">
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center" role="alert">
+          <svg className="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 108 0a8 8 0 000 16zm0-14.5A6.5 6.5 0 111.5 8 6.508 6.508 0 018 1.5zM6.354 4.646a.5.5 0 00-.708.708L7.293 8l-1.647 1.646a.5.5 0 00.708.708L8 8.707l1.646 1.647a.5.5 0 00.708-.708L8.707 8l1.647-1.646a.5.5 0 00-.708-.708L8 7.293 6.354 4.646z"/>
+          </svg>
+          <div>
+            {error}
+            <button onClick={chargerParcelles} className="btn btn-link text-danger">Réessayer</button>
+          </div>
+        </div>
+      )}
+      
+      <div className="d-flex justify-content-between mb-3">
+        <h2 className="h4">Mes Parcelles</h2>
+        <div>
+
+          <Link to="/creer-parcelle" className="btn btn-primary">Nouvelle Parcelle</Link>
         </div>
       </div>
 
       {parcelles.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="row g-3">
           {parcelles.map((parcelle) => (
-            <div
-              key={parcelle.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold mb-2">{parcelle.produit}</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Qualité des semences:</span>{" "}
-                  {parcelle.qualiteSemence}
-                </p>
-                <p>
-                  <span className="font-medium">Méthode de culture:</span>{" "}
-                  {parcelle.methodeCulture}
-                </p>
-                <p>
-                  <span className="font-medium">Localisation:</span>{" "}
-                  {parcelle.latitude}, {parcelle.longitude}
-                </p>
-                <p>
-                  <span className="font-medium">Date de récolte prévue:</span>{" "}
-                  {parcelle.dateRecolte}
-                </p>
-              </div>
-              <div className="mt-4 flex space-x-2">
-                <Link
-                  to={`/parcelle/${parcelle.id}/photos`}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm"
-                >
-                  Photos
-                </Link>
-                <Link
-                  to={`/parcelle/${parcelle.id}/intrants`}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm"
-                >
-                  Intrants
-                </Link>
-                <Link
-                  to={`/parcelle/${parcelle.id}/inspections`}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm"
-                >
-                  Inspections
-                </Link>
+            <div key={parcelle.id} className="col-md-4">
+              <div className="card shadow-sm p-3">
+                <h5 className="card-title">{parcelle.produit}</h5>
+                <div className="card-text">
+                  <p><strong>Qualité des semences:</strong> {parcelle.qualiteSemence}</p>
+                  <p><strong>Méthode de culture:</strong> {parcelle.methodeCulture}</p>
+                  <p><strong>Localisation:</strong> {parcelle.latitude}, {parcelle.longitude}</p>
+                  <p><strong>Date de récolte prévue:</strong> {parcelle.dateRecolte}</p>
+                </div>
+                <div className="d-flex justify-content-between mt-2">
+                  <Link to={`/parcelle/${parcelle.id}/photos`} className="btn btn-link">Photos</Link>
+                  <Link to={`/parcelle/${parcelle.id}/intrants`} className="btn btn-link">Intrants</Link>
+                  <Link to={`/parcelle/${parcelle.id}/inspections`} className="btn btn-link">Inspections</Link>
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            Aucune parcelle
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Commencez par créer votre première parcelle
-          </p>
-          <div className="mt-6">
-            <Link
-              to="/creer-parcelle"
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <svg
-                className="-ml-1 mr-2 h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Créer une parcelle
-            </Link>
-          </div>
+        <div className="text-center py-5">
+          <p className="text-muted">Aucune parcelle enregistrée.</p>
+          <Link to="/creer-parcelle" className="btn btn-primary">Créer une parcelle</Link>
         </div>
       )}
     </div>

@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getContract } from "../utils/contract";
 import { Link } from "react-router-dom";
+import { Home, LogOut, UserPlus, Wallet, Menu } from "lucide-react";
+import { Outlet } from "react-router-dom";
 
 function Header({ state }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const verifierConnexionInitiale = async () => {
     if (window.ethereum) {
@@ -189,75 +192,73 @@ function Header({ state }) {
   };
 
   return (
-    <div className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-8">
-            <h1 className="text-2xl font-bold text-gray-900">
-              <Link to="/">DApp Collecteur Exportateur</Link>
-            </h1>
-            <nav className="flex space-x-4">
-              {getNavigationLinks().map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  {link.text}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            {account ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg">
-                  <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                    {getRoleName(role)}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {`${account.substring(0, 6)}...${account.substring(
-                      account.length - 4
-                    )}`}
-                  </div>
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      role !== null ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  ></div>
+    <div class="container-fluid vh-100 d-flex flex-column">
+    <div class="row flex-grow-1">
+
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
+            <div class="position-sticky">
+                <a href="/" class="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
+                    Mon Projet
+                </a>
+                <ul class="nav flex-column px-3">
+                    {getNavigationLinks().map((link) => (
+                        <li class="nav-item">
+                            <a href={link.to} key={link.to} class="nav-link text-dark py-2 rounded">
+                                {link.text}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </nav>
+
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 px-4 d-flex justify-content-between">
+                <div>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
                 </div>
-                <button
-                  onClick={changerCompte}
-                  className="px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  Changer de compte
-                </button>
-                <Link
-                  to="/ajout-acteur"
-                  className="px-4 py-2 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                >
-                  Nouvel acteur
-                </Link>
-                <button
-                  onClick={deconnecterWallet}
-                  className="px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                  Déconnecter
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={connectWallet}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Connecter Wallet
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    {account ? (
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-success text-white px-3 py-1">
+                                {getRoleName(role)}
+                            </span>
+                            <span class="fw-medium text-muted">
+                                {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
+                            </span>
+                            <div class={`status-indicator bg-${role !== null ? "success" : "danger"}`}></div>
+                            <button onClick={changerCompte} class="btn btn-outline-primary btn-sm">
+                                Changer
+                            </button>
+                            <a href="/ajout-acteur" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                                <i class="bi bi-person-plus me-1"></i> Nouvel acteur
+                            </a>
+                            <button onClick={deconnecterWallet} class="btn btn-sm btn-outline-danger d-flex align-items-center">
+                                <i class="bi bi-box-arrow-right me-1"></i> Déconnecter
+                            </button>
+                        </div>
+                    ) : (
+                        <button onClick={connectWallet} class="btn btn-primary d-flex align-items-center">
+                            <i class="bi bi-wallet me-2"></i> Connecter Wallet
+                        </button>
+                    )}
+                </div>
+            </nav>
+
+            <div class="flex-grow-1 p-4">
+                <h1 class="h4">Bienvenue sur votre tableau de bord</h1>
+                <p>Gérez vos projets et vos interactions ici.</p>
+                <Outlet />
+            </div>
+        </main>
     </div>
+</div>
+
   );
 }
 
-export default Header; 
+export default Header;

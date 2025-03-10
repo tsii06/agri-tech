@@ -97,36 +97,36 @@ function MesCommandes() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Mes Commandes</h2>
+    <div className="container py-4">
+      <div className="card p-4 shadow-sm">
+        <h2 className="h5 mb-3">Mes Commandes</h2>
         {isLoading ? (
           <div className="text-center">Chargement...</div>
         ) : commandes.length === 0 ? (
-          <div className="text-center text-gray-500">
-            Vous n'avez pas encore passé de commandes.
-          </div>
+          <div className="text-center text-muted">Vous n'avez pas encore passé de commandes.</div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="row g-3">
             {commandes.map((commande) => (
-              <div key={commande.id} className="border rounded-lg p-4 shadow-sm">
-                <h3 className="font-semibold text-lg mb-2">{commande.nomProduit}</h3>
-                <div className="space-y-2 text-sm">
-                  <p>Quantité: {commande.quantite}</p>
-                  <p>Prix unitaire: {commande.prixUnitaire} ETH</p>
-                  <p>Total: {(Number(commande.quantite) * Number(commande.prixUnitaire)).toFixed(6)} ETH</p>
-                  <p className={`font-semibold ${getStatutTransportColor(commande.statutTransport)}`}>
-                    Statut: {getStatutTransport(commande.statutTransport)}
-                  </p>
-                </div>
-                <div className="mt-4 space-x-2">
+              <div key={commande.id} className="col-md-4">
+                <div className="card border shadow-sm p-3">
+                  <h5 className="card-title">{commande.nomProduit}</h5>
+                  <div className="card-text small">
+                    <p><strong>Quantité:</strong> {commande.quantite}</p>
+                    <p><strong>Prix unitaire:</strong> {commande.prixUnitaire} ETH</p>
+                    <p><strong>Total:</strong> {(Number(commande.quantite) * Number(commande.prixUnitaire)).toFixed(6)} ETH</p>
+                    <p className={`fw-semibold ${getStatutTransportColor(commande.statutTransport)}`}>
+                      <strong>Statut:</strong> {getStatutTransport(commande.statutTransport)}
+                    </p>
+                  </div>
                   {commande.statutTransport === 0 && (
-                    <Link
-                      to={`/effectuer-paiement/${commande.id}`}
-                      className="inline-block px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Payer
-                    </Link>
+                    <div className="mt-3">
+                      <Link
+                        to={`/effectuer-paiement/${commande.id}`}
+                        className="btn btn-sm btn-primary"
+                      >
+                        Payer
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>

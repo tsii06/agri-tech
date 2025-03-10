@@ -56,69 +56,54 @@ function InspectionsParcelle() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6">Inspections de la parcelle #{id}</h2>
-
-      <form onSubmit={ajouterInspection} className="mb-8">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Rapport d'inspection
-          </label>
+    <div className="container py-4">
+      <h2 className="h4 mb-4">Inspections de la parcelle #{id}</h2>
+      
+      <form onSubmit={ajouterInspection} className="mb-4">
+        <div className="mb-3">
+          <label className="form-label">Rapport d'inspection</label>
           <textarea
             value={rapport}
             onChange={(e) => setRapport(e.target.value)}
             required
             rows={4}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="form-control"
             placeholder="Détaillez votre inspection ici..."
           />
         </div>
         <button
           type="submit"
           disabled={ajoutEnCours}
-          className={`mt-4 px-4 py-2 rounded-md text-white ${
-            ajoutEnCours
-              ? "bg-indigo-400 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
-          }`}
+          className={`btn ${ajoutEnCours ? "btn-secondary disabled" : "btn-primary"}`}
         >
           {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'inspection"}
         </button>
       </form>
-
+      
       {inspections.length > 0 ? (
-        <div className="space-y-6">
+        <div className="row g-3">
           {inspections.map((inspection, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    Inspection #{index + 1}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Par: {inspection.auditeur.substring(0, 6)}...
-                    {inspection.auditeur.substring(inspection.auditeur.length - 4)}
-                  </p>
+            <div key={index} className="col-md-6">
+              <div className="card shadow-sm p-3">
+                <div className="d-flex justify-content-between mb-2">
+                  <div>
+                    <h5 className="card-title">Inspection #{index + 1}</h5>
+                    <p className="text-muted small">
+                      Par: {inspection.auditeur.substring(0, 6)}...
+                      {inspection.auditeur.substring(inspection.auditeur.length - 4)}
+                    </p>
+                  </div>
+                  <span className="text-muted small">
+                    {new Date(parseInt(inspection.timestamp) * 1000).toLocaleString()}
+                  </span>
                 </div>
-                <span className="text-sm text-gray-500">
-                  {new Date(parseInt(inspection.timestamp) * 1000).toLocaleString()}
-                </span>
-              </div>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {inspection.rapport}
-                </p>
+                <p className="card-text text-muted">{inspection.rapport}</p>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center text-gray-500">
-          Aucune inspection n'a encore été effectuée pour cette parcelle.
-        </div>
+        <div className="text-center text-muted">Aucune inspection n'a encore été effectuée pour cette parcelle.</div>
       )}
     </div>
   );

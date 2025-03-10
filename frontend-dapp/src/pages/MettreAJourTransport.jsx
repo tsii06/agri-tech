@@ -82,24 +82,22 @@ function MettreAJourTransport() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Mettre à jour le statut de transport</h2>
-        <div className="mb-6">
-          <h3 className="font-semibold">Détails de la commande :</h3>
-          <p>Produit: {produit.nom}</p>
-          <p>Quantité: {commande.quantite}</p>
-          <p>Statut actuel: {getStatutTransportLabel(commande.statutTransport)}</p>
+    <div className="container py-4">
+      <div className="card p-4 shadow-sm">
+        <h2 className="h5 mb-3">Mettre à jour le statut de transport</h2>
+        <div className="mb-3">
+          <h5 className="fw-semibold">Détails de la commande :</h5>
+          <p><strong>Produit:</strong> {produit.nom}</p>
+          <p><strong>Quantité:</strong> {commande.quantite}</p>
+          <p><strong>Statut actuel:</strong> {getStatutTransportLabel(commande.statutTransport)}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nouveau statut
-            </label>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Nouveau statut</label>
             <select
               value={statut}
               onChange={(e) => setStatut(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="form-select"
             >
               <option value="0">En attente</option>
               <option value="1">En cours</option>
@@ -109,11 +107,7 @@ function MettreAJourTransport() {
           <button
             type="submit"
             disabled={isProcessing || statut === commande.statutTransport.toString()}
-            className={`w-full px-4 py-2 text-white rounded-lg transition-colors ${
-              isProcessing || statut === commande.statutTransport.toString()
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
+            className={`btn w-100 ${isProcessing || statut === commande.statutTransport.toString() ? "btn-secondary disabled" : "btn-primary"}`}
           >
             {isProcessing ? "Mise à jour..." : "Mettre à jour le statut"}
           </button>

@@ -58,67 +58,53 @@ function AjoutProduit() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Ajouter un nouveau produit</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nom du produit
-            </label>
-            <input
-              type="text"
-              value={nomProduit}
-              onChange={(e) => setNomProduit(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Quantité
-            </label>
-            <input
-              type="number"
-              value={quantiteProduit}
-              onChange={(e) => setQuantiteProduit(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Prix (ETH)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={prixProduit}
-              onChange={(e) => setPrixProduit(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              ID Parcelle
-            </label>
-            <input
-              type="number"
-              value={idParcelle}
-              onChange={(e) => setIdParcelle(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <button
-            onClick={ajouterNouveauProduit}
-            disabled={isLoading}
-            className={`w-full px-4 py-2 text-white rounded-lg transition-colors ${
-              isLoading 
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {isLoading ? "Transaction en cours..." : "Ajouter le produit"}
-          </button>
+ <div className="container py-4">
+      <div className="card shadow-sm p-4">
+        <h2 className="h5 mb-3">Ajouter un nouveau produit</h2>
+        <div className="mb-3">
+          <label className="form-label">Nom du produit</label>
+          <input
+            type="text"
+            value={nomProduit}
+            onChange={(e) => setNomProduit(e.target.value)}
+            className="form-control"
+          />
         </div>
+        <div className="mb-3">
+          <label className="form-label">Quantité</label>
+          <input
+            type="number"
+            value={quantiteProduit}
+            onChange={(e) => setQuantiteProduit(e.target.value)}
+            className="form-control"
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Prix (ETH)</label>
+          <input
+            type="number"
+            step="0.01"
+            value={prixProduit}
+            onChange={(e) => setPrixProduit(e.target.value)}
+            className="form-control"
+          />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">ID Parcelle</label>
+          <input
+            type="number"
+            value={idParcelle}
+            onChange={(e) => setIdParcelle(e.target.value)}
+            className="form-control"
+          />
+        </div>
+        <button
+          onClick={ajouterNouveauProduit}
+          disabled={isLoading}
+          className={`btn w-100 ${isLoading ? "btn-secondary disabled" : "btn-primary"}`}
+        >
+          {isLoading ? "Transaction en cours..." : "Ajouter le produit"}
+        </button>
       </div>
     </div>
   );
