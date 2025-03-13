@@ -30,8 +30,9 @@ contract CollecteurExportateurContrat {
         uint idProduit;
         uint quantite;
         uint prix;
+        bool payer;
         StatutTransport statutTransport;
-        Acteur exportateur;
+        address exportateur;
     }
 
     struct EnregistrementCondition {
@@ -104,15 +105,14 @@ contract CollecteurExportateurContrat {
         require(_quantite <= produits[idProduit].quantite, "Quantite invalide");
 
         uint _prix = _quantite * produits[idProduit].prix;
-        Acteur memory _exportateur = acteurs[msg.sender];
         // la quantite de produit doit etre diminuer.
         uint temp = produits[idProduit].quantite - _quantite;
         produits[idProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = Commande(compteurCommandes, idProduit, _quantite, _prix, StatutTransport.EnCours, _exportateur);
+        commandes[compteurCommandes] = Commande(compteurCommandes, idProduit, _quantite, _prix, false, StatutTransport.EnCours, msg.sender);
 
-        emit CommandePasser(_exportateur.addr, idProduit);
+        emit CommandePasser(msg.sender, idProduit);
     }
 
     function ajouterProduit(uint _idParcelle, uint _quantite, uint _prix) public seulementCollecteur {
@@ -138,6 +138,10 @@ contract CollecteurExportateurContrat {
         Produit memory _produit = produits[commandes[_idCommande].idProduit];
         require(_produit.statut == StatutProduit.Valide, "Produit non valide");
         require(msg.value == _produit.prix * commandes[_idCommande].quantite, "Montant incorrect");
+        require(!commandes[_idCommande].payer, "Commande deja payer");
+
+        // definit la commande comme deja payee
+        commandes[_idCommande].payer = true;
 
         compteurPaiements++;
         paiements[compteurPaiements] = Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);

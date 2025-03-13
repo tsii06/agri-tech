@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract, executeContractMethod } from "../utils/contract";
+import { getCollecteurContract, executeContractMethod } from "../utils/contract";
 
 function EffectuerPaiement() {
   const { id } = useParams(); // id de la commande
@@ -16,7 +16,7 @@ function EffectuerPaiement() {
   useEffect(() => {
     const chargerDetails = async () => {
       try {
-        const contract = await getContract();
+        const contract = await getCollecteurContract();
         const commandeInfo = await contract.commandes(id);
         setCommande({
           idProduit: commandeInfo.idProduit.toString(),
@@ -51,10 +51,11 @@ function EffectuerPaiement() {
     setIsProcessing(true);
 
     try {
-      const contract = await getContract();
+      const contract = await getCollecteurContract();
       const montantEnWei = ethers.parseEther(montant);
       
-      await executeContractMethod(
+      const tx = await executeContractMethod(
+        contract,
         contract.effectuerPaiement,
         id,
         montantEnWei,
@@ -63,9 +64,10 @@ function EffectuerPaiement() {
           value: modePaiement === "0" ? montantEnWei : 0
         }
       );
+      await tx.wait();
 
       alert("Paiement effectué avec succès !");
-      navigate("/liste-commandes");
+      navigate("/mes-commandes");
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       alert("Erreur lors du paiement: " + error.message);

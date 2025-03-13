@@ -31,10 +31,13 @@ async function main() {
         "sur brulis",
         "latitude",
         "longitude",
-        "nomProduit",
+        "girofle",
         "12/12/25",
         "certificate"
     );
+    // ajouter un produit
+    await colExp.enregistrerActeur(collecteur.address, 3);
+    await colExp.connect(collecteur).ajouterProduit(1, 100, 1000);
     console.log("✓ Configuration initiale terminée");
 
     // Résumé des adresses des contrats

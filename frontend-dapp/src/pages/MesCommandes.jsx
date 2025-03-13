@@ -12,7 +12,7 @@ function MesCommandes() {
     const chargerCommandes = async () => {
       try {
         const contract = await getCollecteurContract();
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = contract.runner.provider;
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
 
@@ -26,7 +26,7 @@ function MesCommandes() {
         const commandesTemp = [];
         for (let i = 1; i <= compteurCommandes; i++) {
           const commande = await contract.commandes(i);
-          const exportateurAddress = commande.exportateur[0];
+          const exportateurAddress = commande.exportateur.toString();
 
           // Verifie si la commande appartient a l'user
           if(exportateurAddress.toLowerCase() !== account.toLowerCase())
@@ -35,7 +35,7 @@ function MesCommandes() {
           console.log(`Commande ${i}:`, {
             exportateur: exportateurAddress,
             account: account,
-            // match: exportateurAddress.toLowerCase() === account.toLowerCase()
+            match: exportateurAddress.toLowerCase() === account.toLowerCase()
           });
 
           // Vérifier si la commande appartient à l'utilisateur connecté
@@ -52,6 +52,7 @@ function MesCommandes() {
               statutTransport: Number(commande.statutTransport),
               nomProduit: produit.nom,
               prixUnitaire: ethers.formatEther(produit.prix),
+              payer: commande.payer,
               exportateur: exportateurAddress
             });
           // }
@@ -122,16 +123,18 @@ function MesCommandes() {
                       <strong>Statut:</strong> {getStatutTransport(commande.statutTransport)}
                     </p>
                   </div>
-                  {commande.statutTransport === 0 && (
-                    <div className="mt-3">
+                  <div className="mt-3">
+                    {commande.statutTransport === 0 && !commande.payer ? (
                       <Link
                         to={`/effectuer-paiement/${commande.id}`}
                         className="btn btn-sm btn-primary"
                       >
                         Payer
                       </Link>
-                    </div>
-                  )}
+                    ) : (
+                      <button className="btn btn-primary" disabled>Deja payer</button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

@@ -51,7 +51,7 @@ function PasserCommande() {
       await tx.wait();
 
       alert("Commande passée avec succès !");
-      navigate("/liste-produits");
+      navigate("/mes-commandes");
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
       alert("Erreur lors de la commande: " + error.message);

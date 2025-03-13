@@ -80,21 +80,21 @@ function ListeProduits() {
                     </p>
                   </div>
                   <div className="mt-3 d-flex gap-2">
-                    {role === 6 && produit.statut === 0 && (
+                    {role === 6 && (
+                      <>
                       <a 
                         href={`/valider-produit/${produit.id}`}
-                        className="btn btn-sm btn-success"
+                        className={produit.statut === 0 ? "btn btn-sm btn-success" : "btn btn-sm btn-success disabled"}
                       >
                         Valider
                       </a>
-                    )}
-                    {role === 6 && produit.statut === 1 && (
                       <a 
                         href={`/passer-commande/${produit.id}`}
-                        className="btn btn-sm btn-primary"
+                        className={produit.statut !== 1 ? "btn btn-sm btn-primary disabled" : "btn btn-sm btn-primary"}
                       >
                         Commander
                       </a>
+                      </>
                     )}
                   </div>
                 </div>
