@@ -104,7 +104,8 @@ function Header({ state }) {
       2: "CERTIFICATEUR",
       3: "COLLECTEUR",
       4: "AUDITEUR",
-      5: "TRANSPORTEUR"
+      5: "TRANSPORTEUR",
+      6: "EXPORTATEUR"
     };
     return roles[roleNumber] || "INCONNU";
   };
@@ -185,6 +186,11 @@ function Header({ state }) {
         return [
           ...commonLinks,
           { to: "/conditions-transport", text: "Conditions Transport" }
+        ]; 
+      case 6: // Exportateur
+        return [
+          ...commonLinks,
+          { to:"/mes-commandes", text:"Mes commandes"}
         ];
       default:
         return commonLinks;
@@ -192,18 +198,18 @@ function Header({ state }) {
   };
 
   return (
-    <div class="container-fluid vh-100 d-flex flex-column">
-    <div class="row flex-grow-1">
+    <div className="container-fluid vh-100 d-flex flex-column">
+    <div className="row flex-grow-1">
 
-        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
-            <div class="position-sticky">
-                <a href="/" class="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
+        <nav className="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
+            <div className="position-sticky">
+                <a href="/" className="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
                     Mon Projet
                 </a>
-                <ul class="nav flex-column px-3">
-                    {getNavigationLinks().map((link) => (
-                        <li class="nav-item">
-                            <a href={link.to} key={link.to} class="nav-link text-dark py-2 rounded">
+                <ul className="nav flex-column px-3">
+                    {getNavigationLinks().map((link, index) => (
+                        <li className="nav-item" key={index}>
+                            <a href={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
                                 {link.text}
                             </a>
                         </li>
@@ -213,44 +219,44 @@ function Header({ state }) {
         </nav>
 
 
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
+        <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
 
-            <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 px-4 d-flex justify-content-between">
+            <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 px-4 d-flex justify-content-between">
                 <div>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
+                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span className="navbar-toggler-icon"></span>
                     </button>
                 </div>
-                <div class="collapse navbar-collapse" id="navbarNav">
+                <div className="collapse navbar-collapse" id="navbarNav">
                     {account ? (
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-success text-white px-3 py-1">
+                        <div className="d-flex align-items-center gap-3">
+                            <span className="badge bg-success text-white px-3 py-1">
                                 {getRoleName(role)}
                             </span>
-                            <span class="fw-medium text-muted">
+                            <span className="fw-medium text-muted">
                                 {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
                             </span>
-                            <div class={`status-indicator bg-${role !== null ? "success" : "danger"}`}></div>
-                            <button onClick={changerCompte} class="btn btn-outline-primary btn-sm">
+                            <div className={`status-indicator bg-${role !== null ? "success" : "danger"}`}></div>
+                            <button onClick={changerCompte} className="btn btn-outline-primary btn-sm">
                                 Changer
                             </button>
-                            <a href="/ajout-acteur" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
-                                <i class="bi bi-person-plus me-1"></i> Nouvel acteur
+                            <a href="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                                <i className="bi bi-person-plus me-1"></i> Nouvel acteur
                             </a>
-                            <button onClick={deconnecterWallet} class="btn btn-sm btn-outline-danger d-flex align-items-center">
-                                <i class="bi bi-box-arrow-right me-1"></i> Déconnecter
+                            <button onClick={deconnecterWallet} className="btn btn-sm btn-outline-danger d-flex align-items-center">
+                                <i className="bi bi-box-arrow-right me-1"></i> Déconnecter
                             </button>
                         </div>
                     ) : (
-                        <button onClick={connectWallet} class="btn btn-primary d-flex align-items-center">
-                            <i class="bi bi-wallet me-2"></i> Connecter Wallet
+                        <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center">
+                            <i className="bi bi-wallet me-2"></i> Connecter Wallet
                         </button>
                     )}
                 </div>
             </nav>
 
-            <div class="flex-grow-1 p-4">
-                <h1 class="h4">Bienvenue sur votre tableau de bord</h1>
+            <div className="flex-grow-1 p-4">
+                <h1 className="h4">Bienvenue sur votre tableau de bord</h1>
                 <p>Gérez vos projets et vos interactions ici.</p>
                 <Outlet />
             </div>

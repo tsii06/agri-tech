@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract } from "../utils/contract";
+import { getCollecteurContract } from "../utils/contract";
 
 function MesCommandes() {
   const [commandes, setCommandes] = useState([]);
@@ -11,7 +11,7 @@ function MesCommandes() {
   useEffect(() => {
     const chargerCommandes = async () => {
       try {
-        const contract = await getContract();
+        const contract = await getCollecteurContract();
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
@@ -26,12 +26,16 @@ function MesCommandes() {
         const commandesTemp = [];
         for (let i = 1; i <= compteurCommandes; i++) {
           const commande = await contract.commandes(i);
-          const exportateurAddress = commande.exportateur.toString();
+          const exportateurAddress = commande.exportateur[0];
+
+          // Verifie si la commande appartient a l'user
+          if(exportateurAddress.toLowerCase() !== account.toLowerCase())
+            continue;
           
           console.log(`Commande ${i}:`, {
             exportateur: exportateurAddress,
             account: account,
-            match: exportateurAddress.toLowerCase() === account.toLowerCase()
+            // match: exportateurAddress.toLowerCase() === account.toLowerCase()
           });
 
           // Vérifier si la commande appartient à l'utilisateur connecté

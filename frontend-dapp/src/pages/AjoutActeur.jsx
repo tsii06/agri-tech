@@ -13,7 +13,8 @@ function AjoutActeur({ setState }) {
     { value: "2", label: "Certificateur", description: "Valide la qualité des produits et des intrants" },
     { value: "3", label: "Collecteur", description: "Collecte et achète les produits agricoles" },
     { value: "4", label: "Auditeur", description: "Effectue les inspections des parcelles" },
-    { value: "5", label: "Transporteur", description: "Gère le transport des produits" }
+    { value: "5", label: "Transporteur", description: "Gère le transport des produits" },
+    { value: "6", label: "Exportateur", description: "Passer commande et valide un produit" },
   ];
 
   const handleSubmit = async (e) => {
@@ -48,23 +49,23 @@ function AjoutActeur({ setState }) {
   };
 
   return (
-    <div class="container mt-5 p-4 bg-white shadow rounded">
-    <h2 class="text-center mb-4">S'enregistrer comme nouvel acteur</h2>
+    <div className="container mt-5 p-4 bg-white shadow rounded">
+    <h2 className="text-center mb-4">S'enregistrer comme nouvel acteur</h2>
     
     <form onSubmit={handleSubmit}>
-        <div class="mb-3">
-            <label class="form-label">Sélectionnez votre rôle</label>
-            <div class="row g-3">
+        <div className="mb-3">
+            <label className="form-label">Sélectionnez votre rôle</label>
+            <div className="row g-3">
                 {roles.map((role) => (
-                    <div class="col-md-6" key={role.value}>
+                    <div className="col-md-6" key={role.value}>
                         <div 
-                            class="card p-3 border-0 shadow-sm cursor-pointer d-flex flex-column align-items-start"
+                            className="card p-3 border-0 shadow-sm cursor-pointer d-flex flex-column align-items-start"
                             onClick={() => setSelectedRole(role.value)}
                             style={{ transition: '0.3s', borderLeft: selectedRole === role.value ? '5px solid #007bff' : '5px solid transparent' }}
                         >
-                            <h5 class="card-title mb-2">{role.label}</h5>
-                            <p class="card-text text-muted small">{role.description}</p>
-                            {selectedRole === role.value && <div class="text-primary fw-bold mt-auto">✔ Sélectionné</div>}
+                            <h5 className="card-title mb-2">{role.label}</h5>
+                            <p className="card-text text-muted small">{role.description}</p>
+                            {selectedRole === role.value && <div className="text-primary fw-bold mt-auto">✔ Sélectionné</div>}
                         </div>
                     </div>
                 ))}
@@ -74,7 +75,7 @@ function AjoutActeur({ setState }) {
         <button
             type="submit"
             disabled={!selectedRole || loading}
-            class="btn w-100 btn-lg mt-3 fw-bold shadow-sm "
+            className="btn w-100 btn-lg mt-3 fw-bold shadow-sm "
             style={{ backgroundColor: !selectedRole || loading ? '#6c757d' : '#007bff', color: 'white' }}
         >
             {loading ? "Enregistrement en cours..." : "S'enregistrer"}

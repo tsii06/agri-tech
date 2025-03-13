@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract, executeContractMethod } from "../utils/contract";
+import { getCollecteurContract, executeContractMethod } from "../utils/contract";
 
 function PasserCommande() {
   const { id } = useParams();
@@ -14,7 +14,7 @@ function PasserCommande() {
   useEffect(() => {
     const chargerProduit = async () => {
       try {
-        const contract = await getContract();
+        const contract = await getCollecteurContract();
         const produitInfo = await contract.produits(id);
         setProduit({
           nom: produitInfo.nom,
@@ -40,13 +40,15 @@ function PasserCommande() {
     setIsProcessing(true);
 
     try {
-      const contract = await getContract();
+      const contract = await getCollecteurContract();
       
-      await executeContractMethod(
+      const tx = await executeContractMethod(
+        contract,
         contract.passerCommande,
         id,
         quantite
       );
+      await tx.wait();
 
       alert("Commande passée avec succès !");
       navigate("/liste-produits");

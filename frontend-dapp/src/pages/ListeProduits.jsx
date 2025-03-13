@@ -79,22 +79,24 @@ function ListeProduits() {
                       <strong>Statut:</strong> {getStatutProduit(produit.statut)}
                     </p>
                   </div>
-                  {role === 1 && produit.statut === 0 && (
-                    <div className="mt-3 d-flex gap-2">
+                  <div className="mt-3 d-flex gap-2">
+                    {role === 6 && produit.statut === 0 && (
                       <a 
                         href={`/valider-produit/${produit.id}`}
                         className="btn btn-sm btn-success"
                       >
                         Valider
                       </a>
+                    )}
+                    {role === 6 && produit.statut === 1 && (
                       <a 
                         href={`/passer-commande/${produit.id}`}
                         className="btn btn-sm btn-primary"
                       >
                         Commander
                       </a>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

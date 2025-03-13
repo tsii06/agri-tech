@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract, executeContractMethod } from "../utils/contract";
+import { getCollecteurContract, executeContractMethod } from "../utils/contract";
 
 function ValiderProduit() {
   const { id } = useParams();
@@ -13,7 +13,7 @@ function ValiderProduit() {
   useEffect(() => {
     const chargerProduit = async () => {
       try {
-        const contract = await getContract();
+        const contract = await getCollecteurContract();
         const produitInfo = await contract.produits(id);
         setProduit({
           nom: produitInfo.nom,
@@ -38,13 +38,15 @@ function ValiderProduit() {
     setIsProcessing(true);
 
     try {
-      const contract = await getContract();
+      const contract = await getCollecteurContract();
       
-      await executeContractMethod(
+      const tx = await executeContractMethod(
+        contract,
         contract.validerProduit,
         id,
         estValide
       );
+      await tx.wait();
 
       alert(estValide ? "Produit validé avec succès !" : "Produit refusé.");
       navigate("/liste-produits");
