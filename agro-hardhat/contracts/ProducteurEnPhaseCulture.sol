@@ -57,6 +57,8 @@ contract ProducteurEnPhaseCulture {
         uint timestamp;
     }
 
+
+    // ------------------------- Attributs --------------------------------------------------------------
     mapping(address => Acteur) public acteurs;
     mapping(uint => Parcelle) public parcelles;
     mapping(uint => Paiement) public paiements;
@@ -64,6 +66,8 @@ contract ProducteurEnPhaseCulture {
     uint public compteurInspections;
     uint public compteurConditions;
     uint public compteurPaiements;
+    // ------------------------- Fin Attributs ----------------------------------------------------------
+
 
     event ActeurEnregistre(address indexed acteur, Role role);
     event SemenceValidee(uint indexed idParcelle, string qualiteSemence);
@@ -238,4 +242,30 @@ contract ProducteurEnPhaseCulture {
     // corrige l'erreur eth_call
     receive() external payable {}
     fallback() external payable {}
+
+
+    // --------------------------------- Getter --------------------------------------------------------
+    function getActeur(address addr) public view returns(Acteur memory) {
+        return acteurs[addr];
+    }
+    function getParcelle(uint id) public view returns(Parcelle memory) {
+        return parcelles[id];
+    }
+    function getPaiement(uint id) public view returns(Paiement memory) {
+        return paiements[id];
+    }
+
+    function getCompteurParcelle() public view returns(uint) {
+        return compteurParcelles;
+    }
+    function getCompteurInspection() public view returns(uint) {
+        return compteurInspections;
+    }
+    function getCompteurCondition() public view returns(uint) {
+        return compteurConditions;
+    }
+    function getCompteurPaiement() public view returns(uint) {
+        return compteurPaiements;
+    }
+    // --------------------------------- Fin Getter ----------------------------------------------------
 }

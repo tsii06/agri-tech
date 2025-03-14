@@ -19,12 +19,12 @@ function ListeProduits() {
       setRole(Number(acteurInfo.role));
 
       // Obtenir le nombre total de produits
-      const compteurProduits = await contract.compteurProduits();
+      const compteurProduits = await contract.getCompteurProduit();
       
       // Charger tous les produits
       const produitsTemp = [];
       for (let i = 1; i <= compteurProduits; i++) {
-        const produit = await contract.produits(i);
+        const produit = await contract.getProduit(i);
         produitsTemp.push({
           id: i,
           nom: produit.nom,

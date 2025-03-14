@@ -17,7 +17,7 @@ function MesParcelles() {
       const contract = await getContract();
       
       // Récupérer le compteur de parcelles en utilisant la méthode appropriée
-      const compteurParcelles = await contract.compteurParcelles();
+      const compteurParcelles = await contract.getCompteurParcelle();
       // const compteurParcelles = compteurParcellesResult.toNumber();
       console.log("Nombre de parcelles:", compteurParcelles);
 

@@ -19,13 +19,13 @@ function MesCommandes() {
         console.log("Adresse connectée:", account);
 
         // Obtenir le nombre total de commandes
-        const compteurCommandes = await contract.compteurCommandes();
+        const compteurCommandes = await contract.getCompteurCommande();
         console.log("Nombre total de commandes:", compteurCommandes.toString());
         
         // Charger toutes les commandes de l'exportateur
         const commandesTemp = [];
         for (let i = 1; i <= compteurCommandes; i++) {
-          const commande = await contract.commandes(i);
+          const commande = await contract.getCommande(i);
           const exportateurAddress = commande.exportateur.toString();
 
           // Verifie si la commande appartient a l'user

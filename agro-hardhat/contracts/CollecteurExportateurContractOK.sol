@@ -50,6 +50,8 @@ contract CollecteurExportateurContrat {
         uint timestamp;
     }
 
+
+    // ------------------------- Attributs --------------------------------------------------------------
     mapping(address => Acteur) public acteurs;
     mapping(uint => Produit) public produits;
     mapping(uint => EnregistrementCondition) public conditions;
@@ -62,6 +64,7 @@ contract CollecteurExportateurContrat {
     uint public compteurPaiements;
 
     address public producteurEnPhaseCultureAddress;
+    // ------------------------- Fin Attributs ----------------------------------------------------------
 
     event ActeurEnregistre(address indexed acteur, Role role);
     event ProduitAjoute(uint indexed idProduit, string nom, uint quantite, uint prix, uint idParcelle, string dateRecolte, string certificatPhytosanitaire);
@@ -94,9 +97,6 @@ contract CollecteurExportateurContrat {
     function enregistrerActeur(address _acteur, Role _role) public {
         acteurs[_acteur] = Acteur(_acteur, _role);
         emit ActeurEnregistre(_acteur, _role);
-    }
-    function getActeur(address _acteur) public view returns (Acteur memory) {
-        return acteurs[_acteur];
     }
 
     // Modifie la fonction qui passe une commande
@@ -165,6 +165,43 @@ contract CollecteurExportateurContrat {
     // Pour enlever les erreurs eth_call
     fallback() external payable {}
     receive() external payable {}
+
+    // ------------------------------------- Setter ----------------------------------------------------
+    function setProducteurEnPhaseCultureAddress(address _addr) public {
+        producteurEnPhaseCultureAddress = _addr;
+    }
+    // ------------------------------------- Fin Setter -------------------------------------------------
+
+    // -------------------------------------- Getter ----------------------------------------------------
+    function getActeur(address addr) public view returns(Acteur memory) {
+        return acteurs[addr];
+    }
+    function getProduit(uint id) public view returns(Produit memory) {
+        return produits[id];
+    }
+    function getCondition(uint id) public view returns(EnregistrementCondition memory) {
+        return conditions[id];
+    }
+    function getPaiement(uint id) public view returns(Paiement memory) {
+        return paiements[id];
+    }
+    function getCommande(uint id) public view returns(Commande memory) {
+        return commandes[id];
+    }
+
+    function getCompteurCommande() public view returns(uint) {
+        return compteurCommandes;
+    }
+    function getCompteurProduit() public view returns(uint) {
+        return compteurProduits;
+    }
+    function getCompteurPaiement() public view returns(uint) {
+        return compteurPaiements;
+    }
+    function getCompteurCondition() public view returns(uint) {
+        return compteurConditions;
+    }
+    // -------------------------------------- Fin Getter ------------------------------------------------
 }
 
 interface ProducteurEnPhaseCulture {

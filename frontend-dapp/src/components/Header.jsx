@@ -84,7 +84,7 @@ function Header({ state }) {
   const verifierActeur = async (userAddress) => {
     try {
       const contract = await getContract();
-      const acteur = await contract.acteurs(userAddress);
+      const acteur = await contract.getActeur(userAddress);
       
       if (acteur.addr !== ethers.ZeroAddress) {
         const roleNumber = Number(acteur.role);
@@ -164,12 +164,10 @@ function Header({ state }) {
         ];
       case 1: // Fournisseur
         return [
-          ...commonLinks,
           { to: "/mes-parcelles", text: "Gérer les Intrants" }
         ];
       case 2: // Certificateur
         return [
-          ...commonLinks,
           { to: "/mes-parcelles", text: "Contrôle Phytosanitaire" }
         ];
       case 3: // Collecteur
@@ -179,12 +177,10 @@ function Header({ state }) {
         ];
       case 4: // Auditeur
         return [
-          ...commonLinks,
           { to: "/mes-parcelles", text: "Inspections" }
         ];
       case 5: // Transporteur
         return [
-          ...commonLinks,
           { to: "/conditions-transport", text: "Conditions Transport" }
         ]; 
       case 6: // Exportateur

@@ -4,8 +4,8 @@ import CollecteurExportateurContratJson from "../abi/CollecteurExportateurContra
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";  // ProducteurEnPhaseCulture
-const COLLECTEUR_CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";  // CollecteurExportateurContrat
+const PRODUCTEUR_PROXY_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";  // ProducteurProxy
+const COLLECTEUR_PROXY_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";  // CollecteurProxy
 
 export async function getProvider() {
   if (!window.ethereum) {
@@ -23,7 +23,7 @@ export async function getProducteurContract() {
     const provider = await getProvider();
     const signer = await provider.getSigner();
     return new ethers.Contract(
-      PRODUCTEUR_CONTRACT_ADDRESS,
+      PRODUCTEUR_PROXY_ADDRESS,
       ProducteurEnPhaseCultureJson.abi,
       signer
     );
@@ -38,7 +38,7 @@ export async function getCollecteurContract() {
     const provider = await getProvider();
     const signer = await provider.getSigner();
     return new ethers.Contract(
-      COLLECTEUR_CONTRACT_ADDRESS,
+      COLLECTEUR_PROXY_ADDRESS,
       CollecteurExportateurContratJson.abi,
       signer
     );
