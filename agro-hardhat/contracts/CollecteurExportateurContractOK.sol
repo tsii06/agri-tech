@@ -2,15 +2,9 @@
 pragma solidity ^0.8.0;
 
 contract CollecteurExportateurContrat {
-    // enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
     enum StatutProduit { EnAttente, Valide, Rejete }
     enum StatutTransport { EnCours, Livre }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }
-
-    // struct Acteur {
-    //     address addr;
-    //     Role role;
-    // }
 
     struct Produit {
         uint id;
@@ -150,13 +144,19 @@ contract CollecteurExportateurContrat {
         collecteur.transfer(msg.value);
     }
 
-    function enregistrerCondition(uint _idProduit, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    function enregistrerCondition(uint _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+
         compteurConditions++;
-        conditions[_idProduit] = EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
-        emit ConditionEnregistree(_idProduit, compteurConditions, _temperature, _humidite, block.timestamp);
+        conditions[_idCommande] = EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
+        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
     }
 
     function mettreAJourStatutTransport(uint _idCommande, StatutTransport _statut) public seulementTransporteur {
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        
         commandes[_idCommande].statutTransport = _statut;
         emit StatutTransportMisAJour(_idCommande, _statut);
     }

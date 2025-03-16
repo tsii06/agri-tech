@@ -84,13 +84,13 @@ function ListeProduits() {
                       <>
                       <a 
                         href={`/valider-produit/${produit.id}`}
-                        className={produit.statut === 0 ? "btn btn-sm btn-success" : "btn btn-sm btn-success disabled"}
+                        className={produit.statut === 0 ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-success disabled"}
                       >
                         Valider
                       </a>
                       <a 
                         href={`/passer-commande/${produit.id}`}
-                        className={produit.statut !== 1 ? "btn btn-sm btn-primary disabled" : "btn btn-sm btn-primary"}
+                        className={produit.statut !== 1 ? "btn btn-sm btn-outline-primary disabled" : "btn btn-sm btn-primary"}
                       >
                         Commander
                       </a>

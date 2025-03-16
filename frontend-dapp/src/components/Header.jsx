@@ -5,6 +5,26 @@ import { Link } from "react-router-dom";
 import { Home, LogOut, UserPlus, Wallet, Menu } from "lucide-react";
 import { Outlet } from "react-router-dom";
 
+
+
+
+
+
+export const getRoleName = (roleNumber) => {
+  const roles = {
+    0: "PRODUCTEUR",
+    1: "FOURNISSEUR",
+    2: "CERTIFICATEUR",
+    3: "COLLECTEUR",
+    4: "AUDITEUR",
+    5: "TRANSPORTEUR",
+    6: "EXPORTATEUR"
+  };
+  return roles[roleNumber] || "INCONNU";
+};
+
+
+
 function Header({ state }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
@@ -97,19 +117,6 @@ function Header({ state }) {
     }
   };
 
-  const getRoleName = (roleNumber) => {
-    const roles = {
-      0: "PRODUCTEUR",
-      1: "FOURNISSEUR",
-      2: "CERTIFICATEUR",
-      3: "COLLECTEUR",
-      4: "AUDITEUR",
-      5: "TRANSPORTEUR",
-      6: "EXPORTATEUR"
-    };
-    return roles[roleNumber] || "INCONNU";
-  };
-
   useEffect(() => {
     // Vérifier la connexion initiale au chargement de la page
     verifierConnexionInitiale();
@@ -180,7 +187,8 @@ function Header({ state }) {
         ];
       case 5: // Transporteur
         return [
-          { to: "/conditions-transport", text: "Conditions Transport" }
+          { to:"/mes-commandes", text:"Liste des commandes"},
+          // { to: "/conditions-transport", text: "Conditions Transport" }
         ]; 
       case 6: // Exportateur
         return [
