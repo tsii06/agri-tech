@@ -132,7 +132,7 @@ function MesCommandes() {
                         Payer
                       </Link>
                     ) : (
-                      <button className="btn btn-primary" disabled>Deja payer</button>
+                      <button className="btn btn-outline-primary" disabled>Deja payer</button>
                     )}
                   </div>
                 </div>

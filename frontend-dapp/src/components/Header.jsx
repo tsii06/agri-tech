@@ -159,8 +159,7 @@ function Header({ state }) {
       case 0: // Producteur
         return [
           { to: "/mes-parcelles", text: "Mes Parcelles" },
-          { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
-          ...commonLinks
+          { to: "/creer-parcelle", text: "Nouvelle Parcelle" }
         ];
       case 1: // Fournisseur
         return [

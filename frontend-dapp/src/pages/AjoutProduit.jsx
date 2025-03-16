@@ -18,7 +18,7 @@ function AjoutProduit() {
       const signer = await provider.getSigner();
       const account = await signer.getAddress();
 
-      const acteurInfo = await executeContractMethod(contractCE, contractCE.acteurs, account);
+      const acteurInfo = await executeContractMethod(contractCE, contractCE.getActeur, account);
       
       if (acteurInfo.role.toString() !== "3") {
         alert("Vous devez être un collecteur pour ajouter un produit");

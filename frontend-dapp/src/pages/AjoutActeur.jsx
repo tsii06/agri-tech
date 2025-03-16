@@ -24,17 +24,11 @@ function AjoutActeur({ setState }) {
     try {
       // enregistre l'acteur dans les deux contrats
       const contract = await getContract();
-      const contratCE = await getCollecteurContract();
 
-      const txCE = await contratCE.enregistrerActeur(
-        await window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => accounts[0]),
-        parseInt(selectedRole)
-      );
       const tx = await contract.enregistrerActeur(
         await window.ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => accounts[0]),
         parseInt(selectedRole)
       );
-      await txCE.wait();
       await tx.wait();
       
       alert("Acteur enregistré avec succès !");

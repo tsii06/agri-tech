@@ -15,7 +15,7 @@ function ListeProduits() {
       const account = await signer.getAddress();
 
       // Vérifier le rôle de l'utilisateur
-      const acteurInfo = await contract.acteurs(account);
+      const acteurInfo = await contract.getActeur(account);
       setRole(Number(acteurInfo.role));
 
       // Obtenir le nombre total de produits

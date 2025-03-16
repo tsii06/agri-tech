@@ -133,7 +133,7 @@ function IntrantsParcelle() {
                 <p>
                   <strong>Statut:</strong> 
                   <span className={`badge ms-2 ${intrant.valide ? "bg-success" : "bg-warning"}`}>
-                    {intrant.valide ? "Validé" : "En attente"}
+                    {intrant.valide ? "Validé" : "Encore non validé"}
                   </span>
                 </p>
                 {!intrant.valide && (
@@ -143,12 +143,6 @@ function IntrantsParcelle() {
                       className="btn btn-sm btn-success"
                     >
                       Valider
-                    </button>
-                    <button
-                      onClick={() => validerIntrant(intrant.nom, false)}
-                      className="btn btn-sm btn-danger"
-                    >
-                      Rejeter
                     </button>
                   </div>
                 )}

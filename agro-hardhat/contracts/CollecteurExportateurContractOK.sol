@@ -2,15 +2,15 @@
 pragma solidity ^0.8.0;
 
 contract CollecteurExportateurContrat {
-    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
+    // enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
     enum StatutProduit { EnAttente, Valide, Rejete }
     enum StatutTransport { EnCours, Livre }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }
 
-    struct Acteur {
-        address addr;
-        Role role;
-    }
+    // struct Acteur {
+    //     address addr;
+    //     Role role;
+    // }
 
     struct Produit {
         uint id;
@@ -52,7 +52,6 @@ contract CollecteurExportateurContrat {
 
 
     // ------------------------- Attributs --------------------------------------------------------------
-    mapping(address => Acteur) public acteurs;
     mapping(uint => Produit) public produits;
     mapping(uint => EnregistrementCondition) public conditions;
     mapping(uint => Paiement) public paiements;
@@ -63,10 +62,10 @@ contract CollecteurExportateurContrat {
     uint public compteurConditions;
     uint public compteurPaiements;
 
-    address public producteurEnPhaseCultureAddress;
+    ProducteurEnPhaseCulture public producteurEnPhaseCulture;
     // ------------------------- Fin Attributs ----------------------------------------------------------
 
-    event ActeurEnregistre(address indexed acteur, Role role);
+    event ActeurEnregistre(address indexed acteur, ProducteurEnPhaseCulture.Role role);
     event ProduitAjoute(uint indexed idProduit, string nom, uint quantite, uint prix, uint idParcelle, string dateRecolte, string certificatPhytosanitaire);
     event ProduitValide(uint indexed idProduit, bool valide);
     event PaiementEffectue(uint indexed idProduit, uint idPaiement, address payeur, uint montant, ModePaiement mode);
@@ -76,28 +75,28 @@ contract CollecteurExportateurContrat {
     event CommandePasser(address indexed exportateur, uint idProduit);
 
     modifier seulementCollecteur() {
-        require(acteurs[msg.sender].role == Role.Collecteur, "Non autorise: seulement Collecteur");
+        require(producteurEnPhaseCulture.getActeur(msg.sender).role == ProducteurEnPhaseCulture.Role.Collecteur, "Non autorise: seulement Collecteur");
         _;
     }
 
     modifier seulementExportateur() {
-        require(acteurs[msg.sender].role == Role.Exportateur, "Non autorise: seulement Exportateur");
+        require(producteurEnPhaseCulture.getActeur(msg.sender).role == ProducteurEnPhaseCulture.Role.Exportateur, "Non autorise: seulement Exportateur");
         _;
     }
 
     modifier seulementTransporteur() {
-        require(acteurs[msg.sender].role == Role.Transporteur, "Non autorise: seulement Transporteur");
+        require(producteurEnPhaseCulture.getActeur(msg.sender).role == ProducteurEnPhaseCulture.Role.Transporteur, "Non autorise: seulement Transporteur");
         _;
     }
 
     constructor(address _producteurEnPhaseCultureAddress) {
-        producteurEnPhaseCultureAddress = _producteurEnPhaseCultureAddress;
+        producteurEnPhaseCulture = ProducteurEnPhaseCulture(_producteurEnPhaseCultureAddress);
     }
 
-    function enregistrerActeur(address _acteur, Role _role) public {
-        acteurs[_acteur] = Acteur(_acteur, _role);
-        emit ActeurEnregistre(_acteur, _role);
-    }
+    // function enregistrerActeur(address _acteur, Role _role) public {
+    //     acteurs[_acteur] = Acteur(_acteur, _role);
+    //     emit ActeurEnregistre(_acteur, _role);
+    // }
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint idProduit, uint _quantite) public seulementExportateur {
@@ -117,7 +116,7 @@ contract CollecteurExportateurContrat {
 
     function ajouterProduit(uint _idParcelle, uint _quantite, uint _prix) public seulementCollecteur {
         // les valeurs inutiles seront ignorees.
-        (, , , , string memory _nom, string memory _dateRecolte, string memory _certificatPhytosanitaire) = ProducteurEnPhaseCulture(producteurEnPhaseCultureAddress).obtenirInformationsParcelle(_idParcelle);
+        (, , , , string memory _nom, string memory _dateRecolte, string memory _certificatPhytosanitaire) = producteurEnPhaseCulture.obtenirInformationsParcelle(_idParcelle);
 
         compteurProduits++;
         produits[compteurProduits] = Produit(compteurProduits, _nom, _quantite, _prix, StatutProduit.EnAttente, _idParcelle, _dateRecolte, _certificatPhytosanitaire, msg.sender);
@@ -167,14 +166,14 @@ contract CollecteurExportateurContrat {
     receive() external payable {}
 
     // ------------------------------------- Setter ----------------------------------------------------
-    function setProducteurEnPhaseCultureAddress(address _addr) public {
-        producteurEnPhaseCultureAddress = _addr;
+    function setProducteurEnPhaseCulture(address _addr) public {
+        producteurEnPhaseCulture = ProducteurEnPhaseCulture(_addr);
     }
     // ------------------------------------- Fin Setter -------------------------------------------------
 
     // -------------------------------------- Getter ----------------------------------------------------
-    function getActeur(address addr) public view returns(Acteur memory) {
-        return acteurs[addr];
+    function getActeur(address addr) public view returns(ProducteurEnPhaseCulture.Acteur memory) {
+        return producteurEnPhaseCulture.getActeur(addr);
     }
     function getProduit(uint id) public view returns(Produit memory) {
         return produits[id];
@@ -205,6 +204,13 @@ contract CollecteurExportateurContrat {
 }
 
 interface ProducteurEnPhaseCulture {
+    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
+
+    struct Acteur {
+        address addr;
+        Role role;
+    }
+
     function obtenirInformationsParcelle(uint _idParcelle) external view returns (
         string memory qualiteSemence,
         string memory methodeCulture,
@@ -214,4 +220,5 @@ interface ProducteurEnPhaseCulture {
         string memory dateRecolte,
         string memory certificatPhytosanitaire
     );
+    function getActeur(address addr) external view returns(Acteur memory);
 }

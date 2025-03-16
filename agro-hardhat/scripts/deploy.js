@@ -39,7 +39,7 @@ async function main() {
     const colProxyAddr = await colProxyContrat.getAddress();
 
     // donner l'addresse du proxy Prod.
-    await colProxyContrat.setProducteurEnPhaseCultureAddress(proProxyAddr);
+    await colProxyContrat.setProducteurEnPhaseCulture(proProxyAddr);
 
     // Résumé des adresses des contrats
     console.log("\n=== Résumé des adresses des contrats ===");
@@ -64,7 +64,7 @@ async function main() {
         "certificate"
     );
     // ajouter un produit
-    await colProxyContrat.enregistrerActeur(collecteur.address, 3);
+    await proProxyContrat.enregistrerActeur(collecteur.address, 3);
     await colProxyContrat.connect(collecteur).ajouterProduit(1, 100, 100000000);
     console.log("✓ Configuration initiale terminée");
 
