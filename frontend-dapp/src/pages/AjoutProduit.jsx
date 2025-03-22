@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract, executeContractMethod, getCollecteurContract } from "../utils/contract";
 
 function AjoutProduit() {
+  const navigate = useNavigate();
   const [quantiteProduit, setQuantiteProduit] = useState("100");
   const [prixProduit, setPrixProduit] = useState("0.01");
   const [idParcelle, setIdParcelle] = useState("1");
@@ -42,12 +44,7 @@ function AjoutProduit() {
 
       alert("Produit ajouté avec succès !");
 
-      // Réinitialiser les champs
-      setQuantiteProduit("100");
-      setPrixProduit("0.01");
-      setIdParcelle("1");
-      setDateRecolte(Math.floor(Date.now() / 1000));
-      setCertificat("CERT123");
+      navigate("/liste-produits");
 
     } catch (error) {
       console.error("Erreur ajout produit:", error);

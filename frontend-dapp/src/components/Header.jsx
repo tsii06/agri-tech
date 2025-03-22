@@ -179,6 +179,7 @@ function Header({ state }) {
       case 3: // Collecteur
         return [
           { to: "/ajout-produit", text: "Ajouter Produit" },
+          { to: "/mes-parcelles", text: "Liste des Parcelles" },
           ...commonLinks
         ];
       case 4: // Auditeur

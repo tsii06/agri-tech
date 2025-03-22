@@ -57,8 +57,8 @@ async function main() {
     await proProxyContrat.connect(producteur).creerParcelle(
         "bon",
         "sur brulis",
-        "latitude",
-        "longitude",
+        "109.232",
+        "47.233",
         "girofle",
         "12/12/25",
         "certificate"
