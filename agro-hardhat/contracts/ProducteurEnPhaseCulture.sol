@@ -65,8 +65,8 @@ contract ProducteurEnPhaseCulture {
         uint32 idParcelle;
         uint32 quantite;
         uint32 prix;
+        bool certifie;
         string certificatPhytosanitaire;
-        string dateRecolte;
     }
 
 
@@ -79,10 +79,6 @@ contract ProducteurEnPhaseCulture {
     uint32 public compteurPaiements;
     mapping(uint32 => Recolte) public recoltes;
     uint32 public compteurRecoltes;
-
-    /*
-    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
-    */
     address private moduleRecolte;
     address private moduleParcelle;
 
@@ -138,11 +134,6 @@ contract ProducteurEnPhaseCulture {
         require(success, "erreur delegatecall dans creeParcelle");
         
     }
-
-
-    /*
-    les getters pour les tableaux dynamiques d'un parcelle
-    */
     function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
         return parcelles[idParcelle].photos;
     }
@@ -159,8 +150,14 @@ contract ProducteurEnPhaseCulture {
         parcelles[_idParcelle].etape = _etape;
     }
 
+<<<<<<< HEAD
+    function confirmerRecolte(uint _idParcelle, bool _qualiteApprouvee) public seulementCertificateur {
+        require(parcelles[_idParcelle].etape == Etape.Recolte, "Pas en etape de recolte");
+        emit RecolteConfirmee(_idParcelle, _qualiteApprouvee);
+    }
 
-
+    function ajouterPhoto(uint _idParcelle, string memory _urlPhoto) public seulementProducteur {
+=======
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public seulementCertificateur {
 
         (bool success,) = moduleParcelle.delegatecall(abi.encodeWithSignature("appliquerControlePhytosanitaire(uint32,uint32)", _idParcelle, _passe));
@@ -168,6 +165,7 @@ contract ProducteurEnPhaseCulture {
     }
 
     function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
+>>>>>>> f05b8c2a4a06275c67dc05c3710764b42ecb1c02
         parcelles[_idParcelle].photos.push(_urlPhoto);
     }
 
@@ -220,9 +218,9 @@ contract ProducteurEnPhaseCulture {
     }
 
     // ====================================== Recolte =========================================================
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public seulementProducteur {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix) public seulementProducteur {
 
-        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("ajoutRecolte(uint32,uint32,uint32,string)", _idParcelle, _quantite, _prix, _dateRecolte));
+        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("ajoutRecolte(uint32,uint32,uint32)", _idParcelle, _quantite, _prix));
         require(success, "erreur delegatecall dans ajoutRecolte");
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
