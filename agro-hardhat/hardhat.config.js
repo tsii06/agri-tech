@@ -12,4 +12,12 @@ module.exports = {
       chainId: 1337,
     }
   },
+
+  // pour l'optimisation de la compilation
+  setting: {
+    optimizer: {
+      enable: true,
+      runs: 1000
+    }
+  }
 };
