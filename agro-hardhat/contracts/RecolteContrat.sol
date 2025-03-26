@@ -68,10 +68,10 @@ contract RecolteContrat {
         uint32 prix;
         bool certifie;
         string certificatPhytosanitaire;
+        string dateRecolte;
     }
 
 
-    // ------------------------- Attributs --------------------------------------------------------------
     mapping(address => Acteur) public acteurs;
     mapping(uint32 => Parcelle) public parcelles;
     mapping(uint32 => Paiement) public paiements;
@@ -81,15 +81,21 @@ contract RecolteContrat {
     uint32 public compteurPaiements;
     mapping(uint32 => Recolte) public recoltes;
     uint32 public compteurRecoltes;
+
+    /*
+    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
+    */
+    address private moduleRecolte;
+    address private moduleParcelle;
     // ===============================================================================================
 
 
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix) external {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) external {
 
         require(_idParcelle <= compteurParcelles, "Parcelle non existant");
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "");
+        recoltes[compteurRecoltes] = Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) external {
 

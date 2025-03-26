@@ -65,8 +65,8 @@ contract ProducteurEnPhaseCulture {
         uint32 idParcelle;
         uint32 quantite;
         uint32 prix;
-        bool certifie;
         string certificatPhytosanitaire;
+        string dateRecolte;
     }
 
 
@@ -79,6 +79,10 @@ contract ProducteurEnPhaseCulture {
     uint32 public compteurPaiements;
     mapping(uint32 => Recolte) public recoltes;
     uint32 public compteurRecoltes;
+
+    /*
+    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
+    */
     address private moduleRecolte;
     address private moduleParcelle;
 
@@ -134,6 +138,11 @@ contract ProducteurEnPhaseCulture {
         require(success, "erreur delegatecall dans creeParcelle");
         
     }
+
+
+    /*
+    les getters pour les tableaux dynamiques d'un parcelle
+    */
     function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
         return parcelles[idParcelle].photos;
     }
@@ -149,6 +158,8 @@ contract ProducteurEnPhaseCulture {
     function mettreAJourEtape(uint32 _idParcelle, Etape _etape) public seulementProducteur {
         parcelles[_idParcelle].etape = _etape;
     }
+
+
 
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public seulementCertificateur {
 
@@ -209,9 +220,9 @@ contract ProducteurEnPhaseCulture {
     }
 
     // ====================================== Recolte =========================================================
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix) public seulementProducteur {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public seulementProducteur {
 
-        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("ajoutRecolte(uint32,uint32,uint32)", _idParcelle, _quantite, _prix));
+        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("ajoutRecolte(uint32,uint32,uint32,string)", _idParcelle, _quantite, _prix, _dateRecolte));
         require(success, "erreur delegatecall dans ajoutRecolte");
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {

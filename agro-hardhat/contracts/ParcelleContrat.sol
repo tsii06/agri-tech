@@ -73,7 +73,6 @@ contract ParcelleContrat {
     }
 
 
-    // ------------------------- Attributs --------------------------------------------------------------
     mapping(address => Acteur) public acteurs;
     mapping(uint32 => Parcelle) public parcelles;
     mapping(uint32 => Paiement) public paiements;
@@ -83,6 +82,12 @@ contract ParcelleContrat {
     uint32 public compteurPaiements;
     mapping(uint32 => Recolte) public recoltes;
     uint32 public compteurRecoltes;
+
+    /*
+    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
+    */
+    address private moduleRecolte;
+    address private moduleParcelle;
 	// ===============================================================================================
 
 

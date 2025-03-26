@@ -443,14 +443,14 @@ describe("ProducteurEnPhaseCulture", function () {
         });
 
         it("ajout de recolte par un producteur", async function () {
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100);
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
             const recolte = await contrat.recoltes(1);
             expect(recolte.quantite).to.equal(10);
         })
 
         it("certifie recolte", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100);
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
             // certifier la recolte
             await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
             const recolte = await contrat.recoltes(1);
