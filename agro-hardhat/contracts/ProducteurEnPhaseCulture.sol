@@ -167,12 +167,6 @@ contract ProducteurEnPhaseCulture {
         emit EtapeMiseAJour(_idParcelle, _etape);
     }
 
-    function appliquerControlePhytosanitaire(uint _idParcelle, bool _passe) public seulementCertificateur {
-        require(parcelles[_idParcelle].etape == Etape.Culture, "Pas en etape de culture");
-        parcelles[_idParcelle].certifie = _passe;
-        emit ControlePhytosanitaire(_idParcelle, _passe);
-    }
-
     function confirmerRecolte(uint _idParcelle, bool _qualiteApprouvee) public seulementCertificateur {
         require(parcelles[_idParcelle].etape == Etape.Recolte, "Pas en etape de recolte");
         emit RecolteConfirmee(_idParcelle, _qualiteApprouvee);
