@@ -47,7 +47,6 @@ function CreerParcelle() {
       );
 
       await tx.wait();
-      alert("Parcelle bien créée.");
       navigate("/mes-parcelles");
 
     } catch (error) {
