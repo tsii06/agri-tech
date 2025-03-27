@@ -475,5 +475,23 @@ describe("ProducteurEnPhaseCulture", function () {
             // verifie si la quantite de la recolte a bien ete diminuer
             expect(recolte.quantite).to.equal(1);
         });
+
+        it("payer une commande vers un producteur", async function () {
+            // ajoute recolte
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            // certifier la recolte
+            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            // passer une commande
+            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await contrat.getCommande(1);
+            const recolte = await contrat.getRecolte(1);
+
+            // payer la commande
+            await contrat.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
+            const paiement = await contrat.getPaiement(1);
+
+            expect(paiement.payeur).to.equal(collecteur);
+            expect(paiement.vendeur).to.equal(producteur);
+        });
     });
 });

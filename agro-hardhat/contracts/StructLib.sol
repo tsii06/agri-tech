@@ -55,6 +55,7 @@ library StructLib {
     struct Paiement {
         uint32 id;
         address payeur;
+        address vendeur;
         uint32 montant;
         ModePaiement mode;
         uint timestamp;

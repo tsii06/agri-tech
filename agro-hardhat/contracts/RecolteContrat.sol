@@ -82,6 +82,16 @@ contract RecolteContrat {
         uint32 _prix = recolte.prix * _quantite;
         commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, _sender);
     }
+    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) public payable {
+
+        StructLib.Commande memory commande = commandes[_idCommande];
+        require(_idCommande <= compteurCommandes, "Commande non existant");
+        require(!commande.payer, "Commande deja payer");
+        require(_montant == commande.prix, "Prix incorrect");
+
+        compteurPaiements++;
+        paiements[_idCommande] = StructLib.Paiement(compteurPaiements, _collecteur, commande.producteur, _montant, _mode, block.timestamp);
+    }
 
 
 
@@ -113,6 +123,15 @@ contract RecolteContrat {
     }
     function getCompteurCommandes() public view returns (uint32) {
         return compteurCommandes;
+    }
+
+
+
+    /*
+    ici les getters pour les paiements
+    */
+    function getPaiment(uint32 _id) public view returns (StructLib.Paiement memory) {
+        return paiements[_id];
     }
 
 

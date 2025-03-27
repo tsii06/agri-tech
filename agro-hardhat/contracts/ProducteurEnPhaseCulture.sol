@@ -170,6 +170,10 @@ contract ProducteurEnPhaseCulture {
 
         moduleRecolte.passerCommandeVersProducteur(_idRecolte, _quantite, msg.sender);
     }
+    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
+        
+        moduleRecolte.effectuerPaiementVersProducteur(_idCommande, _montant, _mode, msg.sender);
+    }
 
     // function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
     //     compteurConditions++;
@@ -177,10 +181,6 @@ contract ProducteurEnPhaseCulture {
     // }
 
 
-    // function effectuerPaiementVersProducteur(uint32 _idParcelle, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
-    //     compteurPaiements++;
-    //     paiements[_idParcelle] = StructLib.Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
-    // }
 
 
 
@@ -255,8 +255,6 @@ contract ProducteurEnPhaseCulture {
 
 
 
-
-
     // pour les commandes
     }
     function getCommande(uint32 _idRecolte) public view returns (StructLib.Commande memory) {
@@ -268,9 +266,19 @@ contract ProducteurEnPhaseCulture {
 
 
 
+    // pour les paiements
     function getPaiement(uint32 id) public view returns(StructLib.Paiement memory) {
-        return paiements[id];
+        return moduleRecolte.getPaiment(id);
     }
+
+
+
+
+
+
+
+
+
     // function getCompteurCondition() public view returns(uint32) {
     //     return compteurConditions;
     // }
@@ -278,6 +286,13 @@ contract ProducteurEnPhaseCulture {
         return compteurPaiements;
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -291,6 +306,8 @@ interface IRecolte {
     function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite, address _sender) external;
     function getCommande(uint32 _id) external view returns (StructLib.Commande memory);
     function getCompteurCommandes() external view returns (uint32);
+    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) external payable;
+    function getPaiment(uint32 _id) external view returns (StructLib.Paiement memory); 
 }
 
 
