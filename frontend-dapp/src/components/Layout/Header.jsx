@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getContract } from "../utils/contract";
+import { getContract } from "../../utils/contract";
 import { Link } from "react-router-dom";
 import { Home, LogOut, UserPlus, Wallet, Menu } from "lucide-react";
 import { Outlet } from "react-router-dom";
@@ -166,7 +166,8 @@ function Header({ state }) {
       case 0: // Producteur
         return [
           { to: "/mes-parcelles", text: "Mes Parcelles" },
-          { to: "/creer-parcelle", text: "Nouvelle Parcelle" }
+          { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
+          { to: "/liste-recolte", text: "Mes récoltes" }
         ];
       case 1: // Fournisseur
         return [
@@ -178,8 +179,8 @@ function Header({ state }) {
         ];
       case 3: // Collecteur
         return [
-          { to: "/ajout-produit", text: "Ajouter Produit" },
-          { to: "/mes-parcelles", text: "Liste des Parcelles" },
+          { to: "/passer-commande-producteur", text: "Passer commande" },
+          { to: "/liste-producteur", text: "Liste des producteurs" },
           ...commonLinks
         ];
       case 4: // Auditeur
@@ -194,7 +195,9 @@ function Header({ state }) {
       case 6: // Exportateur
         return [
           ...commonLinks,
-          { to:"/mes-commandes", text:"Mes commandes"}
+          { to:"/mes-commandes", text:"Mes commandes"},
+          { to: "/passer-commande-collecteur", text: "Passer commande" },
+          { to:"/liste-collecteur", text:"Liste des collecteurs"}
         ];
       default:
         return commonLinks;
