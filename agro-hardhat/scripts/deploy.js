@@ -68,14 +68,16 @@ async function main() {
 
     // 3. Interagisser avec les proxy
     const proProxyContrat = await ethers.getContractAt("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture", await proProxy.getAddress());
-    // definie les addresses de recolte et parcelle pour ProducteurEnPhaseCulture
-    await proProxyContrat.setAddrRecolte(await recolte.getAddress());
-    await proProxyContrat.setAddrParcelle(await parcelle.getAddress());
 
     const colProxyContrat = await ethers.getContractAt("CollecteurExportateurContrat", await colProxy.getAddress());
     const proProxyAddr = await proProxyContrat.getAddress();
     const colProxyAddr = await colProxyContrat.getAddress();
 
+    // definie l'adresse de CollecteurExportateur dans Recolte
+    await recolte.setAddrCE(colProxyAddr);
+    // definie les addresses de recolte et parcelle pour ProducteurEnPhaseCulture
+    await proProxyContrat.setAddrRecolte(await recolte.getAddress());
+    await proProxyContrat.setAddrParcelle(await parcelle.getAddress());
     // donner l'addresse du proxy Prod.
     await colProxyContrat.setProducteurEnPhaseCulture(proProxyAddr);
 

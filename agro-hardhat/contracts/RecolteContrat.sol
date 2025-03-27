@@ -18,6 +18,7 @@ contract RecolteContrat {
     uint32 public compteurCommandes;
 
     IParcelle private moduleParcelle;
+    ICollecteurExportateur private moduleCE;
 
 
 
@@ -27,6 +28,14 @@ contract RecolteContrat {
     // ================================== constructor =================================================
     constructor(address _parcelle) {
         moduleParcelle = IParcelle(_parcelle);
+    }
+
+
+    /*
+    definit l'adresse de moduleCE
+    */
+    function setAddrCE(address _addr) public {
+        moduleCE = ICollecteurExportateur(_addr);
     }
 
 
@@ -85,9 +94,14 @@ contract RecolteContrat {
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) public payable {
 
         StructLib.CommandeRecolte memory commande = commandes[_idCommande];
+        StructLib.Recolte memory recolte = recoltes[commande.idRecolte];
+
         require(_idCommande <= compteurCommandes, "Commande non existant");
         require(!commande.payer, "Commande deja payer");
         require(_montant == commande.prix, "Prix incorrect");
+
+        // ajout automatique de produit dans le contrat CollecteurExportateur
+        moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, commande.prix, _collecteur, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
 
         compteurPaiements++;
         paiements[_idCommande] = StructLib.Paiement(compteurPaiements, _collecteur, commande.producteur, _montant, _mode, block.timestamp);
@@ -133,9 +147,25 @@ contract RecolteContrat {
     function getPaiment(uint32 _id) public view returns (StructLib.Paiement memory) {
         return paiements[_id];
     }
+    function getCompteurPaiments() public view returns (uint32) {
+        return compteurPaiements;
+    }
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -143,4 +173,11 @@ interface IParcelle {
 
     function getCompteurParcelle() external view returns(uint32);
     function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
+}
+
+
+
+interface ICollecteurExportateur {
+
+    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) external;
 }

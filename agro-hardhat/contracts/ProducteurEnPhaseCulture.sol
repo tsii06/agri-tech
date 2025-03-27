@@ -10,8 +10,6 @@ import "./StructLib.sol";
 contract ProducteurEnPhaseCulture {
 
     mapping(address => StructLib.Acteur) public acteurs;
-    mapping(uint32 => StructLib.Paiement) public paiements;
-    uint32 public compteurPaiements;
 
     IRecolte private moduleRecolte;
     IParcelle private moduleParcelle;
@@ -270,6 +268,9 @@ contract ProducteurEnPhaseCulture {
     function getPaiement(uint32 id) public view returns(StructLib.Paiement memory) {
         return moduleRecolte.getPaiment(id);
     }
+    function getCompteurPaiments() public view returns (uint32) {
+        return moduleRecolte.getCompteurPaiments();
+    }
 
 
 
@@ -282,9 +283,6 @@ contract ProducteurEnPhaseCulture {
     // function getCompteurCondition() public view returns(uint32) {
     //     return compteurConditions;
     // }
-    function getCompteurPaiement() public view returns(uint32) {
-        return compteurPaiements;
-    }
 }
 
 
@@ -308,6 +306,7 @@ interface IRecolte {
     function getCompteurCommandes() external view returns (uint32);
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) external payable;
     function getPaiment(uint32 _id) external view returns (StructLib.Paiement memory); 
+    function getCompteurPaiments() external view returns (uint32);
 }
 
 

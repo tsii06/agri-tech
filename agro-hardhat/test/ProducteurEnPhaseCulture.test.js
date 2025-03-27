@@ -5,6 +5,7 @@ const { int } = require('hardhat/internal/core/params/argumentTypes');
 describe("ProducteurEnPhaseCulture", function () {
     let Contrat;
     let contrat;
+    let contratCE
     let recolteContrat;
     let addr0, addr1, addr2;
     this.beforeEach(async function () {
@@ -24,6 +25,16 @@ describe("ProducteurEnPhaseCulture", function () {
         Contrat = await ethers.getContractFactory("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture");
         contrat = await Contrat.deploy(await recolteContrat.getAddress(), await parcelle.getAddress());
         await contrat.waitForDeployment();
+
+
+        // deployer CollecteurExportateurContractOK
+        const ContratCE = await ethers.getContractFactory("CollecteurExportateurContrat");
+        contratCE = await ContratCE.deploy(await contrat.getAddress());
+        await contratCE.waitForDeployment();
+
+        // donner l'adresse de CE a Recolte pour l'ajout automatique de produit
+        await recolteContrat.setAddrCE(await contratCE.getAddress());
+
     })
 
 
@@ -492,6 +503,25 @@ describe("ProducteurEnPhaseCulture", function () {
 
             expect(paiement.payeur).to.equal(collecteur);
             expect(paiement.vendeur).to.equal(producteur);
+        });
+
+        it("ajout automatique de produit lors du paiement de la commande vers le producteur", async function () {
+            // ajoute recolte
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            // certifier la recolte
+            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            // passer une commande
+            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await contrat.getCommande(1);
+            const recolte = await contrat.getRecolte(1);
+
+            // payer la commande
+            await contrat.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
+            const paiement = await contrat.getPaiement(1);
+            // recuperer le produit automatiquement ajouter
+            const produit = await contratCE.produits(1);
+
+            expect(produit.nom).to.equal("girofle");
         });
     });
 });

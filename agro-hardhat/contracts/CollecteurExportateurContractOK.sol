@@ -33,7 +33,7 @@ contract CollecteurExportateurContrat {
 
 
 
-    event ProduitAjoute(uint32 indexed idProduit, string nom, uint32 quantite, uint32 prix, uint32 idParcelle, string dateRecolte, string certificatPhytosanitaire);
+    event ProduitAjoute(uint32 indexed idProduit, string nom, uint32 quantite, uint32 prix, uint32 idRecolte, string dateRecolte, string certificatPhytosanitaire);
     event ProduitValide(uint32 indexed idProduit, bool valide);
     event PaiementEffectue(uint32 indexed idProduit, uint32 idPaiement, address payeur, uint32 montant, StructLib.ModePaiement mode);
     event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp);
@@ -87,26 +87,24 @@ contract CollecteurExportateurContrat {
 
 
     // ==================================== Produit =========================================================
-
-    function ajouterProduit(uint32 _idParcelle, uint32 _quantite, uint32 _prix) public seulementCollecteur {
-
-        // les valeurs inutiles seront ignorees.
-        (, , , , string memory _nom, string memory _dateRecolte, string memory _certificatPhytosanitaire) = producteurEnPhaseCulture.obtenirInformationsParcelle(_idParcelle);
+    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) public {
 
         compteurProduits++;
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _nom, _quantite, _prix, StructLib.StatutProduit.EnAttente, _idParcelle, _dateRecolte, _certificatPhytosanitaire, msg.sender);
-        emit ProduitAjoute(compteurProduits, _nom, _quantite, _prix, _idParcelle, _dateRecolte, _certificatPhytosanitaire);
+
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _nomProduit, _quantite, _prix, StructLib.StatutProduit.EnAttente, _dateRecolte, _certificatPhytosanitaire, _collecteur);
+
+        emit ProduitAjoute(compteurProduits, _nomProduit, _quantite, _prix, _idRecolte, _dateRecolte, _certificatPhytosanitaire);
     }
 
-    function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
-        require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
-        if (_valide) {
-            produits[_idProduit].statut = StructLib.StatutProduit.Valide;
-        } else {
-            produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
-        }
-        emit ProduitValide(_idProduit, _valide);
-    }
+    // function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
+    //     require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
+    //     if (_valide) {
+    //         produits[_idProduit].statut = StructLib.StatutProduit.Valide;
+    //     } else {
+    //         produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
+    //     }
+    //     emit ProduitValide(_idProduit, _valide);
+    // }
 
 
 
@@ -152,23 +150,23 @@ contract CollecteurExportateurContrat {
     //     collecteur.transfer(msg.value);
     // }
 
-    function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    // function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
 
-        // verifie si l'idCommande est valide.
-        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+    //     // verifie si l'idCommande est valide.
+    //     require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
 
-        compteurConditions++;
-        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
-        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
-    }
+    //     compteurConditions++;
+    //     conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
+    //     emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
+    // }
 
-    function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
-        // verifie si l'idCommande est valide.
-        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+    // function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
+    //     // verifie si l'idCommande est valide.
+    //     require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
         
-        commandes[_idCommande].statutTransport = _statut;
-        emit StatutTransportMisAJour(_idCommande, _statut);
-    }
+    //     commandes[_idCommande].statutTransport = _statut;
+    //     emit StatutTransportMisAJour(_idCommande, _statut);
+    // }
 
 
 
@@ -234,6 +232,14 @@ contract CollecteurExportateurContrat {
     }
     // -------------------------------------- Fin Getter ------------------------------------------------
 }
+
+
+
+
+
+
+
+
 
 interface ProducteurEnPhaseCulture {
 
