@@ -101,15 +101,15 @@ contract CollecteurExportateurContrat {
         produits[_idProduit].prixUnit = _prix;
     }
 
-    // function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
-    //     require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
-    //     if (_valide) {
-    //         produits[_idProduit].statut = StructLib.StatutProduit.Valide;
-    //     } else {
-    //         produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
-    //     }
-    //     emit ProduitValide(_idProduit, _valide);
-    // }
+    function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
+        require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
+        if (_valide) {
+            produits[_idProduit].statut = StructLib.StatutProduit.Valide;
+        } else {
+            produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
+        }
+        emit ProduitValide(_idProduit, _valide);
+    }
 
 
 
@@ -120,58 +120,58 @@ contract CollecteurExportateurContrat {
 
 
 
-    // Modifie la fonction qui passe une commande
-    // function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
-    //     // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
-    //     require(_quantite <= produits[idProduit].quantite, "Quantite invalide");
+    Modifie la fonction qui passe une commande
+    function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
+        // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
+        require(_quantite <= produits[idProduit].quantite, "Quantite invalide");
 
-    //     uint32 _prix = _quantite * produits[idProduit].prix;
-    //     // la quantite de produit doit etre diminuer.
-    //     uint32 temp = produits[idProduit].quantite - _quantite;
-    //     produits[idProduit].quantite = temp;
+        uint32 _prix = _quantite * produits[idProduit].prix;
+        // la quantite de produit doit etre diminuer.
+        uint32 temp = produits[idProduit].quantite - _quantite;
+        produits[idProduit].quantite = temp;
 
-    //     compteurCommandes++;
-    //     commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, idProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, msg.sender);
+        compteurCommandes++;
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, idProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, msg.sender);
 
-    //     emit CommandePasser(msg.sender, idProduit);
-    // }
+        emit CommandePasser(msg.sender, idProduit);
+    }
 
 
-    // function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
+    function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
 
-    //     StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
-    //     require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
-    //     require(msg.value == _produit.prix * commandes[_idCommande].quantite, "Montant incorrect");
-    //     require(!commandes[_idCommande].payer, "Commande deja payer");
+        StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
+        require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
+        require(msg.value == _produit.prix * commandes[_idCommande].quantite, "Montant incorrect");
+        require(!commandes[_idCommande].payer, "Commande deja payer");
 
-    //     // definit la commande comme deja payee
-    //     commandes[_idCommande].payer = true;
+        // definit la commande comme deja payee
+        commandes[_idCommande].payer = true;
 
-    //     compteurPaiements++;
-    //     paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
-    //     emit PaiementEffectue(_produit.id, compteurPaiements, msg.sender, _montant, _mode);
+        compteurPaiements++;
+        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
+        emit PaiementEffectue(_produit.id, compteurPaiements, msg.sender, _montant, _mode);
 
-    //     address payable collecteur = payable(_produit.collecteur);
-    //     collecteur.transfer(msg.value);
-    // }
+        address payable collecteur = payable(_produit.collecteur);
+        collecteur.transfer(msg.value);
+    }
 
-    // function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
 
-    //     // verifie si l'idCommande est valide.
-    //     require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
 
-    //     compteurConditions++;
-    //     conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
-    //     emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
-    // }
+        compteurConditions++;
+        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
+        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
+    }
 
-    // function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
-    //     // verifie si l'idCommande est valide.
-    //     require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+    function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
         
-    //     commandes[_idCommande].statutTransport = _statut;
-    //     emit StatutTransportMisAJour(_idCommande, _statut);
-    // }
+        commandes[_idCommande].statutTransport = _statut;
+        emit StatutTransportMisAJour(_idCommande, _statut);
+    }
 
 
 
