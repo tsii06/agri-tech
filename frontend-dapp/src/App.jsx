@@ -1,13 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 
-<<<<<<< HEAD
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-=======
 import Header from "./components/Layout/Header";
 import Footer from "./components/Layout/Footer";
->>>>>>> origin/main
 import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/ListeProduits";
 import PasserCommande from "./pages/PasserCommandeVersCollecteur";
