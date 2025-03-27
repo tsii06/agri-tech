@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getCollecteurContract, executeContractMethod } from "../utils/contract";
 
-function PasserCommande() {
+function PasserCommandeVersCollecteur() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [produit, setProduit] = useState(null);
@@ -104,4 +104,4 @@ function PasserCommande() {
   );
 }
 
-export default PasserCommande; 
+export default PasserCommandeVersCollecteur; 

@@ -137,9 +137,10 @@ function MesParcelles() {
                   <p><strong>Date de récolte prévue:</strong> {parcelle.dateRecolte}</p>
                 </div>
                 <div className="d-flex justify-content-between mt-2">
-                  <Link to={`/parcelle/${parcelle.id}/photos`} className="btn btn-link">Photos</Link>
-                  <Link to={`/parcelle/${parcelle.id}/intrants`} className="btn btn-link">Intrants</Link>
-                  <Link to={`/parcelle/${parcelle.id}/inspections`} className="btn btn-link">Inspections</Link>
+                  <Link to={`/parcelle/${parcelle.id}/photos`} className="btn btn-link">Photos(producteur)</Link>
+                  <Link to={`/parcelle/${parcelle.id}/intrants`} className="btn btn-link">Intrants(fournisseur)</Link>
+                  <Link to={`/parcelle/${parcelle.id}/inspections`} className="btn btn-link">Inspections(certificateur)</Link>
+                  <Link to={`/parcelle/${parcelle.id}/faire-recolte`} className="btn btn-link">Recolter(producteur)</Link>
                 </div>
               </div>
             </div>
