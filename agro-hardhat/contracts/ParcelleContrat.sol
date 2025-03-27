@@ -1,93 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ProducteurEnPhaseCulture.sol";
+import "./StructLib.sol";
 
 
 
 contract ParcelleContrat {
 
 	// ================================ variable d'etat ==============================================
-	enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
-    enum Etape { PreCulture, Culture, Recolte, Transport }
-    enum ModePaiement { VirementBancaire, Cash, MobileMoney }
-
-    struct Acteur {
-        address addr;
-        Role role;
-    }
-
-    struct Intrant {
-        string nom;
-        uint32 quantite;
-        bool valide;
-    }
-
-    struct Inspection {
-        uint32 id;
-        address auditeur;
-        string rapport;
-        uint timestamp;
-    }
-
-    struct EnregistrementCondition {
-        uint32 id;
-        string temperature;
-        string humidite;
-        uint timestamp;
-    }
-
-    struct Parcelle {
-        uint32 id;
-        address producteur;
-        string qualiteSemence;
-        string methodeCulture;
-        bool certifie;
-        Etape etape;
-        string latitude;
-        string longitude;
-        string[] photos;
-        Intrant[] intrants;
-        Inspection[] inspections;
-        EnregistrementCondition[] conditions;
-        string dateRecolte;
-        string certificatPhytosanitaire;
-    }
-
-    struct Paiement {
-        uint32 id;
-        address payeur;
-        uint32 montant;
-        ModePaiement mode;
-        uint timestamp;
-    }
-
-    // ajout de struct recolte
-    struct Recolte {
-        uint32 id;
-        uint32 idParcelle;
-        uint32 quantite;
-        uint32 prix;
-        bool certifie;
-        string certificatPhytosanitaire;
-    }
-
-
-    mapping(address => Acteur) public acteurs;
-    mapping(uint32 => Parcelle) public parcelles;
-    mapping(uint32 => Paiement) public paiements;
+    mapping(uint32 => StructLib.Parcelle) public parcelles;
     uint32 public compteurParcelles;
     uint32 public compteurInspections;
-    uint32 public compteurConditions;
-    uint32 public compteurPaiements;
-    mapping(uint32 => Recolte) public recoltes;
-    uint32 public compteurRecoltes;
-
-    /*
-    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
-    */
-    address private moduleRecolte;
-    address private moduleParcelle;
 	// ===============================================================================================
 
 
@@ -107,14 +30,14 @@ contract ParcelleContrat {
         parcelles[compteurParcelles].qualiteSemence = _qualiteSemence;
         parcelles[compteurParcelles].methodeCulture = _methodeCulture;
         parcelles[compteurParcelles].certifie = false;
-        parcelles[compteurParcelles].etape = Etape.PreCulture;
+        parcelles[compteurParcelles].etape = StructLib.Etape.PreCulture;
         parcelles[compteurParcelles].latitude = _latitude;
         parcelles[compteurParcelles].longitude = _longitude;
         parcelles[compteurParcelles].dateRecolte = _dateRecolte;
         parcelles[compteurParcelles].certificatPhytosanitaire = _certificatPhytosanitaire;
     }
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public {
-        require(parcelles[_idParcelle].etape == Etape.Culture, "Pas en etape de culture");
+        require(parcelles[_idParcelle].etape == StructLib.Etape.Culture, "Pas en etape de culture");
         parcelles[_idParcelle].certifie = _passe;
     }
     function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) public {
@@ -124,5 +47,74 @@ contract ParcelleContrat {
                 break;
             }
         }
+    }
+
+
+
+    // Pour recuperer les tableaux dynamiques de parcelle
+    function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
+        return parcelles[idParcelle].photos;
+    }
+    function getIntrants(uint32 idParcelle) public view returns (StructLib.Intrant[] memory) {
+        return parcelles[idParcelle].intrants;
+    }
+    function getInspections(uint32 idParcelle) public view returns (StructLib.Inspection[] memory) {
+        return parcelles[idParcelle].inspections;
+    }
+    function getConditions(uint32 idParcelle) public view returns (StructLib.EnregistrementCondition[] memory) {
+        return parcelles[idParcelle].conditions;
+    }
+
+
+
+    function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) public {
+        parcelles[_idParcelle].etape = _etape;
+    }
+    function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public {
+
+        parcelles[_idParcelle].photos.push(_urlPhoto);
+    }
+    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) public {
+
+        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false));
+    }
+    function ajouterInspection(uint32 _idParcelle, string memory _rapport) public {
+
+        compteurInspections++;
+        parcelles[_idParcelle].inspections.push(StructLib.Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
+    }
+    function obtenirInformationsParcelle(uint32 _idParcelle) public view returns (
+        string memory qualiteSemence,
+        string memory methodeCulture,
+        string memory latitude,
+        string memory longitude,
+        string memory dateRecolte,
+        string memory certificatPhytosanitaire
+    ) {
+
+        // l'idParcelle doit etre existant
+        require(_idParcelle <= compteurParcelles, "Ce parcelle n'existe pas");
+        StructLib.Parcelle memory parcelle = parcelles[_idParcelle];
+        return (
+            parcelle.qualiteSemence,
+            parcelle.methodeCulture,
+            parcelle.latitude,
+            parcelle.longitude,
+            parcelle.dateRecolte,
+            parcelle.certificatPhytosanitaire
+        );
+    }
+
+
+
+    // ================================= getters ==========================================================
+    function getParcelle(uint32 id) public view returns(StructLib.Parcelle memory) {
+        return parcelles[id];
+    }
+    function getCompteurParcelle() public view returns(uint32) {
+        return compteurParcelles;
+    }
+    function getCompteurInspection() public view returns(uint32) {
+        return compteurInspections;
     }
 }

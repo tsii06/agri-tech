@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+
+
+library StructLib {
+
+	enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
+    enum Etape { PreCulture, Culture, Recolte, Transport }
+    enum ModePaiement { VirementBancaire, Cash, MobileMoney }
+    enum StatutTransport { EnCours, Livre }
+
+    struct Acteur {
+        address addr;
+        Role role;
+    }
+
+    struct Intrant {
+        string nom;
+        uint32 quantite;
+        bool valide;
+    }
+
+    struct Inspection {
+        uint32 id;
+        address auditeur;
+        string rapport;
+        uint timestamp;
+    }
+
+    struct EnregistrementCondition {
+        uint32 id;
+        string temperature;
+        string humidite;
+        uint timestamp;
+    }
+
+    struct Parcelle {
+        uint32 id;
+        address producteur;
+        string qualiteSemence;
+        string methodeCulture;
+        bool certifie;
+        Etape etape;
+        string latitude;
+        string longitude;
+        string[] photos;
+        Intrant[] intrants;
+        Inspection[] inspections;
+        EnregistrementCondition[] conditions;
+        string dateRecolte;
+        string certificatPhytosanitaire;
+    }
+
+    struct Paiement {
+        uint32 id;
+        address payeur;
+        uint32 montant;
+        ModePaiement mode;
+        uint timestamp;
+    }
+
+    struct Recolte {
+        uint32 id;
+        uint32 idParcelle;
+        uint32 quantite;
+        uint32 prix;
+        bool certifie;
+        string certificatPhytosanitaire;
+        string dateRecolte;
+    }
+
+    struct Commande {
+        uint32 id;
+        uint32 idRecolte;
+        uint32 quantite;
+        uint32 prix;
+        bool payer;
+        StatutTransport statutTransport;
+        address collecteur;
+    }
+}

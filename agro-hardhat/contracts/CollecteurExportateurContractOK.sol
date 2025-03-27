@@ -83,14 +83,18 @@ contract CollecteurExportateurContrat {
         _;
     }
 
+
+
+
+
+
     constructor(address _producteurEnPhaseCultureAddress) {
         producteurEnPhaseCulture = ProducteurEnPhaseCulture(_producteurEnPhaseCultureAddress);
     }
 
-    // function enregistrerActeur(address _acteur, Role _role) public {
-    //     acteurs[_acteur] = Acteur(_acteur, _role);
-    //     emit ActeurEnregistre(_acteur, _role);
-    // }
+
+
+
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint idProduit, uint _quantite) public seulementExportateur {

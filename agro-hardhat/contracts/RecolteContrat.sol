@@ -1,103 +1,49 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./StructLib.sol";
+
+
 
 
 contract RecolteContrat {
 
     // ================================ variable d'etat ==============================================
-    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
-    enum Etape { PreCulture, Culture, Recolte, Transport }
-    enum ModePaiement { VirementBancaire, Cash, MobileMoney }
-
-    struct Acteur {
-        address addr;
-        Role role;
-    }
-
-    struct Intrant {
-        string nom;
-        uint32 quantite;
-        bool valide;
-    }
-
-    struct Inspection {
-        uint32 id;
-        address auditeur;
-        string rapport;
-        uint timestamp;
-    }
-
-    struct EnregistrementCondition {
-        uint32 id;
-        string temperature;
-        string humidite;
-        uint timestamp;
-    }
-
-    struct Parcelle {
-        uint32 id;
-        address producteur;
-        string qualiteSemence;
-        string methodeCulture;
-        bool certifie;
-        Etape etape;
-        string latitude;
-        string longitude;
-        string[] photos;
-        Intrant[] intrants;
-        Inspection[] inspections;
-        EnregistrementCondition[] conditions;
-        string dateRecolte;
-        string certificatPhytosanitaire;
-    }
-
-    struct Paiement {
-        uint32 id;
-        address payeur;
-        uint32 montant;
-        ModePaiement mode;
-        uint timestamp;
-    }
-
-    // ajout de struct recolte
-    struct Recolte {
-        uint32 id;
-        uint32 idParcelle;
-        uint32 quantite;
-        uint32 prix;
-        bool certifie;
-        string certificatPhytosanitaire;
-        string dateRecolte;
-    }
-
-
-    mapping(address => Acteur) public acteurs;
-    mapping(uint32 => Parcelle) public parcelles;
-    mapping(uint32 => Paiement) public paiements;
-    uint32 public compteurParcelles;
-    uint32 public compteurInspections;
-    uint32 public compteurConditions;
-    uint32 public compteurPaiements;
-    mapping(uint32 => Recolte) public recoltes;
+    mapping(uint32 => StructLib.Recolte) public recoltes;
     uint32 public compteurRecoltes;
+    // pour les commandes
+    mapping(uint32 => StructLib.Paiement) public paiements;
+    uint32 public compteurPaiements;
+    mapping(uint32 => StructLib.Commande) public commandes;
+    uint32 public compteurCommandes;
+
+    IParcelle private moduleParcelle;
+
+
+
+
+
+
+    // ================================== constructor =================================================
+    constructor(address _parcelle) {
+        moduleParcelle = IParcelle(_parcelle);
+    }
+
+
+
+
 
     /*
-    les address des autres contrats qui interagisse avec ProducteurEnPhaseCulture
+    ici les fonctions pour les recoltes
     */
-    address private moduleRecolte;
-    address private moduleParcelle;
-    // ===============================================================================================
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public {
 
-
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) external {
-
-        require(_idParcelle <= compteurParcelles, "Parcelle non existant");
+        require(_idParcelle <= moduleParcelle.getCompteurParcelle(), "Parcelle non existant");
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte);
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte);
     }
-    function certifieRecolte(uint32 _idRecolte, string memory _certificat) external {
+    function certifieRecolte(uint32 _idRecolte, string memory _certificat) public {
 
         require(_idRecolte <= compteurRecoltes, "Recolte non existant");
         require(bytes(_certificat).length != 0, "Certificat vide");
@@ -106,4 +52,63 @@ contract RecolteContrat {
         recoltes[_idRecolte].certificatPhytosanitaire = _certificat;
     }
 
+
+
+
+
+
+    /*
+    ici les fonctions pour les commandes
+    */
+    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public {
+
+        StructLib.Recolte memory recolte = recoltes[_idRecolte];
+        require(recolte.certifie, "Recolte non certifie");
+        require(_idRecolte <= compteurRecoltes, "Recolte non existant");
+        require(_quantite <= recolte.quantite, "Quantite trop grand par rapport au quantite disponible");
+
+        // diminuer la quantite disponible dans la recolte.
+        recoltes[_idRecolte].quantite -= _quantite;
+
+        compteurCommandes++;
+        uint32 _prix = recolte.prix * _quantite;
+        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, msg.sender);
+    }
+
+
+
+
+
+
+    // ====================================== getter et setter =============================================
+    /*
+    ici les getters pour les recoltes
+    */
+    function getRecolte(uint32 _idRecolte) public view returns (StructLib.Recolte memory) {
+        return recoltes[_idRecolte];
+    }
+    function getCompteurRecoltes() public view returns (uint32) {
+        return compteurRecoltes;
+
+
+
+    /*
+    ici les getters pour les commandes
+    */
+    }
+    function getCommande(uint32 _id) public view returns (StructLib.Commande memory) {
+        return commandes[_id];
+    }
+    function getCompteurCommandes() public view returns (uint32) {
+        return compteurCommandes;
+    }
+
+
+}
+
+
+
+interface IParcelle {
+
+    function getCompteurParcelle() external view returns(uint32);
 }

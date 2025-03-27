@@ -1,124 +1,72 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./StructLib.sol";
+
+
+
 
 
 contract ProducteurEnPhaseCulture {
 
-    enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
-    enum Etape { PreCulture, Culture, Recolte, Transport }
-    enum ModePaiement { VirementBancaire, Cash, MobileMoney }
-
-    struct Acteur {
-        address addr;
-        Role role;
-    }
-
-    struct Intrant {
-        string nom;
-        uint32 quantite;
-        bool valide;
-    }
-
-    struct Inspection {
-        uint32 id;
-        address auditeur;
-        string rapport;
-        uint timestamp;
-    }
-
-    struct EnregistrementCondition {
-        uint32 id;
-        string temperature;
-        string humidite;
-        uint timestamp;
-    }
-
-    struct Parcelle {
-        uint32 id;
-        address producteur;
-        string qualiteSemence;
-        string methodeCulture;
-        bool certifie;
-        Etape etape;
-        string latitude;
-        string longitude;
-        string[] photos;
-        Intrant[] intrants;
-        Inspection[] inspections;
-        EnregistrementCondition[] conditions;
-        string dateRecolte;
-        string certificatPhytosanitaire;
-    }
-
-    struct Paiement {
-        uint32 id;
-        address payeur;
-        uint32 montant;
-        ModePaiement mode;
-        uint timestamp;
-    }
-
-    // ajout de struct recolte
-    struct Recolte {
-        uint32 id;
-        uint32 idParcelle;
-        uint32 quantite;
-        uint32 prix;
-        bool certifie;
-        string certificatPhytosanitaire;
-        string dateRecolte;
-    }
-
-
-    mapping(address => Acteur) public acteurs;
-    mapping(uint32 => Parcelle) public parcelles;
-    mapping(uint32 => Paiement) public paiements;
-    uint32 public compteurParcelles;
-    uint32 public compteurInspections;
-    uint32 public compteurConditions;
+    mapping(address => StructLib.Acteur) public acteurs;
+    mapping(uint32 => StructLib.Paiement) public paiements;
     uint32 public compteurPaiements;
-    mapping(uint32 => Recolte) public recoltes;
-    uint32 public compteurRecoltes;
-    address private moduleRecolte;
-    address private moduleParcelle;
+
+    IRecolte private moduleRecolte;
+    IParcelle private moduleParcelle;
 
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
-        require(acteurs[msg.sender].role == Role.Producteur, "Non autorise: seulement Producteur");
+        require(acteurs[msg.sender].role == StructLib.Role.Producteur, "Non autorise: seulement Producteur");
         _;
     }
     modifier seulementFournisseur() {
-        require(acteurs[msg.sender].role == Role.Fournisseur, "Non autorise: seulement Fournisseur");
+        require(acteurs[msg.sender].role == StructLib.Role.Fournisseur, "Non autorise: seulement Fournisseur");
         _;
     }
     modifier seulementCertificateur() {
-        require(acteurs[msg.sender].role == Role.Certificateur, "Non autorise: seulement Certificateur");
+        require(acteurs[msg.sender].role == StructLib.Role.Certificateur, "Non autorise: seulement Certificateur");
         _;
     }
     modifier seulementCollecteur() {
-        require(acteurs[msg.sender].role == Role.Collecteur, "Non autorise: seulement Collecteur");
+        require(acteurs[msg.sender].role == StructLib.Role.Collecteur, "Non autorise: seulement Collecteur");
         _;
     }
     modifier seulementAuditeur() {
-        require(acteurs[msg.sender].role == Role.Auditeur, "Non autorise: seulement Auditeur");
+        require(acteurs[msg.sender].role == StructLib.Role.Auditeur, "Non autorise: seulement Auditeur");
         _;
     }
     modifier seulementTransporteur() {
-        require(acteurs[msg.sender].role == Role.Transporteur, "Non autorise: seulement Transporteur");
+        require(acteurs[msg.sender].role == StructLib.Role.Transporteur, "Non autorise: seulement Transporteur");
         _;
     }
 
+
+
+
+
+
+
+
     // ======================================== constructor ==================================================
     constructor(address _recolte, address _parcelle) {
-        moduleRecolte = _recolte;
-        moduleParcelle = _parcelle;
+        moduleRecolte = IRecolte(_recolte);
+        moduleParcelle = IParcelle(_parcelle);
     }
 
 
 
-    function enregistrerActeur(address _acteur, Role _role) public {
-        acteurs[_acteur] = Acteur(_acteur, _role);
+
+
+
+
+
+
+
+
+    function enregistrerActeur(address _acteur, StructLib.Role _role) public {
+        acteurs[_acteur] = StructLib.Acteur(_acteur, _role);
     }
 
     // ====================================== Parcelle =========================================================
@@ -131,50 +79,53 @@ contract ProducteurEnPhaseCulture {
         string memory _certificatPhytosanitaire
     ) public seulementProducteur {
 
-        (bool success,) = moduleParcelle.delegatecall(abi.encodeWithSignature("creerParcelle(string,string,string,string,string,string)", _qualiteSemence, _methodeCulture, _latitude, _longitude, _dateRecolte, _certificatPhytosanitaire));
-        require(success, "erreur delegatecall dans creeParcelle");
+        moduleParcelle.creerParcelle(_qualiteSemence, _methodeCulture, _latitude, _longitude, _dateRecolte, _certificatPhytosanitaire);
         
     }
+
+
+    // Pour recuperer les tableaux dynamiques de parcelle
     function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
-        return parcelles[idParcelle].photos;
+        return moduleParcelle.getPhotos(idParcelle);
     }
-    function getIntrants(uint32 idParcelle) public view returns (Intrant[] memory) {
-        return parcelles[idParcelle].intrants;
+    function getIntrants(uint32 idParcelle) public view returns (StructLib.Intrant[] memory) {
+        return moduleParcelle.getIntrants(idParcelle);
     }
-    function getInspections(uint32 idParcelle) public view returns (Inspection[] memory) {
-        return parcelles[idParcelle].inspections;
+    function getInspections(uint32 idParcelle) public view returns (StructLib.Inspection[] memory) {
+        return moduleParcelle.getInspections(idParcelle);
     }
-    function getConditions(uint32 idParcelle) public view returns (EnregistrementCondition[] memory) {
-        return parcelles[idParcelle].conditions;
+    function getConditions(uint32 idParcelle) public view returns (StructLib.EnregistrementCondition[] memory) {
+        return moduleParcelle.getConditions(idParcelle);
     }
-    function mettreAJourEtape(uint32 _idParcelle, Etape _etape) public seulementProducteur {
-        parcelles[_idParcelle].etape = _etape;
+
+
+
+    function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) public seulementProducteur {
+        moduleParcelle.mettreAJourEtape(_idParcelle, _etape);
     }
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public seulementCertificateur {
 
-        (bool success,) = moduleParcelle.delegatecall(abi.encodeWithSignature("appliquerControlePhytosanitaire(uint32,uint32)", _idParcelle, _passe));
-        require(success, "erreur delegatecall dans appliquerControlePhytosanitaire");
+        moduleParcelle.appliquerControlePhytosanitaire(_idParcelle, _passe);
     }
 
     function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
 
-        parcelles[_idParcelle].photos.push(_urlPhoto);
+        moduleParcelle.ajouterPhoto(_idParcelle, _urlPhoto);
     }
 
     function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) public seulementFournisseur {
-        parcelles[_idParcelle].intrants.push(Intrant(_nom, _quantite, false));
+        
+        moduleParcelle.ajouterIntrant(_idParcelle, _nom, _quantite);
     }
 
     function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) public seulementCertificateur {
         
-        (bool success,) = moduleParcelle.delegatecall(abi.encodeWithSignature("validerIntrant(uint32,string,bool)", _idParcelle, _nom, _valide));
-        require(success, "erreur delegatecall dans validerIntrant");
+        moduleParcelle.validerIntrant(_idParcelle, _nom, _valide);
     }
 
     function ajouterInspection(uint32 _idParcelle, string memory _rapport) public seulementAuditeur {
 
-        compteurInspections++;
-        parcelles[_idParcelle].inspections.push(Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
+        moduleParcelle.ajouterInspection(_idParcelle, _rapport);
     }
 
     function obtenirInformationsParcelle(uint32 _idParcelle) public view returns (
@@ -186,40 +137,35 @@ contract ProducteurEnPhaseCulture {
         string memory certificatPhytosanitaire
     ) {
 
-        // l'idParcelle doit etre existant
-        require(_idParcelle <= compteurParcelles, "Ce parcelle n'existe pas");
-        Parcelle storage parcelle = parcelles[_idParcelle];
-        return (
-            parcelle.qualiteSemence,
-            parcelle.methodeCulture,
-            parcelle.latitude,
-            parcelle.longitude,
-            parcelle.dateRecolte,
-            parcelle.certificatPhytosanitaire
-        );
-    }
-    function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
-        compteurConditions++;
-        parcelles[_idParcelle].conditions.push(EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp));
-    }
-
-
-    function effectuerPaiementVersProducteur(uint32 _idParcelle, uint32 _montant, ModePaiement _mode) public payable seulementCollecteur {
-        compteurPaiements++;
-        paiements[_idParcelle] = Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
+        return moduleParcelle.obtenirInformationsParcelle(_idParcelle);
     }
 
     // ====================================== Recolte =========================================================
     function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public seulementProducteur {
 
-        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("ajoutRecolte(uint32,uint32,uint32,string)", _idParcelle, _quantite, _prix, _dateRecolte));
-        require(success, "erreur delegatecall dans ajoutRecolte");
+        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
 
-        (bool success,) = moduleRecolte.delegatecall(abi.encodeWithSignature("certifieRecolte(uint32,string)", _idRecolte, _certificat));
-        require(success, "erreur delegatecall dans certifieRecolte");
+        moduleRecolte.certifieRecolte(_idRecolte, _certificat);
     }
+
+    // ====================================== Commande =========================================================
+    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur {
+
+        moduleRecolte.passerCommandeVersProducteur(_idRecolte, _quantite);
+    }
+
+    // function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    //     compteurConditions++;
+    //     parcelles[_idParcelle].conditions.push(StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp));
+    // }
+
+
+    // function effectuerPaiementVersProducteur(uint32 _idParcelle, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
+    //     compteurPaiements++;
+    //     paiements[_idParcelle] = StructLib.Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
+    // }
 
 
     // corrige l'erreur eth_call
@@ -227,26 +173,98 @@ contract ProducteurEnPhaseCulture {
     fallback() external payable {}
 
     // ====================================== getter ==========================================================
-    function getActeur(address addr) public view returns(Acteur memory) {
+    function getActeur(address addr) public view returns(StructLib.Acteur memory) {
         return acteurs[addr];
     }
-    function getParcelle(uint32 id) public view returns(Parcelle memory) {
-        return parcelles[id];
-    }
-    function getPaiement(uint32 id) public view returns(Paiement memory) {
-        return paiements[id];
-    }
 
+
+    // pour les parcelles
+    function getParcelle(uint32 id) public view returns(StructLib.Parcelle memory) {
+        return moduleParcelle.getParcelle(id);
+    }
     function getCompteurParcelle() public view returns(uint32) {
-        return compteurParcelles;
+        return moduleParcelle.getCompteurParcelle();
     }
     function getCompteurInspection() public view returns(uint32) {
-        return compteurInspections;
+        return moduleParcelle.getCompteurInspection();
     }
-    function getCompteurCondition() public view returns(uint32) {
-        return compteurConditions;
+
+
+    // pour les recoltes
+    function getRecolte(uint32 _idRecolte) public view returns (StructLib.Recolte memory) {
+        return moduleRecolte.getRecolte(_idRecolte);
     }
+    function getCompteurRecoltes() public view returns (uint32) {
+        return moduleRecolte.getCompteurRecoltes();
+
+
+    // pour les commandes
+    }
+    function getCommande(uint32 _idRecolte) public view returns (StructLib.Commande memory) {
+        return moduleRecolte.getCommande(_idRecolte);
+    }
+    function getCompteurCommandes() public view returns (uint32) {
+        return moduleRecolte.getCompteurCommandes();
+    }
+
+
+
+    function getPaiement(uint32 id) public view returns(StructLib.Paiement memory) {
+        return paiements[id];
+    }
+    // function getCompteurCondition() public view returns(uint32) {
+    //     return compteurConditions;
+    // }
     function getCompteurPaiement() public view returns(uint32) {
         return compteurPaiements;
     }
+}
+
+
+
+
+interface IRecolte {
+
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) external;
+    function certifieRecolte(uint32 _idRecolte, string memory _certificat) external;
+    function getRecolte(uint32 _idRecolte) external view returns (StructLib.Recolte memory);
+    function getCompteurRecoltes() external view returns (uint32);
+    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) external;
+    function getCommande(uint32 _id) external view returns (StructLib.Commande memory);
+    function getCompteurCommandes() external view returns (uint32);
+}
+
+
+
+interface IParcelle {
+
+    function creerParcelle(
+        string memory _qualiteSemence,
+        string memory _methodeCulture,
+        string memory _latitude,
+        string memory _longitude,
+        string memory _dateRecolte,
+        string memory _certificatPhytosanitaire
+        ) external;
+    function obtenirInformationsParcelle(uint32 _idParcelle) external view returns (
+        string memory qualiteSemence,
+        string memory methodeCulture,
+        string memory latitude,
+        string memory longitude,
+        string memory dateRecolte,
+        string memory certificatPhytosanitaire
+        );
+    function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) external;
+    function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) external;
+    function getPhotos(uint32 idParcelle) external view returns (string[] memory); 
+    function getIntrants(uint32 idParcelle) external view returns (StructLib.Intrant[] memory);
+    function getInspections(uint32 idParcelle) external view returns (StructLib.Inspection[] memory);
+    function getConditions(uint32 idParcelle) external view returns (StructLib.EnregistrementCondition[] memory);
+    function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) external;
+    function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) external;
+    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) external;
+    function ajouterInspection(uint32 _idParcelle, string memory _rapport) external;
+    function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
+    function getCompteurParcelle() external view returns(uint32);
+    function getCompteurInspection() external view returns(uint32);
 }

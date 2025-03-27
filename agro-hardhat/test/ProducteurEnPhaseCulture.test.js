@@ -5,22 +5,24 @@ const { int } = require('hardhat/internal/core/params/argumentTypes');
 describe("ProducteurEnPhaseCulture", function () {
     let Contrat;
     let contrat;
-    let recolte;
+    let recolteContrat;
     let addr0, addr1, addr2;
     this.beforeEach(async function () {
         [addr0, addr1, addr2] = await ethers.getSigners();
         
-        // deployer Recolte
-        const Recolte = await ethers.getContractFactory("RecolteContrat");
-        recolte = await Recolte.deploy();
-        await recolte.waitForDeployment();
         // deployer Parcellle
         const Parcelle = await ethers.getContractFactory("ParcelleContrat");
         const parcelle = await Parcelle.deploy();
         await parcelle.waitForDeployment();
+
+        // deployer Recolte
+        const Recolte = await ethers.getContractFactory("RecolteContrat");
+        recolteContrat = await Recolte.deploy(await parcelle.getAddress());
+        await recolteContrat.waitForDeployment();
+
         // deployer ProducteurEnPhaseCulture
         Contrat = await ethers.getContractFactory("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture");
-        contrat = await Contrat.deploy(await recolte.getAddress(), await parcelle.getAddress());
+        contrat = await Contrat.deploy(await recolteContrat.getAddress(), await parcelle.getAddress());
         await contrat.waitForDeployment();
     })
 
@@ -432,19 +434,21 @@ describe("ProducteurEnPhaseCulture", function () {
     // teste sur fonction sur les recoltes
     describe.only("Recolte", function () {
 
-        let producteur,certificateur;
+        let producteur,certificateur,collecteur;
         beforeEach(async function () {
             await contrat.enregistrerActeur(addr0, 0);
             producteur = addr0;
             await contrat.enregistrerActeur(addr1, 2);
             certificateur = addr1;
+            await contrat.enregistrerActeur(addr2, 3);
+            collecteur = addr2;
             // creer parcelle
             await contrat.connect(producteur).creerParcelle("bon", "sur brulis", "latitude", "longitude", "12/12/25", "certificate");
         });
 
         it("ajout de recolte par un producteur", async function () {
             await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
-            const recolte = await contrat.recoltes(1);
+            const recolte = await contrat.getRecolte(1);
             expect(recolte.quantite).to.equal(10);
         })
 
@@ -453,8 +457,23 @@ describe("ProducteurEnPhaseCulture", function () {
             await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
             // certifier la recolte
             await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
-            const recolte = await contrat.recoltes(1);
+            const recolte = await contrat.getRecolte(1);
             expect(recolte.certificatPhytosanitaire).to.equal("CERT-1010");
         })
+
+        it("passer une commandes a un producteur", async function () {
+            // ajoute recolte
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            // certifier la recolte
+            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            // passer une commande
+            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await contrat.getCommande(1);
+            const recolte = await contrat.getRecolte(1);
+            // verifie si la commande a bien ete passer
+            expect(commande.quantite).to.equal(9);
+            // verifie si la quantite de la recolte a bien ete diminuer
+            expect(recolte.quantite).to.equal(1);
+        });
     });
 });
