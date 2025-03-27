@@ -146,9 +146,9 @@ contract ProducteurEnPhaseCulture {
 
 
     // ====================================== Recolte =========================================================
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public seulementProducteur {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
 
-        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte, msg.sender);
+        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte, msg.sender, _nomProduit);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
 
@@ -257,7 +257,7 @@ contract ProducteurEnPhaseCulture {
 
     // pour les commandes
     }
-    function getCommande(uint32 _idRecolte) public view returns (StructLib.Commande memory) {
+    function getCommande(uint32 _idRecolte) public view returns (StructLib.CommandeRecolte memory) {
         return moduleRecolte.getCommande(_idRecolte);
     }
     function getCompteurCommandes() public view returns (uint32) {
@@ -299,12 +299,12 @@ contract ProducteurEnPhaseCulture {
 
 interface IRecolte {
 
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender) external;
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender, string memory _nomProduit) external;
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) external;
     function getRecolte(uint32 _idRecolte) external view returns (StructLib.Recolte memory);
     function getCompteurRecoltes() external view returns (uint32);
     function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite, address _sender) external;
-    function getCommande(uint32 _id) external view returns (StructLib.Commande memory);
+    function getCommande(uint32 _id) external view returns (StructLib.CommandeRecolte memory);
     function getCompteurCommandes() external view returns (uint32);
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) external payable;
     function getPaiment(uint32 _id) external view returns (StructLib.Paiement memory); 

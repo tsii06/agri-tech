@@ -447,14 +447,14 @@ describe("ProducteurEnPhaseCulture", function () {
         });
 
         it("ajout de recolte par un producteur", async function () {
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             const recolte = await contrat.getRecolte(1);
             expect(recolte.quantite).to.equal(10);
         })
 
         it("certifie recolte", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
             await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
             const recolte = await contrat.getRecolte(1);
@@ -463,7 +463,7 @@ describe("ProducteurEnPhaseCulture", function () {
 
         it("passer une commandes a un producteur", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
             await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
             // passer une commande
@@ -478,7 +478,7 @@ describe("ProducteurEnPhaseCulture", function () {
 
         it("payer une commande vers un producteur", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12");
+            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
             await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
             // passer une commande

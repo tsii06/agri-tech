@@ -14,7 +14,7 @@ contract RecolteContrat {
     // pour les commandes
     mapping(uint32 => StructLib.Paiement) public paiements;
     uint32 public compteurPaiements;
-    mapping(uint32 => StructLib.Commande) public commandes;
+    mapping(uint32 => StructLib.CommandeRecolte) public commandes;
     uint32 public compteurCommandes;
 
     IParcelle private moduleParcelle;
@@ -39,14 +39,14 @@ contract RecolteContrat {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender) public {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender, string memory _nomProduit) public {
 
         StructLib.Parcelle memory parcelle = moduleParcelle.getParcelle(_idParcelle);
         require(_idParcelle <= moduleParcelle.getCompteurParcelle(), "Parcelle non existant");
         require(parcelle.producteur == _sender, "Vous n'etes pas proprietaire de ce parcellle");
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, _sender);
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, _sender, _nomProduit);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public {
 
@@ -80,11 +80,11 @@ contract RecolteContrat {
 
         compteurCommandes++;
         uint32 _prix = recolte.prix * _quantite;
-        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, _sender);
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, _sender);
     }
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) public payable {
 
-        StructLib.Commande memory commande = commandes[_idCommande];
+        StructLib.CommandeRecolte memory commande = commandes[_idCommande];
         require(_idCommande <= compteurCommandes, "Commande non existant");
         require(!commande.payer, "Commande deja payer");
         require(_montant == commande.prix, "Prix incorrect");
@@ -118,7 +118,7 @@ contract RecolteContrat {
     ici les getters pour les commandes
     */
     }
-    function getCommande(uint32 _id) public view returns (StructLib.Commande memory) {
+    function getCommande(uint32 _id) public view returns (StructLib.CommandeRecolte memory) {
         return commandes[_id];
     }
     function getCompteurCommandes() public view returns (uint32) {

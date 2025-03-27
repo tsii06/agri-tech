@@ -9,6 +9,7 @@ library StructLib {
     enum Etape { PreCulture, Culture, Recolte, Transport }
     enum ModePaiement { VirementBancaire, Cash, MobileMoney }
     enum StatutTransport { EnCours, Livre }
+    enum StatutProduit { EnAttente, Valide, Rejete }
 
     struct Acteur {
         address addr;
@@ -70,9 +71,10 @@ library StructLib {
         string certificatPhytosanitaire;
         string dateRecolte;
         address producteur;
+        string nomProduit;
     }
 
-    struct Commande {
+    struct CommandeRecolte {
         uint32 id;
         uint32 idRecolte;
         uint32 quantite;
@@ -82,4 +84,28 @@ library StructLib {
         address producteur;
         address collecteur;
     }
+
+    struct Produit {
+        uint32 id;
+        string nom;
+        uint32 quantite;
+        uint32 prix;
+        StatutProduit statut;
+        uint32 idParcelle;
+        string dateRecolte;
+        string certificatPhytosanitaire;
+        address collecteur;
+    }
+
+    struct CommandeProduit {
+        uint32 id;
+        uint32 idProduit;
+        uint32 quantite;
+        uint32 prix;
+        bool payer;
+        StatutTransport statutTransport;
+        address collecteur;
+        address exportateur;
+    }
+    
 }
