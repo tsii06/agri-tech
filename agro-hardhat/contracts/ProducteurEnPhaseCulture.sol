@@ -58,6 +58,20 @@ contract ProducteurEnPhaseCulture {
 
 
 
+    /*
+    setter pour les interfaces recolte et parcelle
+    pour donner les address des interfaces depuis le contrat proxy de Producteur
+    */
+    function setAddrRecolte(address _addr) public {
+        moduleRecolte = IRecolte(_addr);
+    }
+    function setAddrParcelle(address _addr) public {
+        moduleParcelle = IParcelle(_addr);
+    }
+
+
+
+
 
 
 
