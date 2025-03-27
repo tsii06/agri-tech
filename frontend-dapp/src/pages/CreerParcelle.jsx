@@ -40,8 +40,8 @@ function CreerParcelle() {
       const tx = await contract.creerParcelle(
         qualiteSemence.current.value,
         methodeCulture.current.value,
-        location.lat,
-        location.lng,
+        location.lat.toString(),
+        location.lng.toString(),
         dateRecolte.current.value,
         certificatPhytosanitaire.current.value
       );

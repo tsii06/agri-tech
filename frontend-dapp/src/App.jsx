@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import AjoutProduit from "./pages/AjoutProduit";
 import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/ListeProduits";
 import PasserCommande from "./pages/PasserCommande";
@@ -39,7 +38,6 @@ function App() {
                 </div>
               </div>
             } />
-            <Route path="ajout-produit" element={<AjoutProduit />} />
             <Route path="ajout-acteur" element={<AjoutActeur setState={setState} />} />
             <Route path="liste-produits" element={<ListeProduits />} />
             <Route path="mes-commandes" element={<MesCommandes />} />
