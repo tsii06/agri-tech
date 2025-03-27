@@ -68,6 +68,7 @@ library StructLib {
         bool certifie;
         string certificatPhytosanitaire;
         string dateRecolte;
+        address producteur;
     }
 
     struct Commande {
@@ -77,6 +78,7 @@ library StructLib {
         uint32 prix;
         bool payer;
         StatutTransport statutTransport;
+        address producteur;
         address collecteur;
     }
 }

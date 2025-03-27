@@ -39,12 +39,12 @@ contract RecolteContrat {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public {
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender) public {
 
         require(_idParcelle <= moduleParcelle.getCompteurParcelle(), "Parcelle non existant");
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte);
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, _sender);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public {
 
@@ -78,7 +78,7 @@ contract RecolteContrat {
 
         compteurCommandes++;
         uint32 _prix = recolte.prix * _quantite;
-        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, _sender);
+        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, _sender);
     }
 
 

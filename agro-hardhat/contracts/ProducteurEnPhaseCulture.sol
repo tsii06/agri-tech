@@ -137,15 +137,33 @@ contract ProducteurEnPhaseCulture {
         return moduleParcelle.obtenirInformationsParcelle(_idParcelle);
     }
 
+
+
+
+
+
+
+
+
     // ====================================== Recolte =========================================================
     function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) public seulementProducteur {
 
-        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte);
+        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte, msg.sender);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
 
         moduleRecolte.certifieRecolte(_idRecolte, _certificat);
     }
+
+
+
+
+
+
+
+
+
+
 
     // ====================================== Commande =========================================================
     function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur {
@@ -266,7 +284,7 @@ contract ProducteurEnPhaseCulture {
 
 interface IRecolte {
 
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte) external;
+    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender) external;
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) external;
     function getRecolte(uint32 _idRecolte) external view returns (StructLib.Recolte memory);
     function getCompteurRecoltes() external view returns (uint32);
