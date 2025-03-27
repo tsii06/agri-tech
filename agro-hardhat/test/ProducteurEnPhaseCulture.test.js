@@ -471,7 +471,7 @@ describe("ProducteurEnPhaseCulture", function () {
             const commande = await contrat.getCommande(1);
             const recolte = await contrat.getRecolte(1);
             // verifie si la commande a bien ete passer
-            expect(commande.quantite).to.equal(9);
+            expect(commande.collecteur).to.equal(collecteur.address);
             // verifie si la quantite de la recolte a bien ete diminuer
             expect(recolte.quantite).to.equal(1);
         });

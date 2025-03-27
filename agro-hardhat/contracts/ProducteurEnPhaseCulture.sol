@@ -97,23 +97,6 @@ contract ProducteurEnPhaseCulture {
         
     }
 
-
-    // Pour recuperer les tableaux dynamiques de parcelle
-    function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
-        return moduleParcelle.getPhotos(idParcelle);
-    }
-    function getIntrants(uint32 idParcelle) public view returns (StructLib.Intrant[] memory) {
-        return moduleParcelle.getIntrants(idParcelle);
-    }
-    function getInspections(uint32 idParcelle) public view returns (StructLib.Inspection[] memory) {
-        return moduleParcelle.getInspections(idParcelle);
-    }
-    function getConditions(uint32 idParcelle) public view returns (StructLib.EnregistrementCondition[] memory) {
-        return moduleParcelle.getConditions(idParcelle);
-    }
-
-
-
     function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) public seulementProducteur {
         moduleParcelle.mettreAJourEtape(_idParcelle, _etape);
     }
@@ -167,7 +150,7 @@ contract ProducteurEnPhaseCulture {
     // ====================================== Commande =========================================================
     function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur {
 
-        moduleRecolte.passerCommandeVersProducteur(_idRecolte, _quantite);
+        moduleRecolte.passerCommandeVersProducteur(_idRecolte, _quantite, msg.sender);
     }
 
     // function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
@@ -182,9 +165,31 @@ contract ProducteurEnPhaseCulture {
     // }
 
 
+
+
+
+
+
+
+
+
+
+
+
     // corrige l'erreur eth_call
     receive() external payable {}
     fallback() external payable {}
+
+
+
+
+
+
+
+
+
+
+
 
     // ====================================== getter ==========================================================
     function getActeur(address addr) public view returns(StructLib.Acteur memory) {
@@ -202,6 +207,23 @@ contract ProducteurEnPhaseCulture {
     function getCompteurInspection() public view returns(uint32) {
         return moduleParcelle.getCompteurInspection();
     }
+    // Pour recuperer les tableaux dynamiques de parcelle
+    function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
+        return moduleParcelle.getPhotos(idParcelle);
+    }
+    function getIntrants(uint32 idParcelle) public view returns (StructLib.Intrant[] memory) {
+        return moduleParcelle.getIntrants(idParcelle);
+    }
+    function getInspections(uint32 idParcelle) public view returns (StructLib.Inspection[] memory) {
+        return moduleParcelle.getInspections(idParcelle);
+    }
+    function getConditions(uint32 idParcelle) public view returns (StructLib.EnregistrementCondition[] memory) {
+        return moduleParcelle.getConditions(idParcelle);
+    }
+
+   
+
+
 
 
     // pour les recoltes
@@ -210,6 +232,11 @@ contract ProducteurEnPhaseCulture {
     }
     function getCompteurRecoltes() public view returns (uint32) {
         return moduleRecolte.getCompteurRecoltes();
+
+
+
+
+
 
 
     // pour les commandes
@@ -243,7 +270,7 @@ interface IRecolte {
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) external;
     function getRecolte(uint32 _idRecolte) external view returns (StructLib.Recolte memory);
     function getCompteurRecoltes() external view returns (uint32);
-    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) external;
+    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite, address _sender) external;
     function getCommande(uint32 _id) external view returns (StructLib.Commande memory);
     function getCompteurCommandes() external view returns (uint32);
 }

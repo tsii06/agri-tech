@@ -33,6 +33,9 @@ contract RecolteContrat {
 
 
 
+
+
+
     /*
     ici les fonctions pour les recoltes
     */
@@ -57,10 +60,13 @@ contract RecolteContrat {
 
 
 
+
+
+
     /*
     ici les fonctions pour les commandes
     */
-    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public {
+    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite, address _sender) public {
 
         StructLib.Recolte memory recolte = recoltes[_idRecolte];
         require(recolte.certifie, "Recolte non certifie");
@@ -72,8 +78,12 @@ contract RecolteContrat {
 
         compteurCommandes++;
         uint32 _prix = recolte.prix * _quantite;
-        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, msg.sender);
+        commandes[compteurCommandes] = StructLib.Commande(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, _sender);
     }
+
+
+
+
 
 
 
