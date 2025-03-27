@@ -20,13 +20,14 @@ contract ParcelleContrat {
         string memory _latitude,
         string memory _longitude,
         string memory _dateRecolte,
-        string memory _certificatPhytosanitaire
+        string memory _certificatPhytosanitaire,
+        address _sender
     ) public {
 
 		compteurParcelles++;
 		// Ceci permet de ne pas specifier de valeur pour l'initialisation des tableaux dynamiques de struct et ainsi d'eviter un UnimplementedFeatureError
         parcelles[compteurParcelles].id = compteurParcelles;
-        parcelles[compteurParcelles].producteur = msg.sender;
+        parcelles[compteurParcelles].producteur = _sender;
         parcelles[compteurParcelles].qualiteSemence = _qualiteSemence;
         parcelles[compteurParcelles].methodeCulture = _methodeCulture;
         parcelles[compteurParcelles].certifie = false;
@@ -104,6 +105,13 @@ contract ParcelleContrat {
             parcelle.certificatPhytosanitaire
         );
     }
+
+
+
+
+
+
+
 
 
 

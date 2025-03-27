@@ -41,7 +41,9 @@ contract RecolteContrat {
     */
     function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender) public {
 
+        StructLib.Parcelle memory parcelle = moduleParcelle.getParcelle(_idParcelle);
         require(_idParcelle <= moduleParcelle.getCompteurParcelle(), "Parcelle non existant");
+        require(parcelle.producteur == _sender, "Vous n'etes pas proprietaire de ce parcellle");
 
         compteurRecoltes++;
         recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, _sender);
@@ -121,4 +123,5 @@ contract RecolteContrat {
 interface IParcelle {
 
     function getCompteurParcelle() external view returns(uint32);
+    function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
 }
