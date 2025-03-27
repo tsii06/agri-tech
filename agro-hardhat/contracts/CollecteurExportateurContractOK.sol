@@ -120,18 +120,18 @@ contract CollecteurExportateurContrat {
 
 
 
-    Modifie la fonction qui passe une commande
+    // Modifie la fonction qui passe une commande
     function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
         // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
         require(_quantite <= produits[idProduit].quantite, "Quantite invalide");
 
-        uint32 _prix = _quantite * produits[idProduit].prix;
+        uint32 _prix = _quantite * produits[idProduit].prixUnit;
         // la quantite de produit doit etre diminuer.
         uint32 temp = produits[idProduit].quantite - _quantite;
         produits[idProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, idProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, msg.sender);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, idProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, produits[idProduit].collecteur, msg.sender);
 
         emit CommandePasser(msg.sender, idProduit);
     }
@@ -141,14 +141,14 @@ contract CollecteurExportateurContrat {
 
         StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
         require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
-        require(msg.value == _produit.prix * commandes[_idCommande].quantite, "Montant incorrect");
+        require(msg.value == _produit.prixUnit * commandes[_idCommande].quantite, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
 
         // definit la commande comme deja payee
         commandes[_idCommande].payer = true;
 
         compteurPaiements++;
-        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, _montant, _mode, block.timestamp);
+        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp);
         emit PaiementEffectue(_produit.id, compteurPaiements, msg.sender, _montant, _mode);
 
         address payable collecteur = payable(_produit.collecteur);
