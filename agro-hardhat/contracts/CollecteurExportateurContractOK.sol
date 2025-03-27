@@ -95,6 +95,11 @@ contract CollecteurExportateurContrat {
 
         emit ProduitAjoute(compteurProduits, _nomProduit, _quantite, _prix, _idRecolte, _dateRecolte, _certificatPhytosanitaire);
     }
+    function setPriceProduit(uint32 _idProduit, uint32 _prix) public seulementCollecteur {
+
+        require(produits[_idProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
+        produits[_idProduit].prixUnit = _prix;
+    }
 
     // function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
     //     require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");

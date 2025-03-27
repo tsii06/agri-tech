@@ -66,7 +66,7 @@ library StructLib {
         uint32 id;
         uint32 idParcelle;
         uint32 quantite;
-        uint32 prix;
+        uint32 prixUnit;
         bool certifie;
         string certificatPhytosanitaire;
         string dateRecolte;
@@ -90,7 +90,7 @@ library StructLib {
         uint32 idRecolte;
         string nom;
         uint32 quantite;
-        uint32 prix;
+        uint32 prixUnit;
         StatutProduit statut;
         string dateRecolte;
         string certificatPhytosanitaire;

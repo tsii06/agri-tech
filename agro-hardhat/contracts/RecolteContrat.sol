@@ -88,7 +88,7 @@ contract RecolteContrat {
         recoltes[_idRecolte].quantite -= _quantite;
 
         compteurCommandes++;
-        uint32 _prix = recolte.prix * _quantite;
+        uint32 _prix = recolte.prixUnit * _quantite;
         commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, _sender);
     }
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) public payable {
@@ -101,7 +101,7 @@ contract RecolteContrat {
         require(_montant == commande.prix, "Prix incorrect");
 
         // ajout automatique de produit dans le contrat CollecteurExportateur
-        moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, commande.prix, _collecteur, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
+        moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, recolte.prixUnit, _collecteur, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
 
         compteurPaiements++;
         paiements[_idCommande] = StructLib.Paiement(compteurPaiements, _collecteur, commande.producteur, _montant, _mode, block.timestamp);
