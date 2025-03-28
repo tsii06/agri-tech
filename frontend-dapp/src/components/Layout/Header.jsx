@@ -175,6 +175,7 @@ function Header({ state }) {
         return [
           { to: "/passer-commande-producteur", text: "Passer commande" },
           { to: "/liste-producteur", text: "Liste des producteurs" },
+          { to: "/liste-collecteur-commande", text: "Mes commandes" },
           ...commonLinks
         ];
       case 4: // Auditeur

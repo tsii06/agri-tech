@@ -54,6 +54,9 @@ function App() {
             <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
             <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
             <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
+
+            <Route path="liste-producteur" element={<FaireRecolte />} />
+            <Route path="liste-collecteur-commande" element={<FaireRecolte />} />
           </Route>
         </Routes>
       </div>
