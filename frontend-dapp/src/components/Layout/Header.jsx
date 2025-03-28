@@ -146,7 +146,8 @@ function Header({ state }) {
     if (!account) return [];
 
     const commonLinks = [
-      { to: "/liste-produits", text: "Liste des Produits" }
+      { to: "/mes-parcelles", text: "Parcelles" },
+
     ];
 
     if (role === null) {

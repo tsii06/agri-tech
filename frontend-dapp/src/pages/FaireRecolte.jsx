@@ -7,10 +7,11 @@ function FaireRecolte() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const idParcelle = useRef();
   const quantite = useRef();
   const prix = useRef();
   const dateRecolte = useRef();
-  const certificatPhytosanitaire = useRef();
+  const nomProduit = useRef();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,11 +21,12 @@ function FaireRecolte() {
     try {
       const contract = await getContract();
 
-      const tx = await contract.faireRecolte(
-        quantite.current.value,
-        prix.current.value,
+      const tx = await contract.ajoutRecolte(
+        parseInt(idParcelle.current.value),
+        parseInt(quantite.current.value),
+        parseInt(prix.current.value),
         dateRecolte.current.value,
-        certificatPhytosanitaire.current.value
+        nomProduit.current.value
       );
 
       await tx.wait();
@@ -51,6 +53,16 @@ function FaireRecolte() {
 
       <form className="card shadow-sm p-4" onSubmit={handleSubmit}>
         <div className="mb-3">
+          <label className="form-label text-muted">ID de la parcelle</label>
+          <input type="number" className="form-control" required ref={idParcelle} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label text-muted">Nom du produit</label>
+          <input type="text" className="form-control" required ref={nomProduit} />
+        </div>
+
+        <div className="mb-3">
           <label className="form-label text-muted">Quantité de produit</label>
           <input type="number" className="form-control" required ref={quantite} />
         </div>
@@ -63,11 +75,6 @@ function FaireRecolte() {
         <div className="mb-3">
           <label className="form-label text-muted">Date de récolte</label>
           <input type="date" className="form-control" required ref={dateRecolte} />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label text-muted">Certificat phytosanitaire</label>
-          <input type="text" className="form-control" required ref={certificatPhytosanitaire} />
         </div>
 
         <button
