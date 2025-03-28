@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
+import { UserProvider } from './context/useContextt';
 
 import Header from "./components/Layout/Header";
-import Footer from "./components/Layout/Footer";
 import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/ListeProduits";
 import PasserCommande from "./pages/PasserCommandeVersCollecteur";
@@ -22,6 +22,7 @@ function App() {
   const [state, setState] = useState({});
 
   return (
+    <UserProvider>
     <Router>
       <div className="d-flex flex-column min-vh-100">
         <Routes>
@@ -57,6 +58,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    </UserProvider>
   );
 }
 

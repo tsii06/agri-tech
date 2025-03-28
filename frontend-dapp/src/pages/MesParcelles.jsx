@@ -1,25 +1,28 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getContract } from "../utils/contract";
-import { ethers } from "ethers";
+import ParcelleCard from "../components/Tools/ParcelleCard";
+import { useUserContext } from '../context/useContextt';
+
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+
+  const { role, account, verifeActeur } = useUserContext();
+
 
   useEffect(() => {
     chargerParcelles();
   }, []);
 
+
   const chargerParcelles = async () => {
     try {
       const contract = await getContract();
-      
-      // Récupérer le compteur de parcelles en utilisant la méthode appropriée
       const compteurParcelles = await contract.getCompteurParcelle();
-      // const compteurParcelles = compteurParcellesResult.toNumber();
-      console.log("Nombre de parcelles:", compteurParcelles);
 
       if (compteurParcelles === 0) {
         setParcelles([]);
@@ -27,13 +30,25 @@ function MesParcelles() {
         return;
       }
 
-      const parcelles = [];
-      // On commence à 1 car les IDs commencent à 1
+      const parcellesPromises = [];
       for (let i = 1; i <= compteurParcelles; i++) {
-        parcelles.push(await contract.getParcelle(i));
+        parcellesPromises.push(contract.obtenirInformationsParcelle(i));
       }
 
-      setParcelles(parcelles);
+      const parcellesData = await Promise.all(parcellesPromises);
+      // console.log("Données des parcelles:", parcellesData);
+
+      const parcellesFormatees = parcellesData.map((parcelle, index) => ({
+        id: index + 1,
+        qualiteSemence: parcelle[0],
+        methodeCulture: parcelle[1],
+        latitude: parcelle[2],
+        longitude: parcelle[3],
+        dateRecolte: parcelle[4],
+        certificatPhytosanitaire: parcelle[5]
+      }));
+
+      setParcelles(parcellesFormatees);
       setError(null);
     } catch (error) {
       console.error("Erreur détaillée:", error);
@@ -41,17 +56,6 @@ function MesParcelles() {
     } finally {
       setLoading(false);
     }
-  };
-
-
-
-  const getEtapeLabel = (etape) => {
-    const etapes = {
-      0: "Semis",
-      1: "Croissance",
-      2: "Récolte"
-    };
-    return etapes[etape] || "Inconnue";
   };
 
   if (loading) {
@@ -90,52 +94,34 @@ function MesParcelles() {
 
   return (
     <div className="container py-4">
-      {error && (
-        <div className="alert alert-danger d-flex align-items-center" role="alert">
-          <svg className="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 16A8 8 0 108 0a8 8 0 000 16zm0-14.5A6.5 6.5 0 111.5 8 6.508 6.508 0 018 1.5zM6.354 4.646a.5.5 0 00-.708.708L7.293 8l-1.647 1.646a.5.5 0 00.708.708L8 8.707l1.646 1.647a.5.5 0 00.708-.708L8.707 8l1.647-1.646a.5.5 0 00-.708-.708L8 7.293 6.354 4.646z"/>
-          </svg>
-          <div>
-            {error}
-            <button onClick={chargerParcelles} className="btn btn-link text-danger">Réessayer</button>
-          </div>
-        </div>
-      )}
-      
       <div className="d-flex justify-content-between mb-3">
-        <h2 className="h4">Mes Parcelles</h2>
-        <div>
-
-          <Link to="/creer-parcelle" className="btn btn-primary">Nouvelle Parcelle</Link>
-        </div>
+        <h2 className="h4">Parcelles</h2>
+        {userRole === 'producteur' && (
+          <Link to="/creer-parcelle" className="btn btn-primary">
+            Nouvelle Parcelle
+          </Link>
+        )}
       </div>
 
       {parcelles.length > 0 ? (
         <div className="row g-3">
           {parcelles.map((parcelle) => (
             <div key={parcelle.id} className="col-md-4">
-              <div className="card shadow-sm p-3">
-                <h5 className="card-title">{parcelle.produit}</h5>
-                <div className="card-text">
-                  <p><strong>Qualité des semences:</strong> {parcelle.qualiteSemence}</p>
-                  <p><strong>Méthode de culture:</strong> {parcelle.methodeCulture}</p>
-                  <p><strong>Localisation:</strong> {parcelle.latitude}, {parcelle.longitude}</p>
-                  <p><strong>Date de récolte prévue:</strong> {parcelle.dateRecolte}</p>
-                </div>
-                <div className="d-flex justify-content-between mt-2">
-                  <Link to={`/parcelle/${parcelle.id}/photos`} className="btn btn-link">Photos(producteur)</Link>
-                  <Link to={`/parcelle/${parcelle.id}/intrants`} className="btn btn-link">Intrants(fournisseur)</Link>
-                  <Link to={`/parcelle/${parcelle.id}/inspections`} className="btn btn-link">Inspections(certificateur)</Link>
-                  <Link to={`/parcelle/${parcelle.id}/faire-recolte`} className="btn btn-link">Recolter(producteur)</Link>
-                </div>
-              </div>
+              <ParcelleCard 
+                parcelle={parcelle}
+                userRole={role}
+              />
             </div>
           ))}
         </div>
       ) : (
         <div className="text-center py-5">
           <p className="text-muted">Aucune parcelle enregistrée.</p>
-          <Link to="/creer-parcelle" className="btn btn-primary">Créer une parcelle</Link>
+          {userRole === 'producteur' && (
+            <Link to="/creer-parcelle" className="btn btn-primary">
+              Créer une parcelle
+            </Link>
+          )}
         </div>
       )}
     </div>

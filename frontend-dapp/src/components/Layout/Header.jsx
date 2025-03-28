@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getContract } from "../../utils/contract";
-import { Link } from "react-router-dom";
-import { Home, LogOut, UserPlus, Wallet, Menu } from "lucide-react";
 import { Outlet } from "react-router-dom";
-
-
-
-
 
 
 export const getRoleName = (roleNumber) => {
@@ -275,3 +269,4 @@ function Header({ state }) {
 }
 
 export default Header;
+
