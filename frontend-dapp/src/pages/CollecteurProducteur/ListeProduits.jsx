@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getCollecteurContract } from "../../utils/contract";
+import { getContract,getCollecteurProducteurContract,getCollecteurExportateurContract } from "../../utils/contract";
+
 
 function ListeProduits() {
   const [produits, setProduits] = useState([]);

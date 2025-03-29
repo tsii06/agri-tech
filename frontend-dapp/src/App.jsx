@@ -4,23 +4,22 @@ import { UserProvider } from './context/useContextt';
 
 import Header from "./components/Layout/Header";
 import AjoutActeur from "./pages/AjoutActeur";
-import ListeProduits from "./pages/ListeProduits";
-import PasserCommande from "./pages/PasserCommandeVersCollecteur";
-import ValiderProduit from "./pages/ValiderProduit";
-import EffectuerPaiement from "./pages/EffectuerPaiement";
-import EnregistrerCondition from "./pages/EnregistrerCondition";
-import MettreAJourTransport from "./pages/MettreAJourTransport";
-import MesCommandes from "./pages/CommandeCollecteur";
-import CreerParcelle from "./pages/CreerParcelle";
-import MesParcelles from "./pages/MesParcelles";
-import PhotosParcelle from "./pages/PhotosParcelle";
-import IntrantsParcelle from "./pages/IntrantsParcelle";
-import InspectionsParcelle from "./pages/InspectionsParcelle";
-import FaireRecolte from "./pages/FaireRecolte";
-import ListeRecoltes from "./pages/listerecoltes";
-import ListeProducteurs from "./pages/listeProducteur";
-import RecoltesProducteur from "./pages/RecoltesProducteur";
-import AcheterRecolte from "./pages/AcheterRecolte";
+import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
+import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
+import ValiderProduit from "./pages/CertificateurAuditeur/ValiderProduit";
+import EffectuerPaiement from "./pages/CollecteurExportateur/EffectuerPaiementCollecteur";
+import EnregistrerCondition from "./pages/CollecteurProducteur/EnregistrerConditionTransport";
+import LivraisonRecolte from "./pages/CollecteurProducteur/LivraisonRecolte";
+import MesCommandes from "./pages/CollecteurProducteur/CommandeCollecteur";
+import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
+import MesParcelles from "./pages/ProducteurEnPhaseCulture/ListeParcelle";
+import PhotosParcelle from "./pages/ProducteurEnPhaseCulture/PhotosParcelle";
+import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle";
+import InspectionsParcelle from "./pages/CertificateurAuditeur/InspectionsParcelle";
+import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
+import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
+
+import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 
 function App() {
   const [state, setState] = useState({});
@@ -51,7 +50,7 @@ function App() {
             <Route path="valider-produit/:id" element={<ValiderProduit />} />
             <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
             <Route path="enregistrer-condition/:id" element={<EnregistrerCondition />} />
-            <Route path="mettre-a-jour-transport/:id" element={<MettreAJourTransport />} />
+            <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
             <Route path="creer-parcelle" element={<CreerParcelle />} />
             <Route path="mes-parcelles" element={<MesParcelles />} />
             <Route path="parcelle/:id/photos" element={<PhotosParcelle />} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 
 

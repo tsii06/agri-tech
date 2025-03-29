@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getContract } from "../../utils/contract";
+import { getCollecteurProducteurContract } from "../../utils/contract";
 
 function FaireRecolte() {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ function FaireRecolte() {
     setError(null);
 
     try {
-      const contract = await getContract();
+      const contract = await getCollecteurProducteurContract();
 
       const tx = await contract.ajoutRecolte(
         parseInt(idParcelle.current.value),

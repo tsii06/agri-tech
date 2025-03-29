@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurContract, executeContractMethod } from "../../utils/contract";
+import { getCollecteurExportateurContract, executeContractMethod } from "../../utils/contract";
 
 function ValiderProduit() {
   const { id } = useParams();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract } from "../../utils/contract";
+import { getContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 
 function ListeRecoltes() {
@@ -14,18 +14,20 @@ function ListeRecoltes() {
   useEffect(() => {
     const chargerRecoltes = async () => {
       try {
-        const contract = await getContract();
+        const contract = await getCollecteurProducteurContract();
         const provider = contract.runner.provider;
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
 
+        const contractProducteur = await getContract();
+
         // Récupérer l'acteur
-        const _acteur = await contract.getActeur(account);
+        const _acteur = await contractProducteur.getActeur(account);
 
         // Obtenir le nombre total de récoltes
-        const compteurRecoltes = 2
+        const compteurRecoltes = await contract.getCompteurRecoltes();
         console.log("Nombre total de récoltes:", compteurRecoltes.toString());
         
         // Charger toutes les récoltes

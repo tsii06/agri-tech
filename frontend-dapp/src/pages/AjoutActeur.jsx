@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getContract,getCollecteurContract } from "../utils/contract";
+import { getContract,getCollecteurProducteurContract,getCollecteurExportateurContract } from "../utils/contract";
 
 function AjoutActeur({ setState }) {
   const navigate = useNavigate();

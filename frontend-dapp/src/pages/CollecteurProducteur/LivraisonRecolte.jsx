@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract, executeContractMethod } from "../utils/contract";
+import { getContract, executeContractMethod } from "../../utils/contract";
 
-function MettreAJourTransport() {
+function LivraisonRecolte() {
   const { id } = useParams(); // id de la commande
   const navigate = useNavigate();
   const [commande, setCommande] = useState(null);
@@ -117,4 +117,4 @@ function MettreAJourTransport() {
   );
 }
 
-export default MettreAJourTransport; 
+export default LivraisonRecolte; 

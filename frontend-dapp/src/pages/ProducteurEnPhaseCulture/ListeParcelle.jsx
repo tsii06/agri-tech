@@ -32,23 +32,12 @@ function MesParcelles() {
 
       const parcellesPromises = [];
       for (let i = 1; i <= compteurParcelles; i++) {
-        parcellesPromises.push(contract.obtenirInformationsParcelle(i));
+        parcellesPromises.push(await contract.getParcelle(i));
       }
 
-      const parcellesData = await Promise.all(parcellesPromises);
-      // console.log("Données des parcelles:", parcellesData);
 
-      const parcellesFormatees = parcellesData.map((parcelle, index) => ({
-        id: index + 1,
-        qualiteSemence: parcelle[0],
-        methodeCulture: parcelle[1],
-        latitude: parcelle[2],
-        longitude: parcelle[3],
-        dateRecolte: parcelle[4],
-        certificatPhytosanitaire: parcelle[5]
-      }));
+      setParcelles(parcellesPromises);
 
-      setParcelles(parcellesFormatees);
       setError(null);
     } catch (error) {
       console.error("Erreur détaillée:", error);

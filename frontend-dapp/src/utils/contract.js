@@ -1,13 +1,13 @@
 import { ethers } from "ethers";
-import ProducteurEnPhaseCultureJson from "../abi/ProducteurEnPhaseCulture.json";
-import CollecteurExportateurContratJson from "../abi/CollecteurExportateurContrat.json";
-import 
+import ProducteurEnPhaseCulture from "../abi/ProducteurEnPhaseCulture.json";
+import CollecteurExportateur from "../abi/CollecteurExportateur.json";
+import CollecteurProducteur from "../abi/CollecteurProducteur.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_PROXY_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";  // ProducteurProxy
-const COLLECTEUR_PROXY_ADDRESS = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";  // CollecteurProxy
-
+const PRODUCTEUR_PROXY_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";  // ProducteurProxy
+const CollecteurExportateur_PROXY_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";  // CollecteurProxy
+const CollecteurProducteur_PROXY_ADDRESS = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"; 
 
 export async function getProvider() {
   if (!window.ethereum) {
@@ -26,7 +26,7 @@ export async function getProducteurContract() {
     const signer = await provider.getSigner();
     return new ethers.Contract(
       PRODUCTEUR_PROXY_ADDRESS,
-      ProducteurEnPhaseCultureJson.abi,
+      ProducteurEnPhaseCulture.abi,
       signer
     );
   } catch (error) {
@@ -35,13 +35,13 @@ export async function getProducteurContract() {
   }
 }
 
-export async function getCollecteurContract() {
+export async function getCollecteurExportateurContract() {
   try {
     const provider = await getProvider();
     const signer = await provider.getSigner();
     return new ethers.Contract(
-      COLLECTEUR_PROXY_ADDRESS,
-      CollecteurExportateurContratJson.abi,
+      CollecteurExportateur_PROXY_ADDRESS,
+      CollecteurExportateur.abi,
       signer
     );
   } catch (error) {
@@ -49,6 +49,22 @@ export async function getCollecteurContract() {
     throw error;
   }
 }
+
+export async function getCollecteurProducteurContract() {
+  try {
+    const provider = await getProvider();
+    const signer = await provider.getSigner();
+    return new ethers.Contract(
+      CollecteurProducteur_PROXY_ADDRESS,
+      CollecteurProducteur.abi,
+      signer
+    );
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation du contrat Collecteur:", error);
+    throw error;
+  }
+}
+
 
 // Pour la compatibilité avec le code existant
 export async function getContract() {
