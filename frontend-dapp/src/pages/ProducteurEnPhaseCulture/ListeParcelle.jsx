@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getContract } from "../utils/contract";
-import ParcelleCard from "../components/Tools/ParcelleCard";
-import { useUserContext } from '../context/useContextt';
+import { getContract } from "../../utils/contract";
+import ParcelleCard from "../../components/Tools/ParcelleCard";
+import { useUserContext } from '../../context/useContextt';
 
 
 function MesParcelles() {

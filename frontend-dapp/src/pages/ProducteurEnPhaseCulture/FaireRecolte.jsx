@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getContract } from "../utils/contract";
+import { getContract } from "../../utils/contract";
 
 function FaireRecolte() {
   const navigate = useNavigate();

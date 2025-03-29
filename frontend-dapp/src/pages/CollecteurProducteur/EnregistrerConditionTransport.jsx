@@ -1,27 +1,26 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurContract, executeContractMethod } from "../utils/contract";
+import { getContract, executeContractMethod } from "../../utils/contract";
 
-function PasserCommandeVersCollecteur() {
-  const { id } = useParams();
+function EnregistrerCondition() {
+  const { id } = useParams(); // id du produit
   const navigate = useNavigate();
   const [produit, setProduit] = useState(null);
-  const [quantite, setQuantite] = useState("");
+  const [temperature, setTemperature] = useState("");
+  const [humidite, setHumidite] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const chargerProduit = async () => {
       try {
-        const contract = await getCollecteurContract();
+        const contract = await getContract();
         const produitInfo = await contract.produits(id);
         setProduit({
           nom: produitInfo.nom,
           quantite: produitInfo.quantite.toString(),
-          prix: ethers.formatEther(produitInfo.prix),
-          idParcelle: produitInfo.idParcelle.toString(),
-          statut: Number(produitInfo.statut)
+          idParcelle: produitInfo.idParcelle.toString()
         });
       } catch (error) {
         console.error("Erreur lors du chargement du produit:", error);
@@ -40,21 +39,20 @@ function PasserCommandeVersCollecteur() {
     setIsProcessing(true);
 
     try {
-      const contract = await getCollecteurContract();
+      const contract = await getContract();
       
-      const tx = await executeContractMethod(
-        contract,
-        contract.passerCommande,
+      await executeContractMethod(
+        contract.enregistrerCondition,
         id,
-        quantite
+        temperature,
+        humidite
       );
-      await tx.wait();
 
-      alert("Commande passée avec succès !");
-      navigate("/mes-commandes");
+      alert("Conditions enregistrées avec succès !");
+      navigate("/liste-produits");
     } catch (error) {
-      console.error("Erreur lors de la commande:", error);
-      alert("Erreur lors de la commande: " + error.message);
+      console.error("Erreur lors de l'enregistrement:", error);
+      alert("Erreur lors de l'enregistrement: " + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -71,22 +69,32 @@ function PasserCommandeVersCollecteur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">Passer une commande</h2>
+        <h2 className="h5 mb-3">Enregistrer les conditions de transport</h2>
         <div className="mb-3">
           <h5 className="fw-semibold">Détails du produit :</h5>
           <p><strong>Nom:</strong> {produit.nom}</p>
-          <p><strong>Quantité disponible:</strong> {produit.quantite}</p>
-          <p><strong>Prix unitaire:</strong> {produit.prix} ETH</p>
+          <p><strong>Quantité:</strong> {produit.quantite}</p>
+          <p><strong>ID Parcelle:</strong> {produit.idParcelle}</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Quantité à commander</label>
+            <label className="form-label">Température</label>
             <input
-              type="number"
-              value={quantite}
-              onChange={(e) => setQuantite(e.target.value)}
-              min="1"
-              max={produit.quantite}
+              type="text"
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+              placeholder="Ex: 20°C"
+              className="form-control"
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Humidité</label>
+            <input
+              type="text"
+              value={humidite}
+              onChange={(e) => setHumidite(e.target.value)}
+              placeholder="Ex: 65%"
               className="form-control"
               required
             />
@@ -96,7 +104,7 @@ function PasserCommandeVersCollecteur() {
             disabled={isProcessing}
             className={`btn w-100 ${isProcessing ? "btn-secondary disabled" : "btn-primary"}`}
           >
-            {isProcessing ? "Traitement en cours..." : "Passer la commande"}
+            {isProcessing ? "Enregistrement..." : "Enregistrer les conditions"}
           </button>
         </form>
       </div>
@@ -104,4 +112,4 @@ function PasserCommandeVersCollecteur() {
   );
 }
 
-export default PasserCommandeVersCollecteur; 
+export default EnregistrerCondition; 

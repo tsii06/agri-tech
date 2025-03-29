@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract } from "../utils/contract";
-import { getRoleName } from "../components/Layout/Header";
+import { getContract } from "../../utils/contract";
+import { getRoleName } from "../../components/Layout/Header";
 
 function ListeProducteurs() {
   const [producteurs, setProducteurs] = useState([]);

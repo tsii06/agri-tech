@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getContract } from "../utils/contract";
+import { getContract } from "../../utils/contract";
 
 function IntrantsParcelle() {
   const { id } = useParams();

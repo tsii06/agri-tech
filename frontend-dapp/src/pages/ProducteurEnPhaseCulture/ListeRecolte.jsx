@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract } from "../utils/contract";
-import { getRoleName } from "../components/Layout/Header";
+import { getContract } from "../../utils/contract";
+import { getRoleName } from "../../components/Layout/Header";
 
 function ListeRecoltes() {
   const [recoltes, setRecoltes] = useState([]);
@@ -25,7 +25,7 @@ function ListeRecoltes() {
         const _acteur = await contract.getActeur(account);
 
         // Obtenir le nombre total de récoltes
-        const compteurRecoltes = 1
+        const compteurRecoltes = 2
         console.log("Nombre total de récoltes:", compteurRecoltes.toString());
         
         // Charger toutes les récoltes
@@ -33,19 +33,19 @@ function ListeRecoltes() {
         for (let i = 1; i <= compteurRecoltes; i++) {
           const recolte = await contract.getRecolte(i);
           
-          // Si l'utilisateur est un producteur, on ne montre que ses récoltes
-          if (getRoleName(_acteur.role) === "PRODUCTEUR") {
-            const producteurAddress = recolte.producteur.toString();
-            if (producteurAddress.toLowerCase() !== account.toLowerCase()) {
-              continue;
-            }
-          }
+          // // Si l'utilisateur est un producteur, on ne montre que ses récoltes
+          // if (getRoleName(_acteur.role) === "PRODUCEUR") {
+          //   const producteurAddress = recolte.producteur.toString();
+          //   if (producteurAddress.toLowerCase() !== account.toLowerCase()) {
+          //     continue;
+          //   }
+          // }
 
           recoltesTemp.push({
             id: i,
             idParcelle: recolte.idParcelle.toString(),
             quantite: recolte.quantite.toString(),
-            prix: recolte.prix.toString(),
+            prix: recolte.prixUnit,
             dateRecolte: recolte.dateRecolte,
             nomProduit: recolte.nomProduit,
             certifie: recolte.certifie,
@@ -124,7 +124,7 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID Parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                    <p><strong>Prix:</strong> {recolte.prix} FCFA</p>
+                    <p><strong>Prix:</strong> {recolte.prix} MADATX</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p className={`fw-semibold ${getStatutCertificationColor(recolte.certifie)}`}>
                       <strong>Statut:</strong> {getStatutCertification(recolte.certifie)}
