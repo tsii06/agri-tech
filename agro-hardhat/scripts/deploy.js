@@ -17,17 +17,9 @@ async function main() {
 
     // 1. Déploiement du contrat ProducteurEnPhaseCulture
     console.log("\nDéploiement du contrat ProducteurEnPhaseCulture...");
-    // deployer parcelle
-    const Parcelle = await ethers.getContractFactory("ParcelleContrat");
-    const parcelle = await Parcelle.deploy();
-    await parcelle.waitForDeployment();
-    // deployer recolte
-    const Recolte = await ethers.getContractFactory("RecolteContrat");
-    const recolte = await Recolte.deploy(await parcelle.getAddress());
-    await recolte.waitForDeployment();
     // deploy producteur
     const ProCult = await ethers.getContractFactory("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture");
-    const proCult = await ProCult.deploy(await recolte.getAddress(), await parcelle.getAddress());
+    const proCult = await ProCult.deploy();
     await proCult.waitForDeployment();
     const proCultAddress = await proCult.getAddress();
 
@@ -40,13 +32,9 @@ async function main() {
 
 
 
-
-
-
-
     // 2. Déploiement du contrat CollecteurExportateurContrat
     console.log("\nDéploiement du contrat CollecteurExportateurContrat...");
-    const ColExp = await ethers.getContractFactory("CollecteurExportateurContrat");
+    const ColExp = await ethers.getContractFactory("CollecteurExportateur");
     const colExp = await ColExp.deploy(await proProxy.getAddress());
     await colExp.waitForDeployment();
     const colExpAddress = await colExp.getAddress();
@@ -54,6 +42,22 @@ async function main() {
     // Deploye le proxy du collecteurExportateur
     const colProxy = await ProxyContrat.deploy(colExpAddress);
     await colProxy.waitForDeployment();
+
+
+
+
+
+
+    // 3. Déploiement du contrat CollecteurProducteur
+    console.log("\nDéploiement du contrat CollecteurProducteur...");
+    const CollecteurProducteur = await ethers.getContractFactory("CollecteurProducteur");
+    const collecteurProducteur = await CollecteurProducteur.deploy(colProxy, proProxy);
+    await collecteurProducteur.waitForDeployment();
+    const colProAddress = await collecteurProducteur.getAddress();
+
+    // Deploye le proxy du collecteurExportateur
+    const colProProxy = await ProxyContrat.deploy(colProAddress);
+    await colProProxy.waitForDeployment();
 
 
 
@@ -69,26 +73,24 @@ async function main() {
     // 3. Interagisser avec les proxy
     const proProxyContrat = await ethers.getContractAt("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture", await proProxy.getAddress());
 
-    const colProxyContrat = await ethers.getContractAt("CollecteurExportateurContrat", await colProxy.getAddress());
+    const colExpProxyContrat = await ethers.getContractAt("CollecteurExportateur", await colProxy.getAddress());
+    const colProProxyContrat = await ethers.getContractAt("CollecteurProducteur", await colProProxy.getAddress());
     const proProxyAddr = await proProxyContrat.getAddress();
-    const colProxyAddr = await colProxyContrat.getAddress();
+    const colExpProxyAddr = await colExpProxyContrat.getAddress();
+    const colProProxyAddr = await colProProxyContrat.getAddress();
 
     // definie l'adresse de CollecteurExportateur dans Recolte
-    await recolte.setAddrCE(colProxyAddr);
-    // definie les addresses de recolte et parcelle pour ProducteurEnPhaseCulture
-    await proProxyContrat.setAddrRecolte(await recolte.getAddress());
-    await proProxyContrat.setAddrParcelle(await parcelle.getAddress());
+    await colProProxyContrat.setModuleProducteur(proProxyAddr);
+    await colProProxyContrat.setModuleCE(colExpProxyAddr);
     // donner l'addresse du proxy Prod.
-    await colProxyContrat.setProducteurEnPhaseCulture(proProxyAddr);
+    await colExpProxyContrat.setProducteurEnPhaseCulture(proProxyAddr);
 
     // Résumé des adresses des contrats
     console.log("\n=== Résumé des adresses des contrats ===");
 
-    console.log("ProducteurEnPhaseCulture :", proCultAddress);
-    console.log("ProProxy :", proProxyAddr);
-
-    console.log("\nCollecteurExportateurContrat :", colExpAddress);
-    console.log("ColProxy :", colProxyAddr);
+    console.log("ProducteurProxy :", proProxyAddr);
+    console.log("CollecteurExportateurProxy :", colExpProxyAddr);
+    console.log("CollecteurProducteurProxy :", colProProxyAddr);
 
 
 

@@ -5,35 +5,29 @@ const { int } = require('hardhat/internal/core/params/argumentTypes');
 describe("ProducteurEnPhaseCulture", function () {
     let Contrat;
     let contrat;
-    let contratCE
-    let recolteContrat;
+    let contratCE;
+    let collecteurProd;
     let addr0, addr1, addr2;
     this.beforeEach(async function () {
         [addr0, addr1, addr2] = await ethers.getSigners();
         
-        // deployer Parcellle
-        const Parcelle = await ethers.getContractFactory("ParcelleContrat");
-        const parcelle = await Parcelle.deploy();
-        await parcelle.waitForDeployment();
-
-        // deployer Recolte
-        const Recolte = await ethers.getContractFactory("RecolteContrat");
-        recolteContrat = await Recolte.deploy(await parcelle.getAddress());
-        await recolteContrat.waitForDeployment();
 
         // deployer ProducteurEnPhaseCulture
         Contrat = await ethers.getContractFactory("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture");
-        contrat = await Contrat.deploy(await recolteContrat.getAddress(), await parcelle.getAddress());
+        contrat = await Contrat.deploy();
         await contrat.waitForDeployment();
 
 
-        // deployer CollecteurExportateurContractOK
-        const ContratCE = await ethers.getContractFactory("CollecteurExportateurContrat");
-        contratCE = await ContratCE.deploy(await contrat.getAddress());
+        // deployer CollecteurExportateur
+        const CE = await ethers.getContractFactory("CollecteurExportateur");
+        contratCE = await CE.deploy(await contrat.getAddress());
         await contratCE.waitForDeployment();
 
-        // donner l'adresse de CE a Recolte pour l'ajout automatique de produit
-        await recolteContrat.setAddrCE(await contratCE.getAddress());
+
+        // deployer CollecteurProducteur
+        const CP = await ethers.getContractFactory("CollecteurProducteur");
+        collecteurProd = await CP.deploy(await contratCE.getAddress(), await contrat.getAddress());
+        await collecteurProd.waitForDeployment();
 
     })
 
@@ -469,30 +463,30 @@ describe("ProducteurEnPhaseCulture", function () {
         });
 
         it("ajout de recolte par un producteur", async function () {
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
-            const recolte = await contrat.getRecolte(1);
+            await collecteurProd.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            const recolte = await collecteurProd.getRecolte(1);
             expect(recolte.quantite).to.equal(10);
         })
 
         it("certifie recolte", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            await collecteurProd.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
-            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
-            const recolte = await contrat.getRecolte(1);
+            await collecteurProd.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            const recolte = await collecteurProd.getRecolte(1);
             expect(recolte.certificatPhytosanitaire).to.equal("CERT-1010");
         })
 
         it("passer une commandes a un producteur", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            await collecteurProd.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
-            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            await collecteurProd.connect(certificateur).certifieRecolte(1, "CERT-1010");
 
             // passer une commande
-            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
-            const commande = await contrat.getCommande(1);
-            const recolte = await contrat.getRecolte(1);
+            await collecteurProd.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await collecteurProd.getCommande(1);
+            const recolte = await collecteurProd.getRecolte(1);
             
             // verifie si la commande a bien ete passer
             expect(commande.collecteur).to.equal(collecteur.address);
@@ -502,17 +496,17 @@ describe("ProducteurEnPhaseCulture", function () {
 
         it("payer une commande vers un producteur", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            await collecteurProd.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
-            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            await collecteurProd.connect(certificateur).certifieRecolte(1, "CERT-1010");
             // passer une commande
-            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
-            const commande = await contrat.getCommande(1);
-            const recolte = await contrat.getRecolte(1);
+            await collecteurProd.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await collecteurProd.getCommande(1);
+            const recolte = await collecteurProd.getRecolte(1);
 
             // payer la commande
-            await contrat.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
-            const paiement = await contrat.getPaiement(1);
+            await collecteurProd.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
+            const paiement = await collecteurProd.getPaiement(1);
 
             expect(paiement.payeur).to.equal(collecteur);
             expect(paiement.vendeur).to.equal(producteur);
@@ -520,21 +514,22 @@ describe("ProducteurEnPhaseCulture", function () {
 
         it("ajout automatique de produit lors du paiement de la commande vers le producteur", async function () {
             // ajoute recolte
-            await contrat.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
+            await collecteurProd.connect(producteur).ajoutRecolte(1, 10, 100, "12/12/12", "girofle");
             // certifier la recolte
-            await contrat.connect(certificateur).certifieRecolte(1, "CERT-1010");
+            await collecteurProd.connect(certificateur).certifieRecolte(1, "CERT-1010");
             // passer une commande
-            await contrat.connect(collecteur).passerCommandeVersProducteur(1, 9);
-            const commande = await contrat.getCommande(1);
-            const recolte = await contrat.getRecolte(1);
+            await collecteurProd.connect(collecteur).passerCommandeVersProducteur(1, 9);
+            const commande = await collecteurProd.getCommande(1);
+            const recolte = await collecteurProd.getRecolte(1);
 
             // payer la commande
-            await contrat.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
-            const paiement = await contrat.getPaiement(1);
+            await collecteurProd.connect(collecteur).effectuerPaiementVersProducteur(1, 900, 0);
+            const paiement = await collecteurProd.getPaiement(1);
             // recuperer le produit automatiquement ajouter
             const produit = await contratCE.produits(1);
 
             expect(produit.nom).to.equal("girofle");
         });
     });
+
 });

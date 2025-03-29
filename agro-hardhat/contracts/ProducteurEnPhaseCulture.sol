@@ -10,9 +10,11 @@ import "./StructLib.sol";
 contract ProducteurEnPhaseCulture {
 
     mapping(address => StructLib.Acteur) public acteurs;
+    uint32 public compteurActeurs;
 
-    IRecolte private moduleRecolte;
-    IParcelle private moduleParcelle;
+    mapping(uint32 => StructLib.Parcelle) public parcelles;
+    uint32 public compteurParcelles;
+    uint32 public compteurInspections;
 
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
@@ -48,27 +50,6 @@ contract ProducteurEnPhaseCulture {
 
 
     // ======================================== constructor ==================================================
-    constructor(address _recolte, address _parcelle) {
-        moduleRecolte = IRecolte(_recolte);
-        moduleParcelle = IParcelle(_parcelle);
-    }
-
-
-
-
-    /*
-    setter pour les interfaces recolte et parcelle
-    pour donner les address des interfaces depuis le contrat proxy de Producteur
-    */
-    function setAddrRecolte(address _addr) public {
-        moduleRecolte = IRecolte(_addr);
-    }
-    function setAddrParcelle(address _addr) public {
-        moduleParcelle = IParcelle(_addr);
-    }
-
-
-
 
 
 
@@ -78,6 +59,8 @@ contract ProducteurEnPhaseCulture {
 
 
     function enregistrerActeur(address _acteur, StructLib.Role _role) public {
+
+        compteurActeurs++;
         acteurs[_acteur] = StructLib.Acteur(_acteur, _role);
     }
 
@@ -91,48 +74,54 @@ contract ProducteurEnPhaseCulture {
         string memory _certificatPhytosanitaire
     ) public seulementProducteur {
 
-        moduleParcelle.creerParcelle(_qualiteSemence, _methodeCulture, _latitude, _longitude, _dateRecolte, _certificatPhytosanitaire, msg.sender);
-        
+        compteurParcelles++;
+        // Ceci permet de ne pas specifier de valeur pour l'initialisation des tableaux dynamiques de struct et ainsi d'eviter un UnimplementedFeatureError
+        parcelles[compteurParcelles].id = compteurParcelles;
+        parcelles[compteurParcelles].producteur = msg.sender;
+        parcelles[compteurParcelles].qualiteSemence = _qualiteSemence;
+        parcelles[compteurParcelles].methodeCulture = _methodeCulture;
+        parcelles[compteurParcelles].certifie = false;
+        parcelles[compteurParcelles].etape = StructLib.Etape.PreCulture;
+        parcelles[compteurParcelles].latitude = _latitude;
+        parcelles[compteurParcelles].longitude = _longitude;
+        parcelles[compteurParcelles].dateRecolte = _dateRecolte;
+        parcelles[compteurParcelles].certificatPhytosanitaire = _certificatPhytosanitaire;
     }
 
     function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) public seulementProducteur {
-        moduleParcelle.mettreAJourEtape(_idParcelle, _etape);
+
+        parcelles[_idParcelle].etape = _etape;
     }
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public seulementCertificateur {
 
-        moduleParcelle.appliquerControlePhytosanitaire(_idParcelle, _passe);
+        require(parcelles[_idParcelle].etape == StructLib.Etape.Culture, "Pas en etape de culture");
+        parcelles[_idParcelle].certifie = _passe;
     }
 
     function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
 
-        moduleParcelle.ajouterPhoto(_idParcelle, _urlPhoto);
+        parcelles[_idParcelle].photos.push(_urlPhoto);
     }
 
     function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) public seulementFournisseur {
         
-        moduleParcelle.ajouterIntrant(_idParcelle, _nom, _quantite);
+        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false));
     }
 
     function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) public seulementCertificateur {
         
-        moduleParcelle.validerIntrant(_idParcelle, _nom, _valide);
+        for (uint32 i = 0; i < parcelles[_idParcelle].intrants.length; i++) {
+            if (keccak256(abi.encodePacked(parcelles[_idParcelle].intrants[i].nom)) == keccak256(abi.encodePacked(_nom))) {
+                parcelles[_idParcelle].intrants[i].valide = _valide;
+                break;
+            }
+        }
     }
 
     function ajouterInspection(uint32 _idParcelle, string memory _rapport) public seulementAuditeur {
 
-        moduleParcelle.ajouterInspection(_idParcelle, _rapport);
-    }
-
-    function obtenirInformationsParcelle(uint32 _idParcelle) public view returns (
-        string memory qualiteSemence,
-        string memory methodeCulture,
-        string memory latitude,
-        string memory longitude,
-        string memory dateRecolte,
-        string memory certificatPhytosanitaire
-    ) {
-
-        return moduleParcelle.obtenirInformationsParcelle(_idParcelle);
+        compteurInspections++;
+        parcelles[_idParcelle].inspections.push(StructLib.Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
     }
 
 
@@ -140,38 +129,6 @@ contract ProducteurEnPhaseCulture {
 
 
 
-
-
-
-    // ====================================== Recolte =========================================================
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
-
-        moduleRecolte.ajoutRecolte(_idParcelle, _quantite, _prix, _dateRecolte, msg.sender, _nomProduit);
-    }
-    function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
-
-        moduleRecolte.certifieRecolte(_idRecolte, _certificat);
-    }
-
-
-
-
-
-
-
-
-
-
-
-    // ====================================== Commande =========================================================
-    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur {
-
-        moduleRecolte.passerCommandeVersProducteur(_idRecolte, _quantite, msg.sender);
-    }
-    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
-        
-        moduleRecolte.effectuerPaiementVersProducteur(_idCommande, _montant, _mode, msg.sender);
-    }
 
     // function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
     //     compteurConditions++;
@@ -215,61 +172,25 @@ contract ProducteurEnPhaseCulture {
 
     // pour les parcelles
     function getParcelle(uint32 id) public view returns(StructLib.Parcelle memory) {
-        return moduleParcelle.getParcelle(id);
+        return parcelles[id];
     }
     function getCompteurParcelle() public view returns(uint32) {
-        return moduleParcelle.getCompteurParcelle();
+        return compteurParcelles;
     }
     function getCompteurInspection() public view returns(uint32) {
-        return moduleParcelle.getCompteurInspection();
+        return compteurInspections;
     }
-    // Pour recuperer les tableaux dynamiques de parcelle
     function getPhotos(uint32 idParcelle) public view returns (string[] memory) {
-        return moduleParcelle.getPhotos(idParcelle);
+        return parcelles[idParcelle].photos;
     }
     function getIntrants(uint32 idParcelle) public view returns (StructLib.Intrant[] memory) {
-        return moduleParcelle.getIntrants(idParcelle);
+        return parcelles[idParcelle].intrants;
     }
     function getInspections(uint32 idParcelle) public view returns (StructLib.Inspection[] memory) {
-        return moduleParcelle.getInspections(idParcelle);
+        return parcelles[idParcelle].inspections;
     }
     function getConditions(uint32 idParcelle) public view returns (StructLib.EnregistrementCondition[] memory) {
-        return moduleParcelle.getConditions(idParcelle);
-    }
-
-   
-
-
-
-
-    // pour les recoltes
-    function getRecolte(uint32 _idRecolte) public view returns (StructLib.Recolte memory) {
-        return moduleRecolte.getRecolte(_idRecolte);
-    }
-    function getCompteurRecoltes() public view returns (uint32) {
-        return moduleRecolte.getCompteurRecoltes();
-
-
-
-
-
-    // pour les commandes
-    }
-    function getCommande(uint32 _idRecolte) public view returns (StructLib.CommandeRecolte memory) {
-        return moduleRecolte.getCommande(_idRecolte);
-    }
-    function getCompteurCommandes() public view returns (uint32) {
-        return moduleRecolte.getCompteurCommandes();
-    }
-
-
-
-    // pour les paiements
-    function getPaiement(uint32 id) public view returns(StructLib.Paiement memory) {
-        return moduleRecolte.getPaiment(id);
-    }
-    function getCompteurPaiments() public view returns (uint32) {
-        return moduleRecolte.getCompteurPaiments();
+        return parcelles[idParcelle].conditions;
     }
 
 
@@ -283,64 +204,4 @@ contract ProducteurEnPhaseCulture {
     // function getCompteurCondition() public view returns(uint32) {
     //     return compteurConditions;
     // }
-}
-
-
-
-
-
-
-
-
-
-
-
-interface IRecolte {
-
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, address _sender, string memory _nomProduit) external;
-    function certifieRecolte(uint32 _idRecolte, string memory _certificat) external;
-    function getRecolte(uint32 _idRecolte) external view returns (StructLib.Recolte memory);
-    function getCompteurRecoltes() external view returns (uint32);
-    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite, address _sender) external;
-    function getCommande(uint32 _id) external view returns (StructLib.CommandeRecolte memory);
-    function getCompteurCommandes() external view returns (uint32);
-    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode, address _collecteur) external payable;
-    function getPaiment(uint32 _id) external view returns (StructLib.Paiement memory); 
-    function getCompteurPaiments() external view returns (uint32);
-}
-
-
-
-interface IParcelle {
-
-    function creerParcelle(
-        string memory _qualiteSemence,
-        string memory _methodeCulture,
-        string memory _latitude,
-        string memory _longitude,
-        string memory _dateRecolte,
-        string memory _certificatPhytosanitaire,
-        address _sender
-        ) external;
-    function obtenirInformationsParcelle(uint32 _idParcelle) external view returns (
-        string memory qualiteSemence,
-        string memory methodeCulture,
-        string memory latitude,
-        string memory longitude,
-        string memory dateRecolte,
-        string memory certificatPhytosanitaire
-        );
-    function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) external;
-    function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) external;
-    function getPhotos(uint32 idParcelle) external view returns (string[] memory); 
-    function getIntrants(uint32 idParcelle) external view returns (StructLib.Intrant[] memory);
-    function getInspections(uint32 idParcelle) external view returns (StructLib.Inspection[] memory);
-    function getConditions(uint32 idParcelle) external view returns (StructLib.EnregistrementCondition[] memory);
-    function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) external;
-    function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) external;
-    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) external;
-    function ajouterInspection(uint32 _idParcelle, string memory _rapport) external;
-    function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
-    function getCompteurParcelle() external view returns(uint32);
-    function getCompteurInspection() external view returns(uint32);
 }

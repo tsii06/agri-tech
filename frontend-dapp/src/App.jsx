@@ -18,7 +18,7 @@ import IntrantsParcelle from "./pages/IntrantsParcelle";
 import InspectionsParcelle from "./pages/InspectionsParcelle";
 import FaireRecolte from "./pages/FaireRecolte";
 import ListeRecoltes from "./pages/listerecoltes";
-import ListeProducteurs from "./pages/listeProducteur";
+// import ListeProducteurs from "./pages/listeProducteur";
 import RecoltesProducteur from "./pages/RecoltesProducteur";
 import AcheterRecolte from "./pages/AcheterRecolte";
 
@@ -58,7 +58,7 @@ function App() {
             <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
             <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
             <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
-            <Route path="liste-producteur" element={<ListeProducteurs />} />
+            {/*<Route path="liste-producteur" element={<ListeProducteurs />} />*/}
             <Route path="liste-recolte" element={<ListeRecoltes />} />
             <Route path="producteur/:address/recoltes" element={<RecoltesProducteur />} />
             <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
