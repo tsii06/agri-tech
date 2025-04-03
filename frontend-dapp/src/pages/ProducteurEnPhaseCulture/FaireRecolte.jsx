@@ -31,7 +31,7 @@ function FaireRecolte() {
 
       await tx.wait();
       alert("Récolte bien enregistrée.");
-      navigate("/mes-recoltes");
+      navigate("/liste-recolte");
 
     } catch (error) {
       console.error("Erreur lors de l'enregistrement de la récolte:", error);
@@ -59,7 +59,16 @@ function FaireRecolte() {
 
         <div className="mb-3">
           <label className="form-label text-muted">Nom du produit</label>
-          <input type="text" className="form-control" required ref={nomProduit} />
+          <select className="form-control" required ref={nomProduit}>
+            <option value="">Sélectionnez un produit</option>
+            <option value="vanille">Vanille Bourbon</option>
+            <option value="girofle">Girofle</option>
+            <option value="poivre_noir">Poivre noir</option>
+            <option value="curcuma">Curcuma</option>
+            <option value="ravintsara">Huile essentielle de Ravintsara</option>
+
+          </select>
+
         </div>
 
         <div className="mb-3">

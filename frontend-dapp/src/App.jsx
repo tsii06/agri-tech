@@ -6,11 +6,11 @@ import Header from "./components/Layout/Header";
 import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
 import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
-import ValiderProduit from "./pages/CertificateurAuditeur/ValiderProduit";
+
 import EffectuerPaiement from "./pages/CollecteurExportateur/EffectuerPaiementCollecteur";
 import EnregistrerCondition from "./pages/CollecteurProducteur/EnregistrerConditionTransport";
 import LivraisonRecolte from "./pages/CollecteurProducteur/LivraisonRecolte";
-import MesCommandes from "./pages/CollecteurProducteur/CommandeCollecteur";
+import CommandeCollecteur from "./pages/CollecteurProducteur/CommandeCollecteur";
 import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
 import MesParcelles from "./pages/ProducteurEnPhaseCulture/ListeParcelle";
 import PhotosParcelle from "./pages/ProducteurEnPhaseCulture/PhotosParcelle";
@@ -18,6 +18,7 @@ import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle"
 import InspectionsParcelle from "./pages/CertificateurAuditeur/InspectionsParcelle";
 import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
 import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
+import CommandeExportateur from "./pages/CollecteurExportateur/CommandeExportateur";
 
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 
@@ -45,9 +46,8 @@ function App() {
             } />
             <Route path="ajout-acteur" element={<AjoutActeur setState={setState} />} />
             <Route path="liste-produits" element={<ListeProduits />} />
-            <Route path="mes-commandes" element={<MesCommandes />} />
+            <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
             <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
-            <Route path="valider-produit/:id" element={<ValiderProduit />} />
             <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
             <Route path="enregistrer-condition/:id" element={<EnregistrerCondition />} />
             <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
@@ -60,6 +60,8 @@ function App() {
             {/*<Route path="liste-producteur" element={<ListeProducteurs />} />*/}
             <Route path="liste-recolte" element={<ListeRecoltes />} />
             <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
+            <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
+            <Route path="/produits" element={<ListeProduits />} />
           </Route>
         </Routes>
       </div>

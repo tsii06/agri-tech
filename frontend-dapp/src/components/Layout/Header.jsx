@@ -170,13 +170,15 @@ function Header({ state }) {
         ];
       case 2: // Certificateur
         return [
-          { to: "/mes-parcelles", text: "Contrôle Phytosanitaire" }
+          { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
+          { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
         ];
       case 3: // Collecteur
         return [
-          { to: "/passer-commande-producteur", text: "Passer commande" },
+          { to: "/liste-recolte", text: "Passer commande" },
           { to: "/liste-producteur", text: "Liste des producteurs" },
           { to: "/liste-collecteur-commande", text: "Mes commandes" },
+          { to: "/liste-produits", text: "Liste des produits" },
           ...commonLinks
         ];
       case 4: // Auditeur
@@ -193,7 +195,8 @@ function Header({ state }) {
           ...commonLinks,
           { to:"/mes-commandes", text:"Mes commandes"},
           { to: "/passer-commande-collecteur", text: "Passer commande" },
-          { to:"/liste-collecteur", text:"Liste des collecteurs"}
+          { to:"/liste-collecteur", text:"Liste des collecteurs"},
+          { to: "/liste-produits", text: "Liste des produits" },
         ];
       default:
         return commonLinks;

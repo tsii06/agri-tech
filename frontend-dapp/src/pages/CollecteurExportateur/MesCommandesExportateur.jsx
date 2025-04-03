@@ -1,29 +1,27 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurProducteurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 
-function CommandeCollecteur() {
-  const navigate = useNavigate();
+function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [acteur, setActeur] = useState({});
   const [_, setState] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
-  const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
 
   useEffect(() => {
     const chargerCommandes = async () => {
       try {
-        const contract = await getCollecteurProducteurContract();
+        const contract = await getCollecteurExportateurContract();
         const provider = contract.runner.provider;
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
+
+        // Récupérer l'acteur
+        const _acteur = await contract.getActeur(account);
 
         // Obtenir le nombre total de commandes
         const compteurCommandes = await contract.compteurCommandes();
@@ -34,26 +32,26 @@ function CommandeCollecteur() {
         for (let i = 1; i <= compteurCommandes; i++) {
           const commande = await contract.getCommande(i);
           
-          // Vérifier si la commande appartient au collecteur connecté
-          if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
-            const recolte = await contract.getRecolte(commande.idRecolte);
+          // Vérifier si la commande appartient à l'exportateur connecté
+          if (commande.exportateur.toLowerCase() === account.toLowerCase()) {
+            const produit = await contract.getProduit(commande.idProduit);
             
             commandesTemp.push({
               id: commande.id.toString(),
-              idRecolte: commande.idRecolte.toString(),
+              idProduit: commande.idProduit.toString(),
               quantite: commande.quantite.toString(),
               prix: commande.prix.toString(),
               payer: commande.payer,
               statutTransport: commande.statutTransport,
-              producteur: commande.producteur.toString(),
               collecteur: commande.collecteur.toString(),
-              nomProduit: recolte.nomProduit
+              exportateur: commande.exportateur.toString(),
+              nomProduit: produit.nom
             });
           }
         }
         
         console.log("Commandes trouvées:", commandesTemp);
-        setActeur(acteur);
+        setActeur(_acteur);
         // Inverser le tri des commandes pour que les plus récentes soient en premier
         commandesTemp.reverse();
         setCommandes(commandesTemp);
@@ -70,15 +68,14 @@ function CommandeCollecteur() {
 
   const handlePayer = async (commandeId) => {
     try {
-      const contract = await getCollecteurProducteurContract();
+      const contract = await getCollecteurExportateurContract();
       const commande = commandes.find(c => c.id === commandeId);
       
       // Effectuer le paiement
-      const tx = await contract.effectuerPaiementVersProducteur(
-        commande.idRecolte,
-        commande.prix,
+      const tx = await contract.effectuerPaiement(
         commandeId,
-        { value: ethers.parseEther(commande.prix) }
+        commande.prix,
+        0 // ModePaiement.VirementBancaire
       );
       await tx.wait();
       
@@ -89,9 +86,6 @@ function CommandeCollecteur() {
         commandesTemp[index].payer = true;
         setCommandes(commandesTemp);
       }
-
-      // Rediriger vers la page des produits
-      navigate('/produits');
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       setError(error.message);
@@ -159,10 +153,10 @@ function CommandeCollecteur() {
                   <h5 className="card-title">{commande.nomProduit}</h5>
                   <div className="card-text small">
                     <p><strong>ID Commande:</strong> {commande.id}</p>
-                    <p><strong>ID Récolte:</strong> {commande.idRecolte}</p>
+                    <p><strong>ID Produit:</strong> {commande.idProduit}</p>
                     <p><strong>Quantité:</strong> {commande.quantite} kg</p>
                     <p><strong>Prix:</strong> {commande.prix} MADATX</p>
-                    <p><strong>Producteur:</strong> {commande.producteur.slice(0, 6)}...{commande.producteur.slice(-4)}</p>
+                    <p><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutPaiementColor(commande.payer)}`}>
                       <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
                     </p>
@@ -173,10 +167,7 @@ function CommandeCollecteur() {
                   <div className="mt-3">
                     {!commande.payer && (
                       <button
-                        onClick={() => {
-                          setCommandeSelectionnee(commande);
-                          setShowModal(true);
-                        }}
+                        onClick={() => handlePayer(commande.id)}
                         className="btn btn-sm btn-primary"
                       >
                         Payer
@@ -189,53 +180,8 @@ function CommandeCollecteur() {
           </div>
         )}
       </div>
-
-      {/* Modal de paiement */}
-      {showModal && commandeSelectionnee && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Payer la commande</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
-                  <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
-                  <p><strong>Prix total:</strong> {commandeSelectionnee.prix} MADATX</p>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Mode de paiement</label>
-                  <select 
-                    className="form-select"
-                    value={modePaiement}
-                    onChange={(e) => setModePaiement(Number(e.target.value))}
-                  >
-                    <option value={0}>Virement bancaire</option>
-                    <option value={1}>Cash</option>
-                    <option value={2}>Mobile Money</option>
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handlePayer(commandeSelectionnee.id)}
-                >
-                  Confirmer le paiement
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-export default CommandeCollecteur; 
+export default MesCommandesExportateur; 
