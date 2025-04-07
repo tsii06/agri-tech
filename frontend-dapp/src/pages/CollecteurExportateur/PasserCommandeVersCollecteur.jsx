@@ -76,7 +76,7 @@ function PasserCommandeVersCollecteur() {
           <h5 className="fw-semibold">Détails du produit :</h5>
           <p><strong>Nom:</strong> {produit.nom}</p>
           <p><strong>Quantité disponible:</strong> {produit.quantite}</p>
-          <p><strong>Prix unitaire:</strong> {produit.prix} ETH</p>
+          <p><strong>Prix unitaire:</strong> {produit.prix} Ar</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

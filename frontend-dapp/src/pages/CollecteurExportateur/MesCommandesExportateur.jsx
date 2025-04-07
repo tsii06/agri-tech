@@ -155,7 +155,7 @@ function MesCommandesExportateur() {
                     <p><strong>ID Commande:</strong> {commande.id}</p>
                     <p><strong>ID Produit:</strong> {commande.idProduit}</p>
                     <p><strong>Quantité:</strong> {commande.quantite} kg</p>
-                    <p><strong>Prix:</strong> {commande.prix} MADATX</p>
+                    <p><strong>Prix:</strong> {commande.prix} Ar</p>
                     <p><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutPaiementColor(commande.payer)}`}>
                       <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}

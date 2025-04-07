@@ -174,7 +174,7 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID Parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                    <p><strong>Prix:</strong> {recolte.prix} MADATX</p>
+                    <p><strong>Prix:</strong> {recolte.prix} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p className={`fw-semibold ${getStatutCertificationColor(recolte.certifie)}`}>
                       <strong>Statut:</strong> {getStatutCertification(recolte.certifie)}
@@ -229,8 +229,8 @@ function ListeRecoltes() {
                   />
                 </div>
                 <div className="mb-3">
-                  <p>Prix unitaire: {recolteSelectionnee.prix} MADATX</p>
-                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prix)} MADATX</p>
+                  <p>Prix unitaire: {recolteSelectionnee.prix} Ar</p>
+                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prix)} Ar</p>
                 </div>
               </div>
               <div className="modal-footer">

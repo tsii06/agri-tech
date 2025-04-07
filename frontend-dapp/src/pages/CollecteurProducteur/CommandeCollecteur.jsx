@@ -161,7 +161,7 @@ function CommandeCollecteur() {
                     <p><strong>ID Commande:</strong> {commande.id}</p>
                     <p><strong>ID Récolte:</strong> {commande.idRecolte}</p>
                     <p><strong>Quantité:</strong> {commande.quantite} kg</p>
-                    <p><strong>Prix:</strong> {commande.prix} MADATX</p>
+                    <p><strong>Prix:</strong> {commande.prix} Ar</p>
                     <p><strong>Producteur:</strong> {commande.producteur.slice(0, 6)}...{commande.producteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutPaiementColor(commande.payer)}`}>
                       <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
@@ -203,7 +203,7 @@ function CommandeCollecteur() {
                 <div className="mb-3">
                   <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
                   <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
-                  <p><strong>Prix total:</strong> {commandeSelectionnee.prix} MADATX</p>
+                  <p><strong>Prix total:</strong> {commandeSelectionnee.prix} Ar</p>
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Mode de paiement</label>

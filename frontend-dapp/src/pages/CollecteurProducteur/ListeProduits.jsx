@@ -180,7 +180,7 @@ function ListeProduits() {
                   <div className="card-text small">
                     <p><strong>ID Récolte:</strong> {produit.idRecolte}</p>
                     <p><strong>Quantité:</strong> {produit.quantite} kg</p>
-                    <p><strong>Prix unitaire:</strong> {produit.prixUnit} MADATX</p>
+                    <p><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
                     <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
                     <p className={`fw-semibold ${getStatutProduitColor(produit.statut)}`}>
@@ -227,7 +227,7 @@ function ListeProduits() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label">Prix actuel: {produitSelectionne.prixUnit} MADATX</label>
+                  <label className="form-label">Prix actuel: {produitSelectionne.prixUnit} Ar</label>
                   <input
                     type="number"
                     className="form-control"

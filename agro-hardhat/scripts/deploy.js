@@ -4,7 +4,7 @@ async function main() {
     console.log("Début du déploiement des contrats...\n");
 
     // Récupération des comptes
-    const [deployer, collecteur, exportateur, transporteur, producteur] = await ethers.getSigners();
+    const [deployer, collecteur, exportateur, transporteur, producteur, certificateur] = await ethers.getSigners();
     console.log("Compte déployeur:", deployer.address);
 
 
@@ -75,6 +75,7 @@ async function main() {
 
     const colExpProxyContrat = await ethers.getContractAt("CollecteurExportateur", await colProxy.getAddress());
     const colProProxyContrat = await ethers.getContractAt("CollecteurProducteur", await colProProxy.getAddress());
+
     const proProxyAddr = await proProxyContrat.getAddress();
     const colExpProxyAddr = await colExpProxyContrat.getAddress();
     const colProProxyAddr = await colProProxyContrat.getAddress();
@@ -106,6 +107,10 @@ async function main() {
     // 4. Configuration initiale pour les tests
     console.log("\nConfiguration initiale des contrats...");
     await proProxyContrat.enregistrerActeur(producteur.address, 0);
+    await proProxyContrat.enregistrerActeur(collecteur.address, 3);
+    await proProxyContrat.enregistrerActeur(certificateur.address, 2);
+
+    // creer des parcelles
     await proProxyContrat.connect(producteur).creerParcelle(
         "bon",
         "sur brulis",
@@ -114,9 +119,30 @@ async function main() {
         "12/12/25",
         "certificate"
     );
-    // ajouter un produit
-    // await proProxyContrat.enregistrerActeur(collecteur.address, 3);
-    // await colProxyContrat.connect(collecteur).ajouterProduit(1, 100, 100000000);
+    await proProxyContrat.connect(producteur).creerParcelle(
+        "bon",
+        "sur brulis",
+        "155.232",
+        "434.233",
+        "12/12/25",
+        "certificate"
+    );
+
+    // faire recolte
+    await colProProxyContrat.connect(producteur).ajoutRecolte(1, 10, 10000, "12/12/2025", "Girofle");
+    await colProProxyContrat.connect(producteur).ajoutRecolte(2, 10, 10000, "12/12/2025", "Café");
+
+    // certifier les recoltes
+    await colProProxyContrat.connect(certificateur).certifieRecolte(1, "cert-1001");
+    await colProProxyContrat.connect(certificateur).certifieRecolte(2, "cert-1002");
+
+    // passer commandes sur les recoltes
+    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(1, 5);
+    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 8);
+
+    // payer une commande
+    await colProProxyContrat.connect(collecteur).effectuerPaiementVersProducteur(1, 50000, 0);
+
     console.log("✓ Configuration initiale terminée");
 
     console.log("\nDéploiement terminé avec succès!");
