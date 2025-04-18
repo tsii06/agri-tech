@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract } from "../../utils/contract";
 import { Outlet } from "react-router-dom";
@@ -215,9 +216,9 @@ function Header({ state }) {
                 <ul className="nav flex-column px-3">
                     {getNavigationLinks().map((link, index) => (
                         <li className="nav-item" key={index}>
-                            <a href={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
+                            <Link to={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
                                 {link.text}
-                            </a>
+                            </Link>
                         </li>
                     ))}
                 </ul>

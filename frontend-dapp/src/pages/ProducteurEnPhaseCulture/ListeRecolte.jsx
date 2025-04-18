@@ -112,7 +112,7 @@ function ListeRecoltes() {
       await tx.wait();
       
       // Rediriger vers la page des commandes
-      navigate('/mes-commandes');
+      navigate('/liste-collecteur-commande');
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
       setError(error.message);
