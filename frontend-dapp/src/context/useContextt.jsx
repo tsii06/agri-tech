@@ -6,7 +6,7 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
     const [role, setRole] = useState(null);
-    const [account, setAccount] = useState(null);
+    const [account, setAccount] = useState("");
 
     const verifeActeur = async (userAddress) => {
         try {
