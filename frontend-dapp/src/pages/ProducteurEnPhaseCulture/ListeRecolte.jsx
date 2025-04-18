@@ -147,7 +147,7 @@ function ListeRecoltes() {
             {getRoleName(acteur.role) === "PRODUCTEUR" ? "Mes Récoltes" : "Liste des Récoltes"}
           </h2>
           {getRoleName(acteur.role) === "PRODUCTEUR" && (
-            <Link to="/fairerecolte" className="btn btn-primary">
+            <Link to="/mes-parcelles" className="btn btn-primary">
               Ajouter une récolte
             </Link>
           )}
