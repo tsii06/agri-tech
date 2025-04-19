@@ -20,7 +20,7 @@ export const getRoleName = (roleNumber) => {
 
 
 
-function Header({ state }) {
+function Header({ state,setState }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -59,6 +59,8 @@ function Header({ state }) {
         setAccount(userAddress);
         await verifierActeur(userAddress);
 
+        // force UserProvider a se re-render
+        setState({});
         // redirige vers le route index
         navigate("/");
 
@@ -90,6 +92,8 @@ function Header({ state }) {
           await verifierActeur(accounts[0]);
         }
 
+        // force UserProvider a se re-render
+        setState({});
         // redirige vers le route index
         navigate("/");
 
@@ -104,6 +108,8 @@ function Header({ state }) {
     setAccount(null);
     setRole(null);
 
+    // force UserProvider a se re-render
+    setState({});
     // redirige vers le route index
     navigate("/");
 
