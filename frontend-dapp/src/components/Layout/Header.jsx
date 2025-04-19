@@ -108,8 +108,6 @@ function Header({ state,setState }) {
     setAccount(null);
     setRole(null);
 
-    // force UserProvider a se re-render
-    setState({});
     // redirige vers le route index
     navigate("/");
 
