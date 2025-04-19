@@ -212,44 +212,49 @@ function ListeRecoltes() {
 
       {/* Modal de commande */}
       {showModal && recolteSelectionnee && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Quantité disponible: {recolteSelectionnee.quantite} kg</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={quantiteCommande}
-                    onChange={(e) => setQuantiteCommande(e.target.value)}
-                    placeholder="Quantité à commander"
-                  />
+        <>
+        <div className="modal-backdrop fade show"></div>
+
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-                <div className="mb-3">
-                  <p>Prix unitaire: {recolteSelectionnee.prixUnit} Ar</p>
-                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prixUnit)} Ar</p>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Quantité disponible: {recolteSelectionnee.quantite} kg</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={quantiteCommande}
+                      onChange={(e) => setQuantiteCommande(e.target.value)}
+                      placeholder="Quantité à commander"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <p>Prix unitaire: {recolteSelectionnee.prixUnit} Ar</p>
+                    <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prixUnit)} Ar</p>
+                  </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleCommander(recolteSelectionnee.id)}
-                >
-                  Confirmer la commande
-                </button>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleCommander(recolteSelectionnee.id)}
+                  >
+                    Confirmer la commande
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+        </>
       )}
     </div>
   );

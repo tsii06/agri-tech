@@ -192,6 +192,9 @@ function CommandeCollecteur() {
 
       {/* Modal de paiement */}
       {showModal && commandeSelectionnee && (
+        <>
+        <div className="modal-backdrop fade show"></div>
+
         <div className="modal show d-block" tabIndex="-1">
           <div className="modal-dialog">
             <div className="modal-content">
@@ -233,6 +236,7 @@ function CommandeCollecteur() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );
