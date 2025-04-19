@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useUserContext } from '../../context/useContextt';
 
 function ListeRecoltes() {
   const navigate = useNavigate();
@@ -15,13 +16,18 @@ function ListeRecoltes() {
   const [recolteSelectionnee, setRecolteSelectionnee] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  const { role, account, verifeActeur } = useUserContext();
+
+
+
+
   useEffect(() => {
     const chargerRecoltes = async () => {
       try {
         const contract = await getCollecteurProducteurContract();
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
+        // const provider = contract.runner.provider;
+        // const signer = await provider.getSigner();
+        // const accounts = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
 
@@ -39,23 +45,30 @@ function ListeRecoltes() {
         for (let i = 1; i <= compteurRecoltes; i++) {
           const recolte = await contract.getRecolte(i);
 
-          recoltesTemp.push({
-            id: i,
-            idParcelle: recolte.idParcelle.toString(),
-            quantite: recolte.quantite.toString(),
-            prix: recolte.prixUnit,
-            dateRecolte: recolte.dateRecolte,
-            nomProduit: recolte.nomProduit,
-            certifie: recolte.certifie,
-            producteur: recolte.producteur.toString()
-          });
+          // verifie si la recolte n'appartient pas a l'utilistateur
+          if(recolte.producteur.toLowerCase() !== account.toLowerCase())
+            continue;
+
+          // recoltesTemp.push({
+          //   id: i,
+          //   idParcelle: recolte.idParcelle.toString(),
+          //   quantite: recolte.quantite.toString(),
+          //   prix: recolte.prixUnit,
+          //   dateRecolte: recolte.dateRecolte,
+          //   nomProduit: recolte.nomProduit,
+          //   certifie: recolte.certifie,
+          //   producteur: recolte.producteur.toString()
+          // });
+          recoltesTemp.push(recolte);
         }
         
         console.log("Récoltes trouvées:", recoltesTemp);
         setActeur(_acteur);
+
         // Inverser le tri des récoltes pour que les plus récentes soient en premier
         recoltesTemp.reverse();
         setRecoltes(recoltesTemp);
+
       } catch (error) {
         console.error("Erreur lors du chargement des récoltes:", error);
         setError(error.message);
@@ -174,7 +187,7 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID Parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                    <p><strong>Prix:</strong> {recolte.prix} Ar</p>
+                    <p><strong>Prix:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p className={`fw-semibold ${getStatutCertificationColor(recolte.certifie)}`}>
                       <strong>Statut:</strong> {getStatutCertification(recolte.certifie)}
