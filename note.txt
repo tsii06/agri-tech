@@ -1,1 +1,7 @@
 dans obtenirInfoParcelle : storage -> memory
+
+
+## les utilistateur avec des roles par defaut:
+- user 1 : collecteur
+- user 4 : producteur
+- user 5 : certificateur
