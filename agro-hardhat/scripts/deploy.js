@@ -129,8 +129,8 @@ async function main() {
     );
 
     // faire recolte
-    await colProProxyContrat.connect(producteur).ajoutRecolte(1, 10, 10000, "12/12/2025", "Girofle");
-    await colProProxyContrat.connect(producteur).ajoutRecolte(2, 10, 10000, "12/12/2025", "Café");
+    await colProProxyContrat.connect(producteur).ajoutRecolte(1, 100, 10000, "12/12/2025", "Girofle");
+    await colProProxyContrat.connect(producteur).ajoutRecolte(2, 100, 10000, "12/12/2025", "Café");
 
     // certifier les recoltes
     await colProProxyContrat.connect(certificateur).certifieRecolte(1, "cert-1001");
@@ -139,6 +139,8 @@ async function main() {
     // passer commandes sur les recoltes
     await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(1, 5);
     await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 8);
+    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 10);
+    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 12);
 
     // payer une commande
     await colProProxyContrat.connect(collecteur).effectuerPaiementVersProducteur(1, 50000, 0);
