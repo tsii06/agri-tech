@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract } from "../../utils/contract";
 import { Outlet } from "react-router-dom";
@@ -24,6 +24,7 @@ function Header({ state }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
 
   const verifierConnexionInitiale = async () => {
     if (window.ethereum) {
@@ -57,6 +58,10 @@ function Header({ state }) {
         const userAddress = await signer.getAddress();
         setAccount(userAddress);
         await verifierActeur(userAddress);
+
+        // redirige vers le route index
+        navigate("/");
+
       } catch (error) {
         console.error("Erreur de connexion:", error);
         alert("Erreur lors de la connexion au wallet");
@@ -84,6 +89,10 @@ function Header({ state }) {
           setAccount(accounts[0]);
           await verifierActeur(accounts[0]);
         }
+
+        // redirige vers le route index
+        navigate("/");
+
       } catch (error) {
         console.error("Erreur lors du changement de compte:", error);
         alert("Erreur lors du changement de compte");
@@ -94,6 +103,10 @@ function Header({ state }) {
   const deconnecterWallet = () => {
     setAccount(null);
     setRole(null);
+
+    // redirige vers le route index
+    navigate("/");
+
   };
 
   const verifierActeur = async (userAddress) => {
@@ -247,9 +260,9 @@ function Header({ state }) {
                             <button onClick={changerCompte} className="btn btn-outline-primary btn-sm">
                                 Changer
                             </button>
-                            <a href="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                            <Link to="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
                                 <i className="bi bi-person-plus me-1"></i> Nouvel acteur
-                            </a>
+                            </Link>
                             <button onClick={deconnecterWallet} className="btn btn-sm btn-outline-danger d-flex align-items-center">
                                 <i className="bi bi-box-arrow-right me-1"></i> Déconnecter
                             </button>
@@ -265,7 +278,11 @@ function Header({ state }) {
             <div className="flex-grow-1 p-4">
                 <h1 className="h4">Bienvenue sur votre tableau de bord</h1>
                 <p>Gérez vos projets et vos interactions ici.</p>
+
+                {/* ================= les composants enfants seront afficher ici ================== */}
                 <Outlet />
+
+
             </div>
         </main>
     </div>
