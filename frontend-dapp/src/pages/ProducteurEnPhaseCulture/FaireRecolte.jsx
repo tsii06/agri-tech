@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useParams } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 
 function FaireRecolte() {
@@ -13,6 +13,12 @@ function FaireRecolte() {
   const dateRecolte = useRef();
   const nomProduit = useRef();
 
+  // recupere l'id du parcelle
+  const { id } = useParams();
+
+
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,7 +28,7 @@ function FaireRecolte() {
       const contract = await getCollecteurProducteurContract();
 
       const tx = await contract.ajoutRecolte(
-        parseInt(idParcelle.current.value),
+        parseInt(id),
         parseInt(quantite.current.value),
         parseInt(prix.current.value),
         dateRecolte.current.value,
@@ -43,7 +49,7 @@ function FaireRecolte() {
 
   return (
     <div className="container py-4">
-      <h2 className="h4 mb-3">Créer une nouvelle récolte</h2>
+      <h2 className="h4 mb-3">Faire récolte sur la parcelle #{id}</h2>
 
       {error && (
         <div className="alert alert-danger d-flex align-items-center" role="alert">
@@ -52,10 +58,6 @@ function FaireRecolte() {
       )}
 
       <form className="card shadow-sm p-4" onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label text-muted">ID de la parcelle</label>
-          <input type="number" className="form-control" required ref={idParcelle} />
-        </div>
 
         <div className="mb-3">
           <label className="form-label text-muted">Nom du produit</label>

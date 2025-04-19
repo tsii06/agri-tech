@@ -25,9 +25,6 @@ function ListeRecoltes() {
     const chargerRecoltes = async () => {
       try {
         const contract = await getCollecteurProducteurContract();
-        // const provider = contract.runner.provider;
-        // const signer = await provider.getSigner();
-        // const accounts = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
 
@@ -45,20 +42,12 @@ function ListeRecoltes() {
         for (let i = 1; i <= compteurRecoltes; i++) {
           const recolte = await contract.getRecolte(i);
 
-          // verifie si la recolte n'appartient pas a l'utilistateur
-          if(recolte.producteur.toLowerCase() !== account.toLowerCase())
-            continue;
+          // verifie si l'utilisateur est un producteur
+          if(getRoleName(_acteur.role) === "PRODUCTEUR")
+            // verifie si la recolte n'appartient pas a l'utilistateur
+            if(recolte.producteur.toLowerCase() !== account.toLowerCase())
+              continue;
 
-          // recoltesTemp.push({
-          //   id: i,
-          //   idParcelle: recolte.idParcelle.toString(),
-          //   quantite: recolte.quantite.toString(),
-          //   prix: recolte.prixUnit,
-          //   dateRecolte: recolte.dateRecolte,
-          //   nomProduit: recolte.nomProduit,
-          //   certifie: recolte.certifie,
-          //   producteur: recolte.producteur.toString()
-          // });
           recoltesTemp.push(recolte);
         }
         
@@ -242,8 +231,8 @@ function ListeRecoltes() {
                   />
                 </div>
                 <div className="mb-3">
-                  <p>Prix unitaire: {recolteSelectionnee.prix} Ar</p>
-                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prix)} Ar</p>
+                  <p>Prix unitaire: {recolteSelectionnee.prixUnit} Ar</p>
+                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prixUnit)} Ar</p>
                 </div>
               </div>
               <div className="modal-footer">

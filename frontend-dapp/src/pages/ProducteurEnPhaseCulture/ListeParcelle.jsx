@@ -35,9 +35,11 @@ function MesParcelles() {
       for (let i = 1; i <= compteurParcelles; i++) {
         parcelle = await contract.getParcelle(i);
 
-        // si le parcelle n'est pas a l'utilisateur, on ne l'affiche pas
-        if(parcelle.producteur.toLowerCase() !== account.toLowerCase())
-          continue;
+        // verifie si l'utilisateur est un producteur
+        if(role === 0) // 0 = producteur
+          // si le parcelle n'est pas a l'utilisateur, on ne l'affiche pas
+          if(parcelle.producteur.toLowerCase() !== account.toLowerCase())
+            continue;
 
         parcellesPromises.push(parcelle);
       }
