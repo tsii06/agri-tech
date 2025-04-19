@@ -21,8 +21,8 @@ function ListeRecoltes() {
 
 
 
-  useEffect(() => {
-    const chargerRecoltes = async () => {
+
+  const chargerRecoltes = async () => {
       try {
         const contract = await getCollecteurProducteurContract();
 
@@ -66,8 +66,20 @@ function ListeRecoltes() {
       }
     };
 
+
+
+
+
+
+  useEffect(() => {
+    
     chargerRecoltes();
+
   }, [_]);
+
+
+
+
 
   const handleCertifier = async (recolteId) => {
     try {
@@ -76,13 +88,8 @@ function ListeRecoltes() {
       const tx = await contract.certifieRecolte(recolteId, certificat);
       await tx.wait();
       
-      // Recharger les récoltes après la certification
-      const recoltesTemp = [...recoltes];
-      const index = recoltesTemp.findIndex(r => r.id === recolteId);
-      if (index !== -1) {
-        recoltesTemp[index].certifie = true;
-        setRecoltes(recoltesTemp);
-      }
+      chargerRecoltes();
+
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError(error.message);

@@ -3,6 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useUserContext } from '../../context/useContextt';
+
+
+
+
+
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
@@ -15,13 +21,22 @@ function CommandeCollecteur() {
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
 
+  const { role, account, verifeActeur } = useUserContext();
+
+
+
+
+
+
+
+
   useEffect(() => {
     const chargerCommandes = async () => {
       try {
         const contract = await getCollecteurProducteurContract();
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
+        // const provider = contract.runner.provider;
+        // const signer = await provider.getSigner();
+        // const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
 
@@ -39,14 +54,14 @@ function CommandeCollecteur() {
             const recolte = await contract.getRecolte(commande.idRecolte);
             
             commandesTemp.push({
-              id: commande.id.toString(),
-              idRecolte: commande.idRecolte.toString(),
-              quantite: commande.quantite.toString(),
-              prix: commande.prix.toString(),
+              id: commande.id,
+              idRecolte: commande.idRecolte,
+              quantite: commande.quantite,
+              prix: commande.prix,
               payer: commande.payer,
               statutTransport: commande.statutTransport,
-              producteur: commande.producteur.toString(),
-              collecteur: commande.collecteur.toString(),
+              producteur: commande.producteur,
+              collecteur: commande.collecteur,
               nomProduit: recolte.nomProduit
             });
           }
@@ -57,6 +72,7 @@ function CommandeCollecteur() {
         // Inverser le tri des commandes pour que les plus récentes soient en premier
         commandesTemp.reverse();
         setCommandes(commandesTemp);
+
       } catch (error) {
         console.error("Erreur lors du chargement des commandes:", error);
         setError(error.message);
@@ -75,23 +91,15 @@ function CommandeCollecteur() {
       
       // Effectuer le paiement
       const tx = await contract.effectuerPaiementVersProducteur(
-        commande.idRecolte,
-        commande.prix,
-        commandeId,
-        { value: ethers.parseEther(commande.prix) }
+        parseInt(commande.idRecolte),
+        parseInt(commande.prix),
+        parseInt(commandeId)
       );
       await tx.wait();
-      
-      // Mettre à jour l'état local
-      const commandesTemp = [...commandes];
-      const index = commandesTemp.findIndex(c => c.id === commandeId);
-      if (index !== -1) {
-        commandesTemp[index].payer = true;
-        setCommandes(commandesTemp);
-      }
 
       // Rediriger vers la page des produits
       navigate('/produits');
+      
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       setError(error.message);
