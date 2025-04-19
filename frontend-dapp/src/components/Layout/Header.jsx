@@ -228,7 +228,7 @@ function Header({ state,setState }) {
         <nav className="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
             <div className="position-sticky">
                 <a href="/" className="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
-                    Mon Projet
+                    Agri-tech
                 </a>
                 <ul className="nav flex-column px-3">
                     {getNavigationLinks().map((link, index) => (
