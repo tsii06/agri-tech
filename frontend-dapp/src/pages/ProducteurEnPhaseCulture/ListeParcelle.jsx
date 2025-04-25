@@ -31,8 +31,17 @@ function MesParcelles() {
       }
 
       const parcellesPromises = [];
+      let parcelle;
       for (let i = 1; i <= compteurParcelles; i++) {
-        parcellesPromises.push(await contract.getParcelle(i));
+        parcelle = await contract.getParcelle(i);
+
+        // verifie si l'utilisateur est un producteur
+        if(role === 0) // 0 = producteur
+          // si le parcelle n'est pas a l'utilisateur, on ne l'affiche pas
+          if(parcelle.producteur.toLowerCase() !== account.toLowerCase())
+            continue;
+
+        parcellesPromises.push(parcelle);
       }
 
 
@@ -85,11 +94,6 @@ function MesParcelles() {
     <div className="container py-4">
       <div className="d-flex justify-content-between mb-3">
         <h2 className="h4">Parcelles</h2>
-        {userRole === 'producteur' && (
-          <Link to="/creer-parcelle" className="btn btn-primary">
-            Nouvelle Parcelle
-          </Link>
-        )}
       </div>
 
       {parcelles.length > 0 ? (
@@ -106,11 +110,6 @@ function MesParcelles() {
       ) : (
         <div className="text-center py-5">
           <p className="text-muted">Aucune parcelle enregistrée.</p>
-          {userRole === 'producteur' && (
-            <Link to="/creer-parcelle" className="btn btn-primary">
-              Créer une parcelle
-            </Link>
-          )}
         </div>
       )}
     </div>

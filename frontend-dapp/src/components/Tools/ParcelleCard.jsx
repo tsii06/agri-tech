@@ -57,6 +57,7 @@ const ParcelleCard = ({
     <div className="card shadow-sm p-3">
       <h5 className="card-title">{produit}</h5>
       <div className="card-text">
+        <p><strong>Id de la parcelle:</strong> {id}</p>
         <p><strong>Qualité des semences:</strong> {qualiteSemence}</p>
         <p><strong>Méthode de culture:</strong> {methodeCulture}</p>
         <p><strong>Localisation:</strong> {latitude}, {longitude}</p>

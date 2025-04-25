@@ -26,11 +26,11 @@ function App() {
   const [state, setState] = useState({});
 
   return (
-    <UserProvider>
+    <UserProvider state={state} >
     <Router>
       <div className="d-flex flex-column min-vh-100">
         <Routes>
-          <Route path="/" element={<Header state={state} />}>
+          <Route path="/" element={<Header state={state} setState={setState} />}>
             <Route index element={
               <div className="row justify-content-center">
                 <div className="col-md-8">

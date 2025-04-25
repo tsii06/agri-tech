@@ -127,6 +127,9 @@ contract CollecteurProducteur {
         // ajout automatique de produit dans le contrat CollecteurExportateur
         moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, recolte.prixUnit, msg.sender, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
 
+        // definie la commande comme deja payer
+        commandes[_idCommande].payer = true;
+
         compteurPaiements++;
         paiements[_idCommande] = StructLib.Paiement(compteurPaiements, msg.sender, commande.producteur, _montant, _mode, block.timestamp);
     }

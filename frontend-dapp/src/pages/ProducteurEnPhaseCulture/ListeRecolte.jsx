@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useUserContext } from '../../context/useContextt';
 
 function ListeRecoltes() {
   const navigate = useNavigate();
@@ -15,13 +16,15 @@ function ListeRecoltes() {
   const [recolteSelectionnee, setRecolteSelectionnee] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    const chargerRecoltes = async () => {
+  const { role, account, verifeActeur } = useUserContext();
+
+
+
+
+
+  const chargerRecoltes = async () => {
       try {
         const contract = await getCollecteurProducteurContract();
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
 
@@ -39,23 +42,22 @@ function ListeRecoltes() {
         for (let i = 1; i <= compteurRecoltes; i++) {
           const recolte = await contract.getRecolte(i);
 
-          recoltesTemp.push({
-            id: i,
-            idParcelle: recolte.idParcelle.toString(),
-            quantite: recolte.quantite.toString(),
-            prix: recolte.prixUnit,
-            dateRecolte: recolte.dateRecolte,
-            nomProduit: recolte.nomProduit,
-            certifie: recolte.certifie,
-            producteur: recolte.producteur.toString()
-          });
+          // verifie si l'utilisateur est un producteur
+          if(getRoleName(_acteur.role) === "PRODUCTEUR")
+            // verifie si la recolte n'appartient pas a l'utilistateur
+            if(recolte.producteur.toLowerCase() !== account.toLowerCase())
+              continue;
+
+          recoltesTemp.push(recolte);
         }
         
         console.log("Récoltes trouvées:", recoltesTemp);
         setActeur(_acteur);
+
         // Inverser le tri des récoltes pour que les plus récentes soient en premier
         recoltesTemp.reverse();
         setRecoltes(recoltesTemp);
+
       } catch (error) {
         console.error("Erreur lors du chargement des récoltes:", error);
         setError(error.message);
@@ -64,8 +66,20 @@ function ListeRecoltes() {
       }
     };
 
+
+
+
+
+
+  useEffect(() => {
+    
     chargerRecoltes();
+
   }, [_]);
+
+
+
+
 
   const handleCertifier = async (recolteId) => {
     try {
@@ -74,13 +88,8 @@ function ListeRecoltes() {
       const tx = await contract.certifieRecolte(recolteId, certificat);
       await tx.wait();
       
-      // Recharger les récoltes après la certification
-      const recoltesTemp = [...recoltes];
-      const index = recoltesTemp.findIndex(r => r.id === recolteId);
-      if (index !== -1) {
-        recoltesTemp[index].certifie = true;
-        setRecoltes(recoltesTemp);
-      }
+      chargerRecoltes();
+
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError(error.message);
@@ -147,7 +156,7 @@ function ListeRecoltes() {
             {getRoleName(acteur.role) === "PRODUCTEUR" ? "Mes Récoltes" : "Liste des Récoltes"}
           </h2>
           {getRoleName(acteur.role) === "PRODUCTEUR" && (
-            <Link to="/fairerecolte" className="btn btn-primary">
+            <Link to="/mes-parcelles" className="btn btn-primary">
               Ajouter une récolte
             </Link>
           )}
@@ -174,7 +183,7 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID Parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                    <p><strong>Prix:</strong> {recolte.prix} Ar</p>
+                    <p><strong>Prix:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p className={`fw-semibold ${getStatutCertificationColor(recolte.certifie)}`}>
                       <strong>Statut:</strong> {getStatutCertification(recolte.certifie)}
@@ -210,44 +219,49 @@ function ListeRecoltes() {
 
       {/* Modal de commande */}
       {showModal && recolteSelectionnee && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Quantité disponible: {recolteSelectionnee.quantite} kg</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={quantiteCommande}
-                    onChange={(e) => setQuantiteCommande(e.target.value)}
-                    placeholder="Quantité à commander"
-                  />
+        <>
+        <div className="modal-backdrop fade show"></div>
+
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-                <div className="mb-3">
-                  <p>Prix unitaire: {recolteSelectionnee.prix} Ar</p>
-                  <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prix)} Ar</p>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Quantité disponible: {recolteSelectionnee.quantite} kg</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={quantiteCommande}
+                      onChange={(e) => setQuantiteCommande(e.target.value)}
+                      placeholder="Quantité à commander"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <p>Prix unitaire: {recolteSelectionnee.prixUnit} Ar</p>
+                    <p>Total: {Number(quantiteCommande) * Number(recolteSelectionnee.prixUnit)} Ar</p>
+                  </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleCommander(recolteSelectionnee.id)}
-                >
-                  Confirmer la commande
-                </button>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleCommander(recolteSelectionnee.id)}
+                  >
+                    Confirmer la commande
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+        </>
       )}
     </div>
   );

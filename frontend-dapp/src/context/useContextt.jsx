@@ -4,9 +4,9 @@ import { ethers } from 'ethers';
 
 const UserContext = createContext();
 
-export const UserProvider = ({ children }) => {
+export const UserProvider = ({ children,state }) => {
     const [role, setRole] = useState(null);
-    const [account, setAccount] = useState(null);
+    const [account, setAccount] = useState("");
 
     const verifeActeur = async (userAddress) => {
         try {
@@ -36,7 +36,7 @@ export const UserProvider = ({ children }) => {
         };
 
         checkAccount();
-    }, []);
+    }, [state]);
 
     return (
         <UserContext.Provider value={{ role, setRole, account, verifeActeur }}>

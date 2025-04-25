@@ -218,6 +218,9 @@ function ListeProduits() {
 
       {/* Modal de modification du prix */}
       {showModal && produitSelectionne && (
+        <>
+        <div className="modal-backdrop fade show"></div>
+
         <div className="modal show d-block" tabIndex="-1">
           <div className="modal-dialog">
             <div className="modal-content">
@@ -252,6 +255,7 @@ function ListeProduits() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );
