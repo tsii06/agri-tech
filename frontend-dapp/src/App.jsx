@@ -8,7 +8,6 @@ import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
 import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
 
 import EffectuerPaiement from "./pages/CollecteurExportateur/EffectuerPaiementCollecteur";
-import EnregistrerCondition from "./pages/CollecteurProducteur/EnregistrerConditionTransport";
 import LivraisonRecolte from "./pages/CollecteurProducteur/LivraisonRecolte";
 import CommandeCollecteur from "./pages/CollecteurProducteur/CommandeCollecteur";
 import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
@@ -21,6 +20,7 @@ import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
 import CommandeExportateur from "./pages/CollecteurExportateur/CommandeExportateur";
 
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
+import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
 
 function App() {
   const [state, setState] = useState({});
@@ -49,7 +49,6 @@ function App() {
             <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
             <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
             <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
-            <Route path="enregistrer-condition/:id" element={<EnregistrerCondition />} />
             <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
             <Route path="creer-parcelle" element={<CreerParcelle />} />
             <Route path="mes-parcelles" element={<MesParcelles />} />
@@ -57,11 +56,12 @@ function App() {
             <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
             <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
             <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
-            {/*<Route path="liste-producteur" element={<ListeProducteurs />} />*/}
+
             <Route path="liste-recolte" element={<ListeRecoltes />} />
             <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
             <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
             <Route path="/produits" element={<ListeProduits />} />
+            <Route path="/mes-commandes-exportateur" element={<MesCommandesExportateur />} />
           </Route>
         </Routes>
       </div>

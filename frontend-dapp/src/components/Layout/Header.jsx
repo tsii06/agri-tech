@@ -176,7 +176,7 @@ function Header({ state }) {
       case 3: // Collecteur
         return [
           { to: "/liste-recolte", text: "Passer commande" },
-          { to: "/liste-producteur", text: "Liste des producteurs" },
+          // { to: "/liste-producteur", text: "Liste des producteurs" },
           { to: "/liste-collecteur-commande", text: "Mes commandes" },
           { to: "/liste-produits", text: "Liste des produits" },
           ...commonLinks

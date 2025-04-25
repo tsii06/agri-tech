@@ -74,11 +74,12 @@ function CommandeCollecteur() {
       const commande = commandes.find(c => c.id === commandeId);
       
       // Effectuer le paiement
+      // Les paramètres sont: idCommande, montant, mode
       const tx = await contract.effectuerPaiementVersProducteur(
-        commande.idRecolte,
-        commande.prix,
         commandeId,
-        { value: ethers.parseEther(commande.prix) }
+        commande.prix,
+        modePaiement,
+        { value: commande.prix }  // Attention: la valeur doit correspondre au montant envoyé
       );
       await tx.wait();
       
@@ -90,6 +91,9 @@ function CommandeCollecteur() {
         setCommandes(commandesTemp);
       }
 
+      // Fermer le modal
+      setShowModal(false);
+      
       // Rediriger vers la page des produits
       navigate('/produits');
     } catch (error) {

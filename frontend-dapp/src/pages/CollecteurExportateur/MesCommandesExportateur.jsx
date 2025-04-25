@@ -9,6 +9,9 @@ function MesCommandesExportateur() {
   const [error, setError] = useState(null);
   const [acteur, setActeur] = useState({});
   const [_, setState] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
+  const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
 
   useEffect(() => {
     const chargerCommandes = async () => {
@@ -22,9 +25,10 @@ function MesCommandesExportateur() {
 
         // Récupérer l'acteur
         const _acteur = await contract.getActeur(account);
+        setActeur(_acteur);
 
         // Obtenir le nombre total de commandes
-        const compteurCommandes = await contract.compteurCommandes();
+        const compteurCommandes = await contract.getCompteurCommande();
         console.log("Nombre total de commandes:", compteurCommandes.toString());
         
         // Charger toutes les commandes
@@ -51,7 +55,6 @@ function MesCommandesExportateur() {
         }
         
         console.log("Commandes trouvées:", commandesTemp);
-        setActeur(_acteur);
         // Inverser le tri des commandes pour que les plus récentes soient en premier
         commandesTemp.reverse();
         setCommandes(commandesTemp);
@@ -75,7 +78,8 @@ function MesCommandesExportateur() {
       const tx = await contract.effectuerPaiement(
         commandeId,
         commande.prix,
-        0 // ModePaiement.VirementBancaire
+        modePaiement,
+        { value: commande.prix }  // La valeur envoyée doit correspondre au prix
       );
       await tx.wait();
       
@@ -86,6 +90,9 @@ function MesCommandesExportateur() {
         commandesTemp[index].payer = true;
         setCommandes(commandesTemp);
       }
+
+      // Fermer le modal
+      setShowModal(false);
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       setError(error.message);
@@ -101,7 +108,7 @@ function MesCommandesExportateur() {
   };
 
   const getStatutTransport = (statut) => {
-    switch(statut) {
+    switch(Number(statut)) {
       case 0: return "En attente";
       case 1: return "En cours";
       case 2: return "Livré";
@@ -110,7 +117,7 @@ function MesCommandesExportateur() {
   };
 
   const getStatutTransportColor = (statut) => {
-    switch(statut) {
+    switch(Number(statut)) {
       case 0: return "text-warning";
       case 1: return "text-info";
       case 2: return "text-success";
@@ -133,7 +140,10 @@ function MesCommandesExportateur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">Mes Commandes</h2>
+        <h2 className="h5 mb-3">
+          Mes Commandes
+          <span className="badge bg-info ms-2">Exportateur</span>
+        </h2>
         
         {isLoading ? (
           <div className="text-center">
@@ -167,10 +177,13 @@ function MesCommandesExportateur() {
                   <div className="mt-3">
                     {!commande.payer && (
                       <button
-                        onClick={() => handlePayer(commande.id)}
+                        onClick={() => {
+                          setCommandeSelectionnee(commande);
+                          setShowModal(true);
+                        }}
                         className="btn btn-sm btn-primary"
                       >
-                        Payer
+                        Payer (Exportateur)
                       </button>
                     )}
                   </div>
@@ -180,6 +193,51 @@ function MesCommandesExportateur() {
           </div>
         )}
       </div>
+
+      {/* Modal de paiement */}
+      {showModal && commandeSelectionnee && (
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Payer la commande</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
+                  <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
+                  <p><strong>Prix total:</strong> {commandeSelectionnee.prix} Ar</p>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Mode de paiement</label>
+                  <select 
+                    className="form-select"
+                    value={modePaiement}
+                    onChange={(e) => setModePaiement(Number(e.target.value))}
+                  >
+                    <option value={0}>Virement bancaire</option>
+                    <option value={1}>Cash</option>
+                    <option value={2}>Mobile Money</option>
+                  </select>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handlePayer(commandeSelectionnee.id)}
+                >
+                  Confirmer le paiement
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

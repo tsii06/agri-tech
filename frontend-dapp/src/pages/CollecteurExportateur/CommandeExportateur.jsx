@@ -14,6 +14,7 @@ function CommandeExportateur() {
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     const chargerProduits = async () => {
@@ -25,8 +26,13 @@ function CommandeExportateur() {
 
         console.log("Adresse connectée:", account);
 
+        // Récupérer l'acteur et son rôle
+        const _acteur = await contract.getActeur(account);
+        setActeur(_acteur);
+        setRole(Number(_acteur.role));
+
         // Obtenir le nombre total de produits
-        const compteurProduits = await contract.compteurProduits();
+        const compteurProduits = await contract.getCompteurProduit();
         console.log("Nombre total de produits:", compteurProduits.toString());
         
         // Charger tous les produits
@@ -34,8 +40,8 @@ function CommandeExportateur() {
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
           
-          // Vérifier que le produit est validé
-          if (produit.statut === 1) { // 1 = Valide
+          // Ajouter uniquement les produits validés
+          if (produit.statut == 1) { // 1 = Validé
             produitsTemp.push({
               id: i,
               idRecolte: produit.idRecolte.toString(),
@@ -51,7 +57,6 @@ function CommandeExportateur() {
         }
         
         console.log("Produits trouvés:", produitsTemp);
-        setActeur(acteur);
         // Inverser le tri des produits pour que les plus récentes soient en premier
         produitsTemp.reverse();
         setProduits(produitsTemp);
@@ -69,7 +74,6 @@ function CommandeExportateur() {
   const handleCommander = async (produitId) => {
     try {
       const contract = await getCollecteurExportateurContract();
-      const produit = produits.find(p => p.id === produitId);
       
       // Vérifier que la quantité est valide
       const quantite = Number(quantiteCommande);
@@ -78,6 +82,7 @@ function CommandeExportateur() {
         return;
       }
       
+      const produit = produits.find(p => p.id === produitId);
       if (quantite > Number(produit.quantite)) {
         setError("La quantité demandée est supérieure à la quantité disponible");
         return;
@@ -90,8 +95,13 @@ function CommandeExportateur() {
       );
       await tx.wait();
       
-      // Rediriger vers la page des commandes
-      navigate('/mes-commandes');
+      // Fermer le modal
+      setShowModal(false);
+      setProduitSelectionne(null);
+      setQuantiteCommande("");
+      
+      // Rediriger vers la liste des commandes
+      navigate('/mes-commandes-exportateur');
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
       setError(error.message);
@@ -99,7 +109,7 @@ function CommandeExportateur() {
   };
 
   const getStatutProduit = (statut) => {
-    switch(statut) {
+    switch(Number(statut)) {
       case 0: return "En attente";
       case 1: return "Validé";
       case 2: return "Rejeté";
@@ -108,7 +118,7 @@ function CommandeExportateur() {
   };
 
   const getStatutProduitColor = (statut) => {
-    switch(statut) {
+    switch(Number(statut)) {
       case 0: return "text-warning";
       case 1: return "text-success";
       case 2: return "text-danger";
@@ -131,7 +141,10 @@ function CommandeExportateur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">Liste des Produits</h2>
+        <h2 className="h5 mb-3">
+          Liste des Produits 
+          <span className="badge bg-info ms-2">Exportateur</span>
+        </h2>
         
         {isLoading ? (
           <div className="text-center">
@@ -150,26 +163,30 @@ function CommandeExportateur() {
                 <div className="card border shadow-sm p-3">
                   <h5 className="card-title">{produit.nom}</h5>
                   <div className="card-text small">
+                    <p><strong>ID:</strong> {produit.id}</p>
                     <p><strong>ID Récolte:</strong> {produit.idRecolte}</p>
                     <p><strong>Quantité disponible:</strong> {produit.quantite} kg</p>
-                    <p><strong>Prix unitaire:</strong> {produit.prixUnit} MADATX</p>
+                    <p><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
                     <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
                     <p><strong>Collecteur:</strong> {produit.collecteur.slice(0, 6)}...{produit.collecteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutProduitColor(produit.statut)}`}>
-                      <strong>Statut:</strong> {getStatutProduit(produit.statut)}
+                      <strong>Statutff:</strong> {getStatutProduit(produit.statut)}
                     </p>
                   </div>
                   <div className="mt-3">
-                    <button
-                      onClick={() => {
-                        setProduitSelectionne(produit);
-                        setShowModal(true);
-                      }}
-                      className="btn btn-sm btn-primary"
-                    >
-                      Commander
-                    </button>
+                    {role === 6 && produit.statut == 1 && ( // Exportateur et produit validé
+                      <button
+                        onClick={() => {
+                          setProduitSelectionne(produit);
+                          setQuantiteCommande("");
+                          setShowModal(true);
+                        }}
+                        className="btn btn-sm btn-primary"
+                      >
+                        Commander (Exportateur)
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -199,8 +216,8 @@ function CommandeExportateur() {
                   />
                 </div>
                 <div className="mb-3">
-                  <p>Prix unitaire: {produitSelectionne.prixUnit} MADATX</p>
-                  <p>Total: {Number(quantiteCommande) * Number(produitSelectionne.prixUnit)} MADATX</p>
+                  <p>Prix unitaire: {produitSelectionne.prixUnit} Ar</p>
+                  <p>Total: {Number(quantiteCommande) * Number(produitSelectionne.prixUnit)} Ar</p>
                 </div>
               </div>
               <div className="modal-footer">
