@@ -129,6 +129,40 @@ Decrit les tests unitaires effectues sur les smart contracts du projet.
 
 
 
+### GestionnaireActeurs
+|-------------------------------------------------------------------------------------------------------|
+| **Fonction**                          | **Description du test**                                       |
+|-------------------------------------------------------------------------------------------------------|
+| ajouterAdministrateur()               | Administrateur bien ajouter         							|
+|                 						| seulementAdministrateur  								        |
+|-------------------------------------------------------------------------------------------------------|
+| retirerAdministrateur()               | Administrateur bien retirer         							|
+|-------------------------------------------------------------------------------------------------------|
+| enregistrerActeur() 	                | Acteur bien enregistrer 	        							|
+|-------------------------------------------------------------------------------------------------------|
+| modifierActeur() 	                	| Acteur bien modifier     			  							|
+|                 						| Le modifier acteurExiste 								        |
+|-------------------------------------------------------------------------------------------------------|
+| desactiverActeur() 	                | Acteur bien desactiver		  								|
+|                 						| Le modifier acteurActif 								        |
+|-------------------------------------------------------------------------------------------------------|
+| activerActeur() 		                | Acteur bien activer 			  								|
+|-------------------------------------------------------------------------------------------------------|
+| getDetailsActeur()	                | Information recues 			  								|
+|-------------------------------------------------------------------------------------------------------|
+| ajouterContratDelegue()               | Adresse contrat ajouter		  								|
+|-------------------------------------------------------------------------------------------------------|
+| retirerContratDelegue()               | Adresse contrat retirer		  								|
+|-------------------------------------------------------------------------------------------------------|
+| estActeurAvecRole()               	| Role verifier					  								|
+|-------------------------------------------------------------------------------------------------------|
+| getActeursByRole()               		| Acteurs par role recuperer	  								|
+|-------------------------------------------------------------------------------------------------------|
+| getAdresseParIdBlockchain()           | Adresse recuperer par idBlockchain  							|
+|-------------------------------------------------------------------------------------------------------|
+
+
+
 ## Les commandes pour executer les tests
 ~ Executer tous les tests :
 ```sh

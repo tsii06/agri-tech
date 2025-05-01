@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
+
+import "./StructLib.sol";
+
 
 /**
  * @title GestionnaireActeurs
@@ -7,15 +10,15 @@ pragma solidity ^0.8.20;
  */
 contract GestionnaireActeurs {
     // Définition des rôles dans l'écosystème
-    enum Role {
-        Producteur,
-        Collecteur,
-        Exportateur,
-        Certificateur,
-        Auditeur,
-        Transporteur,
-        Administration
-    }
+    // enum Role {
+    //     Producteur,
+    //     Collecteur,
+    //     Exportateur,
+    //     Certificateur,
+    //     Auditeur,
+    //     Transporteur,
+    //     Administration
+    // }
     
     // Type d'entité (soit undividuel soit morale pour une société)
     enum TypeEntite {
@@ -27,7 +30,7 @@ contract GestionnaireActeurs {
     struct Acteur {
         address adresse;
         string idBlockchain; // Identifiant unique généré par la blockchain
-        Role role;
+        StructLib.Role role;
         bool actif;
         TypeEntite typeEntite; // Type d'entité: individu ou organisation
         string nom; // Nom de l'individu ou de l'organisation
@@ -42,20 +45,20 @@ contract GestionnaireActeurs {
     // Mappings pour stocker et accéder aux acteurs
     mapping(address => Acteur) public acteurs;
     mapping(string => address) public idBlockchainToAddress; // Mapping d'ID blockchain vers adresse
-    mapping(Role => address[]) public acteursByRole;
+    mapping(StructLib.Role => address[]) public acteursByRole;
     
     // Mapping pour les administrateurs qui peuvent gérer les acteurs
     mapping(address => bool) public administrateurs;
     
     // Compteur d'acteurs par rôle
-    mapping(Role => uint256) public compteurActeurs;
+    mapping(StructLib.Role => uint256) public compteurActeurs;
     
     // Compteur pour générer des IDs uniques
     uint256 private compteurIds;
 
     // Évènements
-    event ActeurEnregistre(address indexed adresse, string idBlockchain, Role role, string nom, uint256 timestamp);
-    event ActeurModifie(address indexed adresse, string idBlockchain, Role role, string nom, uint256 timestamp);
+    event ActeurEnregistre(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
+    event ActeurModifie(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
     event ActeurDesactive(address indexed adresse, string idBlockchain, uint256 timestamp);
     event ActeurActive(address indexed adresse, string idBlockchain, uint256 timestamp);
     event ContratDelegueAjoute(address indexed acteur, address indexed contrat, uint256 timestamp);
@@ -194,7 +197,7 @@ contract GestionnaireActeurs {
      */
     function enregistrerActeur(
         address _adresse,
-        Role _role,
+        StructLib.Role _role,
         TypeEntite _typeEntite,
         string memory _nom,
         string memory _nifOuCin,
@@ -336,7 +339,7 @@ contract GestionnaireActeurs {
      * @param _role Rôle à vérifier
      * @return true si l'adresse correspond à un acteur actif avec le rôle spécifié
      */
-    function estActeurAvecRole(address _adresse, Role _role) external view returns (bool) {
+    function estActeurAvecRole(address _adresse, StructLib.Role _role) external view returns (bool) {
         return acteurs[_adresse].adresse != address(0) && 
                acteurs[_adresse].role == _role && 
                acteurs[_adresse].actif;
@@ -347,7 +350,7 @@ contract GestionnaireActeurs {
      * @param _role Rôle à filtrer
      * @return Liste des adresses correspondant au rôle
      */
-    function getActeursByRole(Role _role) external view returns (address[] memory) {
+    function getActeursByRole(StructLib.Role _role) external view returns (address[] memory) {
         return acteursByRole[_role];
     }
 
@@ -379,7 +382,7 @@ contract GestionnaireActeurs {
      */
     function getDetailsActeur(address _adresse) external view acteurExiste(_adresse) returns (
         string memory idBlockchain,
-        Role role,
+        StructLib.Role role,
         bool actif,
         TypeEntite typeEntite,
         string memory nom,
@@ -416,7 +419,7 @@ contract GestionnaireActeurs {
         (bool success, ) = proxyAddress.call(
             abi.encodeWithSignature("updateImplementation(address)", _nouvelleImplementation)
         );
-        require(success, "Échec de la mise à jour de l'implementation");
+        require(success, "Echec de la mise a jour de l'implementation");
         
         implementation = _nouvelleImplementation;
     }

@@ -5,11 +5,38 @@ pragma solidity ^0.8.0;
 
 library StructLib {
 
-	enum Role { Producteur, Fournisseur, Certificateur, Collecteur, Auditeur, Transporteur, Exportateur }
-    enum Etape { PreCulture, Culture, Recolte, Transport }
-    enum ModePaiement { VirementBancaire, Cash, MobileMoney }
-    enum StatutTransport { EnCours, Livre }
-    enum StatutProduit { EnAttente, Valide, Rejete }
+	enum Role { 
+        Producteur, 
+        Fournisseur, 
+        Certificateur, 
+        Collecteur, 
+        Auditeur, 
+        Transporteur, 
+        Exportateur, 
+        Administration 
+    }
+    enum Etape { PreCulture, 
+        Culture, 
+        Recolte, 
+        Transport 
+    }
+    enum ModePaiement { 
+        VirementBancaire, 
+        Cash, 
+        MobileMoney
+    }
+    enum StatutTransport { 
+        EnCours, 
+        Livre 
+    }
+    enum StatutProduit { 
+        EnAttente, 
+        Valide, 
+        Rejete 
+    }
+
+
+    
 
     struct Acteur {
         address addr;
