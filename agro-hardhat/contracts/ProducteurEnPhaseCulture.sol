@@ -2,66 +2,42 @@
 pragma solidity ^0.8.0;
 
 import "./StructLib.sol";
-
-
-
-
+import "./gestionnaireActeurs.sol";
 
 contract ProducteurEnPhaseCulture {
-
-    mapping(address => StructLib.Acteur) public acteurs;
-    uint32 public compteurActeurs;
-
+    GestionnaireActeurs public gestionnaireActeurs;
     mapping(uint32 => StructLib.Parcelle) public parcelles;
     uint32 public compteurParcelles;
     uint32 public compteurInspections;
 
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Producteur, "Non autorise: seulement Producteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Producteur), "Non autorise: seulement Producteur");
         _;
     }
     modifier seulementFournisseur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Fournisseur, "Non autorise: seulement Fournisseur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Fournisseur), "Non autorise: seulement Fournisseur");
         _;
     }
     modifier seulementCertificateur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Certificateur, "Non autorise: seulement Certificateur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Certificateur), "Non autorise: seulement Certificateur");
         _;
     }
     modifier seulementCollecteur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Collecteur, "Non autorise: seulement Collecteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
         _;
     }
     modifier seulementAuditeur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Auditeur, "Non autorise: seulement Auditeur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Auditeur), "Non autorise: seulement Auditeur");
         _;
     }
     modifier seulementTransporteur() {
-        require(acteurs[msg.sender].role == StructLib.Role.Transporteur, "Non autorise: seulement Transporteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Transporteur), "Non autorise: seulement Transporteur");
         _;
     }
 
-
-
-
-
-
-
-
-    // ======================================== constructor ==================================================
-
-
-
-
-
-
-
-
-    function enregistrerActeur(address _acteur, StructLib.Role _role) public {
-
-        compteurActeurs++;
-        acteurs[_acteur] = StructLib.Acteur(_acteur, _role);
+    constructor(address _gestionnaireActeurs) {
+        gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
     }
 
     // ====================================== Parcelle =========================================================
@@ -73,9 +49,7 @@ contract ProducteurEnPhaseCulture {
         string memory _dateRecolte,
         string memory _certificatPhytosanitaire
     ) public seulementProducteur {
-
         compteurParcelles++;
-        // Ceci permet de ne pas specifier de valeur pour l'initialisation des tableaux dynamiques de struct et ainsi d'eviter un UnimplementedFeatureError
         parcelles[compteurParcelles].id = compteurParcelles;
         parcelles[compteurParcelles].producteur = msg.sender;
         parcelles[compteurParcelles].qualiteSemence = _qualiteSemence;
@@ -89,27 +63,22 @@ contract ProducteurEnPhaseCulture {
     }
 
     function mettreAJourEtape(uint32 _idParcelle, StructLib.Etape _etape) public seulementProducteur {
-
         parcelles[_idParcelle].etape = _etape;
     }
     function appliquerControlePhytosanitaire(uint32 _idParcelle, bool _passe) public seulementCertificateur {
-
         require(parcelles[_idParcelle].etape == StructLib.Etape.Culture, "Pas en etape de culture");
         parcelles[_idParcelle].certifie = _passe;
     }
 
     function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
-
         parcelles[_idParcelle].photos.push(_urlPhoto);
     }
 
     function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) public seulementFournisseur {
-        
         parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false));
     }
 
     function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) public seulementCertificateur {
-        
         for (uint32 i = 0; i < parcelles[_idParcelle].intrants.length; i++) {
             if (keccak256(abi.encodePacked(parcelles[_idParcelle].intrants[i].nom)) == keccak256(abi.encodePacked(_nom))) {
                 parcelles[_idParcelle].intrants[i].valide = _valide;
@@ -119,56 +88,15 @@ contract ProducteurEnPhaseCulture {
     }
 
     function ajouterInspection(uint32 _idParcelle, string memory _rapport) public seulementAuditeur {
-
         compteurInspections++;
         parcelles[_idParcelle].inspections.push(StructLib.Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
     }
 
-
-
-
-
-
-
-    // function enregistrerCondition(uint32 _idParcelle, string memory _temperature, string memory _humidite) public seulementTransporteur {
-    //     compteurConditions++;
-    //     parcelles[_idParcelle].conditions.push(StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp));
-    // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // corrige l'erreur eth_call
-    receive() external payable {}
-    fallback() external payable {}
-
-
-
-
-
-
-
-
-
-
-
-
     // ====================================== getter ==========================================================
     function getActeur(address addr) public view returns(StructLib.Acteur memory) {
-        return acteurs[addr];
+        (string memory idBlockchain, StructLib.Role role, bool actif, , , , , , , , ) = gestionnaireActeurs.getDetailsActeur(addr);
+        return StructLib.Acteur(addr, role);
     }
-
 
     // pour les parcelles
     function getParcelle(uint32 id) public view returns(StructLib.Parcelle memory) {
@@ -193,15 +121,7 @@ contract ProducteurEnPhaseCulture {
         return parcelles[idParcelle].conditions;
     }
 
-
-
-
-
-
-
-
-
-    // function getCompteurCondition() public view returns(uint32) {
-    //     return compteurConditions;
-    // }
+    // corrige l'erreur eth_call
+    receive() external payable {}
+    fallback() external payable {}
 }

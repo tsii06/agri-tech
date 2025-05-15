@@ -92,22 +92,9 @@ function CommandeCollecteur() {
       // Effectuer le paiement
       // Les paramètres sont: idCommande, montant, mode
       const tx = await contract.effectuerPaiementVersProducteur(
-<<<<<<< HEAD
-<<<<<<< HEAD
-        commandeId,
-        commande.prix,
-        modePaiement,
-        { value: commande.prix }  // Attention: la valeur doit correspondre au montant envoyé
-=======
         parseInt(commande.idRecolte),
         parseInt(commande.prix),
         parseInt(commandeId)
->>>>>>> 1cc1a9fadd0f7d33cca1406cc1427007e1f0af29
-=======
-        parseInt(commande.idRecolte),
-        parseInt(commande.prix),
-        parseInt(commandeId)
->>>>>>> 1cc1a9fadd0f7d33cca1406cc1427007e1f0af29
       );
       await tx.wait();
 

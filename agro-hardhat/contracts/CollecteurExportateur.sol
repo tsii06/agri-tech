@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
 import "./StructLib.sol";
-
-
-
-
+import "./gestionnaireActeurs.sol";
 
 contract CollecteurExportateur {
-
     // ------------------------- Attributs --------------------------------------------------------------
     mapping(uint32 => StructLib.Produit) public produits;
     mapping(uint32 => StructLib.EnregistrementCondition) public conditions;
@@ -21,17 +16,8 @@ contract CollecteurExportateur {
     uint32 public compteurConditions;
     uint32 public compteurPaiements;
 
-    ProducteurEnPhaseCulture public producteurEnPhaseCulture;
+    GestionnaireActeurs public gestionnaireActeurs;
     // ------------------------- Fin Attributs ----------------------------------------------------------
-
-
-
-
-
-
-
-
-
 
     event ProduitAjoute(uint32 indexed idProduit, string nom, uint32 quantite, uint32 prix, uint32 idRecolte, string dateRecolte, string certificatPhytosanitaire);
     event ProduitValide(uint32 indexed idProduit, bool valide);
@@ -41,54 +27,25 @@ contract CollecteurExportateur {
     // Evenement produit lorsqu une commande est passer
     event CommandePasser(address indexed exportateur, uint32 idProduit);
 
-
-
-
-
-
-
-
-
-
-
-
     modifier seulementCollecteur() {
-        require(producteurEnPhaseCulture.getActeur(msg.sender).role == StructLib.Role.Collecteur, "Non autorise: seulement Collecteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
         _;
     }
     modifier seulementExportateur() {
-        require(producteurEnPhaseCulture.getActeur(msg.sender).role == StructLib.Role.Exportateur, "Non autorise: seulement Exportateur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Exportateur), "Non autorise: seulement Exportateur");
         _;
     }
     modifier seulementTransporteur() {
-        require(producteurEnPhaseCulture.getActeur(msg.sender).role == StructLib.Role.Transporteur, "Non autorise: seulement Transporteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Transporteur), "Non autorise: seulement Transporteur");
         _;
     }
 
-
-
-
-
-
-
-
-
-    constructor(address _producteurEnPhaseCultureAddress) {
-        producteurEnPhaseCulture = ProducteurEnPhaseCulture(_producteurEnPhaseCultureAddress);
+    constructor(address _gestionnaireActeurs) {
+        gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
     }
-
-
-
-
-
-
-
-
-
 
     // ==================================== Produit =========================================================
     function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) public {
-
         compteurProduits++;
 
         produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _nomProduit, _quantite, _prix, StructLib.StatutProduit.EnAttente, _dateRecolte, _certificatPhytosanitaire, _collecteur);
@@ -96,7 +53,6 @@ contract CollecteurExportateur {
         emit ProduitAjoute(compteurProduits, _nomProduit, _quantite, _prix, _idRecolte, _dateRecolte, _certificatPhytosanitaire);
     }
     function setPriceProduit(uint32 _idProduit, uint32 _prix) public seulementCollecteur {
-
         require(produits[_idProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
         produits[_idProduit].prixUnit = _prix;
     }
@@ -110,15 +66,6 @@ contract CollecteurExportateur {
         }
         emit ProduitValide(_idProduit, _valide);
     }
-
-
-
-
-
-
-
-
-
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
@@ -136,9 +83,7 @@ contract CollecteurExportateur {
         emit CommandePasser(msg.sender, idProduit);
     }
 
-
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
-
         StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
         require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
         require(msg.value == _produit.prixUnit * commandes[_idCommande].quantite, "Montant incorrect");
@@ -156,7 +101,6 @@ contract CollecteurExportateur {
     }
 
     function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
-
         // verifie si l'idCommande est valide.
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
 
@@ -173,42 +117,20 @@ contract CollecteurExportateur {
         emit StatutTransportMisAJour(_idCommande, _statut);
     }
 
-
-
-
-
-
-
-
-
     // Pour enlever les erreurs eth_call
     fallback() external payable {}
     receive() external payable {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ------------------------------------- Setter ----------------------------------------------------
-    function setProducteurEnPhaseCulture(address _addr) public {
-        producteurEnPhaseCulture = ProducteurEnPhaseCulture(_addr);
+    function setGestionnaireActeurs(address _addr) public {
+        gestionnaireActeurs = GestionnaireActeurs(_addr);
     }
     // ------------------------------------- Fin Setter -------------------------------------------------
 
     // -------------------------------------- Getter ----------------------------------------------------
     function getActeur(address addr) public view returns(StructLib.Acteur memory) {
-        return producteurEnPhaseCulture.getActeur(addr);
+        (string memory idBlockchain, StructLib.Role role, bool actif, , , , , , , , ) = gestionnaireActeurs.getDetailsActeur(addr);
+        return StructLib.Acteur(addr, role);
     }
     function getProduit(uint32 id) public view returns(StructLib.Produit memory) {
         return produits[id];
@@ -236,26 +158,4 @@ contract CollecteurExportateur {
         return compteurConditions;
     }
     // -------------------------------------- Fin Getter ------------------------------------------------
-}
-
-
-
-
-
-
-
-
-
-interface ProducteurEnPhaseCulture {
-
-    function obtenirInformationsParcelle(uint32 _idParcelle) external view returns (
-        string memory qualiteSemence,
-        string memory methodeCulture,
-        string memory latitude,
-        string memory longitude,
-        string memory produit,
-        string memory dateRecolte,
-        string memory certificatPhytosanitaire
-    );
-    function getActeur(address addr) external view returns(StructLib.Acteur memory);
 }

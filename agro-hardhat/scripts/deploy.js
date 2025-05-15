@@ -1,153 +1,95 @@
+const hre = require("hardhat");
 const { ethers } = require("hardhat");
 
 async function main() {
     console.log("Début du déploiement des contrats...\n");
 
-    // Récupération des comptes
-    const [deployer, collecteur, exportateur, transporteur, producteur, certificateur] = await ethers.getSigners();
-    console.log("Compte déployeur:", deployer.address);
+    const [deployer] = await hre.ethers.getSigners();
+    console.log("Deploying contracts with the account:", deployer.address);
 
+    // 1. Déployer d'abord le GestionnaireActeurs
+    const GestionnaireActeurs = await ethers.getContractFactory("GestionnaireActeurs");
+    const gestionnaireActeurs = await GestionnaireActeurs.deploy(deployer.address, deployer.address); // deployer.address comme proxy initial
+    await gestionnaireActeurs.waitForDeployment();
+    console.log("GestionnaireActeurs deployed to:", await gestionnaireActeurs.getAddress());
 
+    // 2. Déployer le ProducteurEnPhaseCulture
+    const ProducteurEnPhaseCulture = await ethers.getContractFactory("ProducteurEnPhaseCulture");
+    const producteurEnPhaseCulture = await ProducteurEnPhaseCulture.deploy(await gestionnaireActeurs.getAddress());
+    await producteurEnPhaseCulture.waitForDeployment();
+    console.log("ProducteurEnPhaseCulture deployed to:", await producteurEnPhaseCulture.getAddress());
 
+    // 3. Déployer le CollecteurExportateur
+    const CollecteurExportateur = await ethers.getContractFactory("CollecteurExportateur");
+    const collecteurExportateur = await CollecteurExportateur.deploy(await gestionnaireActeurs.getAddress());
+    await collecteurExportateur.waitForDeployment();
+    console.log("CollecteurExportateur deployed to:", await collecteurExportateur.getAddress());
 
-
-
-
-
-
-    // 1. Déploiement du contrat ProducteurEnPhaseCulture
-    console.log("\nDéploiement du contrat ProducteurEnPhaseCulture...");
-    // deploy producteur
-    const ProCult = await ethers.getContractFactory("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture");
-    const proCult = await ProCult.deploy();
-    await proCult.waitForDeployment();
-    const proCultAddress = await proCult.getAddress();
-
-    const ProxyContrat = await ethers.getContractFactory("ContratProxy");
-    // Deploye le proxy du producteurEnPhaseCulture
-    const proProxy = await ProxyContrat.deploy(proCultAddress);
-    await proProxy.waitForDeployment();
-
-
-
-
-
-    // 2. Déploiement du contrat CollecteurExportateurContrat
-    console.log("\nDéploiement du contrat CollecteurExportateurContrat...");
-    const ColExp = await ethers.getContractFactory("CollecteurExportateur");
-    const colExp = await ColExp.deploy(await proProxy.getAddress());
-    await colExp.waitForDeployment();
-    const colExpAddress = await colExp.getAddress();
-
-    // Deploye le proxy du collecteurExportateur
-    const colProxy = await ProxyContrat.deploy(colExpAddress);
-    await colProxy.waitForDeployment();
-
-
-
-
-
-
-    // 3. Déploiement du contrat CollecteurProducteur
-    console.log("\nDéploiement du contrat CollecteurProducteur...");
+    // 4. Déployer le CollecteurProducteur
     const CollecteurProducteur = await ethers.getContractFactory("CollecteurProducteur");
-    const collecteurProducteur = await CollecteurProducteur.deploy(colProxy, proProxy);
+    const collecteurProducteur = await CollecteurProducteur.deploy(
+        await collecteurExportateur.getAddress(),
+        await gestionnaireActeurs.getAddress(),
+        await producteurEnPhaseCulture.getAddress()
+    );
     await collecteurProducteur.waitForDeployment();
-    const colProAddress = await collecteurProducteur.getAddress();
+    console.log("CollecteurProducteur deployed to:", await collecteurProducteur.getAddress());
 
-    // Deploye le proxy du collecteurExportateur
-    const colProProxy = await ProxyContrat.deploy(colProAddress);
-    await colProProxy.waitForDeployment();
-
-
-
-
-
-
-
-
-
-
-
-
-    // 3. Interagisser avec les proxy
-    const proProxyContrat = await ethers.getContractAt("contracts/ProducteurEnPhaseCulture.sol:ProducteurEnPhaseCulture", await proProxy.getAddress());
-
-    const colExpProxyContrat = await ethers.getContractAt("CollecteurExportateur", await colProxy.getAddress());
-    const colProProxyContrat = await ethers.getContractAt("CollecteurProducteur", await colProProxy.getAddress());
-
-    const proProxyAddr = await proProxyContrat.getAddress();
-    const colExpProxyAddr = await colExpProxyContrat.getAddress();
-    const colProProxyAddr = await colProProxyContrat.getAddress();
-
-    // definie l'adresse de CollecteurExportateur dans Recolte
-    await colProProxyContrat.setModuleProducteur(proProxyAddr);
-    await colProProxyContrat.setModuleCE(colExpProxyAddr);
-    // donner l'addresse du proxy Prod.
-    await colExpProxyContrat.setProducteurEnPhaseCulture(proProxyAddr);
-
-    // Résumé des adresses des contrats
-    console.log("\n=== Résumé des adresses des contrats ===");
-
-    console.log("ProducteurProxy :", proProxyAddr);
-    console.log("CollecteurExportateurProxy :", colExpProxyAddr);
-    console.log("CollecteurProducteurProxy :", colProProxyAddr);
-
-
-
-
-
-
-
-
-
-
-
-
-    // 4. Configuration initiale pour les tests
-    console.log("\nConfiguration initiale des contrats...");
-    await proProxyContrat.enregistrerActeur(producteur.address, 0);
-    await proProxyContrat.enregistrerActeur(collecteur.address, 3);
-    await proProxyContrat.enregistrerActeur(certificateur.address, 2);
-
-    // creer des parcelles
-    await proProxyContrat.connect(producteur).creerParcelle(
-        "bon",
-        "sur brulis",
-        "109.232",
-        "47.233",
-        "12/12/25",
-        "certificate"
-    );
-    await proProxyContrat.connect(producteur).creerParcelle(
-        "bon",
-        "sur brulis",
-        "155.232",
-        "434.233",
-        "12/12/25",
-        "certificate"
+    // 5. Enregistrer les acteurs dans le GestionnaireActeurs
+    console.log("Enregistrement des acteurs...");
+    
+    // Enregistrer le déployeur comme administrateur
+    await gestionnaireActeurs.enregistrerActeur(
+        deployer.address,
+        7, // Role.Administration
+        0, // TypeEntite.Individu
+        "Admin Principal",
+        "ADMIN001",
+        "Adresse Admin",
+        "admin@example.com",
+        "1234567890"
     );
 
-    // faire recolte
-    await colProProxyContrat.connect(producteur).ajoutRecolte(1, 100, 10000, "12/12/2025", "Girofle");
-    await colProProxyContrat.connect(producteur).ajoutRecolte(2, 100, 10000, "12/12/2025", "Café");
+    // Enregistrer un producteur de test
+    const producteurAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Adresse de test
+    await gestionnaireActeurs.enregistrerActeur(
+        producteurAddress,
+        0, // Role.Producteur
+        0, // TypeEntite.Individu
+        "Producteur Test",
+        "PROD001",
+        "Adresse Producteur",
+        "producteur@example.com",
+        "0987654321"
+    );
 
-    // certifier les recoltes
-    await colProProxyContrat.connect(certificateur).certifieRecolte(1, "cert-1001");
-    await colProProxyContrat.connect(certificateur).certifieRecolte(2, "cert-1002");
+    // Enregistrer un collecteur de test
+    const collecteurAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"; // Adresse de test
+    await gestionnaireActeurs.enregistrerActeur(
+        collecteurAddress,
+        3, // Role.Collecteur
+        0, // TypeEntite.Individu
+        "Collecteur Test",
+        "COLL001",
+        "Adresse Collecteur",
+        "collecteur@example.com",
+        "1122334455"
+    );
 
-    // passer commandes sur les recoltes
-    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(1, 5);
-    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 8);
-    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 10);
-    await colProProxyContrat.connect(collecteur).passerCommandeVersProducteur(2, 12);
+    // Enregistrer un exportateur de test
+    const exportateurAddress = "0x90F79bf6EB2c4f870365E785982E1f101E93b906"; // Adresse de test
+    await gestionnaireActeurs.enregistrerActeur(
+        exportateurAddress,
+        6, // Role.Exportateur
+        0, // TypeEntite.Individu
+        "Exportateur Test",
+        "EXP001",
+        "Adresse Exportateur",
+        "exportateur@example.com",
+        "5544332211"
+    );
 
-    // payer une commande
-    await colProProxyContrat.connect(collecteur).effectuerPaiementVersProducteur(1, 50000, 0);
-
-    console.log("✓ Configuration initiale terminée");
-
-    console.log("\nDéploiement terminé avec succès!");
+    console.log("Déploiement terminé avec succès!");
 }
 
 main()

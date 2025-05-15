@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link,useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { getContract } from "../../utils/contract";
 import { Outlet } from "react-router-dom";
@@ -20,11 +19,10 @@ export const getRoleName = (roleNumber) => {
 
 
 
-function Header({ state,setState }) {
+function Header({ state }) {
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
 
   const verifierConnexionInitiale = async () => {
     if (window.ethereum) {
@@ -58,12 +56,6 @@ function Header({ state,setState }) {
         const userAddress = await signer.getAddress();
         setAccount(userAddress);
         await verifierActeur(userAddress);
-
-        // force UserProvider a se re-render
-        setState({});
-        // redirige vers le route index
-        navigate("/");
-
       } catch (error) {
         console.error("Erreur de connexion:", error);
         alert("Erreur lors de la connexion au wallet");
@@ -91,12 +83,6 @@ function Header({ state,setState }) {
           setAccount(accounts[0]);
           await verifierActeur(accounts[0]);
         }
-
-        // force UserProvider a se re-render
-        setState({});
-        // redirige vers le route index
-        navigate("/");
-
       } catch (error) {
         console.error("Erreur lors du changement de compte:", error);
         alert("Erreur lors du changement de compte");
@@ -107,10 +93,6 @@ function Header({ state,setState }) {
   const deconnecterWallet = () => {
     setAccount(null);
     setRole(null);
-
-    // redirige vers le route index
-    navigate("/");
-
   };
 
   const verifierActeur = async (userAddress) => {
@@ -228,14 +210,14 @@ function Header({ state,setState }) {
         <nav className="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
             <div className="position-sticky">
                 <a href="/" className="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
-                    Agri-tech
+                    Mon Projet
                 </a>
                 <ul className="nav flex-column px-3">
                     {getNavigationLinks().map((link, index) => (
                         <li className="nav-item" key={index}>
-                            <Link to={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
+                            <a href={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
                                 {link.text}
-                            </Link>
+                            </a>
                         </li>
                     ))}
                 </ul>
@@ -264,9 +246,9 @@ function Header({ state,setState }) {
                             <button onClick={changerCompte} className="btn btn-outline-primary btn-sm">
                                 Changer
                             </button>
-                            <Link to="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                            <a href="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
                                 <i className="bi bi-person-plus me-1"></i> Nouvel acteur
-                            </Link>
+                            </a>
                             <button onClick={deconnecterWallet} className="btn btn-sm btn-outline-danger d-flex align-items-center">
                                 <i className="bi bi-box-arrow-right me-1"></i> Déconnecter
                             </button>
@@ -282,11 +264,7 @@ function Header({ state,setState }) {
             <div className="flex-grow-1 p-4">
                 <h1 className="h4">Bienvenue sur votre tableau de bord</h1>
                 <p>Gérez vos projets et vos interactions ici.</p>
-
-                {/* ================= les composants enfants seront afficher ici ================== */}
                 <Outlet />
-
-
             </div>
         </main>
     </div>

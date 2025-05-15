@@ -2,12 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./StructLib.sol";
-
-
-
+import "./gestionnaireActeurs.sol";
+import "./ProducteurEnPhaseCulture.sol";
 
 contract CollecteurProducteur {
-
     // ================================ variable d'etat ==============================================
     mapping(uint32 => StructLib.Recolte) public recoltes;
     uint32 public compteurRecoltes;
@@ -18,71 +16,55 @@ contract CollecteurProducteur {
     uint32 public compteurCommandes;
 
     ICollecteurExportateur private moduleCE;
-    IProducteur private moduleProducteur;
-
-
-
-
-
+    GestionnaireActeurs public gestionnaireActeurs;
+    ProducteurEnPhaseCulture public producteurEnPhaseCulture;
 
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
-        require(moduleProducteur.getActeur(msg.sender).role == StructLib.Role.Producteur, "Non autorise: seulement Producteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Producteur), "Non autorise: seulement Producteur");
         _;
     }
     modifier seulementCertificateur() {
-        require(moduleProducteur.getActeur(msg.sender).role == StructLib.Role.Certificateur, "Non autorise: seulement Certificateur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Certificateur), "Non autorise: seulement Certificateur");
         _;
     }
     modifier seulementCollecteur() {
-        require(moduleProducteur.getActeur(msg.sender).role == StructLib.Role.Collecteur, "Non autorise: seulement Collecteur");
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
         _;
     }
 
-
-
-
-
-
     // ================================== constructor =================================================
-    constructor(address _addrCE, address _producteur) {
+    constructor(address _addrCE, address _gestionnaireActeurs, address _producteurEnPhaseCulture) {
         moduleCE = ICollecteurExportateur(_addrCE);
-        moduleProducteur = IProducteur(_producteur);
+        gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
+        producteurEnPhaseCulture = ProducteurEnPhaseCulture(payable(_producteurEnPhaseCulture));
     }
-
-
 
     // definie le contrat collecteurExportateur
     function setModuleCE(address _addr) public {
-
         moduleCE = ICollecteurExportateur(_addr);
     }
-    function setModuleProducteur(address _addr) public {
 
-        moduleProducteur = IProducteur(_addr);
+    function setGestionnaireActeurs(address _addr) public {
+        gestionnaireActeurs = GestionnaireActeurs(_addr);
     }
 
-
-
-
-
-
-
+    function setProducteurEnPhaseCulture(address _addr) public {
+        producteurEnPhaseCulture = ProducteurEnPhaseCulture(payable(_addr));
+    }
 
     /*
     ici les fonctions pour les recoltes
     */
     function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
-
-        StructLib.Parcelle memory parcelle = moduleProducteur.getParcelle(_idParcelle);
-        require(_idParcelle <= moduleProducteur.getCompteurParcelle(), "Parcelle non existant");
+        StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelle);
+        require(_idParcelle <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant");
         require(parcelle.producteur == msg.sender, "Vous n'etes pas proprietaire de ce parcellle");
 
         compteurRecoltes++;
         recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, msg.sender, _nomProduit);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
-
         require(_idRecolte <= compteurRecoltes, "Recolte non existant");
         require(bytes(_certificat).length != 0, "Certificat vide");
 
@@ -90,19 +72,10 @@ contract CollecteurProducteur {
         recoltes[_idRecolte].certificatPhytosanitaire = _certificat;
     }
 
-
-
-
-
-
-
-
-
     /*
     ici les fonctions pour les commandes
     */
     function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur {
-
         StructLib.Recolte memory recolte = recoltes[_idRecolte];
         require(recolte.certifie, "Recolte non certifie");
         require(_idRecolte <= compteurRecoltes, "Recolte non existant");
@@ -116,7 +89,6 @@ contract CollecteurProducteur {
         commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender);
     }
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
-
         StructLib.CommandeRecolte memory commande = commandes[_idCommande];
         StructLib.Recolte memory recolte = recoltes[commande.idRecolte];
 
@@ -134,15 +106,6 @@ contract CollecteurProducteur {
         paiements[_idCommande] = StructLib.Paiement(compteurPaiements, msg.sender, commande.producteur, _montant, _mode, block.timestamp);
     }
 
-
-
-
-
-
-
-
-
-
     // ====================================== getter et setter =============================================
     /*
     ici les getters pour les recoltes
@@ -152,21 +115,17 @@ contract CollecteurProducteur {
     }
     function getCompteurRecoltes() public view returns (uint32) {
         return compteurRecoltes;
-
-
+    }
 
     /*
     ici les getters pour les commandes
     */
-    }
     function getCommande(uint32 _id) public view returns (StructLib.CommandeRecolte memory) {
         return commandes[_id];
     }
     function getCompteurCommandes() public view returns (uint32) {
         return compteurCommandes;
     }
-
-
 
     /*
     ici les getters pour les paiements
@@ -177,29 +136,13 @@ contract CollecteurProducteur {
     function getCompteurPaiments() public view returns (uint32) {
         return compteurPaiements;
     }
-
-
 }
 
-
-
-
-
-
-
-
-
-
-
 interface ICollecteurExportateur {
-
     function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) external;
 }
 
-
-
 interface IProducteur {
-
     function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
     function getCompteurParcelle() external view returns(uint32);
     function getActeur(address _addr) external view returns(StructLib.Acteur memory);
