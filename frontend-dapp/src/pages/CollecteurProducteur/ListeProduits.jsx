@@ -7,7 +7,6 @@ function ListeProduits() {
   const [produits, setProduits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acteur, setActeur] = useState({});
   const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [produitSelectionne, setProduitSelectionne] = useState(null);
@@ -23,11 +22,6 @@ function ListeProduits() {
         const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
-
-        // Récupérer l'acteur et son rôle
-        const _acteur = await contract.getActeur(account);
-        setActeur(_acteur);
-        setRole(Number(_acteur.role));
 
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();

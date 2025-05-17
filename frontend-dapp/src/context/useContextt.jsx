@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getContract } from '../utils/contract';
+import { getGestionnaireActeursContract } from '../utils/contract';
 import { ethers } from 'ethers';
 
 const UserContext = createContext();
@@ -10,11 +10,10 @@ export const UserProvider = ({ children,state }) => {
 
     const verifeActeur = async (userAddress) => {
         try {
-            const contract = await getContract();
-            const acteur = await contract.getActeur(userAddress);
-            
-            if (acteur.addr !== ethers.ZeroAddress) {
-                const roleNumber = Number(acteur.role);
+            const contract = await getGestionnaireActeursContract();
+            const details = await contract.getDetailsActeur(userAddress);
+            if (details && details[0]) {
+                const roleNumber = Number(details[1]);
                 setRole(roleNumber);
             } else {
                 setRole(null);

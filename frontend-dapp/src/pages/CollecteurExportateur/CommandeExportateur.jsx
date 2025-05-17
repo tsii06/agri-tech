@@ -26,11 +26,6 @@ function CommandeExportateur() {
 
         console.log("Adresse connectée:", account);
 
-        // Récupérer l'acteur et son rôle
-        const _acteur = await contract.getActeur(account);
-        setActeur(_acteur);
-        setRole(Number(_acteur.role));
-
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
         console.log("Nombre total de produits:", compteurProduits.toString());

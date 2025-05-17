@@ -128,10 +128,7 @@ contract CollecteurExportateur {
     // ------------------------------------- Fin Setter -------------------------------------------------
 
     // -------------------------------------- Getter ----------------------------------------------------
-    function getActeur(address addr) public view returns(StructLib.Acteur memory) {
-        (string memory idBlockchain, StructLib.Role role, bool actif, , , , , , , , ) = gestionnaireActeurs.getDetailsActeur(addr);
-        return StructLib.Acteur(addr, role);
-    }
+
     function getProduit(uint32 id) public view returns(StructLib.Produit memory) {
         return produits[id];
     }

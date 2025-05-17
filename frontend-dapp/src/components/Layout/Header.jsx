@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getContract } from "../../utils/contract";
+import { getGestionnaireActeursContract } from "../../utils/contract";
 import { Outlet } from "react-router-dom";
 
 
@@ -97,11 +97,11 @@ function Header({ state }) {
 
   const verifierActeur = async (userAddress) => {
     try {
-      const contract = await getContract();
-      const acteur = await contract.getActeur(userAddress);
-      
-      if (acteur.addr !== ethers.ZeroAddress) {
-        const roleNumber = Number(acteur.role);
+      const contract = await getGestionnaireActeursContract();
+      // getDetailsActeur retourne un tuple, le rôle est à l'index 1
+      const details = await contract.getDetailsActeur(userAddress);
+      if (details && details[0]) { // idBlockchain non vide
+        const roleNumber = Number(details[1]);
         setRole(roleNumber);
       } else {
         setRole(null);
@@ -254,9 +254,6 @@ function Header({ state }) {
                             <button onClick={changerCompte} className="btn btn-outline-primary btn-sm">
                                 Changer
                             </button>
-                            <a href="/ajout-acteur" className="btn btn-sm btn-outline-secondary d-flex align-items-center">
-                                <i className="bi bi-person-plus me-1"></i> Nouvel acteur
-                            </a>
                             <button onClick={deconnecterWallet} className="btn btn-sm btn-outline-danger d-flex align-items-center">
                                 <i className="bi bi-box-arrow-right me-1"></i> Déconnecter
                             </button>

@@ -145,5 +145,5 @@ interface ICollecteurExportateur {
 interface IProducteur {
     function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
     function getCompteurParcelle() external view returns(uint32);
-    function getActeur(address _addr) external view returns(StructLib.Acteur memory);
+
 }

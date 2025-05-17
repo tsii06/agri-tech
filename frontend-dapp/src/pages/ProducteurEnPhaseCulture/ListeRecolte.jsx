@@ -18,68 +18,48 @@ function ListeRecoltes() {
 
   const { role, account, verifeActeur } = useUserContext();
 
-
-
-
-
   const chargerRecoltes = async () => {
-      try {
-        const contract = await getCollecteurProducteurContract();
+    try {
+      const contract = await getCollecteurProducteurContract();
 
-        console.log("Adresse connectée:", account);
+      console.log("Adresse connectée:", account);
 
-        const contractProducteur = await getContract();
+      // Obtenir le nombre total de récoltes
+      const compteurRecoltes = await contract.compteurRecoltes();
+      console.log("Nombre total de récoltes:", compteurRecoltes.toString());
+      
+      // Charger toutes les récoltes
+      const recoltesTemp = [];
+      for (let i = 1; i <= compteurRecoltes; i++) {
+        const recolte = await contract.getRecolte(i);
 
-        // Récupérer l'acteur
-        const _acteur = await contractProducteur.getActeur(account);
+        // verifie si l'utilisateur est un producteur
+        if(getRoleName(acteur.role) === "PRODUCTEUR")
+          // verifie si la recolte n'appartient pas a l'utilistateur
+          if(recolte.producteur.toLowerCase() !== account.toLowerCase())
+            continue;
 
-        // Obtenir le nombre total de récoltes
-        const compteurRecoltes = await contract.compteurRecoltes();
-        console.log("Nombre total de récoltes:", compteurRecoltes.toString());
-        
-        // Charger toutes les récoltes
-        const recoltesTemp = [];
-        for (let i = 1; i <= compteurRecoltes; i++) {
-          const recolte = await contract.getRecolte(i);
-
-          // verifie si l'utilisateur est un producteur
-          if(getRoleName(_acteur.role) === "PRODUCTEUR")
-            // verifie si la recolte n'appartient pas a l'utilistateur
-            if(recolte.producteur.toLowerCase() !== account.toLowerCase())
-              continue;
-
-          recoltesTemp.push(recolte);
-        }
-        
-        console.log("Récoltes trouvées:", recoltesTemp);
-        setActeur(_acteur);
-
-        // Inverser le tri des récoltes pour que les plus récentes soient en premier
-        recoltesTemp.reverse();
-        setRecoltes(recoltesTemp);
-
-      } catch (error) {
-        console.error("Erreur lors du chargement des récoltes:", error);
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
+        recoltesTemp.push(recolte);
       }
-    };
+      
+      console.log("Récoltes trouvées:", recoltesTemp);
+      setActeur(acteur);
 
+      // Inverser le tri des récoltes pour que les plus récentes soient en premier
+      recoltesTemp.reverse();
+      setRecoltes(recoltesTemp);
 
-
-
-
+    } catch (error) {
+      console.error("Erreur lors du chargement des récoltes:", error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    
     chargerRecoltes();
-
   }, [_]);
-
-
-
-
 
   const handleCertifier = async (recolteId) => {
     try {

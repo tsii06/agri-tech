@@ -7,7 +7,6 @@ function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acteur, setActeur] = useState({});
   const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
@@ -22,11 +21,7 @@ function MesCommandesExportateur() {
         const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
-
-        // Récupérer l'acteur
-        const _acteur = await contract.getActeur(account);
-        setActeur(_acteur);
-
+        
         // Obtenir le nombre total de commandes
         const compteurCommandes = await contract.getCompteurCommande();
         console.log("Nombre total de commandes:", compteurCommandes.toString());

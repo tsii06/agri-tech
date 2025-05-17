@@ -3,7 +3,6 @@ import { useState } from "react";
 import { UserProvider } from './context/useContextt';
 
 import Header from "./components/Layout/Header";
-import AjoutActeur from "./pages/AjoutActeur";
 import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
 import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
 
@@ -23,6 +22,7 @@ import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
 import AdminRegisterActeur from "./admin/AdminRegisterActeur";
 import AdminAjoutContratDelegue from "./admin/AdminAjoutContratDelegue";
+import AdminListeActeurs from "./admin/AdminListeActeurs";
 
 function App() {
   const [state, setState] = useState({});
@@ -46,7 +46,7 @@ function App() {
                 </div>
               </div>
             } />
-            <Route path="ajout-acteur" element={<AjoutActeur setState={setState} />} />
+
             <Route path="liste-produits" element={<ListeProduits />} />
             <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
             <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
@@ -67,6 +67,7 @@ function App() {
             <Route path="admin" element={<AdminHome />} />
             <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
             <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
+            <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
           </Route>
         </Routes>
       </div>
@@ -82,6 +83,7 @@ function AdminHome() {
       <ul>
         <li><a href="/admin/enregistrer-acteur">Enregistrer un acteur</a></li>
         <li><a href="/admin/ajouter-contrat-delegue">Ajouter un contrat délégué</a></li>
+        <li><a href="/admin/liste-acteurs">Liste des acteurs</a></li>
       </ul>
     </div>
   );

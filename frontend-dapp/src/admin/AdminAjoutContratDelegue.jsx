@@ -14,10 +14,19 @@ export default function AdminAjoutContratDelegue() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  function isValidAddress(addr) {
+    return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    if (!isValidAddress(form.acteur) || !isValidAddress(form.contratDelegue)) {
+      setMessage("Adresse Ethereum invalide !");
+      setLoading(false);
+      return;
+    }
     try {
       const contract = await getGestionnaireActeursContract();
       const tx = await contract.ajouterContratDelegue(

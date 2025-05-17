@@ -7,24 +7,6 @@ export function useWallet() {
   const [role, setRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const verifierActeur = async (userAddress) => {
-    try {
-      const contract = await getContract();
-      const acteur = await contract.getActeur(userAddress);
-      
-      if (acteur.addr !== ethers.ZeroAddress) {
-        const roleNumber = Number(acteur.role);
-        setRole(roleNumber);
-      } else {
-        setRole(null);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la vérification de l'acteur :", error);
-      setRole(null);
-    }
-    setIsLoading(false);
-  };
-
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
@@ -32,7 +14,6 @@ export function useWallet() {
         const signer = await provider.getSigner();
         const userAddress = await signer.getAddress();
         setAccount(userAddress);
-        await verifierActeur(userAddress);
       } catch (error) {
         console.error("Erreur lors de la connexion au wallet:", error);
         setAccount(null);
@@ -52,7 +33,6 @@ export function useWallet() {
         .then(accounts => {
           if (accounts.length > 0) {
             setAccount(accounts[0]);
-            verifierActeur(accounts[0]);
           } else {
             setIsLoading(false);
           }
@@ -62,7 +42,6 @@ export function useWallet() {
       window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
-          verifierActeur(accounts[0]);
         } else {
           setAccount(null);
           setRole(null);
@@ -79,6 +58,5 @@ export function useWallet() {
     role,
     isLoading,
     connectWallet,
-    verifierActeur
   };
 } 

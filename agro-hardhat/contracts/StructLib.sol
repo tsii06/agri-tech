@@ -36,6 +36,7 @@ library StructLib {
     }
 
 
+
     struct Intrant {
         string nom;
         uint32 quantite;

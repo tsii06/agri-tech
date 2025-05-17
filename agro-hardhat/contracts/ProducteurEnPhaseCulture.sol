@@ -93,10 +93,6 @@ contract ProducteurEnPhaseCulture {
     }
 
     // ====================================== getter ==========================================================
-    function getActeur(address addr) public view returns(StructLib.Acteur memory) {
-        (string memory idBlockchain, StructLib.Role role, bool actif, , , , , , , , ) = gestionnaireActeurs.getDetailsActeur(addr);
-        return StructLib.Acteur(addr, role);
-    }
 
     // pour les parcelles
     function getParcelle(uint32 id) public view returns(StructLib.Parcelle memory) {
