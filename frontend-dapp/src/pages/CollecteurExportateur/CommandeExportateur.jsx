@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useUserContext } from '../../context/useContextt';
 
 function CommandeExportateur() {
   const navigate = useNavigate();
@@ -14,29 +15,25 @@ function CommandeExportateur() {
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [role, setRole] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const { account } = useUserContext();
 
   useEffect(() => {
+    if (!account) return;
     const chargerProduits = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
-
-        console.log("Adresse connectée:", account);
-
+        let role = userRole;
+        if (!role) {
+          role = await getRoleOfAddress(account);
+          setUserRole(role);
+        }
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
-        console.log("Nombre total de produits:", compteurProduits.toString());
-        
-        // Charger tous les produits
         const produitsTemp = [];
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
-          
-          // Ajouter uniquement les produits validés
-          if (produit.statut == 1) { // 1 = Validé
+          if (produit.statut == 1) {
             produitsTemp.push({
               id: i,
               idRecolte: produit.idRecolte.toString(),
@@ -50,21 +47,16 @@ function CommandeExportateur() {
             });
           }
         }
-        
-        console.log("Produits trouvés:", produitsTemp);
-        // Inverser le tri des produits pour que les plus récentes soient en premier
         produitsTemp.reverse();
         setProduits(produitsTemp);
       } catch (error) {
-        console.error("Erreur lors du chargement des produits:", error);
         setError(error.message);
       } finally {
         setIsLoading(false);
       }
     };
-
     chargerProduits();
-  }, [_]);
+  }, [account]);
 
   const handleCommander = async (produitId) => {
     try {
@@ -170,7 +162,7 @@ function CommandeExportateur() {
                     </p>
                   </div>
                   <div className="mt-3">
-                    {role === 6 && produit.statut == 1 && ( // Exportateur et produit validé
+                    {userRole === 6 && produit.statut == 1 && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);

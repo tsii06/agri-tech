@@ -89,6 +89,132 @@ async function main() {
         "5544332211"
     );
 
+    // === Données de test supplémentaires ===
+    // 1. Créer des parcelles pour le producteur
+    console.log("Création de parcelles pour le producteur...");
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(producteurAddress)).creerParcelle(
+        "Semence A",
+        "Bio",
+        "-18.8792",
+        "47.5079",
+        "2024-07-01",
+        "CertificatPhyto-1"
+    );
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(producteurAddress)).creerParcelle(
+        "Semence B",
+        "Conventionnel",
+        "-18.8793",
+        "47.5080",
+        "2024-07-02",
+        "CertificatPhyto-2"
+    );
+
+    // 2. Créer des récoltes pour chaque parcelle (via CollecteurProducteur)
+    console.log("Création de récoltes pour chaque parcelle...");
+    await collecteurProducteur.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte(1, 1000, 500, "2024-07-10", "Riz Bio");
+    await collecteurProducteur.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte(2, 800, 600, "2024-07-12", "Riz Classique");
+
+    // 3. Certification d'une récolte (par le certificateur)
+    // On suppose qu'un certificateur existe déjà (à ajouter si besoin)
+    const certificateurAddress = "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65";
+    await gestionnaireActeurs.enregistrerActeur(
+        certificateurAddress,
+        2, // Role.Certificateur
+        0,
+        "Certificateur Test",
+        "CERT001",
+        "Adresse Certificateur",
+        "cert@example.com",
+        "6677889900"
+    );
+    await collecteurProducteur.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "Certificat de qualité BIO");
+
+    // 4. Création de produits à partir des récoltes (par le collecteur)
+    console.log("Création de produits à partir des récoltes...");
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, 700, collecteurAddress, "Riz Bio", "2024-07-10", "CertificatPhyto-1");
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, 800, collecteurAddress, "Riz Classique", "2024-07-12", "CertificatPhyto-2");
+
+    // 5. Commande du collecteur vers producteur
+    console.log("Commande du collecteur vers producteur...");
+    await collecteurProducteur.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 200);
+
+    // 6. Commande de l'exportateur vers collecteur
+    console.log("Commande de l'exportateur vers collecteur...");
+    await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 100);
+
+    // 7. Paiement de l'exportateur pour une commande
+    console.log("Paiement de l'exportateur...");
+    await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 70000, 0, { value: ethers.parseEther("0.01") });
+
+    // 8. Inspection d'une parcelle (par un auditeur)
+    const auditeurAddress = "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc";
+    await gestionnaireActeurs.enregistrerActeur(
+        auditeurAddress,
+        4, // Role.Auditeur
+        0,
+        "Auditeur Test",
+        "AUD001",
+        "Adresse Auditeur",
+        "auditeur@example.com",
+        "4455667788"
+    );
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(auditeurAddress)).ajouterInspection(1, "Inspection OK");
+    // === Fin des données de test ===
+
+    // === ENRICHISSEMENT DES DONNÉES DE TEST ===
+    // 1. Ajouter plusieurs acteurs de chaque type
+    const producteur2 = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+    const collecteur2 = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
+    const exportateur2 = "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2";
+    const certificateur2 = "0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c";
+    const auditeur2 = "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db";
+    const transporteur1 = "0x17F6AD8Ef982297579C203069C1DbfFE4348c372";
+    const fournisseur1 = "0x5cA1e00004366Ac85f492887AAab12d0e6418876";
+
+    await gestionnaireActeurs.enregistrerActeur(producteur2, 0, 0, "Producteur Deux", "PROD002", "Adresse P2", "prod2@example.com", "1111111111");
+    await gestionnaireActeurs.enregistrerActeur(collecteur2, 3, 0, "Collecteur Deux", "COLL002", "Adresse C2", "coll2@example.com", "2222222222");
+    await gestionnaireActeurs.enregistrerActeur(exportateur2, 6, 0, "Exportateur Deux", "EXP002", "Adresse E2", "exp2@example.com", "3333333333");
+    await gestionnaireActeurs.enregistrerActeur(certificateur2, 2, 0, "Certificateur Deux", "CERT002", "Adresse Cert2", "cert2@example.com", "4444444444");
+    await gestionnaireActeurs.enregistrerActeur(auditeur2, 4, 0, "Auditeur Deux", "AUD002", "Adresse Aud2", "aud2@example.com", "5555555555");
+    await gestionnaireActeurs.enregistrerActeur(transporteur1, 5, 0, "Transporteur Un", "TRANS001", "Adresse T1", "trans1@example.com", "6666666666");
+    await gestionnaireActeurs.enregistrerActeur(fournisseur1, 1, 0, "Fournisseur Un", "FOUR001", "Adresse F1", "fourn1@example.com", "7777777777");
+
+    // 2. Créer des parcelles pour chaque producteur
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(producteur2)).creerParcelle(
+        "Semence C", "Bio", "-18.88", "47.51", "2024-07-03", "CertificatPhyto-3"
+    );
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(producteur2)).creerParcelle(
+        "Semence D", "Conventionnel", "-18.89", "47.52", "2024-07-04", "CertificatPhyto-4"
+    );
+
+    // 3. Créer des récoltes (certaines non certifiées)
+    await collecteurProducteur.connect(await ethers.getSigner(producteur2)).ajoutRecolte(3, 1200, 550, "2024-07-15", "Riz Premium"); // non certifiée
+    await collecteurProducteur.connect(await ethers.getSigner(producteur2)).ajoutRecolte(4, 900, 650, "2024-07-16", "Riz Standard"); // non certifiée
+
+    // 4. Certifier une seule récolte
+    await collecteurProducteur.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "Certificat Premium");
+    // La récolte 4 reste non certifiée
+
+    // 5. Créer des produits (certifiés et non certifiés)
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, 900, collecteur2, "Riz Premium", "2024-07-15", "CertificatPhyto-3"); // certifié
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, 950, collecteur2, "Riz Standard", "2024-07-16", ""); // non certifié
+
+    // 6. Créer des commandes (payées et non payées)
+    // Commande payée
+    await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).passerCommande(2, 100);
+    await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).effectuerPaiement(2, 80000, 0, { value: ethers.parseEther("0.01") });
+    // Commande non payée
+    await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).passerCommande(3, 50);
+    // Pas de paiement pour cette commande
+
+    // 7. Ajouter une inspection sur une nouvelle parcelle
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(auditeur2)).ajouterInspection(3, "Inspection Premium OK");
+    // 8. Ajouter un intrant par le fournisseur
+    await producteurEnPhaseCulture.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20);
+    // 9. Transporteur enregistre une condition de transport
+    await collecteurExportateur.connect(await ethers.getSigner(transporteur1)).enregistrerCondition(2, "25C", "60%");
+    // === FIN ENRICHISSEMENT ===
+
     console.log("Déploiement terminé avec succès!");
 }
 

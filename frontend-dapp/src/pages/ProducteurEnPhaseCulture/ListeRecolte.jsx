@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getContract, getCollecteurProducteurContract } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
+import {  getCollecteurProducteurContract, getRoleOfAddress } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
 
 function ListeRecoltes() {
@@ -10,6 +9,7 @@ function ListeRecoltes() {
   const [recoltes, setRecoltes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [acteur, setActeur] = useState({});
   const [_, setState] = useState({});
   const [quantiteCommande, setQuantiteCommande] = useState("");
@@ -19,38 +19,29 @@ function ListeRecoltes() {
   const { role, account, verifeActeur } = useUserContext();
 
   const chargerRecoltes = async () => {
+    if (!account) return;
     try {
       const contract = await getCollecteurProducteurContract();
-
-      console.log("Adresse connectée:", account);
-
+      let role = userRole;
+      if (!role) {
+        role = await getRoleOfAddress(account);
+        setUserRole(role);
+      }
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
-      console.log("Nombre total de récoltes:", compteurRecoltes.toString());
-      
-      // Charger toutes les récoltes
       const recoltesTemp = [];
       for (let i = 1; i <= compteurRecoltes; i++) {
         const recolte = await contract.getRecolte(i);
-
-        // verifie si l'utilisateur est un producteur
-        if(getRoleName(acteur.role) === "PRODUCTEUR")
-          // verifie si la recolte n'appartient pas a l'utilistateur
-          if(recolte.producteur.toLowerCase() !== account.toLowerCase())
+        // Filtrer selon le rôle
+        if (role === 0) { // Producteur
+          if (recolte.producteur.toLowerCase() !== account.toLowerCase())
             continue;
-
+        }
         recoltesTemp.push(recolte);
       }
-      
-      console.log("Récoltes trouvées:", recoltesTemp);
-      setActeur(acteur);
-
-      // Inverser le tri des récoltes pour que les plus récentes soient en premier
       recoltesTemp.reverse();
       setRecoltes(recoltesTemp);
-
     } catch (error) {
-      console.error("Erreur lors du chargement des récoltes:", error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -58,8 +49,9 @@ function ListeRecoltes() {
   };
 
   useEffect(() => {
+    if (!account) return;
     chargerRecoltes();
-  }, [_]);
+  }, [account]);
 
   const handleCertifier = async (recolteId) => {
     try {
@@ -133,9 +125,9 @@ function ListeRecoltes() {
       <div className="card p-4 shadow-sm">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="h5 mb-0">
-            {getRoleName(acteur.role) === "PRODUCTEUR" ? "Mes Récoltes" : "Liste des Récoltes"}
+            {userRole === 0 ? "Mes Récoltes" : "Liste des Récoltes"}
           </h2>
-          {getRoleName(acteur.role) === "PRODUCTEUR" && (
+          {userRole === 0 && (
             <Link to="/mes-parcelles" className="btn btn-primary">
               Ajouter une récolte
             </Link>
@@ -150,9 +142,7 @@ function ListeRecoltes() {
           </div>
         ) : recoltes.length === 0 ? (
           <div className="text-center text-muted">
-            {getRoleName(acteur.role) === "PRODUCTEUR" 
-              ? "Vous n'avez pas encore de récoltes enregistrées."
-              : "Aucune récolte n'est enregistrée pour le moment."}
+            {userRole === 0 ? "Vous n'avez pas encore de récoltes enregistrées." : "Aucune récolte n'est enregistrée pour le moment."}
           </div>
         ) : (
           <div className="row g-3">
@@ -170,7 +160,7 @@ function ListeRecoltes() {
                     </p>
                   </div>
                   <div className="mt-3">
-                    {getRoleName(acteur.role) === "CERTIFICATEUR" && !recolte.certifie && (
+                    {userRole === 2 && !recolte.certifie && (
                       <button
                         onClick={() => handleCertifier(recolte.id)}
                         className="btn btn-sm btn-primary me-2"
@@ -178,7 +168,7 @@ function ListeRecoltes() {
                         Certifier
                       </button>
                     )}
-                    {getRoleName(acteur.role) === "COLLECTEUR" && recolte.certifie && (
+                    {userRole === 3 && recolte.certifie && (
                       <button
                         onClick={() => {
                           setRecolteSelectionnee(recolte);

@@ -20,9 +20,9 @@ import CommandeExportateur from "./pages/CollecteurExportateur/CommandeExportate
 
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
-import AdminRegisterActeur from "./admin/AdminRegisterActeur";
-import AdminAjoutContratDelegue from "./admin/AdminAjoutContratDelegue";
-import AdminListeActeurs from "./admin/AdminListeActeurs";
+import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
+import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
+import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
 
 function App() {
   const [state, setState] = useState({});

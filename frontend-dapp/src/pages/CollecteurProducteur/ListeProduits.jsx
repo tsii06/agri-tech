@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 
 function ListeProduits() {
@@ -11,7 +11,7 @@ function ListeProduits() {
   const [showModal, setShowModal] = useState(false);
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
-  const [role, setRole] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     const chargerProduits = async () => {
@@ -20,38 +20,33 @@ function ListeProduits() {
         const provider = contract.runner.provider;
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
-
-        console.log("Adresse connectée:", account);
-
+        let role = userRole;
+        if (!role && account) {
+          role = await getRoleOfAddress(account);
+          setUserRole(role);
+        }
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
-        console.log("Nombre total de produits:", compteurProduits.toString());
-        
-        // Charger tous les produits
         const produitsTemp = [];
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
-          
-          // Vérifier que le produit appartient au collecteur connecté
-          if (produit.collecteur.toLowerCase() === account.toLowerCase()) {
+
             produitsTemp.push({
               id: i,
               idRecolte: produit.idRecolte.toString(),
               nom: produit.nom,
               quantite: produit.quantite.toString(),
               prixUnit: produit.prixUnit.toString(),
-              statut: Number(produit.statut), // Convertir en nombre
+              statut: Number(produit.statut),
               dateRecolte: produit.dateRecolte,
               certificatPhytosanitaire: produit.certificatPhytosanitaire,
               collecteur: produit.collecteur.toString()
             });
-          }
+          
         }
-        
-        console.log("Produits trouvés:", produitsTemp);
-        // Inverser le tri des produits pour que les plus récentes soient en premier
         produitsTemp.reverse();
         setProduits(produitsTemp);
+        console.log(produitsTemp)
       } catch (error) {
         console.error("Erreur lors du chargement des produits:", error);
         setError(error.message);
@@ -59,7 +54,6 @@ function ListeProduits() {
         setIsLoading(false);
       }
     };
-
     chargerProduits();
   }, [_]);
 
@@ -182,7 +176,7 @@ function ListeProduits() {
                     </p>
                   </div>
                   <div className="mt-3">
-                    {role === 3 && ( // Collecteur
+                    {userRole === 3 && ( // Collecteur
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);
@@ -194,7 +188,7 @@ function ListeProduits() {
                         Modifier le prix
                       </button>
                     )}
-                    {role === 6 && produit.statut === 0 && ( // Exportateur et produit en attente
+                    {userRole === 6 && produit.statut === 0 && ( // Exportateur et produit en attente
                       <button
                         onClick={() => handleValiderProduit(produit.id)}
                         className="btn btn-sm btn-success"

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getGestionnaireActeursContract } from "../utils/contract";
+import { getGestionnaireActeursContract } from "../../utils/contract";
 
 export default function AdminAjoutContratDelegue() {
   const [form, setForm] = useState({

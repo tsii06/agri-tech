@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useUserContext } from '../../context/useContextt';
 
 function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -11,14 +12,21 @@ function MesCommandesExportateur() {
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
+  const [userRole, setUserRole] = useState(null);
+  const { account } = useUserContext();
 
   useEffect(() => {
+    if (!account) return;
     const chargerCommandes = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
+        let role = userRole;
+        if (!role) {
+          role = await getRoleOfAddress(account);
+          setUserRole(role);
+        }
         const provider = contract.runner.provider;
         const signer = await provider.getSigner();
-        const account = await signer.getAddress();
 
         console.log("Adresse connectée:", account);
         
@@ -62,7 +70,7 @@ function MesCommandesExportateur() {
     };
 
     chargerCommandes();
-  }, [_]);
+  }, [account]);
 
   const handlePayer = async (commandeId) => {
     try {

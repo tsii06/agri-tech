@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getGestionnaireActeursContract } from "../utils/contract";
+import { getGestionnaireActeursContract } from "../../utils/contract";
 
 const ROLES = [
   "Producteur",
