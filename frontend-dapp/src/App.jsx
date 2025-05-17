@@ -21,6 +21,8 @@ import CommandeExportateur from "./pages/CollecteurExportateur/CommandeExportate
 
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
+import AdminRegisterActeur from "./admin/AdminRegisterActeur";
+import AdminAjoutContratDelegue from "./admin/AdminAjoutContratDelegue";
 
 function App() {
   const [state, setState] = useState({});
@@ -62,11 +64,26 @@ function App() {
             <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
             <Route path="/produits" element={<ListeProduits />} />
             <Route path="/mes-commandes-exportateur" element={<MesCommandesExportateur />} />
+            <Route path="admin" element={<AdminHome />} />
+            <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
+            <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
           </Route>
         </Routes>
       </div>
     </Router>
     </UserProvider>
+  );
+}
+
+function AdminHome() {
+  return (
+    <div className="container mt-4">
+      <h2>Espace Administration</h2>
+      <ul>
+        <li><a href="/admin/enregistrer-acteur">Enregistrer un acteur</a></li>
+        <li><a href="/admin/ajouter-contrat-delegue">Ajouter un contrat délégué</a></li>
+      </ul>
+    </div>
   );
 }
 

@@ -36,13 +36,6 @@ library StructLib {
     }
 
 
-    
-
-    struct Acteur {
-        address addr;
-        Role role;
-    }
-
     struct Intrant {
         string nom;
         uint32 quantite;

@@ -147,13 +147,16 @@ function Header({ state }) {
 
     const commonLinks = [
       { to: "/mes-parcelles", text: "Parcelles" },
-
     ];
+
+    // Ajout du lien Admin pour tous les utilisateurs connectés (ou seulement pour l'admin si tu veux)
+    const adminLink = { to: "/admin", text: "Admin" };
 
     if (role === null) {
       return [
         { to: "/ajout-acteur", text: "S'enregistrer" },
-        ...commonLinks
+        ...commonLinks,
+        adminLink
       ];
     }
 
@@ -162,33 +165,37 @@ function Header({ state }) {
         return [
           { to: "/mes-parcelles", text: "Mes Parcelles" },
           { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
-          { to: "/liste-recolte", text: "Mes récoltes" }
+          { to: "/liste-recolte", text: "Mes récoltes" },
+          adminLink
         ];
       case 1: // Fournisseur
         return [
-          { to: "/mes-parcelles", text: "Gérer les Intrants" }
+          { to: "/mes-parcelles", text: "Gérer les Intrants" },
+          adminLink
         ];
       case 2: // Certificateur
         return [
           { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
-          { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+          { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" },
+          adminLink
         ];
       case 3: // Collecteur
         return [
           { to: "/liste-recolte", text: "Passer commande" },
-          // { to: "/liste-producteur", text: "Liste des producteurs" },
           { to: "/liste-collecteur-commande", text: "Mes commandes" },
           { to: "/liste-produits", text: "Liste des produits" },
-          ...commonLinks
+          ...commonLinks,
+          adminLink
         ];
       case 4: // Auditeur
         return [
-          { to: "/mes-parcelles", text: "Inspections" }
+          { to: "/mes-parcelles", text: "Inspections" },
+          adminLink
         ];
       case 5: // Transporteur
         return [
           { to:"/mes-commandes", text:"Liste des commandes"},
-          // { to: "/conditions-transport", text: "Conditions Transport" }
+          adminLink
         ]; 
       case 6: // Exportateur
         return [
@@ -197,9 +204,10 @@ function Header({ state }) {
           { to: "/passer-commande-collecteur", text: "Passer commande" },
           { to:"/liste-collecteur", text:"Liste des collecteurs"},
           { to: "/liste-produits", text: "Liste des produits" },
+          adminLink
         ];
       default:
-        return commonLinks;
+        return [...commonLinks, adminLink];
     }
   };
 
