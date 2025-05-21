@@ -67,40 +67,124 @@ export default function AdminRegisterActeur() {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "auto" }}>
-      <h2>Enregistrer un nouvel acteur</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Adresse (wallet):
-          <input name="adresse" value={form.adresse} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>Rôle:
-          <select name="role" value={form.role} onChange={handleChange} className="form-control">
-            {ROLES.map((r, i) => <option value={i} key={i}>{r}</option>)}
-          </select>
-        </label>
-        <label>Type d'entité:
-          <select name="typeEntite" value={form.typeEntite} onChange={handleChange} className="form-control">
-            {TYPES_ENTITE.map((t, i) => <option value={i} key={i}>{t}</option>)}
-          </select>
-        </label>
-        <label>Nom:
-          <input name="nom" value={form.nom} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>NIF ou CIN:
-          <input name="nifOuCin" value={form.nifOuCin} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>Adresse officielle:
-          <input name="adresseOfficielle" value={form.adresseOfficielle} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>Email:
-          <input name="email" value={form.email} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>Téléphone:
-          <input name="telephone" value={form.telephone} onChange={handleChange} required className="form-control" />
-        </label>
-        <button type="submit" disabled={loading} className="btn btn-primary mt-2">{loading ? "Enregistrement..." : "Enregistrer"}</button>
-      </form>
-      {message && <div className="alert alert-info mt-2">{message}</div>}
+    <div className="card mt-4" style={{ maxWidth: 600, margin: "auto" }}>
+      <div className="card-body">
+        <h4 className="card-title mb-4">Enregistrer un nouvel acteur</h4>
+        <form onSubmit={handleSubmit}>
+          <div className="row">
+            <div className="col-md-12 mb-3">
+              <label className="form-label">Adresse (wallet)</label>
+              <input
+                name="adresse"
+                value={form.adresse}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Rôle</label>
+              <select
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                className="form-control"
+              >
+                {ROLES.map((r, i) => (
+                  <option value={i} key={i}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Type d'entité</label>
+              <select
+                name="typeEntite"
+                value={form.typeEntite}
+                onChange={handleChange}
+                className="form-control"
+              >
+                {TYPES_ENTITE.map((t, i) => (
+                  <option value={i} key={i}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Nom</label>
+              <input
+                name="nom"
+                value={form.nom}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">NIF ou CIN</label>
+              <input
+                name="nifOuCin"
+                value={form.nifOuCin}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+  
+            <div className="col-md-12 mb-3">
+              <label className="form-label">Adresse officielle</label>
+              <input
+                name="adresseOfficielle"
+                value={form.adresseOfficielle}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+  
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Téléphone</label>
+              <input
+                name="telephone"
+                value={form.telephone}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+          </div>
+  
+          <div className="d-flex justify-content-start">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary"
+            >
+              {loading ? "Enregistrement..." : "Enregistrer"}
+            </button>
+          </div>
+  
+          {message && <div className="alert alert-info mt-3">{message}</div>}
+        </form>
+      </div>
     </div>
   );
-} 
+}  

@@ -152,13 +152,6 @@ function Header({ state }) {
     // Ajout du lien Admin pour tous les utilisateurs connectés (ou seulement pour l'admin si tu veux)
     const adminLink = { to: "/admin", text: "Admin" };
 
-    if (role === null) {
-      return [
-        { to: "/ajout-acteur", text: "S'enregistrer" },
-        ...commonLinks,
-        adminLink
-      ];
-    }
 
     switch (role) {
       case 0: // Producteur
@@ -184,6 +177,7 @@ function Header({ state }) {
           { to: "/liste-recolte", text: "Passer commande" },
           { to: "/liste-collecteur-commande", text: "Mes commandes" },
           { to: "/liste-produits", text: "Liste des produits" },
+          { to: "/liste-acteurs-role", text: "Liste des Producteurs" },
           ...commonLinks,
           adminLink
         ];
@@ -202,7 +196,7 @@ function Header({ state }) {
           ...commonLinks,
           { to:"/mes-commandes", text:"Mes commandes"},
           { to: "/passer-commande-collecteur", text: "Passer commande" },
-          { to:"/liste-collecteur", text:"Liste des collecteurs"},
+          { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
           { to: "/liste-produits", text: "Liste des produits" },
           adminLink
         ];
@@ -267,8 +261,6 @@ function Header({ state }) {
             </nav>
 
             <div className="flex-grow-1 p-4">
-                <h1 className="h4">Bienvenue sur votre tableau de bord</h1>
-                <p>Gérez vos projets et vos interactions ici.</p>
                 <Outlet />
             </div>
         </main>

@@ -23,6 +23,7 @@ import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesE
 import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
 import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
 import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
+import ListeActeursRole from "./pages/ListeActeursRole";
 
 function App() {
   const [state, setState] = useState({});
@@ -68,6 +69,9 @@ function App() {
             <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
             <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
             <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
+            <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
+            <Route path="listerecolte/:address" element={<ListeRecoltes />} />
+            <Route path="listeproduit/:address" element={<ListeProduits />} />
           </Route>
         </Routes>
       </div>

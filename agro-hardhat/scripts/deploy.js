@@ -142,9 +142,14 @@ async function main() {
     console.log("Commande de l'exportateur vers collecteur...");
     await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 100);
 
+
+    // Valider le produit (par l'exportateur)
+    await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).validerProduit(1, true); // true = validé
     // 7. Paiement de l'exportateur pour une commande
     console.log("Paiement de l'exportateur...");
-    await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 70000, 0, { value: ethers.parseEther("0.01") });
+    // await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 70000, 0, { value: ethers.parseEther("0.01") });
+
+    
 
     // 8. Inspection d'une parcelle (par un auditeur)
     const auditeurAddress = "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc";
@@ -164,12 +169,12 @@ async function main() {
     // === ENRICHISSEMENT DES DONNÉES DE TEST ===
     // 1. Ajouter plusieurs acteurs de chaque type
     const producteur2 = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
-    const collecteur2 = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
-    const exportateur2 = "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2";
-    const certificateur2 = "0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c";
-    const auditeur2 = "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db";
-    const transporteur1 = "0x17F6AD8Ef982297579C203069C1DbfFE4348c372";
-    const fournisseur1 = "0x5cA1e00004366Ac85f492887AAab12d0e6418876";
+    const collecteur2 = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955";
+    const exportateur2 = "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f";
+    const certificateur2 = "0xcd3B766CCDd6AE721141F452C550Ca635964ce71";
+    const auditeur2 = "0x2546BcD3c84621e976D8185a91A922aE77ECEc30";
+    const transporteur1 = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788";
+    const fournisseur1 = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720";
 
     await gestionnaireActeurs.enregistrerActeur(producteur2, 0, 0, "Producteur Deux", "PROD002", "Adresse P2", "prod2@example.com", "1111111111");
     await gestionnaireActeurs.enregistrerActeur(collecteur2, 3, 0, "Collecteur Deux", "COLL002", "Adresse C2", "coll2@example.com", "2222222222");
@@ -202,7 +207,7 @@ async function main() {
     // 6. Créer des commandes (payées et non payées)
     // Commande payée
     await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).passerCommande(2, 100);
-    await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).effectuerPaiement(2, 80000, 0, { value: ethers.parseEther("0.01") });
+    // await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).effectuerPaiement(2, 80000, 0, { value: ethers.parseEther("0.01") });
     // Commande non payée
     await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).passerCommande(3, 50);
     // Pas de paiement pour cette commande
@@ -213,6 +218,9 @@ async function main() {
     await producteurEnPhaseCulture.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20);
     // 9. Transporteur enregistre une condition de transport
     await collecteurExportateur.connect(await ethers.getSigner(transporteur1)).enregistrerCondition(2, "25C", "60%");
+
+
+
     // === FIN ENRICHISSEMENT ===
 
     console.log("Déploiement terminé avec succès!");

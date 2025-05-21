@@ -42,18 +42,48 @@ export default function AdminAjoutContratDelegue() {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "auto" }}>
-      <h2>Ajouter un contrat délégué à un acteur</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Adresse de l'acteur :
-          <input name="acteur" value={form.acteur} onChange={handleChange} required className="form-control" />
-        </label>
-        <label>Adresse du contrat délégué :
-          <input name="contratDelegue" value={form.contratDelegue} onChange={handleChange} required className="form-control" />
-        </label>
-        <button type="submit" disabled={loading} className="btn btn-primary mt-2">{loading ? "Ajout..." : "Ajouter"}</button>
-      </form>
-      {message && <div className="alert alert-info mt-2">{message}</div>}
+    <div className="card mt-4" style={{ maxWidth: 600, margin: "auto" }}>
+      <div className="card-body">
+        <h4 className="card-title mb-4">Ajouter un contrat délégué à un acteur</h4>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Adresse de l'acteur</label>
+            <input
+              name="acteur"
+              value={form.acteur}
+              onChange={handleChange}
+              required
+              className="form-control"
+              placeholder="0x..."
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Adresse du contrat délégué</label>
+            <input
+              name="contratDelegue"
+              value={form.contratDelegue}
+              onChange={handleChange}
+              required
+              className="form-control"
+              placeholder="0x..."
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+          >
+            {loading ? "Ajout..." : "Ajouter"}
+          </button>
+        </form>
+
+        {message && (
+          <div className="alert alert-info mt-3">{message}</div>
+        )}
+      </div>
     </div>
+
   );
 } 

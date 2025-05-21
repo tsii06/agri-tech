@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
+import { useParams } from "react-router-dom";
 
 function ListeProduits() {
+  const { address } = useParams();
   const [produits, setProduits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,7 +23,8 @@ function ListeProduits() {
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
         let role = userRole;
-        if (!role && account) {
+        let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
+        if (!role && !address && account) {
           role = await getRoleOfAddress(account);
           setUserRole(role);
         }
@@ -30,19 +33,18 @@ function ListeProduits() {
         const produitsTemp = [];
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
-
-            produitsTemp.push({
-              id: i,
-              idRecolte: produit.idRecolte.toString(),
-              nom: produit.nom,
-              quantite: produit.quantite.toString(),
-              prixUnit: produit.prixUnit.toString(),
-              statut: Number(produit.statut),
-              dateRecolte: produit.dateRecolte,
-              certificatPhytosanitaire: produit.certificatPhytosanitaire,
-              collecteur: produit.collecteur.toString()
-            });
-          
+          if (cible && produit.collecteur.toLowerCase() !== cible) continue;
+          produitsTemp.push({
+            id: i,
+            idRecolte: produit.idRecolte.toString(),
+            nom: produit.nom,
+            quantite: produit.quantite.toString(),
+            prixUnit: produit.prixUnit.toString(),
+            statut: Number(produit.statut),
+            dateRecolte: produit.dateRecolte,
+            certificatPhytosanitaire: produit.certificatPhytosanitaire,
+            collecteur: produit.collecteur.toString()
+          });
         }
         produitsTemp.reverse();
         setProduits(produitsTemp);
@@ -55,7 +57,7 @@ function ListeProduits() {
       }
     };
     chargerProduits();
-  }, [_]);
+  }, [address, _]);
 
   const handleModifierPrix = async (produitId) => {
     try {
@@ -147,7 +149,7 @@ function ListeProduits() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">Liste des Produits</h2>
+        <h2 className="h5 mb-3">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
         
         {isLoading ? (
           <div className="text-center">

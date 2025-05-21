@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ethers } from "ethers";
 import {  getCollecteurProducteurContract, getRoleOfAddress } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
 
 function ListeRecoltes() {
+  const { address } = useParams();
   const navigate = useNavigate();
   const [recoltes, setRecoltes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,11 +20,11 @@ function ListeRecoltes() {
   const { role, account, verifeActeur } = useUserContext();
 
   const chargerRecoltes = async () => {
-    if (!account) return;
     try {
       const contract = await getCollecteurProducteurContract();
       let role = userRole;
-      if (!role) {
+      let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
+      if (!role && !address && account) {
         role = await getRoleOfAddress(account);
         setUserRole(role);
       }
@@ -32,11 +33,7 @@ function ListeRecoltes() {
       const recoltesTemp = [];
       for (let i = 1; i <= compteurRecoltes; i++) {
         const recolte = await contract.getRecolte(i);
-        // Filtrer selon le rôle
-        if (role === 0) { // Producteur
-          if (recolte.producteur.toLowerCase() !== account.toLowerCase())
-            continue;
-        }
+        if (cible && recolte.producteur.toLowerCase() !== cible) continue;
         recoltesTemp.push(recolte);
       }
       recoltesTemp.reverse();
@@ -49,9 +46,9 @@ function ListeRecoltes() {
   };
 
   useEffect(() => {
-    if (!account) return;
+    if (!address && !account) return;
     chargerRecoltes();
-  }, [account]);
+  }, [address, account]);
 
   const handleCertifier = async (recolteId) => {
     try {
@@ -125,9 +122,9 @@ function ListeRecoltes() {
       <div className="card p-4 shadow-sm">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2 className="h5 mb-0">
-            {userRole === 0 ? "Mes Récoltes" : "Liste des Récoltes"}
+            {address ? "Récoltes du producteur" : userRole === 0 ? "Mes Récoltes" : "Liste des Récoltes"}
           </h2>
-          {userRole === 0 && (
+          {!address && userRole === 0 && (
             <Link to="/mes-parcelles" className="btn btn-primary">
               Ajouter une récolte
             </Link>
