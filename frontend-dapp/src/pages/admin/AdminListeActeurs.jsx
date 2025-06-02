@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
+import { fetchFromIPFS } from "../../utils/ipfs";
 
 const ROLES = [
   "Producteur",
@@ -37,19 +38,52 @@ export default function AdminListeActeurs() {
         for (let addr of addresses) {
           try {
             const details = await contract.getDetailsActeur(addr);
+            const offChainDetailsHash = details[6];
+            let ipfsDataContent = { nom: "N/A", email: "N/A", telephone: "N/A", nifOuCin: "N/A", adresseOfficielle: "N/A" };
+
+            if (offChainDetailsHash && offChainDetailsHash.trim() !== "") {
+              try {
+                const ipfsData = await fetchFromIPFS(offChainDetailsHash);
+                if (ipfsData) {
+                  ipfsDataContent.nom = ipfsData.nom || "Non disponible (IPFS)";
+                  ipfsDataContent.email = ipfsData.email || "Non disponible (IPFS)";
+                  ipfsDataContent.telephone = ipfsData.telephone || "Non disponible (IPFS)";
+                  ipfsDataContent.nifOuCin = ipfsData.nifOuCin || "Non disponible (IPFS)";
+                  ipfsDataContent.adresseOfficielle = ipfsData.adresseOfficielle || "Non disponible (IPFS)";
+                } else {
+                  ipfsDataContent.nom = "Données IPFS non trouvées";
+                }
+              } catch (ipfsError) {
+                console.error("Erreur fetch IPFS pour " + addr + ":", ipfsError);
+                ipfsDataContent.nom = "Erreur IPFS";
+              }
+            }
+
             all.push({
               adresse: addr,
-              role,
-              typeEntite: details[3],
-              nom: details[4],
-              nifOuCin: details[5],
-              adresseOfficielle: details[6],
-              email: details[7],
-              telephone: details[8],
-              actif: details[2],
-              idBlockchain: details[0],
+              role, // role is the loop variable for roles index
+              typeEntite: Number(details[3]), // typeEntite is details[3]
+              nom: ipfsDataContent.nom,
+              nifOuCin: ipfsDataContent.nifOuCin,
+              adresseOfficielle: ipfsDataContent.adresseOfficielle,
+              email: ipfsDataContent.email,
+              telephone: ipfsDataContent.telephone,
+              actif: details[2], // actif is details[2]
+              idBlockchain: details[0], // idBlockchain is details[0]
+              offChainDetailsHash: offChainDetailsHash // Store the hash itself
             });
-          } catch (e) { /* ignorer les erreurs d'acteur inexistant */ }
+          } catch (e) {
+            console.error("Erreur getDetailsActeur pour " + addr + ":", e);
+            // Optionnel: ajouter un placeholder si getDetailsActeur échoue
+             all.push({
+              adresse: addr,
+              role,
+              nom: "Erreur Contrat",
+              idBlockchain: "N/A",
+              actif: false,
+              offChainDetailsHash: "N/A"
+            });
+          }
         }
       }
       setActeurs(all);
@@ -85,16 +119,13 @@ export default function AdminListeActeurs() {
     }
     try {
       const contract = await getGestionnaireActeursContract();
+      // Appel modifié pour modifierActeur
       const tx = await contract.modifierActeur(
         editForm.adresse,
-        editForm.nom,
-        editForm.nifOuCin,
-        editForm.adresseOfficielle,
-        editForm.email,
-        editForm.telephone
+        editForm.offChainDetailsHash
       );
       await tx.wait();
-      setEditMessage("Acteur modifié avec succès !");
+      setEditMessage("Détails off-chain de l'acteur (hash) modifiés avec succès !");
       await fetchActeurs();
       setEditIndex(null);
     } catch (err) {
@@ -147,24 +178,25 @@ export default function AdminListeActeurs() {
       {editIndex !== null && (
         <div className="card mt-4">
           <div className="card-body">
-            <h5>Modifier l'acteur</h5>
+            <h5>Modifier l'acteur (Hash des détails Off-Chain)</h5>
+            <p>Adresse: {editForm.adresse}</p>
+            <p>ID Blockchain: {editForm.idBlockchain}</p>
+            <p>Rôle actuel: {ROLES[editForm.role]}</p>
             <form onSubmit={handleEditSubmit}>
-              <label>Nom:
-                <input name="nom" value={editForm.nom} onChange={handleEditChange} className="form-control" required />
-              </label>
-              <label>NIF ou CIN:
-                <input name="nifOuCin" value={editForm.nifOuCin} onChange={handleEditChange} className="form-control" required />
-              </label>
-              <label>Adresse officielle:
-                <input name="adresseOfficielle" value={editForm.adresseOfficielle} onChange={handleEditChange} className="form-control" required />
-              </label>
-              <label>Email:
-                <input name="email" value={editForm.email} onChange={handleEditChange} className="form-control" required />
-              </label>
-              <label>Téléphone:
-                <input name="telephone" value={editForm.telephone} onChange={handleEditChange} className="form-control" required />
-              </label>
-              <button type="submit" className="btn btn-primary mt-2" disabled={editLoading}>{editLoading ? "Modification..." : "Enregistrer"}</button>
+              <div className="mb-3">
+                <label htmlFor="offChainDetailsHashInput" className="form-label">Off-Chain Details Hash (IPFS):</label>
+                <input
+                  id="offChainDetailsHashInput"
+                  name="offChainDetailsHash"
+                  value={editForm.offChainDetailsHash || ''}
+                  onChange={handleEditChange}
+                  className="form-control"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary mt-2" disabled={editLoading}>
+                {editLoading ? "Modification..." : "Enregistrer le nouveau Hash"}
+              </button>
               <button type="button" className="btn btn-secondary mt-2 ms-2" onClick={() => setEditIndex(null)}>Annuler</button>
             </form>
             {editMessage && <div className="alert alert-info mt-2">{editMessage}</div>}

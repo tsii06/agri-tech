@@ -19,11 +19,7 @@ export default function AdminRegisterActeur() {
     adresse: "",
     role: 0,
     typeEntite: 0,
-    nom: "",
-    nifOuCin: "",
-    adresseOfficielle: "",
-    email: "",
-    telephone: ""
+    offChainDetailsHash: "" // New field
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -52,14 +48,12 @@ export default function AdminRegisterActeur() {
         form.adresse,
         Number(form.role),
         Number(form.typeEntite),
-        form.nom,
-        form.nifOuCin,
-        form.adresseOfficielle,
-        form.email,
-        form.telephone
+        form.offChainDetailsHash // Pass the hash
       );
       await tx.wait();
-      setMessage("Acteur enregistré avec succès !");
+      setMessage("Acteur enregistré avec succès ! (Hash: " + form.offChainDetailsHash + ")");
+      // Optionally clear the form or specific fields
+      setForm(prev => ({ ...prev, adresse: "", offChainDetailsHash: "" }));
     } catch (err) {
       setMessage("Erreur : " + (err?.reason || err?.message || err));
     }
@@ -114,60 +108,17 @@ export default function AdminRegisterActeur() {
                 ))}
               </select>
             </div>
-  
-            <div className="col-md-6 mb-3">
-              <label className="form-label">Nom</label>
-              <input
-                name="nom"
-                value={form.nom}
-                onChange={handleChange}
-                required
-                className="form-control"
-              />
-            </div>
-  
-            <div className="col-md-6 mb-3">
-              <label className="form-label">NIF ou CIN</label>
-              <input
-                name="nifOuCin"
-                value={form.nifOuCin}
-                onChange={handleChange}
-                required
-                className="form-control"
-              />
-            </div>
-  
+
+            {/* New field for Off-Chain Details Hash */}
             <div className="col-md-12 mb-3">
-              <label className="form-label">Adresse officielle</label>
+              <label className="form-label">Off-Chain Details Hash (IPFS)</label>
               <input
-                name="adresseOfficielle"
-                value={form.adresseOfficielle}
+                name="offChainDetailsHash"
+                value={form.offChainDetailsHash}
                 onChange={handleChange}
                 required
                 className="form-control"
-              />
-            </div>
-  
-            <div className="col-md-6 mb-3">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                className="form-control"
-              />
-            </div>
-  
-            <div className="col-md-6 mb-3">
-              <label className="form-label">Téléphone</label>
-              <input
-                name="telephone"
-                value={form.telephone}
-                onChange={handleChange}
-                required
-                className="form-control"
+                placeholder="Ex: QmXo9Sj8x..."
               />
             </div>
           </div>
