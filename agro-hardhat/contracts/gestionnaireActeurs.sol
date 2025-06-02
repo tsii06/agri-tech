@@ -33,13 +33,9 @@ contract GestionnaireActeurs {
         StructLib.Role role;
         bool actif;
         TypeEntite typeEntite; // Type d'entité: individu ou organisation
-        string nom; // Nom de l'individu ou de l'organisation
-        string nifOuCin; // NIF pour organisation ou CIN pour individu
-        string adresseOfficielle; // Adresse officielle complète
-        string email; // Email officiel
-        string telephone; // Numéro de téléphone
         uint256 dateEnregistrement;
         address[] contratsDelegues; // Contrats auxquels l'acteur a accès
+        string offChainDetailsHash;
     }
 
     // Mappings pour stocker et accéder aux acteurs
@@ -57,8 +53,8 @@ contract GestionnaireActeurs {
     uint256 private compteurIds;
 
     // Évènements
-    event ActeurEnregistre(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
-    event ActeurModifie(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
+    event ActeurEnregistre(address indexed adresse, string idBlockchain, StructLib.Role role, string offChainDetailsHash, uint256 timestamp);
+    event ActeurModifie(address indexed adresse, string idBlockchain, StructLib.Role role, string newOffChainDetailsHash, uint256 timestamp);
     event ActeurDesactive(address indexed adresse, string idBlockchain, uint256 timestamp);
     event ActeurActive(address indexed adresse, string idBlockchain, uint256 timestamp);
     event ContratDelegueAjoute(address indexed acteur, address indexed contrat, uint256 timestamp);
@@ -139,27 +135,23 @@ contract GestionnaireActeurs {
      * @param _i Nombre à convertir
      * @return Le nombre converti en string
      */
-    function uint2str(uint256 _i) internal pure returns (string memory) {
+    function uint2str(uint256 _i) internal pure returns (string memory str) {
         if (_i == 0) {
             return "0";
         }
-        
-        uint256 j = _i;
-        uint256 length;
-        while (j != 0) {
-            length++;
-            j /= 10;
+        uint256 temp = _i;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
         }
-        
-        bytes memory bstr = new bytes(length);
-        uint256 k = length;
-        j = _i;
-        while (j != 0) {
-            bstr[--k] = bytes1(uint8(48 + j % 10));
-            j /= 10;
+        bytes memory buffer = new bytes(digits);
+        while (_i != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + _i % 10));
+            _i /= 10;
         }
-        
-        return string(bstr);
+        return string(buffer);
     }
 
     /**
@@ -189,21 +181,13 @@ contract GestionnaireActeurs {
      * @param _adresse Adresse de l'acteur
      * @param _role Rôle de l'acteur
      * @param _typeEntite Type d'entité (Individu ou Organisation)
-     * @param _nom Nom ou raison sociale de l'acteur
-     * @param _nifOuCin NIF pour organisation ou CIN pour individu
-     * @param _adresseOfficielle Adresse officielle complète
-     * @param _email Email officiel
-     * @param _telephone Numéro de téléphone
+     * @param _offChainDetailsHash Hash des détails stockés hors chaîne
      */
     function enregistrerActeur(
         address _adresse,
         StructLib.Role _role,
         TypeEntite _typeEntite,
-        string memory _nom,
-        string memory _nifOuCin,
-        string memory _adresseOfficielle,
-        string memory _email,
-        string memory _telephone
+        string memory _offChainDetailsHash
     ) external seulementAdministrateur {
         require(_adresse != address(0), "Adresse invalide");
         require(acteurs[_adresse].adresse == address(0), "Acteur deja enregistre");
@@ -219,13 +203,9 @@ contract GestionnaireActeurs {
             role: _role,
             actif: true,
             typeEntite: _typeEntite,
-            nom: _nom,
-            nifOuCin: _nifOuCin,
-            adresseOfficielle: _adresseOfficielle,
-            email: _email,
-            telephone: _telephone,
             dateEnregistrement: block.timestamp,
-            contratsDelegues: contratsDeleguesVide
+            contratsDelegues: contratsDeleguesVide,
+            offChainDetailsHash: _offChainDetailsHash
         });
         
         // Enregistrement de l'acteur
@@ -234,34 +214,22 @@ contract GestionnaireActeurs {
         acteursByRole[_role].push(_adresse);
         compteurActeurs[_role]++;
         
-        emit ActeurEnregistre(_adresse, idBlockchain, _role, _nom, block.timestamp);
+        emit ActeurEnregistre(_adresse, idBlockchain, _role, _offChainDetailsHash, block.timestamp);
     }
 
     /**
      * @dev Modifie les informations d'un acteur existant
      * @param _adresse Adresse de l'acteur à modifier
-     * @param _nom Nouveau nom
-     * @param _nifOuCin Nouveau NIF/CIN
-     * @param _adresseOfficielle Nouvelle adresse officielle
-     * @param _email Nouvel email
-     * @param _telephone Nouveau numéro de téléphone
+     * @param _newOffChainDetailsHash Nouveau hash des détails stockés hors chaîne
      */
     function modifierActeur(
         address _adresse,
-        string memory _nom,
-        string memory _nifOuCin,
-        string memory _adresseOfficielle,
-        string memory _email,
-        string memory _telephone
+        string memory _newOffChainDetailsHash
     ) external seulementAdministrateur acteurExiste(_adresse) {
         Acteur storage acteur = acteurs[_adresse];
-        acteur.nom = _nom;
-        acteur.nifOuCin = _nifOuCin;
-        acteur.adresseOfficielle = _adresseOfficielle;
-        acteur.email = _email;
-        acteur.telephone = _telephone;
+        acteur.offChainDetailsHash = _newOffChainDetailsHash;
         
-        emit ActeurModifie(_adresse, acteur.idBlockchain, acteur.role, _nom, block.timestamp);
+        emit ActeurModifie(_adresse, acteur.idBlockchain, acteur.role, _newOffChainDetailsHash, block.timestamp);
     }
 
     /**
@@ -324,10 +292,9 @@ contract GestionnaireActeurs {
         
         require(trouve, "Contrat non trouve");
         
-        // Supprime le contrat en remplaçant par le dernier élément et en réduisant le tableau
-        if (acteur.contratsDelegues.length > 1) {
-            acteur.contratsDelegues[indexASupprimer] = acteur.contratsDelegues[acteur.contratsDelegues.length - 1];
-        }
+        // Move the last element to the spot of the one to delete
+        acteur.contratsDelegues[indexASupprimer] = acteur.contratsDelegues[acteur.contratsDelegues.length - 1];
+        // Remove the last element from the array
         acteur.contratsDelegues.pop();
         
         emit ContratDelegueRetire(_acteur, _contratDelegue, block.timestamp);
@@ -355,6 +322,44 @@ contract GestionnaireActeurs {
     }
 
     /**
+     * @dev Récupère une page d'adresses d'acteurs pour un rôle spécifique
+     * @param _role Rôle à filtrer
+     * @param _startIndex Index de début pour la pagination (0-based)
+     * @param _pageSize Nombre d'éléments par page
+     * @return page La page d'adresses d'acteurs
+     * @return totalCount Le nombre total d'acteurs pour ce rôle
+     */
+    function getActeursByRolePaginated(
+        StructLib.Role _role,
+        uint256 _startIndex,
+        uint256 _pageSize
+    ) external view returns (address[] memory page, uint256 totalCount) {
+        address[] storage acteursList = acteursByRole[_role];
+        totalCount = acteursList.length;
+
+        require(_pageSize > 0, "Page size must be positive");
+        // Adjusted condition to allow _startIndex == 0 when totalCount == 0
+        require(_startIndex < totalCount || (_startIndex == 0 && totalCount == 0), "Start index out of bounds");
+
+        uint256 actualEndIndex = _startIndex + _pageSize;
+        if (actualEndIndex > totalCount) {
+            actualEndIndex = totalCount;
+        }
+
+        // If startIndex is beyond the array or effective page size is zero
+        if (_startIndex >= actualEndIndex) {
+            return (new address[](0), totalCount);
+        }
+
+        page = new address[](actualEndIndex - _startIndex);
+        for (uint256 i = 0; i < page.length; i++) {
+            page[i] = acteursList[_startIndex + i];
+        }
+
+        return (page, totalCount);
+    }
+
+    /**
      * @dev Récupère l'adresse d'un acteur à partir de son ID blockchain
      * @param _idBlockchain ID blockchain de l'acteur
      * @return Adresse associée à cet ID blockchain
@@ -372,26 +377,18 @@ contract GestionnaireActeurs {
      * @return role Rôle de l'acteur
      * @return actif Statut de l'acteur
      * @return typeEntite Type d'entité (Individu ou Organisation)
-     * @return nom Nom de l'acteur
-     * @return nifOuCin NIF pour organisation ou CIN pour individu
-     * @return adresseOfficielle Adresse officielle complète
-     * @return email Email officiel
-     * @return telephone Numéro de téléphone
      * @return dateEnregistrement Date d'enregistrement
      * @return contratsDelegues Liste des contrats délégués
+     * @return offChainDetailsHash Hash des détails stockés hors chaîne
      */
     function getDetailsActeur(address _adresse) external view acteurExiste(_adresse) returns (
         string memory idBlockchain,
         StructLib.Role role,
         bool actif,
         TypeEntite typeEntite,
-        string memory nom,
-        string memory nifOuCin,
-        string memory adresseOfficielle,
-        string memory email,
-        string memory telephone,
         uint256 dateEnregistrement,
-        address[] memory contratsDelegues
+        address[] memory contratsDelegues,
+        string memory offChainDetailsHash
     ) {
         Acteur memory acteur = acteurs[_adresse];
         return (
@@ -399,13 +396,9 @@ contract GestionnaireActeurs {
             acteur.role,
             acteur.actif,
             acteur.typeEntite,
-            acteur.nom,
-            acteur.nifOuCin,
-            acteur.adresseOfficielle,
-            acteur.email,
-            acteur.telephone,
             acteur.dateEnregistrement,
-            acteur.contratsDelegues
+            acteur.contratsDelegues,
+            acteur.offChainDetailsHash
         );
     }
 
