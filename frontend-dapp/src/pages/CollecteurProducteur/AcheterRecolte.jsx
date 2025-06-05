@@ -165,7 +165,7 @@ function AcheterRecolte() {
             </div>
             <div className="mt-3">
               <button
-                className="btn btn-success"
+                className="btn-agrichain"
                 onClick={handleAcheter}
                 disabled={loading}
               >

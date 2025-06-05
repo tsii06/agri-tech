@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
+import { ShoppingCart, Hash, Package2, BadgeEuro, User, BadgeCheck, BadgeX, Truck, Wallet, Search, ChevronDown } from "lucide-react";
 
 function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -14,6 +15,9 @@ function MesCommandesExportateur() {
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
   const [userRole, setUserRole] = useState(null);
   const { account } = useUserContext();
+  const [search, setSearch] = useState("");
+  const [paiementFiltre, setPaiementFiltre] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(9);
 
   useEffect(() => {
     if (!account) return;
@@ -128,6 +132,22 @@ function MesCommandesExportateur() {
     }
   };
 
+  // Filtrage commandes selon recherche et paiement
+  const commandesFiltres = commandes.filter((commande) => {
+    const searchLower = search.toLowerCase();
+    const matchSearch =
+      (commande.nomProduit && commande.nomProduit.toLowerCase().includes(searchLower)) ||
+      (commande.id && commande.id.toString().includes(searchLower)) ||
+      (commande.idProduit && commande.idProduit.toString().includes(searchLower)) ||
+      (commande.prix && commande.prix.toString().includes(searchLower));
+    const matchPaiement =
+      paiementFiltre === "all" ||
+      (paiementFiltre === "paye" && commande.payer) ||
+      (paiementFiltre === "nonpaye" && !commande.payer);
+    return matchSearch && matchPaiement;
+  });
+  const commandesAffichees = commandesFiltres.slice(0, visibleCount);
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -143,10 +163,35 @@ function MesCommandesExportateur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">
-          Mes Commandes
-          <span className="badge bg-info ms-2">Exportateur</span>
-        </h2>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
+          <div className="input-group" style={{maxWidth: 320}}>
+            <span className="input-group-text"><Search size={16} /></span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
+              style={{borderRadius: '0 8px 8px 0'}}
+            />
+          </div>
+          <div className="dropdown">
+            <button className="btn btn-outline-success dropdown-toggle d-flex align-items-center" type="button" id="dropdownPaiement" data-bs-toggle="dropdown" aria-expanded="false">
+              <ChevronDown size={16} className="me-1" />
+              {paiementFiltre === 'all' && 'Toutes les commandes'}
+              {paiementFiltre === 'paye' && 'Payées'}
+              {paiementFiltre === 'nonpaye' && 'Non payées'}
+            </button>
+            <ul className="dropdown-menu" aria-labelledby="dropdownPaiement">
+              <li><button className="dropdown-item" onClick={() => setPaiementFiltre('all')}>Toutes les commandes</button></li>
+              <li><button className="dropdown-item" onClick={() => setPaiementFiltre('paye')}>Payées</button></li>
+              <li><button className="dropdown-item" onClick={() => setPaiementFiltre('nonpaye')}>Non payées</button></li>
+            </ul>
+          </div>
+        </div>
+        <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
+          <h2 className="h5 mb-0">Mes Commandes Exportateur</h2>
+        </div>
         
         {isLoading ? (
           <div className="text-center">
@@ -158,22 +203,31 @@ function MesCommandesExportateur() {
           <div className="text-center text-muted">
             Vous n'avez pas encore passé de commandes.
           </div>
+        ) : commandesFiltres.length === 0 ? (
+          <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>
         ) : (
           <div className="row g-3">
-            {commandes.map((commande) => (
+            {commandesAffichees.map((commande) => (
               <div key={commande.id} className="col-md-4">
-                <div className="card border shadow-sm p-3">
-                  <h5 className="card-title">{commande.nomProduit}</h5>
+                <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                  <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
+                    <ShoppingCart size={36} />
+                  </div>
+                  <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
                   <div className="card-text small">
-                    <p><strong>ID Commande:</strong> {commande.id}</p>
-                    <p><strong>ID Produit:</strong> {commande.idProduit}</p>
-                    <p><strong>Quantité:</strong> {commande.quantite} kg</p>
-                    <p><strong>Prix:</strong> {commande.prix} Ar</p>
-                    <p><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
-                    <p className={`fw-semibold ${getStatutPaiementColor(commande.payer)}`}>
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
+                    <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
+                    <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
+                    <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
+                    <p className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(commande.payer)}`}
+                      style={{gap: 6}}>
+                      <Wallet size={16} className="me-1" />
                       <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
                     </p>
-                    <p className={`fw-semibold ${getStatutTransportColor(commande.statutTransport)}`}>
+                    <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(commande.statutTransport)}`}
+                      style={{gap: 6}}>
+                      <Truck size={16} className="me-1" />
                       <strong>Transport:</strong> {getStatutTransport(commande.statutTransport)}
                     </p>
                   </div>
@@ -184,9 +238,9 @@ function MesCommandesExportateur() {
                           setCommandeSelectionnee(commande);
                           setShowModal(true);
                         }}
-                        className="btn btn-sm btn-primary"
+                        className="btn-agrichain"
                       >
-                        Payer (Exportateur)
+                        Payer
                       </button>
                     )}
                   </div>
@@ -239,6 +293,14 @@ function MesCommandesExportateur() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {commandesAffichees.length < commandesFiltres.length && (
+        <div className="text-center mt-3">
+          <button className="btn-agrichain-outline" onClick={() => setVisibleCount(visibleCount + 9)}>
+            Charger plus
+          </button>
         </div>
       )}
     </div>

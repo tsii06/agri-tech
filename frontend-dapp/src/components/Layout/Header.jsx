@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getGestionnaireActeursContract } from "../../utils/contract";
-import { Outlet } from "react-router-dom";
-
+import {
+  Menu,
+  User,
+  LogOut,
+  Wallet,
+  RefreshCw,
+} from "lucide-react";
 
 export const getRoleName = (roleNumber) => {
   const roles = {
@@ -17,23 +22,19 @@ export const getRoleName = (roleNumber) => {
   return roles[roleNumber] || "INCONNU";
 };
 
-
-
-function Header({ state }) {
-  const [account, setAccount] = useState(null);
-  const [role, setRole] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+function Header({ state, setAccount, setRole }) {
+  const [account, setAccountLocal] = useState(null);
+  const [role, setRoleLocal] = useState(null);
 
   const verifierConnexionInitiale = async () => {
     if (window.ethereum) {
       try {
-        // Vérifier si des comptes sont déjà connectés
         const accounts = await window.ethereum.request({
           method: 'eth_accounts'
         });
-        
         if (accounts.length > 0) {
-          setAccount(accounts[0]);
+          setAccountLocal(accounts[0]);
+          setAccount && setAccount(accounts[0]);
           await verifierActeur(accounts[0]);
         }
       } catch (error) {
@@ -45,16 +46,15 @@ function Header({ state }) {
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
-        // Demander à l'utilisateur de choisir un compte
         await window.ethereum.request({
           method: 'wallet_requestPermissions',
           params: [{ eth_accounts: {} }]
         });
-        
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const userAddress = await signer.getAddress();
-        setAccount(userAddress);
+        setAccountLocal(userAddress);
+        setAccount && setAccount(userAddress);
         await verifierActeur(userAddress);
       } catch (error) {
         console.error("Erreur de connexion:", error);
@@ -68,19 +68,16 @@ function Header({ state }) {
   const changerCompte = async () => {
     if (window.ethereum) {
       try {
-        // Forcer l'ouverture de MetaMask pour sélectionner un compte
         await window.ethereum.request({
           method: 'wallet_requestPermissions',
           params: [{ eth_accounts: {} }]
         });
-        
-        // Récupérer le nouveau compte sélectionné
         const accounts = await window.ethereum.request({
           method: 'eth_requestAccounts'
         });
-        
         if (accounts[0]) {
-          setAccount(accounts[0]);
+          setAccountLocal(accounts[0]);
+          setAccount && setAccount(accounts[0]);
           await verifierActeur(accounts[0]);
         }
       } catch (error) {
@@ -91,20 +88,23 @@ function Header({ state }) {
   };
 
   const deconnecterWallet = () => {
-    setAccount(null);
-    setRole(null);
+    setAccountLocal(null);
+    setRoleLocal(null);
+    setAccount && setAccount(null);
+    setRole && setRole(null);
   };
 
   const verifierActeur = async (userAddress) => {
     try {
       const contract = await getGestionnaireActeursContract();
-      // getDetailsActeur retourne un tuple, le rôle est à l'index 1
       const details = await contract.getDetailsActeur(userAddress);
-      if (details && details[0]) { // idBlockchain non vide
+      if (details && details[0]) {
         const roleNumber = Number(details[1]);
-        setRole(roleNumber);
+        setRoleLocal(roleNumber);
+        setRole && setRole(roleNumber);
       } else {
-        setRole(null);
+        setRoleLocal(null);
+        setRole && setRole(null);
       }
     } catch (error) {
       console.error("Erreur lors de la vérification de l'acteur :", error);
@@ -112,28 +112,24 @@ function Header({ state }) {
   };
 
   useEffect(() => {
-    // Vérifier la connexion initiale au chargement de la page
     verifierConnexionInitiale();
-
-    // Écouter les changements de compte
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length > 0) {
-          setAccount(accounts[0]);
+          setAccountLocal(accounts[0]);
+          setAccount && setAccount(accounts[0]);
           verifierActeur(accounts[0]);
         } else {
-          setAccount(null);
-          setRole(null);
+          setAccountLocal(null);
+          setRoleLocal(null);
+          setAccount && setAccount(null);
+          setRole && setRole(null);
         }
       });
-
-      // Écouter les changements de chaîne
       window.ethereum.on("chainChanged", () => {
         window.location.reload();
       });
     }
-
-    // Nettoyage des listeners lors du démontage du composant
     return () => {
       if (window.ethereum) {
         window.ethereum.removeListener("accountsChanged", () => {});
@@ -142,131 +138,47 @@ function Header({ state }) {
     };
   }, [state]);
 
-  const getNavigationLinks = () => {
-    if (!account) return [];
-
-    const commonLinks = [
-      { to: "/mes-parcelles", text: "Parcelles" },
-    ];
-
-    // Ajout du lien Admin pour tous les utilisateurs connectés (ou seulement pour l'admin si tu veux)
-    const adminLink = { to: "/admin", text: "Admin" };
-
-
-    switch (role) {
-      case 0: // Producteur
-        return [
-          { to: "/mes-parcelles", text: "Mes Parcelles" },
-          { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
-          { to: "/liste-recolte", text: "Mes récoltes" },
-          adminLink
-        ];
-      case 1: // Fournisseur
-        return [
-          { to: "/mes-parcelles", text: "Gérer les Intrants" },
-          adminLink
-        ];
-      case 2: // Certificateur
-        return [
-          { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
-          { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" },
-          adminLink
-        ];
-      case 3: // Collecteur
-        return [
-          { to: "/liste-recolte", text: "Passer commande" },
-          { to: "/liste-collecteur-commande", text: "Mes commandes" },
-          { to: "/liste-produits", text: "Liste des produits" },
-          { to: "/liste-acteurs-role", text: "Liste des Producteurs" },
-          ...commonLinks,
-          adminLink
-        ];
-      case 4: // Auditeur
-        return [
-          { to: "/mes-parcelles", text: "Inspections" },
-          adminLink
-        ];
-      case 5: // Transporteur
-        return [
-          { to:"/mes-commandes", text:"Liste des commandes"},
-          adminLink
-        ]; 
-      case 6: // Exportateur
-        return [
-          ...commonLinks,
-          { to:"/mes-commandes", text:"Mes commandes"},
-          { to: "/passer-commande-collecteur", text: "Passer commande" },
-          { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
-          { to: "/liste-produits", text: "Liste des produits" },
-          adminLink
-        ];
-      default:
-        return [...commonLinks, adminLink];
-    }
-  };
-
   return (
-    <div className="container-fluid vh-100 d-flex flex-column">
-    <div className="row flex-grow-1">
-
-        <nav className="col-md-3 col-lg-2 d-md-block bg-light sidebar py-4 shadow-sm">
-            <div className="position-sticky">
-                <a href="/" className="d-flex align-items-center mb-3 text-dark fw-bold fs-5 text-decoration-none px-3">
-                    Mon Projet
-                </a>
-                <ul className="nav flex-column px-3">
-                    {getNavigationLinks().map((link, index) => (
-                        <li className="nav-item" key={index}>
-                            <a href={link.to} key={link.to} className="nav-link text-dark py-2 rounded">
-                                {link.text}
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+    <header className="bg-white shadow-sm madtx-header">
+      <div className="container d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center gap-3">
+          <button
+            className="btn btn-primary d-md-none"
+            style={{ padding: 6, borderRadius: 6 }}
+            aria-label="Ouvrir le menu"
+            // Le bouton menu peut ouvrir la sidebar si besoin, à gérer dans App
+          >
+            <Menu size={24} />
+          </button>
+          <h2 className="project-title mb-0" style={{ color: "rgb(44 106 46 / var(--tw-text-opacity,1))" }}>MadTX</h2>
+        </div>
+        <nav className="navbar navbar-expand-lg navbar-light bg-white py-3 px-4 d-flex justify-content-between">
+          <div className="collapse navbar-collapse show" id="navbarNav">
+            {account ? (
+              <div className="d-flex align-items-center gap-3">
+                <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1">
+                  <User size={16} /> {getRoleName(role)}
+                </span>
+                <span className="fw-medium text-muted d-flex align-items-center gap-1">
+                  <User size={16} /> {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
+                </span>
+                <div className="status-indicator" style={{ width: 12, height: 12, borderRadius: '50%', background: role !== null ? 'var(--madtx-green)' : 'var(--madtx-brown)', marginLeft: 8 }}></div>
+                <button onClick={changerCompte} className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                  <RefreshCw size={16} /> Changer
+                </button>
+                <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1">
+                  <LogOut size={16} /> Déconnecter
+                </button>
+              </div>
+            ) : (
+              <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center gap-2">
+                <Wallet size={18} /> Connecter Wallet
+              </button>
+            )}
+          </div>
         </nav>
-
-
-        <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 d-flex flex-column">
-
-            <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 px-4 d-flex justify-content-between">
-                <div>
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span className="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-                <div className="collapse navbar-collapse" id="navbarNav">
-                    {account ? (
-                        <div className="d-flex align-items-center gap-3">
-                            <span className="badge bg-success text-white px-3 py-1">
-                                {getRoleName(role)}
-                            </span>
-                            <span className="fw-medium text-muted">
-                                {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
-                            </span>
-                            <div className={`status-indicator bg-${role !== null ? "success" : "danger"}`}></div>
-                            <button onClick={changerCompte} className="btn btn-outline-primary btn-sm">
-                                Changer
-                            </button>
-                            <button onClick={deconnecterWallet} className="btn btn-sm btn-outline-danger d-flex align-items-center">
-                                <i className="bi bi-box-arrow-right me-1"></i> Déconnecter
-                            </button>
-                        </div>
-                    ) : (
-                        <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center">
-                            <i className="bi bi-wallet me-2"></i> Connecter Wallet
-                        </button>
-                    )}
-                </div>
-            </nav>
-
-            <div className="flex-grow-1 p-4">
-                <Outlet />
-            </div>
-        </main>
-    </div>
-</div>
-
+      </div>
+    </header>
   );
 }
 

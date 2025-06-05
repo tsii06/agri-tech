@@ -1,0 +1,189 @@
+:root {
+  --madtx-green: #4e944f;
+  --madtx-green-light: #eafaf1;
+  --madtx-brown: #a47149;
+  --madtx-brown-light: #f7f3ef;
+  --madtx-green-opacity: rgba(78, 148, 79, 0.08);
+  --madtx-brown-opacity: rgba(164, 113, 73, 0.08);
+  --madtx-text: #2d2d2d;
+  --madtx-title: #3a5a40;
+}
+
+body {
+  background: var(--madtx-green-light);
+  color: var(--madtx-text);
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+.card {
+  background: var(--madtx-brown-light);
+  border: 1px solid var(--madtx-brown-opacity);
+  box-shadow: 0 2px 8px var(--madtx-green-opacity);
+}
+
+.card-title, h1, h2, h3, h4, h5 {
+  color: var(--madtx-title);
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--madtx-green);
+  border-color: var(--madtx-green);
+  color: #fff;
+  opacity: 0.92;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--madtx-brown);
+  border-color: var(--madtx-brown);
+  color: #fff;
+  opacity: 1;
+}
+
+.btn-success {
+  background: var(--madtx-green);
+  border-color: var(--madtx-green);
+  color: #fff;
+  opacity: 0.92;
+}
+.btn-success:hover, .btn-success:focus {
+  background: var(--madtx-brown);
+  border-color: var(--madtx-brown);
+  color: #fff;
+  opacity: 1;
+}
+
+.btn-warning {
+  background: var(--madtx-brown);
+  border-color: var(--madtx-brown);
+  color: #fff;
+  opacity: 0.92;
+}
+.btn-warning:hover, .btn-warning:focus {
+  background: var(--madtx-green);
+  border-color: var(--madtx-green);
+  color: #fff;
+  opacity: 1;
+}
+
+a, .nav-link {
+  color: var(--madtx-green);
+  opacity: 0.85;
+  text-decoration: none;
+}
+a:hover, .nav-link:hover {
+  color: var(--madtx-brown);
+  opacity: 1;
+}
+
+.table {
+  background: var(--madtx-green-opacity);
+}
+
+input, select, textarea {
+  background: var(--madtx-brown-light);
+  border: 1px solid var(--madtx-green-opacity);
+  color: var(--madtx-text);
+}
+
+::-webkit-input-placeholder { color: #888; opacity: 0.7; }
+::-moz-placeholder { color: #888; opacity: 0.7; }
+:-ms-input-placeholder { color: #888; opacity: 0.7; }
+::placeholder { color: #888; opacity: 0.7; }
+
+.alert-info {
+  background: var(--madtx-green-opacity);
+  color: var(--madtx-title);
+  border: 1px solid var(--madtx-green);
+}
+
+.alert-danger {
+  background: var(--madtx-brown-opacity);
+  color: var(--madtx-brown);
+  border: 1px solid var(--madtx-brown);
+}
+
+.spinner-border {
+  color: var(--madtx-green);
+}
+
+/* Changer le titre principal du projet */
+header h1, .navbar-brand, .project-title, .main-title {
+  color: var(--madtx-green);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* Douceur générale */
+* {
+  border-radius: 8px !important;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.madtx-sidebar {
+  background: var(--madtx-brown-light) !important;
+  border-right: 1px solid var(--madtx-brown-opacity);
+}
+@media (max-width: 768px) {
+  .madtx-sidebar {
+    position: fixed;
+    z-index: 1000;
+    width: 100vw;
+    height: auto;
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--madtx-brown-opacity);
+    box-shadow: 0 2px 8px var(--madtx-green-opacity);
+  }
+  .madtx-sidebar ul {
+    flex-direction: row !important;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+  }
+  .madtx-sidebar .nav-item {
+    flex: 1 1 0;
+    text-align: center;
+  }
+}
+.madtx-active {
+  background: var(--madtx-green-opacity) !important;
+  color: var(--madtx-green) !important;
+  font-weight: 600 !important;
+  outline: 2px solid var(--madtx-green) !important;
+}
+.nav-link {
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+.nav-link:hover, .nav-link:focus {
+  background: var(--madtx-green-opacity);
+  color: var(--madtx-green);
+  opacity: 1;
+  outline: 2px solid var(--madtx-green);
+}
+
+/* Boutons AgriChain */
+.btn-agrichain {
+  background: #2e7d32;
+  color: #fff !important;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.btn-agrichain:hover, .btn-agrichain:focus {
+  background: #388e3c;
+  color: #fff !important;
+}
+
+.btn-agrichain-outline {
+  background: #fff;
+  color: #2e7d32 !important;
+  border: 2px solid #2e7d32;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-agrichain-outline:hover, .btn-agrichain-outline:focus {
+  background: #388e3c;
+  color: #fff !important;
+  border-color: #388e3c;
+} 

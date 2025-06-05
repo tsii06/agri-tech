@@ -3,6 +3,8 @@ import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 import { useParams } from "react-router-dom";
+import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, BadgeCheck, BadgeX, Search, ChevronDown } from "lucide-react";
+import { useUserContext } from '../../context/useContextt';
 
 function ListeProduits() {
   const { address } = useParams();
@@ -14,6 +16,11 @@ function ListeProduits() {
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
   const [userRole, setUserRole] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statutFiltre, setStatutFiltre] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(9);
+  const [quantiteCommande, setQuantiteCommande] = useState("");
+  const { role, account } = useUserContext();
 
   useEffect(() => {
     const chargerProduits = async () => {
@@ -28,6 +35,7 @@ function ListeProduits() {
           role = await getRoleOfAddress(account);
           setUserRole(role);
         }
+        console.log(userRole);
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
         const produitsTemp = [];
@@ -58,6 +66,15 @@ function ListeProduits() {
     };
     chargerProduits();
   }, [address, _]);
+
+  // Synchronisation du rôle utilisateur
+  useEffect(() => {
+    if (role !== undefined && role !== null) {
+      setUserRole(role);
+    } else if (account) {
+      getRoleOfAddress(account).then(setUserRole);
+    }
+  }, [role, account]);
 
   const handleModifierPrix = async (produitId) => {
     try {
@@ -134,6 +151,50 @@ function ListeProduits() {
     }
   };
 
+  // Filtrage produits selon recherche et statut
+  const produitsFiltres = produits.filter((produit) => {
+    const searchLower = search.toLowerCase();
+    const matchSearch =
+      produit.nom.toLowerCase().includes(searchLower) ||
+      produit.idRecolte.toLowerCase().includes(searchLower) ||
+      produit.certificatPhytosanitaire.toLowerCase().includes(searchLower) ||
+      produit.prixUnit.toString().includes(searchLower);
+    const matchStatut =
+      statutFiltre === "all" ||
+      (statutFiltre === "valide" && produit.statut === 1) ||
+      (statutFiltre === "attente" && produit.statut === 0) ||
+      (statutFiltre === "rejete" && produit.statut === 2);
+    return matchSearch && matchStatut;
+  });
+  const produitsAffiches = produitsFiltres.slice(0, visibleCount);
+
+  // Fonction pour commander un produit (exportateur)
+  const handleCommanderProduit = async (produitId) => {
+    try {
+      const contract = await getCollecteurExportateurContract();
+      // Vérifier la quantité
+      const quantite = Number(quantiteCommande);
+      if (isNaN(quantite) || quantite <= 0 || quantite > Number(produitSelectionne.quantite)) {
+        setError("Veuillez entrer une quantité valide");
+        return;
+      }
+      // Appel du smart contract pour commander
+      const tx = await contract.passerCommande(
+        produitId,
+        quantite
+      );
+      await tx.wait();
+      alert("Commande passée avec succès !");
+      setShowModal(false);
+      setProduitSelectionne(null);
+      setQuantiteCommande("");
+      // Optionnel : rafraîchir la liste
+      setState({});
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -149,7 +210,37 @@ function ListeProduits() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
+          <div className="input-group" style={{maxWidth: 320}}>
+            <span className="input-group-text"><Search size={16} /></span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
+              style={{borderRadius: '0 8px 8px 0'}}
+            />
+          </div>
+          <div className="dropdown">
+            <button className="btn btn-outline-success dropdown-toggle d-flex align-items-center" type="button" id="dropdownStatut" data-bs-toggle="dropdown" aria-expanded="false">
+              <ChevronDown size={16} className="me-1" />
+              {statutFiltre === 'all' && 'Tous les statuts'}
+              {statutFiltre === 'valide' && 'Validés'}
+              {statutFiltre === 'attente' && 'En attente'}
+              {statutFiltre === 'rejete' && 'Rejetés'}
+            </button>
+            <ul className="dropdown-menu" aria-labelledby="dropdownStatut">
+              <li><button className="dropdown-item" onClick={() => setStatutFiltre('all')}>Tous les statuts</button></li>
+              <li><button className="dropdown-item" onClick={() => setStatutFiltre('valide')}>Validés</button></li>
+              <li><button className="dropdown-item" onClick={() => setStatutFiltre('attente')}>En attente</button></li>
+              <li><button className="dropdown-item" onClick={() => setStatutFiltre('rejete')}>Rejetés</button></li>
+            </ul>
+          </div>
+        </div>
+        <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
+          <h2 className="h5 mb-0">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
+        </div>
         
         {isLoading ? (
           <div className="text-center">
@@ -161,41 +252,59 @@ function ListeProduits() {
           <div className="text-center text-muted">
             Vous n'avez pas encore de produits.
           </div>
+        ) : produitsFiltres.length === 0 ? (
+          <div className="text-center text-muted">Aucun produit ne correspond à la recherche ou au filtre.</div>
         ) : (
           <div className="row g-3">
-            {produits.map((produit) => (
+            {produitsAffiches.map((produit) => (
               <div key={produit.id} className="col-md-4">
-                <div className="card border shadow-sm p-3">
-                  <h5 className="card-title">{produit.nom}</h5>
+                <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                  <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
+                    <Box size={36} />
+                  </div>
+                  <h5 className="card-title text-center mb-3">{produit.nom}</h5>
                   <div className="card-text small">
-                    <p><strong>ID Récolte:</strong> {produit.idRecolte}</p>
-                    <p><strong>Quantité:</strong> {produit.quantite} kg</p>
-                    <p><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
-                    <p><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
-                    <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
-                    <p className={`fw-semibold ${getStatutProduitColor(produit.statut)}`}>
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Récolte:</strong> {produit.idRecolte}</p>
+                    <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {produit.quantite} kg</p>
+                    <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
+                    <p><Calendar size={16} className="me-2 text-success" /><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
+                    <p><FileCheck2 size={16} className="me-2 text-success" /><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
+                    <p className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(produit.statut)}`}
+                      style={{gap: 6}}>
+                      {produit.statut === 1 ? <BadgeCheck size={16} className="me-1" /> : produit.statut === 2 ? <BadgeX size={16} className="me-1" /> : <Hash size={16} className="me-1" />}
                       <strong>Statut:</strong> {getStatutProduit(produit.statut)}
                     </p>
                   </div>
                   <div className="mt-3">
-                    {userRole === 3 && ( // Collecteur
+                    {userRole === 3 && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);
                           setNouveauPrix(produit.prixUnit);
                           setShowModal(true);
                         }}
-                        className="btn btn-sm btn-primary"
+                        className="btn btn-agrichain"
                       >
                         Modifier le prix
                       </button>
                     )}
-                    {userRole === 6 && produit.statut === 0 && ( // Exportateur et produit en attente
+                    {userRole === 6 && produit.statut === 0 && (
                       <button
                         onClick={() => handleValiderProduit(produit.id)}
-                        className="btn btn-sm btn-success"
+                        className="btn-agrichain-outline"
                       >
                         Valider le produit
+                      </button>
+                    )}
+                    {userRole === 6 && produit.statut === 1 && (
+                      <button
+                        onClick={() => {
+                          setProduitSelectionne(produit);
+                          setShowModal('commander');
+                        }}
+                        className="btn-agrichain"
+                      >
+                        Commander
                       </button>
                     )}
                   </div>
@@ -207,7 +316,7 @@ function ListeProduits() {
       </div>
 
       {/* Modal de modification du prix */}
-      {showModal && produitSelectionne && (
+      {showModal === true && produitSelectionne && (
         <>
         <div className="modal-backdrop fade show"></div>
 
@@ -246,6 +355,60 @@ function ListeProduits() {
           </div>
         </div>
         </>
+      )}
+
+      {/* Modal Commander pour l'exportateur */}
+      {showModal === 'commander' && produitSelectionne && (
+        <>
+        <div className="modal-backdrop fade show"></div>
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Commander {produitSelectionne.nom}</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Quantité disponible: {produitSelectionne.quantite} kg</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={quantiteCommande || ''}
+                    onChange={e => setQuantiteCommande(e.target.value)}
+                    placeholder="Quantité à commander"
+                  />
+                </div>
+                <div className="mb-3">
+                  <p>Prix unitaire: {produitSelectionne.prixUnit} Ar</p>
+                  <p>Total: {Number(quantiteCommande) * Number(produitSelectionne.prixUnit) || 0} Ar</p>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleCommanderProduit(produitSelectionne.id)}
+                  disabled={!quantiteCommande || Number(quantiteCommande) <= 0 || Number(quantiteCommande) > Number(produitSelectionne.quantite)}
+                >
+                  Confirmer la commande
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </>
+      )}
+
+      {produitsAffiches.length < produitsFiltres.length && (
+        <div className="text-center mt-3">
+          <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+            Charger plus
+          </button>
+        </div>
       )}
     </div>
   );

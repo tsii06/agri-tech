@@ -73,7 +73,7 @@ export default function AdminAjoutContratDelegue() {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-primary"
+            className="btn-agrichain"
           >
             {loading ? "Ajout..." : "Ajouter"}
           </button>

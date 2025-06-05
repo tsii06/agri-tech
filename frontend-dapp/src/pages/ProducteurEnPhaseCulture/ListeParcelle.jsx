@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
+import { Search, ChevronDown } from "lucide-react";
 
 
 function MesParcelles() {
@@ -10,6 +11,9 @@ function MesParcelles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [search, setSearch] = useState("");
+  const [certifFiltre, setCertifFiltre] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(9);
 
   const { role, account, verifeActeur } = useUserContext();
 
@@ -56,6 +60,22 @@ function MesParcelles() {
     }
   };
 
+  // Filtrage parcelles selon recherche et certificat
+  const parcellesFiltres = parcelles.filter((parcelle) => {
+    const searchLower = search.toLowerCase();
+    const matchSearch =
+      (parcelle.produit && parcelle.produit.toLowerCase().includes(searchLower)) ||
+      (parcelle.id && parcelle.id.toString().includes(searchLower)) ||
+      (parcelle.qualiteSemence && parcelle.qualiteSemence.toLowerCase().includes(searchLower)) ||
+      (parcelle.methodeCulture && parcelle.methodeCulture.toLowerCase().includes(searchLower));
+    const matchCertif =
+      certifFiltre === "all" ||
+      (certifFiltre === "avec" && parcelle.certificatPhytosanitaire) ||
+      (certifFiltre === "sans" && !parcelle.certificatPhytosanitaire);
+    return matchSearch && matchCertif;
+  });
+  const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -92,13 +112,40 @@ function MesParcelles() {
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between mb-3">
-        <h2 className="h4">Parcelles</h2>
-      </div>
-
-      {parcelles.length > 0 ? (
+      <div className="card p-4 shadow-sm">
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
+          <div className="input-group" style={{maxWidth: 320}}>
+            <span className="input-group-text"><Search size={16} /></span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
+              style={{borderRadius: '0 8px 8px 0'}}
+            />
+          </div>
+          <div className="dropdown">
+            <button className="btn btn-outline-success dropdown-toggle d-flex align-items-center" type="button" id="dropdownCertif" data-bs-toggle="dropdown" aria-expanded="false">
+              <ChevronDown size={16} className="me-1" />
+              {certifFiltre === 'all' && 'Toutes les parcelles'}
+              {certifFiltre === 'avec' && 'Avec certificat'}
+              {certifFiltre === 'sans' && 'Sans certificat'}
+            </button>
+            <ul className="dropdown-menu" aria-labelledby="dropdownCertif">
+              <li><button className="dropdown-item" onClick={() => setCertifFiltre('all')}>Toutes les parcelles</button></li>
+              <li><button className="dropdown-item" onClick={() => setCertifFiltre('avec')}>Avec certificat</button></li>
+              <li><button className="dropdown-item" onClick={() => setCertifFiltre('sans')}>Sans certificat</button></li>
+            </ul>
+          </div>
+        </div>
+        <div className="">
+          <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
+            <h2 className="h5 mb-0">Liste des Parcelles</h2>
+          </div>
+          {parcelles.length > 0 ? (
         <div className="row g-3">
-          {parcelles.map((parcelle) => (
+          {parcellesAffichees.map((parcelle) => (
             <div key={parcelle.id} className="col-md-4">
               <ParcelleCard 
                 parcelle={parcelle}
@@ -107,11 +154,32 @@ function MesParcelles() {
             </div>
           ))}
         </div>
+      ) : parcellesFiltres.length === 0 ? (
+        <div className="text-center text-muted">Aucune parcelle ne correspond à la recherche ou au filtre.</div>
       ) : (
-        <div className="text-center py-5">
-          <p className="text-muted">Aucune parcelle enregistrée.</p>
+        <div className="row g-3">
+          {parcellesAffichees.map((parcelle) => (
+            <div key={parcelle.id} className="col-md-4">
+              <ParcelleCard 
+                parcelle={parcelle}
+                userRole={role}
+              />
+            </div>
+          ))}
         </div>
       )}
+
+      {parcellesAffichees.length < parcellesFiltres.length && (
+        <div className="text-center mt-3">
+          <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+            Charger plus
+          </button>
+        </div>
+      )}
+        </div>
+      </div>
+
+      
     </div>
   );
 }

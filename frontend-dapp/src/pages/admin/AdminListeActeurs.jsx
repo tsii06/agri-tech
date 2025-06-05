@@ -116,10 +116,7 @@ export default function AdminListeActeurs() {
             <th>Rôle</th>
             <th>Type</th>
             <th>Nom</th>
-            <th>NIF/CIN</th>
-            <th>Adresse Officielle</th>
             <th>Email</th>
-            <th>Téléphone</th>
             <th>Actif</th>
             <th>Actions</th>
           </tr>
@@ -131,13 +128,10 @@ export default function AdminListeActeurs() {
               <td>{ROLES[acteur.role]}</td>
               <td>{TYPES_ENTITE[acteur.typeEntite]}</td>
               <td>{acteur.nom}</td>
-              <td>{acteur.nifOuCin}</td>
-              <td>{acteur.adresseOfficielle}</td>
               <td>{acteur.email}</td>
-              <td>{acteur.telephone}</td>
               <td>{acteur.actif ? "Oui" : "Non"}</td>
               <td>
-                <button className="btn btn-sm btn-warning" onClick={() => handleEdit(i)}>Modifier</button>
+                <button className="btn-agrichain-outline" onClick={() => handleEdit(i)}>Modifier</button>
               </td>
             </tr>
           ))}

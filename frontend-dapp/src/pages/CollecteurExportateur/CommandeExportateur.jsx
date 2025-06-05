@@ -158,7 +158,7 @@ function CommandeExportateur() {
                     <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
                     <p><strong>Collecteur:</strong> {produit.collecteur.slice(0, 6)}...{produit.collecteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutProduitColor(produit.statut)}`}>
-                      <strong>Statutff:</strong> {getStatutProduit(produit.statut)}
+                      <strong>Status:</strong> {getStatutProduit(produit.statut)}
                     </p>
                   </div>
                   <div className="mt-3">
@@ -169,9 +169,9 @@ function CommandeExportateur() {
                           setQuantiteCommande("");
                           setShowModal(true);
                         }}
-                        className="btn btn-sm btn-primary"
+                        className="btn-agrichain"
                       >
-                        Commander (Exportateur)
+                        Commander
                       </button>
                     )}
                   </div>

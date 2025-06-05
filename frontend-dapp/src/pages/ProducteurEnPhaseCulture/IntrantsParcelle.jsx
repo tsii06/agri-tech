@@ -117,7 +117,7 @@ function IntrantsParcelle() {
         <button
           type="submit"
           disabled={ajoutEnCours}
-          className={`btn mt-3 ${ajoutEnCours ? "btn-secondary disabled" : "btn-primary"}`}
+          className={`btn-agrichain mt-3${ajoutEnCours ? " disabled" : ""}`}
         >
           {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
         </button>
@@ -140,7 +140,7 @@ function IntrantsParcelle() {
                   <div className="mt-3 d-flex gap-2">
                     <button
                       onClick={() => validerIntrant(intrant.nom, true)}
-                      className="btn btn-sm btn-success"
+                      className="btn-agrichain-outline"
                     >
                       Valider
                     </button>

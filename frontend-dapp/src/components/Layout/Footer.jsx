@@ -1,52 +1,65 @@
 import React from 'react';
+import { Leaf, Github, Twitter, Linkedin } from 'lucide-react';
 
-const Footer = () => {
+function Footer() {
   return (
-    <footer className="text-light py-5 mt-auto">
-      <div>
+    <footer className="bg-dark text-white pt-5 pb-4 pt-5">
+      <div className="container">
         <div className="row">
-          {/* À propos */}
+          
+          {/* Logo et description */}
           <div className="col-md-4 mb-4">
-            <h3 className="h4 mb-4">À propos d'Agri-Tech</h3>
-            <p className="text-muted">
-              Une plateforme innovante pour la traçabilité et la gestion de la chaîne d'approvisionnement agricole utilisant la blockchain.
+            <div className="d-flex align-items-center mb-3">
+              <Leaf size={32} className="text-success" />
+              <span className="ms-2 h5 mb-0 fw-bold">Madagascar AgriChain</span>
+            </div>
+            <p className="text-light small">
+              Traçabilité de produits agricoles sur la blockchain pour plus de transparence, 
+              de confiance et d'efficacité dans la chaîne d'approvisionnement à Madagascar.
             </p>
+            <div className="d-flex gap-3">
+              <a href="#" className="text-white-50 hover-opacity text-decoration-none">
+                <Github size={20} />
+              </a>
+              <a href="#" className="text-white-50 hover-opacity text-decoration-none">
+                <Twitter size={20} />
+              </a>
+              <a href="#" className="text-white-50 hover-opacity text-decoration-none">
+                <Linkedin size={20} />
+              </a>
+            </div>
           </div>
 
-          {/* Liens rapides */}
+          {/* Liens de navigation */}
           <div className="col-md-4 mb-4">
-            <h3 className="h4 mb-4">Liens rapides</h3>
+            <h5 className="text-white mb-3">Navigation</h5>
             <ul className="list-unstyled">
-              <li className="mb-2">
-                <a href="#" className="text-muted text-decoration-none">Accueil</a>
-              </li>
-              <li className="mb-2">
-                <a href="#" className="text-muted text-decoration-none">Services</a>
-              </li>
-              <li className="mb-2">
-                <a href="#" className="text-muted text-decoration-none">Contact</a>
-              </li>
+              <li><a href="/" className="text-white-50 text-decoration-none">Accueil</a></li>
+              <li><a href="/producer" className="text-white-50 text-decoration-none">Espace Producteur</a></li>
+              <li><a href="/cooperative" className="text-white-50 text-decoration-none">Espace Coopérative</a></li>
+              <li><a href="/about" className="text-white-50 text-decoration-none">À Propos</a></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div className="col-md-4 mb-4">
-            <h3 className="h4 mb-4">Contact</h3>
-            <ul className="list-unstyled text-muted">
-              <li className="mb-2">Email: contact@agri-tech.com</li>
-              <li className="mb-2">Tél: +261 34 00 000 00</li>
-              <li className="mb-2">Antananarivo, Madagascar</li>
+            <h5 className="text-white mb-3">Contact</h5>
+            <ul className="list-unstyled text-white-50">
+              <li>Antananarivo, Madagascar</li>
+              <li>contact@madagascar-agrichain.com</li>
+              <li>+261 34 12 345 67</li>
             </ul>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="border-top border-secondary pt-4 mt-4 text-center text-muted">
-          <p className="mb-0">&copy; {new Date().getFullYear()} Agri-Tech. Tous droits réservés.</p>
+        <div className="text-center border-top border-secondary pt-3 mt-4">
+          <small className="text-white-50">
+            &copy; {new Date().getFullYear()} Madagascar AgriChain. Tous droits réservés.
+          </small>
         </div>
       </div>
     </footer>
   );
-};
+}
 
-export default Footer; 
+export default Footer;
