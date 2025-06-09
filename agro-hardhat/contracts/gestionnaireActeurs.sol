@@ -423,4 +423,18 @@ contract GestionnaireActeurs {
         
         implementation = _nouvelleImplementation;
     }
+
+    /**
+     * @dev Vérifie si un acteur possède un contrat délégué donné
+     * @param _acteur Adresse de l'acteur
+     * @param _contrat Adresse du contrat à vérifier
+     * @return true si le contrat est délégué à l'acteur
+     */
+    function aContratDelegue(address _acteur, address _contrat) public view returns (bool) {
+        address[] memory contrats = acteurs[_acteur].contratsDelegues;
+        for (uint i = 0; i < contrats.length; i++) {
+            if (contrats[i] == _contrat) return true;
+        }
+        return false;
+    }
 }

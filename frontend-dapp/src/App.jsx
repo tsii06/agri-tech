@@ -28,6 +28,8 @@ import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
 import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
 import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
 import ListeActeursRole from "./pages/ListeActeursRole";
+import ActiverDesactiverActeur from "./pages/Admin/ActiverDesactiverActeur";
+import RetirerContratDelegue from "./pages/RetirerContratDelegue";
 
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
@@ -192,6 +194,8 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
                 <Route path="listerecolte/:address" element={<ListeRecoltes />} />
                 <Route path="listeproduit/:address" element={<ListeProduits />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
+                <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
+                <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
               </Routes>
             </div>
           </div>
@@ -212,6 +216,8 @@ function AdminHome() {
         <li><a href="/admin/enregistrer-acteur">Enregistrer un acteur</a></li>
         <li><a href="/admin/ajouter-contrat-delegue">Ajouter un contrat délégué</a></li>
         <li><a href="/admin/liste-acteurs">Liste des acteurs</a></li>
+        <li><a href="/admin/activer-desactiver-acteur">Activer / Désactiver un acteur</a></li>
+        <li><a href="/retirer-contrat-delegue">Retirer un contrat délégué</a></li>
       </ul>
     </div>
   );

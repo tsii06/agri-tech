@@ -35,6 +35,13 @@ contract ProducteurEnPhaseCulture {
         require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Transporteur), "Non autorise: seulement Transporteur");
         _;
     }
+    modifier seulementActeurAutorise() {
+        require(
+            gestionnaireActeurs.aContratDelegue(msg.sender, address(this)),
+            "Non autorise: contrat non delegue"
+        );
+        _;
+    }
 
     constructor(address _gestionnaireActeurs) {
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
@@ -48,7 +55,7 @@ contract ProducteurEnPhaseCulture {
         string memory _longitude,
         string memory _dateRecolte,
         string memory _certificatPhytosanitaire
-    ) public seulementProducteur {
+    ) public seulementProducteur seulementActeurAutorise {
         compteurParcelles++;
         parcelles[compteurParcelles].id = compteurParcelles;
         parcelles[compteurParcelles].producteur = msg.sender;
