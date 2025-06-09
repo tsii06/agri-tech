@@ -30,7 +30,8 @@ contract GestionnaireActeurs {
     struct Acteur {
         address adresse;
         string idBlockchain; // Identifiant unique généré par la blockchain
-        StructLib.Role role;
+        StructLib.Role[] roles; // Tableau pour lister tous les rôles
+        mapping(StructLib.Role => bool) hasRole; // Mapping pour vérification rapide
         bool actif;
         TypeEntite typeEntite; // Type d'entité: individu ou organisation
         string nom; // Nom de l'individu ou de l'organisation
@@ -207,33 +208,24 @@ contract GestionnaireActeurs {
     ) external seulementAdministrateur {
         require(_adresse != address(0), "Adresse invalide");
         require(acteurs[_adresse].adresse == address(0), "Acteur deja enregistre");
-        
-        // Générer un ID blockchain unique
         string memory idBlockchain = genererIdBlockchain();
-        
-        // Création du nouvel acteur
-        address[] memory contratsDeleguesVide = new address[](0);
-        Acteur memory nouvelActeur = Acteur({
-            adresse: _adresse,
-            idBlockchain: idBlockchain,
-            role: _role,
-            actif: true,
-            typeEntite: _typeEntite,
-            nom: _nom,
-            nifOuCin: _nifOuCin,
-            adresseOfficielle: _adresseOfficielle,
-            email: _email,
-            telephone: _telephone,
-            dateEnregistrement: block.timestamp,
-            contratsDelegues: contratsDeleguesVide
-        });
-        
-        // Enregistrement de l'acteur
-        acteurs[_adresse] = nouvelActeur;
+        Acteur storage nouvelActeur = acteurs[_adresse];
+        nouvelActeur.adresse = _adresse;
+        nouvelActeur.idBlockchain = idBlockchain;
+        nouvelActeur.actif = true;
+        nouvelActeur.typeEntite = _typeEntite;
+        nouvelActeur.nom = _nom;
+        nouvelActeur.nifOuCin = _nifOuCin;
+        nouvelActeur.adresseOfficielle = _adresseOfficielle;
+        nouvelActeur.email = _email;
+        nouvelActeur.telephone = _telephone;
+        nouvelActeur.dateEnregistrement = block.timestamp;
+        // Ajout du rôle initial
+        nouvelActeur.roles.push(_role);
+        nouvelActeur.hasRole[_role] = true;
         idBlockchainToAddress[idBlockchain] = _adresse;
         acteursByRole[_role].push(_adresse);
         compteurActeurs[_role]++;
-        
         emit ActeurEnregistre(_adresse, idBlockchain, _role, _nom, block.timestamp);
     }
 
@@ -261,7 +253,7 @@ contract GestionnaireActeurs {
         acteur.email = _email;
         acteur.telephone = _telephone;
         
-        emit ActeurModifie(_adresse, acteur.idBlockchain, acteur.role, _nom, block.timestamp);
+        emit ActeurModifie(_adresse, acteur.idBlockchain, acteur.roles[0], _nom, block.timestamp);
     }
 
     /**
@@ -341,7 +333,7 @@ contract GestionnaireActeurs {
      */
     function estActeurAvecRole(address _adresse, StructLib.Role _role) external view returns (bool) {
         return acteurs[_adresse].adresse != address(0) && 
-               acteurs[_adresse].role == _role && 
+               acteurs[_adresse].hasRole[_role] && 
                acteurs[_adresse].actif;
     }
 
@@ -369,7 +361,7 @@ contract GestionnaireActeurs {
      * @dev Récupère les détails d'un acteur
      * @param _adresse Adresse de l'acteur
      * @return idBlockchain ID blockchain unique
-     * @return role Rôle de l'acteur
+     * @return roles Tableau des rôles de l'acteur
      * @return actif Statut de l'acteur
      * @return typeEntite Type d'entité (Individu ou Organisation)
      * @return nom Nom de l'acteur
@@ -382,7 +374,7 @@ contract GestionnaireActeurs {
      */
     function getDetailsActeur(address _adresse) external view acteurExiste(_adresse) returns (
         string memory idBlockchain,
-        StructLib.Role role,
+        StructLib.Role[] memory roles,
         bool actif,
         TypeEntite typeEntite,
         string memory nom,
@@ -393,10 +385,10 @@ contract GestionnaireActeurs {
         uint256 dateEnregistrement,
         address[] memory contratsDelegues
     ) {
-        Acteur memory acteur = acteurs[_adresse];
+        Acteur storage acteur = acteurs[_adresse];
         return (
             acteur.idBlockchain,
-            acteur.role,
+            acteur.roles,
             acteur.actif,
             acteur.typeEntite,
             acteur.nom,
@@ -436,5 +428,18 @@ contract GestionnaireActeurs {
             if (contrats[i] == _contrat) return true;
         }
         return false;
+    }
+
+    function ajouterRole(address _adresse, StructLib.Role _role) external seulementAdministrateur acteurExiste(_adresse) {
+        Acteur storage acteur = acteurs[_adresse];
+        require(!acteur.hasRole[_role], "Role deja attribue");
+        acteur.roles.push(_role);
+        acteur.hasRole[_role] = true;
+        acteursByRole[_role].push(_adresse);
+        compteurActeurs[_role]++;
+    }
+
+    function getRoles(address _adresse) external view returns (StructLib.Role[] memory) {
+        return acteurs[_adresse].roles;
     }
 }
