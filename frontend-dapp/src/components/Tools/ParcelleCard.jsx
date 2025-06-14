@@ -45,8 +45,8 @@ const ParcelleCard = ({
     // Liens pour le certificateur
     if (userRole === 2) {
       links.push(
-        <Link key="inspections" to={`/parcelle/${id}/inspections`} className="btn btn-link">
-          Inspections
+        <Link key="intrants" to={`/parcelle/${id}/intrants`} className="btn btn-link">
+          Intrants
         </Link>
       );
     }

@@ -101,7 +101,7 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
           roleLinks = [{ to: "/mes-parcelles", text: "Gérer les Intrants" }]; break;
         case 2:
           roleLinks = [
-            { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
+            { to: "/mes-parcelles", text: "Validation des intrants" },
             { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
           ]; break;
         case 3:
