@@ -19,6 +19,9 @@ contract CollecteurProducteur {
     GestionnaireActeurs public gestionnaireActeurs;
     ProducteurEnPhaseCulture public producteurEnPhaseCulture;
 
+    // limite le nombre d'appel a la fonction initialiser a 1
+    bool private initialised;
+
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
         require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Producteur), "Non autorise: seulement Producteur");
@@ -33,11 +36,13 @@ contract CollecteurProducteur {
         _;
     }
 
-    // ================================== constructor =================================================
-    constructor(address _addrCE, address _gestionnaireActeurs, address _producteurEnPhaseCulture) {
+    // ================================== initialiser =================================================
+    function initialiser(address _addrCE, address _gestionnaireActeurs, address _producteurEnPhaseCulture) public {
+        require(!initialised, "Contrat deja initialiser !");
         moduleCE = ICollecteurExportateur(_addrCE);
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
         producteurEnPhaseCulture = ProducteurEnPhaseCulture(payable(_producteurEnPhaseCulture));
+        initialised = true;
     }
 
     // definie le contrat collecteurExportateur
