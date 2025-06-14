@@ -116,18 +116,16 @@ function MesCommandesExportateur() {
 
   const getStatutTransport = (statut) => {
     switch(Number(statut)) {
-      case 0: return "En attente";
-      case 1: return "En cours";
-      case 2: return "Livré";
+      case 0: return "En cours";
+      case 1: return "Livré";
       default: return "Inconnu";
     }
   };
 
   const getStatutTransportColor = (statut) => {
     switch(Number(statut)) {
-      case 0: return "text-warning";
-      case 1: return "text-info";
-      case 2: return "text-success";
+      case 0: return "text-info";
+      case 1: return "text-success";
       default: return "text-secondary";
     }
   };

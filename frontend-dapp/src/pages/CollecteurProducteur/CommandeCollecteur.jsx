@@ -111,18 +111,16 @@ function CommandeCollecteur() {
 
   const getStatutTransport = (statut) => {
     switch(statut) {
-      case 0: return "En attente";
-      case 1: return "En cours";
-      case 2: return "Livré";
+      case 0: return "En cours";
+      case 1: return "Livré";
       default: return "Inconnu";
     }
   };
 
   const getStatutTransportColor = (statut) => {
     switch(statut) {
-      case 0: return "text-warning";
-      case 1: return "text-info";
-      case 2: return "text-success";
+      case 0: return "text-info";
+      case 1: return "text-success";
       default: return "text-secondary";
     }
   };
@@ -227,10 +225,10 @@ function CommandeCollecteur() {
                         <Wallet size={16} className="me-1" />
                         <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
                       </p>
-                      <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(commande.statutTransport)}`}
+                      <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(Number(commande.statutTransport))}`}
                         style={{gap: 6}}>
                         <Truck size={16} className="me-1" />
-                        <strong>Transport:</strong> {getStatutTransport(commande.statutTransport)}
+                        <strong>Transport:</strong> {getStatutTransport(Number(commande.statutTransport))}
                       </p>
                     </div>
                     <div className="mt-3">
