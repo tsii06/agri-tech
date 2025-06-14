@@ -90,9 +90,8 @@ function LivraisonRecolte() {
 
   const getStatutTransportLabel = (statutCode) => {
     switch(statutCode) {
-      case 0: return "En attente";
-      case 1: return "En cours";
-      case 2: return "Livré";
+      case 0: return <span className="text-warning fw-bold">En cours</span>;
+      case 1: return <span className="text-success fw-bold">Livré</span>;
       default: return "Inconnu";
     }
   };
@@ -101,7 +100,7 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurExportateurContract();
-      await contract.mettreAJourStatutTransport(Number(commandeId), 2);
+      await contract.mettreAJourStatutTransport(Number(commandeId), 1);
       alert("Statut de transport mis à jour avec succès !");
       setIsProcessing(false);
       window.location.reload();
@@ -194,7 +193,7 @@ function LivraisonRecolte() {
           ))}
         </div>
       </div>
-      <div className="card p-4 shadow-sm mb-4">
+      <div className="card p-4 shadow-sm my-4">
         <h2 className="h5 mb-3">Liste des Commandes (Récolte)</h2>
         <div className="row g-3">
           {commandesRecolte.map((cmd) => (
