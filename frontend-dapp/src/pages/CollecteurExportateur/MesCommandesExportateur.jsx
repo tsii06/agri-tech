@@ -7,7 +7,6 @@ function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -27,8 +26,6 @@ function MesCommandesExportateur() {
           role = await getRoleOfAddress(account);
           setUserRole(role);
         }
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
 
         console.log("Adresse connectée:", account);
         
@@ -72,7 +69,7 @@ function MesCommandesExportateur() {
     };
 
     chargerCommandes();
-  }, [account]);
+  }, [account, userRole]);
 
   const handlePayer = async (commandeId) => {
     try {
@@ -197,7 +194,7 @@ function MesCommandesExportateur() {
           </div>
         ) : commandes.length === 0 ? (
           <div className="text-center text-muted">
-            Vous n'avez pas encore passé de commandes.
+            Vous n&apos;avez pas encore passé de commandes.
           </div>
         ) : commandesFiltres.length === 0 ? (
           <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>

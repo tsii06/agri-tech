@@ -13,9 +13,7 @@ function CommandeCollecteur() {
   const navigate = useNavigate();
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [acteur, setActeur] = useState({});
-  const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -23,12 +21,12 @@ function CommandeCollecteur() {
   const [paiementFiltre, setPaiementFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
 
-  const { role, account, verifeActeur } = useUserContext();
+  const { account } = useUserContext();
 
 
   useEffect(() => {
     if (!window.ethereum) {
-      setError("Veuillez installer Metamask pour accéder à vos commandes.");
+      alert("Veuillez installer Metamask pour accéder à vos commandes.");
       setIsLoading(false);
       return;
     }
@@ -63,13 +61,13 @@ function CommandeCollecteur() {
         commandesTemp.reverse();
         setCommandes(commandesTemp);
       } catch (error) {
-        setError(error.message);
+        console.error(error.message);
       } finally {
         setIsLoading(false);
       }
     };
     chargerCommandes();
-  }, [account]);
+  }, [account, acteur]);
 
   const handlePayer = async (commandeId) => {
     try {
@@ -95,7 +93,7 @@ function CommandeCollecteur() {
       
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
-      setError(error.message);
+      console.error(error.message);
     }
   };
 
@@ -199,7 +197,7 @@ function CommandeCollecteur() {
           
           {commandes.length === 0 ? (
             <div className="text-center text-muted">
-              Vous n'avez pas encore passé de commandes.
+              Vous n&apos;avez pas encore passé de commandes.
             </div>
           ) : commandesFiltres.length === 0 ? (
             <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>

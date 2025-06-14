@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
 
 function LivraisonRecolte() {
   const { id } = useParams(); // id de la commande
-  const navigate = useNavigate();
   const [commande, setCommande] = useState(null);
   const [produit, setProduit] = useState(null);
   const [statut, setStatut] = useState("0");
@@ -16,8 +15,6 @@ function LivraisonRecolte() {
   const [humidite, setHumidite] = useState("");
   const [commandes, setCommandes] = useState([]);
   const [commandesRecolte, setCommandesRecolte] = useState([]);
-  const [filtreStatut, setFiltreStatut] = useState("");
-  const [filtreProducteur, setFiltreProducteur] = useState("");
   const [error, setError] = useState(null);
 
   useEffect(() => {
