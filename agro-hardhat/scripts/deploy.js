@@ -9,30 +9,34 @@ async function main() {
 
     // 1. Déployer d'abord le GestionnaireActeurs
     const GestionnaireActeurs = await ethers.getContractFactory("GestionnaireActeurs");
-    const gestionnaireActeurs = await GestionnaireActeurs.deploy(deployer.address, deployer.address); // deployer.address comme proxy initial
+    const gestionnaireActeurs = await GestionnaireActeurs.deploy();
     await gestionnaireActeurs.waitForDeployment();
+    await gestionnaireActeurs.initialiser(deployer.address);
     console.log("GestionnaireActeurs deployed to:", await gestionnaireActeurs.getAddress());
 
     // 2. Déployer le ProducteurEnPhaseCulture
     const ProducteurEnPhaseCulture = await ethers.getContractFactory("ProducteurEnPhaseCulture");
-    const producteurEnPhaseCulture = await ProducteurEnPhaseCulture.deploy(await gestionnaireActeurs.getAddress());
+    const producteurEnPhaseCulture = await ProducteurEnPhaseCulture.deploy();
     await producteurEnPhaseCulture.waitForDeployment();
+    await producteurEnPhaseCulture.initialiser(await gestionnaireActeurs.getAddress());
     console.log("ProducteurEnPhaseCulture deployed to:", await producteurEnPhaseCulture.getAddress());
 
     // 3. Déployer le CollecteurExportateur
     const CollecteurExportateur = await ethers.getContractFactory("CollecteurExportateur");
-    const collecteurExportateur = await CollecteurExportateur.deploy(await gestionnaireActeurs.getAddress());
+    const collecteurExportateur = await CollecteurExportateur.deploy();
     await collecteurExportateur.waitForDeployment();
+    await collecteurExportateur.initialiser(await gestionnaireActeurs.getAddress());
     console.log("CollecteurExportateur deployed to:", await collecteurExportateur.getAddress());
 
     // 4. Déployer le CollecteurProducteur
     const CollecteurProducteur = await ethers.getContractFactory("CollecteurProducteur");
-    const collecteurProducteur = await CollecteurProducteur.deploy(
+    const collecteurProducteur = await CollecteurProducteur.deploy();
+    await collecteurProducteur.waitForDeployment();
+    await collecteurProducteur.initialiser(
         await collecteurExportateur.getAddress(),
         await gestionnaireActeurs.getAddress(),
         await producteurEnPhaseCulture.getAddress()
     );
-    await collecteurProducteur.waitForDeployment();
     console.log("CollecteurProducteur deployed to:", await collecteurProducteur.getAddress());
 
     // 5. Enregistrer les acteurs dans le GestionnaireActeurs
