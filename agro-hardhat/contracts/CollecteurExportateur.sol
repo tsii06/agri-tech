@@ -15,6 +15,8 @@ contract CollecteurExportateur {
     uint32 public compteurProduits;
     uint32 public compteurConditions;
     uint32 public compteurPaiements;
+    // limite le nombre d'appel a la fonction initialiser a 1
+    bool private initialised;
 
     GestionnaireActeurs public gestionnaireActeurs;
     // ------------------------- Fin Attributs ----------------------------------------------------------
@@ -40,8 +42,10 @@ contract CollecteurExportateur {
         _;
     }
 
-    constructor(address _gestionnaireActeurs) {
+    function initialiser(address _gestionnaireActeurs) public {
+        require(!initialised, "Contrat deja initialiser !");
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
+        initialised = true;
     }
 
     // ==================================== Produit =========================================================

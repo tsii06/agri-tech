@@ -9,6 +9,8 @@ contract ProducteurEnPhaseCulture {
     mapping(uint32 => StructLib.Parcelle) public parcelles;
     uint32 public compteurParcelles;
     uint32 public compteurInspections;
+    // limite le nombre d'appel a la fonction initialiser a 1
+    bool private initialised;
 
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
@@ -43,8 +45,10 @@ contract ProducteurEnPhaseCulture {
         _;
     }
 
-    constructor(address _gestionnaireActeurs) {
+    function initialiser(address _gestionnaireActeurs) public {
+        require(!initialised, "Contrat deja initialiser !");
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
+        initialised = true;
     }
 
     // ====================================== Parcelle =========================================================

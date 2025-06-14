@@ -6,11 +6,11 @@ import GestionnaireActeurs from "../abi/GestionnaireActeurs.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_PROXY_ADDRESS = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318";  // ProducteurProxy
-const CollecteurExportateur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";  // CollecteurProxy
-const CollecteurProducteur_PROXY_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"; 
+const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";  // ProducteurProxy
+const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853";  // CollecteurProxy
+const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; 
 // Adresse du contrat GestionnaireActeurs déployé sur le réseau local
-const GESTIONNAIRE_ACTEURS_ADDRESS = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"; // À remplacer par la vraie adresse après déploiement
+const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
 
 export async function getProvider() {
   if (!window.ethereum) {

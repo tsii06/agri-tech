@@ -57,6 +57,9 @@ contract GestionnaireActeurs {
     // Compteur pour générer des IDs uniques
     uint256 private compteurIds;
 
+    // limite le nombre d'appel a la fonction initialiser a 1
+    bool private initialised;
+
     // Évènements
     event ActeurEnregistre(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
     event ActeurModifie(address indexed adresse, string idBlockchain, StructLib.Role role, string nom, uint256 timestamp);
@@ -74,13 +77,13 @@ contract GestionnaireActeurs {
     /**
      * @dev Constructeur du contrat
      * @param _administrateurInitial Adresse du premier administrateur
-     * @param _proxyAddress Adresse du contrat proxy
      */
-    constructor(address _administrateurInitial, address _proxyAddress) {
+    function initialiser(address _administrateurInitial) public {
         require(_administrateurInitial != address(0), "Adresse administrateur invalide");
+        require(!initialised, "Contrat deja initialiser !");
         administrateurs[_administrateurInitial] = true;
-        proxyAddress = _proxyAddress;
         compteurIds = 1; // Commencer à 1
+        initialised = true;
         emit AdministrateurAjoute(_administrateurInitial, block.timestamp);
     }
 

@@ -9,30 +9,34 @@ async function main() {
 
     // 1. Déployer d'abord le GestionnaireActeurs
     const GestionnaireActeurs = await ethers.getContractFactory("GestionnaireActeurs");
-    const gestionnaireActeurs = await GestionnaireActeurs.deploy(deployer.address, deployer.address); // deployer.address comme proxy initial
+    const gestionnaireActeurs = await GestionnaireActeurs.deploy();
     await gestionnaireActeurs.waitForDeployment();
+    await gestionnaireActeurs.initialiser(deployer.address);
     console.log("GestionnaireActeurs deployed to:", await gestionnaireActeurs.getAddress());
 
     // 2. Déployer le ProducteurEnPhaseCulture
     const ProducteurEnPhaseCulture = await ethers.getContractFactory("ProducteurEnPhaseCulture");
-    const producteurEnPhaseCulture = await ProducteurEnPhaseCulture.deploy(await gestionnaireActeurs.getAddress());
+    const producteurEnPhaseCulture = await ProducteurEnPhaseCulture.deploy();
     await producteurEnPhaseCulture.waitForDeployment();
+    await producteurEnPhaseCulture.initialiser(await gestionnaireActeurs.getAddress());
     console.log("ProducteurEnPhaseCulture deployed to:", await producteurEnPhaseCulture.getAddress());
 
     // 3. Déployer le CollecteurExportateur
     const CollecteurExportateur = await ethers.getContractFactory("CollecteurExportateur");
-    const collecteurExportateur = await CollecteurExportateur.deploy(await gestionnaireActeurs.getAddress());
+    const collecteurExportateur = await CollecteurExportateur.deploy();
     await collecteurExportateur.waitForDeployment();
+    await collecteurExportateur.initialiser(await gestionnaireActeurs.getAddress());
     console.log("CollecteurExportateur deployed to:", await collecteurExportateur.getAddress());
 
     // 4. Déployer le CollecteurProducteur
     const CollecteurProducteur = await ethers.getContractFactory("CollecteurProducteur");
-    const collecteurProducteur = await CollecteurProducteur.deploy(
+    const collecteurProducteur = await CollecteurProducteur.deploy();
+    await collecteurProducteur.waitForDeployment();
+    await collecteurProducteur.initialiser(
         await collecteurExportateur.getAddress(),
         await gestionnaireActeurs.getAddress(),
         await producteurEnPhaseCulture.getAddress()
     );
-    await collecteurProducteur.waitForDeployment();
     console.log("CollecteurProducteur deployed to:", await collecteurProducteur.getAddress());
 
     // 5. Enregistrer les acteurs dans le GestionnaireActeurs
@@ -97,6 +101,8 @@ async function main() {
     // === Données de test supplémentaires ===
     // 1. Créer des parcelles pour le producteur
     console.log("Création de parcelles pour le producteur...");
+    // ajouter le contrat délégué pour le producteur
+    await gestionnaireActeurs.ajouterContratDelegue(producteurAddress, await producteurEnPhaseCulture.getAddress());
     await producteurEnPhaseCulture.connect(await ethers.getSigner(producteurAddress)).creerParcelle(
         "Semence A",
         "Bio",
@@ -116,6 +122,8 @@ async function main() {
 
     // 2. Créer des récoltes pour chaque parcelle (via CollecteurProducteur)
     console.log("Création de récoltes pour chaque parcelle...");
+    // ajouter le contrat délégué pour le producteur
+    await gestionnaireActeurs.ajouterContratDelegue(producteurAddress, await collecteurProducteur.getAddress());
     await collecteurProducteur.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte(1, 1000, 500, "2024-07-10", "Riz Bio");
     await collecteurProducteur.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte(2, 800, 600, "2024-07-12", "Riz Classique");
 
@@ -132,19 +140,27 @@ async function main() {
         "cert@example.com",
         "6677889900"
     );
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(certificateurAddress, await collecteurProducteur.getAddress());
     await collecteurProducteur.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "Certificat de qualité BIO");
 
     // 4. Création de produits à partir des récoltes (par le collecteur)
     console.log("Création de produits à partir des récoltes...");
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(collecteurAddress, await collecteurExportateur.getAddress());
     await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, 700, collecteurAddress, "Riz Bio", "2024-07-10", "CertificatPhyto-1");
     await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, 800, collecteurAddress, "Riz Classique", "2024-07-12", "CertificatPhyto-2");
 
     // 5. Commande du collecteur vers producteur
     console.log("Commande du collecteur vers producteur...");
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(collecteurAddress, await collecteurProducteur.getAddress());
     await collecteurProducteur.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 200);
 
     // 6. Commande de l'exportateur vers collecteur
     console.log("Commande de l'exportateur vers collecteur...");
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(exportateurAddress, await collecteurExportateur.getAddress());
     await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 100);
 
 
@@ -168,6 +184,8 @@ async function main() {
         "auditeur@example.com",
         "4455667788"
     );
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(auditeurAddress, await producteurEnPhaseCulture.getAddress());
     await producteurEnPhaseCulture.connect(await ethers.getSigner(auditeurAddress)).ajouterInspection(1, "Inspection OK");
     // === Fin des données de test ===
 
@@ -195,6 +213,8 @@ async function main() {
     await gestionnaireActeurs.enregistrerActeur(fournisseur1, 1, 0, "Fournisseur Un", "FOUR001", "Adresse F1", "fourn1@example.com", "7777777777");
 
     // 2. Créer des parcelles pour chaque producteur
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(producteur2, await producteurEnPhaseCulture.getAddress());
     await producteurEnPhaseCulture.connect(await ethers.getSigner(producteur2)).creerParcelle(
         "Semence C", "Bio", "-18.88", "47.51", "2024-07-03", "CertificatPhyto-3"
     );
@@ -203,19 +223,27 @@ async function main() {
     );
 
     // 3. Créer des récoltes (certaines non certifiées)
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(producteur2, await collecteurProducteur.getAddress());
     await collecteurProducteur.connect(await ethers.getSigner(producteur2)).ajoutRecolte(3, 1200, 550, "2024-07-15", "Riz Premium"); // non certifiée
     await collecteurProducteur.connect(await ethers.getSigner(producteur2)).ajoutRecolte(4, 900, 650, "2024-07-16", "Riz Standard"); // non certifiée
 
     // 4. Certifier une seule récolte
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(certificateur2, await collecteurProducteur.getAddress());
     await collecteurProducteur.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "Certificat Premium");
     // La récolte 4 reste non certifiée
 
     // 5. Créer des produits (certifiés et non certifiés)
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(collecteur2, await collecteurExportateur.getAddress());
     await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, 900, collecteur2, "Riz Premium", "2024-07-15", "CertificatPhyto-3"); // certifié
     await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, 950, collecteur2, "Riz Standard", "2024-07-16", ""); // non certifié
 
     // 6. Créer des commandes (payées et non payées)
     // Commande payée
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(exportateur2, await collecteurExportateur.getAddress());
     await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).passerCommande(2, 100);
     // await collecteurExportateur.connect(await ethers.getSigner(exportateur2)).effectuerPaiement(2, 80000, 0, { value: ethers.parseEther("0.01") });
     // Commande non payée
@@ -223,10 +251,16 @@ async function main() {
     // Pas de paiement pour cette commande
 
     // 7. Ajouter une inspection sur une nouvelle parcelle
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(auditeur2, await producteurEnPhaseCulture.getAddress());
     await producteurEnPhaseCulture.connect(await ethers.getSigner(auditeur2)).ajouterInspection(3, "Inspection Premium OK");
     // 8. Ajouter un intrant par le fournisseur
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(fournisseur1, await producteurEnPhaseCulture.getAddress());
     await producteurEnPhaseCulture.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20);
     // 9. Transporteur enregistre une condition de transport
+    // ajouter contrat deleguer
+    await gestionnaireActeurs.ajouterContratDelegue(transporteur1, await collecteurExportateur.getAddress());
     await collecteurExportateur.connect(await ethers.getSigner(transporteur1)).enregistrerCondition(2, "25C", "60%");
 
 
