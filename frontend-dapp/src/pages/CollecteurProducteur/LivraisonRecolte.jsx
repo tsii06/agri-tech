@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
-import { ShoppingCart, Hash, Package2, BadgeEuro, User, BadgeCheck, BadgeX, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
 
 function LivraisonRecolte() {
   const { id } = useParams(); // id de la commande

@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
-import { ShoppingCart, Hash, Package2, BadgeEuro, User, BadgeCheck, BadgeX, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
 
 function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
