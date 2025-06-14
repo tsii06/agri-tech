@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require('dotenv').config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -10,6 +11,11 @@ module.exports = {
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 1337,
+    },
+    amoy: {
+      url: "https://rpc-amoy.polygon.technology",
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: 80002
     }
   },
 

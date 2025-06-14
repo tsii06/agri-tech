@@ -74,12 +74,11 @@ contract GestionnaireActeurs {
     /**
      * @dev Constructeur du contrat
      * @param _administrateurInitial Adresse du premier administrateur
-     * @param _proxyAddress Adresse du contrat proxy
      */
-    constructor(address _administrateurInitial, address _proxyAddress) {
+    constructor(address _administrateurInitial) {
         require(_administrateurInitial != address(0), "Adresse administrateur invalide");
         administrateurs[_administrateurInitial] = true;
-        proxyAddress = _proxyAddress;
+        // proxyAddress = _proxyAddress;
         compteurIds = 1; // Commencer à 1
         emit AdministrateurAjoute(_administrateurInitial, block.timestamp);
     }
