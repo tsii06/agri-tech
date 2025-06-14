@@ -62,6 +62,11 @@ async function main() {
         "producteur@example.com",
         "0987654321"
     );
+    // Déléguer le contrat ProducteurEnPhaseCulture au producteur
+    await gestionnaireActeurs.ajouterContratDelegue(
+        producteurAddress,
+        await producteurEnPhaseCulture.getAddress()
+    );
 
     // Enregistrer un collecteur de test
     const collecteurAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"; // Adresse de test
@@ -177,6 +182,11 @@ async function main() {
     const fournisseur1 = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720";
 
     await gestionnaireActeurs.enregistrerActeur(producteur2, 0, 0, "Producteur Deux", "PROD002", "Adresse P2", "prod2@example.com", "1111111111");
+    // Déléguer le contrat ProducteurEnPhaseCulture au producteur2
+    await gestionnaireActeurs.ajouterContratDelegue(
+        producteur2,
+        await producteurEnPhaseCulture.getAddress()
+    );
     await gestionnaireActeurs.enregistrerActeur(collecteur2, 3, 0, "Collecteur Deux", "COLL002", "Adresse C2", "coll2@example.com", "2222222222");
     await gestionnaireActeurs.enregistrerActeur(exportateur2, 6, 0, "Exportateur Deux", "EXP002", "Adresse E2", "exp2@example.com", "3333333333");
     await gestionnaireActeurs.enregistrerActeur(certificateur2, 2, 0, "Certificateur Deux", "CERT002", "Adresse Cert2", "cert2@example.com", "4444444444");

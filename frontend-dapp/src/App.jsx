@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserProvider } from './context/useContextt';
 import { ethers } from "ethers";
 
@@ -30,17 +30,37 @@ import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
 import ListeActeursRole from "./pages/ListeActeursRole";
 import ActiverDesactiverActeur from "./pages/Admin/ActiverDesactiverActeur";
 import RetirerContratDelegue from "./pages/RetirerContratDelegue";
+import AjouterRoleActeur from "./pages/Admin/AjouterRoleActeur";
 
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
   ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight
 } from "lucide-react";
+import { getGestionnaireActeursContract } from "./utils/contract";
 
 function App() {
   const [state, setState] = useState({});
   const [account, setAccount] = useState(null);
   const [role, setRole] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      if (account) {
+        try {
+          const contract = await getGestionnaireActeursContract();
+          const rolesArray = await contract.getRoles(account);
+          setRoles(rolesArray.map(r => Number(r)));
+        } catch (e) {
+          setRoles([]);
+        }
+      } else {
+        setRoles([]);
+      }
+    };
+    fetchRoles();
+  }, [account]);
 
   return (
     <UserProvider state={state}>
@@ -54,61 +74,69 @@ function App() {
           setRole={setRole}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          roles={roles}
         />
       </Router>
     </UserProvider>
   );
 }
 
-function AppLayout({ state, setState, account, setAccount, role, setRole, sidebarOpen, setSidebarOpen }) {
+function AppLayout({ state, setState, account, setAccount, role, setRole, sidebarOpen, setSidebarOpen, roles }) {
   const location = useLocation();
 
   const getNavigationLinks = () => {
-    if (!account) return [];
-    const commonLinks = [{ to: "/mes-parcelles", text: "Parcelles" }];
-    const adminLink = { to: "/admin", text: "Admin" };
-
-    switch (role) {
-      case 0:
-        return [
-          { to: "/mes-parcelles", text: "Mes Parcelles" },
-          { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
-          { to: "/liste-recolte", text: "Mes récoltes" },
-          adminLink
-        ];
-      case 1:
-        return [{ to: "/mes-parcelles", text: "Gérer les Intrants" }, adminLink];
-      case 2:
-        return [
-          { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
-          { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" },
-          adminLink
-        ];
-      case 3:
-        return [
-          { to: "/liste-recolte", text: "Passer commande" },
-          { to: "/liste-collecteur-commande", text: "Mes commandes" },
-          { to: "/liste-produits", text: "Liste des produits" },
-          { to: "/liste-acteurs-role", text: "Liste des Producteurs" },
-          ...commonLinks,
-          adminLink
-        ];
-      case 4:
-        return [{ to: "/mes-parcelles", text: "Inspections" }, adminLink];
-      case 5:
-        return [{ to: "/transport", text: "Gestion des transports" }, adminLink];
-      case 6:
-        return [
-          ...commonLinks,
-          { to: "/mes-commandes-exportateur", text: "Mes commandes" },
-          { to: "/passer-commande-collecteur", text: "Passer commande" },
-          { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
-          { to: "/liste-produits", text: "Liste des produits" },
-          adminLink
-        ];
-      default:
-        return [...commonLinks, adminLink];
+    if (!account || !roles.length) return [];
+    const linksSet = new Set();
+    const links = [];
+    roles.forEach(role => {
+      let roleLinks = [];
+      switch (role) {
+        case 0:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Mes Parcelles" },
+            { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
+            { to: "/liste-recolte", text: "Mes récoltes" }
+          ]; break;
+        case 1:
+          roleLinks = [{ to: "/mes-parcelles", text: "Gérer les Intrants" }]; break;
+        case 2:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Contrôle Phytosanitaire Parcelle" },
+            { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+          ]; break;
+        case 3:
+          roleLinks = [
+            { to: "/liste-recolte", text: "Passer commande" },
+            { to: "/liste-collecteur-commande", text: "Mes commandes" },
+            { to: "/liste-produits", text: "Liste des produits" },
+            { to: "/liste-acteurs-role", text: "Liste des Producteurs" }
+          ]; break;
+        case 4:
+          roleLinks = [{ to: "/mes-parcelles", text: "Inspections" }]; break;
+        case 5:
+          roleLinks = [{ to: "/transport", text: "Gestion des transports" }]; break;
+        case 6:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Parcelles" },
+            { to: "/mes-commandes-exportateur", text: "Mes commandes" },
+            { to: "/passer-commande-collecteur", text: "Passer commande" },
+            { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
+            { to: "/liste-produits", text: "Liste des produits" }
+          ]; break;
+        default: break;
+      }
+      roleLinks.forEach(link => {
+        const key = link.to + link.text;
+        if (!linksSet.has(key)) {
+          linksSet.add(key);
+          links.push(link);
+        }
+      });
+    });
+    if (roles.includes(7)) {
+      links.push({ to: "/admin", text: "Admin" });
     }
+    return links;
   };
 
   const getLinkIcon = (text) => {
@@ -196,6 +224,7 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
                 <Route path="transport" element={<LivraisonRecolte />} />
                 <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
                 <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
+                <Route path="admin/ajouter-role-acteur" element={<AjouterRoleActeur />} />
               </Routes>
             </div>
           </div>
@@ -218,6 +247,7 @@ function AdminHome() {
         <li><a href="/admin/liste-acteurs">Liste des acteurs</a></li>
         <li><a href="/admin/activer-desactiver-acteur">Activer / Désactiver un acteur</a></li>
         <li><a href="/retirer-contrat-delegue">Retirer un contrat délégué</a></li>
+        <li><a href="/admin/ajouter-role-acteur">Ajouter un rôle à un acteur</a></li>
       </ul>
     </div>
   );

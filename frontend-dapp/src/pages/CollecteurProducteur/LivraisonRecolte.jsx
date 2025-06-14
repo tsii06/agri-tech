@@ -62,7 +62,7 @@ function LivraisonRecolte() {
         // Charger la commande sélectionnée si id fourni
         if (id) {
           const c = await contract.getCommande(id);
-          setCommande({
+        setCommande({
             id: c.id.toString(),
             idProduit: c.idProduit.toString(),
             quantite: c.quantite.toString(),
@@ -74,10 +74,10 @@ function LivraisonRecolte() {
           });
           // Charger le produit associé
           const produitInfo = await contract.getProduit(c.idProduit);
-          setProduit({
-            nom: produitInfo.nom,
-            quantite: produitInfo.quantite.toString()
-          });
+        setProduit({
+          nom: produitInfo.nom,
+          quantite: produitInfo.quantite.toString()
+        });
         }
       } catch (error) {
         setError(error.message);
@@ -85,7 +85,7 @@ function LivraisonRecolte() {
         setIsLoading(false);
       }
     };
-    chargerDetails();
+      chargerDetails();
   }, [id]);
 
   const getStatutTransportLabel = (statutCode) => {
@@ -238,7 +238,7 @@ function LivraisonRecolte() {
                   <label className="form-label">Température</label>
                   <input type="text" className="form-control" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="Ex: 25C" />
                 </div>
-                <div className="mb-3">
+          <div className="mb-3">
                   <label className="form-label">Humidité</label>
                   <input type="text" className="form-control" value={humidite} onChange={e => setHumidite(e.target.value)} placeholder="Ex: 60%" />
                 </div>
@@ -259,7 +259,7 @@ function LivraisonRecolte() {
               </div>
             </div>
           </div>
-        </div>
+      </div>
       )}
     </div>
   );

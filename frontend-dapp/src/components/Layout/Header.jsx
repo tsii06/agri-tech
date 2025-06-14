@@ -8,6 +8,7 @@ import {
   Wallet,
   RefreshCw,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const getRoleName = (roleNumber) => {
   const roles = {
@@ -146,12 +147,21 @@ function Header({ state, setAccount, setRole }) {
             className="btn btn-primary d-md-none"
             style={{ padding: 6, borderRadius: 6 }}
             aria-label="Ouvrir le menu"
-            // Le bouton menu peut ouvrir la sidebar si besoin, à gérer dans App
           >
             <Menu size={24} />
           </button>
-          <h2 className="project-title mb-0" style={{ color: "rgb(44 106 46 / var(--tw-text-opacity,1))" }}>MadTX</h2>
+          <Link to="/" className="project-title mb-0" style={{ color: "rgb(44 106 46 / var(--tw-text-opacity,1))", textDecoration: "none" }}>
+            MadTX
+          </Link>
         </div>
+        <nav className="d-none d-md-flex align-items-center gap-4">
+          <Link to="/mes-parcelles" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+            Parcelles
+          </Link>
+          <Link to="/contact" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+            Contact
+          </Link>
+        </nav>
         <nav className="navbar navbar-expand-lg navbar-light bg-white py-3 px-4 d-flex justify-content-between">
           <div className="collapse navbar-collapse show" id="navbarNav">
             {account ? (
