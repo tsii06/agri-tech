@@ -8,12 +8,13 @@ import "./ProducteurEnPhaseCulture.sol";
 contract CollecteurProducteur {
     // ================================ variable d'etat ==============================================
     mapping(uint32 => StructLib.Recolte) public recoltes;
-    uint32 public compteurRecoltes;
-    // pour les commandes
-    mapping(uint32 => StructLib.Paiement) public paiements;
-    uint32 public compteurPaiements;
     mapping(uint32 => StructLib.CommandeRecolte) public commandes;
+    mapping(uint32 => StructLib.Paiement) public paiements;
+    mapping(uint32 => StructLib.EnregistrementCondition) public conditions;
+    uint32 public compteurRecoltes;
     uint32 public compteurCommandes;
+    uint32 public compteurPaiements;
+    uint32 public compteurConditions;
 
     ICollecteurExportateur private moduleCE;
     GestionnaireActeurs public gestionnaireActeurs;
@@ -35,6 +36,17 @@ contract CollecteurProducteur {
         require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
         _;
     }
+    modifier seulementTransporteur() {
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Transporteur), "Non autorise: seulement Transporteur");
+        _;
+    }
+
+
+    
+    // ================================== evenements =================================================
+    event StatutTransportMisAJour(uint32 indexed idCommande, StructLib.StatutTransport statut, address transporteur);
+    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp, address transporteur);
+
 
     // ================================== initialiser =================================================
     function initialiser(address _addrCE, address _gestionnaireActeurs, address _producteurEnPhaseCulture) public {
@@ -109,6 +121,23 @@ contract CollecteurProducteur {
 
         compteurPaiements++;
         paiements[_idCommande] = StructLib.Paiement(compteurPaiements, msg.sender, commande.producteur, _montant, _mode, block.timestamp);
+    }
+
+    function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        
+        commandes[_idCommande].statutTransport = _statut;
+        emit StatutTransportMisAJour(_idCommande, _statut, msg.sender);
+    }
+
+    function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+        // verifie si l'idCommande est valide.
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+
+        compteurConditions++;
+        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
+        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp, msg.sender);
     }
 
     // ====================================== getter et setter =============================================

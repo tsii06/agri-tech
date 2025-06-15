@@ -138,7 +138,7 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      await contract.mettreAJourStatutTransport(Number(commandeId), Number(statut));
+      await contract.mettreAJourStatutTransport(Number(commandeId), 1);
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setIsProcessing(false);
       setStatut("0");
@@ -213,6 +213,8 @@ function LivraisonRecolte() {
           ))}
         </div>
       </div>
+
+      {/* LISTE DES COMMANDES SUR LES RECOLTES DES PRODUCTEURS */}
       <div className="card p-4 shadow-sm my-4">
         <h2 className="h5 mb-3">Liste des Commandes (Récolte)</h2>
         <div className="row g-3">
