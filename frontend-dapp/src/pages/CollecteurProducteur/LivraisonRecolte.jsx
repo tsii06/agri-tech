@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
 
 function LivraisonRecolte() {
-  const { id } = useParams(); // id de la commande
-  const [commande, setCommande] = useState(null);
-  const [produit, setProduit] = useState(null);
-  const [statut, setStatut] = useState("0");
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
@@ -58,26 +53,6 @@ function LivraisonRecolte() {
           });
         }
         setCommandesRecolte(commandesRecolteTemp);
-        // Charger la commande sélectionnée si id fourni
-        if (id) {
-          const c = await contract.getCommande(id);
-        setCommande({
-            id: c.id.toString(),
-            idProduit: c.idProduit.toString(),
-            quantite: c.quantite.toString(),
-            statutTransport: Number(c.statutTransport),
-            prix: c.prix.toString(),
-            payer: c.payer,
-            collecteur: c.collecteur,
-            exportateur: c.exportateur
-          });
-          // Charger le produit associé
-          const produitInfo = await contract.getProduit(c.idProduit);
-        setProduit({
-          nom: produitInfo.nom,
-          quantite: produitInfo.quantite.toString()
-        });
-        }
       } catch (error) {
         setError(error.message);
       } finally {
@@ -85,7 +60,7 @@ function LivraisonRecolte() {
       }
     };
       chargerDetails();
-  }, [id]);
+  }, []);
 
   const getStatutTransportLabel = (statutCode) => {
     switch(statutCode) {
@@ -107,7 +82,8 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurExportateurContract();
-      await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      const tx = await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      await tx.wait();
       alert("Statut de transport mis à jour avec succès !");
       setIsProcessing(false);
       window.location.reload();
@@ -121,7 +97,8 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurExportateurContract();
-      await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      const tx = await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      await tx.wait();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
@@ -138,10 +115,10 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      const tx = await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      await tx.wait();
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setIsProcessing(false);
-      setStatut("0");
       window.location.reload();
     } catch (error) {
       setIsProcessing(false);
@@ -154,7 +131,8 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      const tx = await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      await tx.wait();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
