@@ -44,7 +44,7 @@ function LivraisonRecolte() {
         const contractCP = await getCollecteurProducteurContract();
         const compteurCommandesRecolte = await contractCP.getCompteurCommandes();
         const commandesRecolteTemp = [];
-        for (let i = 0; i < compteurCommandesRecolte; i++) {
+        for (let i = 1; i <= compteurCommandesRecolte; i++) {
           const c = await contractCP.commandes(i);
           commandesRecolteTemp.push({
             id: c.id.toString(),
