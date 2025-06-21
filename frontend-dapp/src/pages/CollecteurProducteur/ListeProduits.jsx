@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
+import { getCollecteurExportateurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 import { useParams } from "react-router-dom";
 import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, BadgeCheck, BadgeX, Search, ChevronDown } from "lucide-react";
 import { useUserContext } from '../../context/useContextt';
+import { hasRole } from '../../utils/roles';
 
 function ListeProduits() {
   const { address } = useParams();
@@ -15,12 +16,11 @@ function ListeProduits() {
   const [showModal, setShowModal] = useState(false);
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
-  const [userRole, setUserRole] = useState(null);
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
   const [quantiteCommande, setQuantiteCommande] = useState("");
-  const { role, account } = useUserContext();
+  const { roles, account } = useUserContext();
 
   useEffect(() => {
     const chargerProduits = async () => {
@@ -29,13 +29,7 @@ function ListeProduits() {
         const provider = contract.runner.provider;
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
-        let role = userRole;
         let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
-        if (!role && !address && account) {
-          role = await getRoleOfAddress(account);
-          setUserRole(role);
-        }
-        console.log(userRole);
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
         const produitsTemp = [];
@@ -56,7 +50,6 @@ function ListeProduits() {
         }
         produitsTemp.reverse();
         setProduits(produitsTemp);
-        console.log(produitsTemp)
       } catch (error) {
         console.error("Erreur lors du chargement des produits:", error);
         setError(error.message);
@@ -66,15 +59,6 @@ function ListeProduits() {
     };
     chargerProduits();
   }, [address, _]);
-
-  // Synchronisation du rôle utilisateur
-  useEffect(() => {
-    if (role !== undefined && role !== null) {
-      setUserRole(role);
-    } else if (account) {
-      getRoleOfAddress(account).then(setUserRole);
-    }
-  }, [role, account]);
 
   const handleModifierPrix = async (produitId) => {
     try {
@@ -155,10 +139,8 @@ function ListeProduits() {
   const produitsFiltres = produits.filter((produit) => {
     const searchLower = search.toLowerCase();
     const matchSearch =
-      produit.nom.toLowerCase().includes(searchLower) ||
-      produit.idRecolte.toLowerCase().includes(searchLower) ||
-      produit.certificatPhytosanitaire.toLowerCase().includes(searchLower) ||
-      produit.prixUnit.toString().includes(searchLower);
+      (produit.nom && produit.nom.toLowerCase().includes(searchLower)) ||
+      (produit.id && produit.id.toString().includes(searchLower));
     const matchStatut =
       statutFiltre === "all" ||
       (statutFiltre === "valide" && produit.statut === 1) ||
@@ -276,7 +258,7 @@ function ListeProduits() {
                     </p>
                   </div>
                   <div className="mt-3">
-                    {userRole === 3 && (
+                    {hasRole(roles, 3) && produit.statut === 1 && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);
@@ -288,7 +270,7 @@ function ListeProduits() {
                         Modifier le prix
                       </button>
                     )}
-                    {userRole === 6 && produit.statut === 0 && (
+                    {hasRole(roles, 6) && produit.statut === 0 && (
                       <button
                         onClick={() => handleValiderProduit(produit.id)}
                         className="btn-agrichain-outline"
@@ -296,7 +278,7 @@ function ListeProduits() {
                         Valider le produit
                       </button>
                     )}
-                    {userRole === 6 && produit.statut === 1 && (
+                    {hasRole(roles, 6) && produit.statut === 1 && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);

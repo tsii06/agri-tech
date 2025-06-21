@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import { getGestionnaireActeursContract } from "../utils/contract";
 import { User, Mail, Phone, BadgeCheck, BadgeX, KeyRound, UserCheck, Search, ChevronDown } from "lucide-react";
+import { hasRole } from '../utils/roles';
 
 const ROLES = [
   "Producteur",
@@ -16,7 +17,7 @@ const ROLES = [
 ];
 
 export default function ListeActeursRole() {
-  const { role } = useUserContext();
+  const { roles } = useUserContext();
   const [acteurs, setActeurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,15 +26,15 @@ export default function ListeActeursRole() {
   const [actifFiltre, setActifFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
 
-  // Détermine le rôle cible à afficher selon le rôle utilisateur
+  // Détermine le rôle cible à afficher selon les rôles utilisateur
   let roleCible = null;
   let titre = "";
   let boutonLabel = "";
-  if (role === 6) { // Exportateur
+  if (hasRole(roles, 6)) { // Exportateur
     roleCible = 3; // Collecteur
     titre = "Liste des Collecteurs";
     boutonLabel = "Voir produit";
-  } else if (role === 3) { // Collecteur
+  } else if (hasRole(roles, 3)) { // Collecteur
     roleCible = 0; // Producteur
     titre = "Liste des Producteurs";
     boutonLabel = "Voir récolte";
@@ -153,9 +154,9 @@ export default function ListeActeursRole() {
                     <button
                       className="btn-agrichain"
                       onClick={() => {
-                        if (role === 6) {
+                        if (hasRole(roles, 6)) {
                           navigate(`/listeproduit/${acteur.adresse}`);
-                        } else if (role === 3) {
+                        } else if (hasRole(roles, 3)) {
                           navigate(`/listerecolte/${acteur.adresse}`);
                         }
                       }}

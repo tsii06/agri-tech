@@ -188,10 +188,9 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
             <div className="col-md-3 col-lg-2 bg-light border-end p-0">
               <Sidebar
                 account={account}
-                role={role}
+                roles={roles || []}
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
-                getNavigationLinks={getNavigationLinks}
                 getLinkIcon={getLinkIcon}
               />
             </div>

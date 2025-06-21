@@ -26,6 +26,7 @@ export const getRoleName = (roleNumber) => {
 function Header({ state, setAccount, setRole }) {
   const [account, setAccountLocal] = useState(null);
   const [role, setRoleLocal] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const verifierConnexionInitiale = async () => {
     if (window.ethereum) {
@@ -141,53 +142,62 @@ function Header({ state, setAccount, setRole }) {
 
   return (
     <header className="bg-white shadow-sm madtx-header">
-      <div className="container d-flex align-items-center justify-content-between">
-        <div className="d-flex align-items-center gap-3">
-          <button
-            className="btn btn-primary d-md-none"
-            style={{ padding: 6, borderRadius: 6 }}
-            aria-label="Ouvrir le menu"
-          >
-            <Menu size={24} />
-          </button>
-          <Link to="/" className="project-title mb-0" style={{ color: "rgb(44 106 46 / var(--tw-text-opacity,1))", textDecoration: "none" }}>
+      <nav className="navbar navbar-expand-md navbar-light bg-white">
+        <div className="container">
+          {/* Titre cliquable */}
+          <Link to="/" className="navbar-brand project-title fw-bold" style={{ color: "#2c6a2e" }}>
             MadTX
           </Link>
-        </div>
-        <nav className="d-none d-md-flex align-items-center gap-4">
-          <Link to="/mes-parcelles" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
-            Parcelles
-          </Link>
-          <Link to="/contact" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
-            Contact
-          </Link>
-        </nav>
-        <nav className="navbar navbar-expand-lg navbar-light bg-white py-3 px-4 d-flex justify-content-between">
-          <div className="collapse navbar-collapse show" id="navbarNav">
-            {account ? (
-              <div className="d-flex align-items-center gap-3">
-                <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1">
-                  <User size={16} /> {getRoleName(role)}
-                </span>
-                <span className="fw-medium text-muted d-flex align-items-center gap-1">
-                  <User size={16} /> {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
-                </span>
-                <div className="status-indicator" style={{ width: 12, height: 12, borderRadius: '50%', background: role !== null ? 'var(--madtx-green)' : 'var(--madtx-brown)', marginLeft: 8 }}></div>
-                <button onClick={changerCompte} className="btn btn-primary btn-sm d-flex align-items-center gap-1">
-                  <RefreshCw size={16} /> Changer
+          {/* Bouton hamburger */}
+          <button
+            className="navbar-toggler"
+            type="button"
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
+          {/* Menu responsive */}
+          <div className={`collapse navbar-collapse${menuOpen ? " show" : ""}`} id="mainNavbar">
+            <ul className="navbar-nav me-auto mb-2 mb-md-0">
+              <li className="nav-item">
+                <Link to="/mes-parcelles" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+                  Parcelles
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/contact" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+                  Contact
+                </Link>
+              </li>
+            </ul>
+            <div className="d-flex align-items-center gap-3">
+              {account ? (
+                <>
+                  <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1">
+                    <User size={16} /> {getRoleName(role)}
+                  </span>
+                  <span className="fw-medium text-muted d-flex align-items-center gap-1">
+                    <User size={16} /> {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
+                  </span>
+                  <div className="status-indicator" style={{ width: 12, height: 12, borderRadius: '50%', background: role !== null ? 'var(--madtx-green)' : 'var(--madtx-brown)', marginLeft: 8 }}></div>
+                  <button onClick={async () => await changerCompte()} className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                    <RefreshCw size={16} /> Changer
+                  </button>
+                  <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1">
+                    <LogOut size={16} /> Déconnecter
+                  </button>
+                </>
+              ) : (
+                <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center gap-2">
+                  <Wallet size={18} /> Connecter Wallet
                 </button>
-                <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1">
-                  <LogOut size={16} /> Déconnecter
-                </button>
-              </div>
-            ) : (
-              <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center gap-2">
-                <Wallet size={18} /> Connecter Wallet
-              </button>
-            )}
+              )}
+            </div>
           </div>
-        </nav>
-      </div>
+        </div>
+      </nav>
     </header>
   );
 }

@@ -4,22 +4,18 @@ import { ethers } from 'ethers';
 
 const UserContext = createContext();
 
-export const UserProvider = ({ children,state }) => {
-    const [role, setRole] = useState(null);
+export const UserProvider = ({ children, state }) => {
+    const [roles, setRoles] = useState([]);
     const [account, setAccount] = useState("");
 
     const verifeActeur = async (userAddress) => {
         try {
             const contract = await getGestionnaireActeursContract();
-            const details = await contract.getDetailsActeur(userAddress);
-            if (details && details[0]) {
-                const roleNumber = Number(details[1]);
-                setRole(roleNumber);
-            } else {
-                setRole(null);
-            }
+            const rolesArray = await contract.getRoles(userAddress);
+            setRoles(rolesArray.map(r => Number(r)));
         } catch (error) {
-            console.error("Erreur lors de la vérification de l'acteur :", error);
+            console.error("Erreur lors de la vérification des rôles :", error);
+            setRoles([]);
         }
     };
 
@@ -38,7 +34,7 @@ export const UserProvider = ({ children,state }) => {
     }, [state]);
 
     return (
-        <UserContext.Provider value={{ role, setRole, account, verifeActeur }}>
+        <UserContext.Provider value={{ roles, setRoles, account, verifeActeur }}>
             {children}
         </UserContext.Provider>
     );

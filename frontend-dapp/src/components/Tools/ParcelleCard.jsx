@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Hash, Package2, BadgeCheck, Calendar, FileCheck2, Sprout } from "lucide-react";
+import { hasRole } from '../../utils/roles';
 
 const ParcelleCard = ({ 
   parcelle, 
@@ -22,7 +23,7 @@ const ParcelleCard = ({
     const links = [];
 
     // Liens pour le producteur
-    if (userRole === 0) {
+    if (hasRole(userRole, 0)) {
       links.push(
         <Link key="photos" to={`/parcelle/${id}/photos`} className="btn btn-link">
           Photos
@@ -33,20 +34,20 @@ const ParcelleCard = ({
       );
     }
 
-    // Liens pour le collecteur
-    if (userRole === 1) {
+    // Liens pour le fournisseur
+    if (hasRole(userRole, 1)) {
       links.push(
-        <Link key="intrants" to={`/parcelle/${id}/intrants`} className="btn btn-link">
-          Intrants
+        <Link key="intrants-fournisseur" to={`/parcelle/${id}/intrants`} className="btn btn-link">
+          Intrants (Fournisseur)
         </Link>
       );
     }
 
     // Liens pour le certificateur
-    if (userRole === 2) {
+    if (hasRole(userRole, 2)) {
       links.push(
-        <Link key="intrants" to={`/parcelle/${id}/intrants`} className="btn btn-link">
-          Intrants
+        <Link key="intrants-certificateur" to={`/parcelle/${id}/intrants`} className="btn btn-link">
+          Intrants (Certificateur)
         </Link>
       );
     }

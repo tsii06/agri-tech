@@ -1,38 +1,115 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 
-function Sidebar({ account, role, sidebarOpen, setSidebarOpen, getNavigationLinks, getLinkIcon }) {
+const ROLE_LABELS = {
+  0: "Producteur",
+  1: "Fournisseur",
+  2: "Certificateur",
+  3: "Collecteur",
+  4: "Auditeur",
+  5: "Transporteur",
+  6: "Exportateur",
+  7: "Administration"
+};
+
+const ROLE_LINKS = {
+  0: [
+    { to: "/mes-parcelles", text: "Mes Parcelles" },
+    { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
+    { to: "/liste-recolte", text: "Mes récoltes" }
+  ],
+  1: [
+    { to: "/mes-parcelles", text: "Gérer les Intrants" }
+  ],
+  2: [
+    { to: "/mes-parcelles", text: "Validation des intrants" },
+    { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+  ],
+  3: [
+    { to: "/liste-recolte", text: "Passer commande" },
+    { to: "/liste-collecteur-commande", text: "Mes commandes" },
+    { to: "/liste-produits", text: "Liste des produits" },
+    { to: "/liste-acteurs-role", text: "Liste des Producteurs" }
+  ],
+  4: [
+    { to: "/mes-parcelles", text: "Inspections" }
+  ],
+  5: [
+    { to: "/transport", text: "Gestion des transports" }
+  ],
+  6: [
+    { to: "/mes-parcelles", text: "Parcelles" },
+    { to: "/mes-commandes-exportateur", text: "Mes commandes" },
+    { to: "/passer-commande-collecteur", text: "Passer commande" },
+    { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
+  ]
+};
+
+
+function Sidebar({ account, roles, sidebarOpen, setSidebarOpen, getLinkIcon }) {
   const location = useLocation();
-  if (!account) return null;
+  const [openGroups, setOpenGroups] = useState({});
+
+  if (!account || !roles || roles.length === 0) return null;
+
+  const handleToggle = (role) => {
+    setOpenGroups(prev => ({
+      ...prev,
+      [role]: !prev[role]
+    }));
+  };
+
   return (
-    // <nav
-    //   className={`col-md-3 col-lg-2 madtx-sidebar sidebar py-4 shadow-sm ${sidebarOpen ? "d-block" : "d-none d-md-block"}`}
-    //   style={{ minHeight: "100vh", zIndex: 1000, position: "relative" }}
-    // >
+
       <div className="position-sticky">
         <ul className="nav flex-column px-3">
-          {getNavigationLinks().map((link, index) => {
-            const isActive = location.pathname === link.to;
-            return (
-              <li className="nav-item" key={index}>
-                <a
-                  href={link.to}
-                  className={`nav-link d-flex align-items-center gap-2 py-2 rounded ${isActive ? "madtx-active" : ""}`}
-                  aria-current={isActive ? "page" : undefined}
-                  tabIndex={0}
-                  style={{
-                    background: isActive ? "var(--madtx-green-opacity)" : "transparent",
-                    color: isActive ? "var(--madtx-green)" : "inherit",
-                    fontWeight: isActive ? 600 : 400,
-                    outline: isActive ? "2px solid var(--madtx-green)" : "none"
+          {roles.map(role => (
+            <li key={role} className="nav-item mb-2">
+              {role === 7 ? (
+                <div
+                  className="d-flex align-items-center justify-content-between"
+                  style={{ cursor: "pointer", fontWeight: 600, color: "#4e944f" }}
+                  onClick={() => {
+                    handleToggle(role);
+                    window.location.href = "/admin";
                   }}
                 >
-                  {getLinkIcon(link.text)}
-                  {link.text}
-                </a>
-              </li>
-            );
-          })}
+                  <span>{ROLE_LABELS[role]}</span>
+                  <span>{openGroups[role] ? "▼" : "►"}</span>
+                </div>
+              ) : (
+                <div
+                  className="d-flex align-items-center justify-content-between"
+                  style={{ cursor: "pointer", fontWeight: 600, color: "#4e944f" }}
+                  onClick={() => handleToggle(role)}
+                >
+                  <span>{ROLE_LABELS[role]}</span>
+                  <span>{openGroups[role] ? "▼" : "►"}</span>
+                </div>
+              )}
+              <ul
+                className="list-unstyled ps-3"
+                style={{
+                  display: openGroups[role] ? "block" : "none",
+                  marginTop: 6,
+                  marginBottom: 0
+                }}
+              >
+                {(ROLE_LINKS[role] || []).map(link => (
+                  <li key={link.to}>
+                    <a
+                      href={link.to}
+                      className="nav-link d-flex align-items-center gap-2 py-2 rounded"
+                      style={{ color: "#333" }}
+                    >
+                      {getLinkIcon && getLinkIcon(link.text)}
+                      {link.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
         </ul>
       </div>
     // </nav>

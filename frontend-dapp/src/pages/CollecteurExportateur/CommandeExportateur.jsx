@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
+import { getCollecteurExportateurContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
+import { hasRole } from '../../utils/roles';
 
 function CommandeExportateur() {
   const navigate = useNavigate();
@@ -15,19 +16,13 @@ function CommandeExportateur() {
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [userRole, setUserRole] = useState(null);
-  const { account } = useUserContext();
+  const { roles, account } = useUserContext();
 
   useEffect(() => {
     if (!account) return;
     const chargerProduits = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
-        let role = userRole;
-        if (!role) {
-          role = await getRoleOfAddress(account);
-          setUserRole(role);
-        }
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
         const produitsTemp = [];
@@ -155,14 +150,16 @@ function CommandeExportateur() {
                     <p><strong>Quantité disponible:</strong> {produit.quantite} kg</p>
                     <p><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
-                    <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
+                    {produit.certificatPhytosanitaire && (
+                      <p><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
+                    )}
                     <p><strong>Collecteur:</strong> {produit.collecteur.slice(0, 6)}...{produit.collecteur.slice(-4)}</p>
                     <p className={`fw-semibold ${getStatutProduitColor(produit.statut)}`}>
                       <strong>Status:</strong> {getStatutProduit(produit.statut)}
                     </p>
                   </div>
                   <div className="mt-3">
-                    {userRole === 6 && produit.statut == 1 && (
+                    {hasRole(roles, 6) && produit.statut == 1 && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);

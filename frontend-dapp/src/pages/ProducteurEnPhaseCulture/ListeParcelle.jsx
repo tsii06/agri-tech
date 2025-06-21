@@ -4,19 +4,19 @@ import { getContract } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
+import {hasRole} from '../../utils/roles';
 
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userRole, setUserRole] = useState(null);
   const [search, setSearch] = useState("");
   const [certifFiltre, setCertifFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
 
-  const { role, account, verifeActeur } = useUserContext();
-
+  // Utilisation du tableau de rôles
+  const { roles, account, verifeActeur } = useUserContext();
 
   useEffect(() => {
     chargerParcelles();
@@ -39,18 +39,14 @@ function MesParcelles() {
       for (let i = 1; i <= compteurParcelles; i++) {
         parcelle = await contract.getParcelle(i);
 
-        // verifie si l'utilisateur est un producteur
-        if(role === 0) // 0 = producteur
-          // si le parcelle n'est pas a l'utilisateur, on ne l'affiche pas
-          if(parcelle.producteur.toLowerCase() !== account.toLowerCase())
-            continue;
+        // Afficher uniquement les parcelles de l'adresse connectée
+        if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
+          continue;
 
         parcellesPromises.push(parcelle);
       }
 
-
       setParcelles(parcellesPromises);
-
       setError(null);
     } catch (error) {
       console.error("Erreur détaillée:", error);
@@ -75,6 +71,10 @@ function MesParcelles() {
     return matchSearch && matchCertif;
   });
   const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
+
+  // Affichage du debug
+  console.log("roles reçus:", roles);
+  console.log("type de roles:", Array.isArray(roles) ? 'array' : typeof roles);
 
   if (loading) {
     return (
@@ -149,7 +149,7 @@ function MesParcelles() {
             <div key={parcelle.id} className="col-md-4">
               <ParcelleCard 
                 parcelle={parcelle}
-                userRole={role}
+                userRole={roles}
               />
             </div>
           ))}
@@ -162,7 +162,7 @@ function MesParcelles() {
             <div key={parcelle.id} className="col-md-4">
               <ParcelleCard 
                 parcelle={parcelle}
-                userRole={role}
+                userRole={roles}
               />
             </div>
           ))}

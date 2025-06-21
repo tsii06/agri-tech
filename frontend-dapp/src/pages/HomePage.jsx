@@ -47,7 +47,7 @@ function HomePage({ account, onConnectWallet }) {
       <section className="py-5 bg-white">
         <div className="container text-center">
           <h2 className="fw-bold mb-3" style={{ color: agrichainGreen }}>
-            Pourquoi choisir AgriChain ?
+            Pourquoi choisir MadTx ?
           </h2>
           <p className="text-muted mb-5 mx-auto" style={{ maxWidth: '700px' }}>
             Notre plateforme associe blockchain et agriculture pour un écosystème transparent, équitable et efficace.
@@ -87,7 +87,7 @@ function HomePage({ account, onConnectWallet }) {
       {/* CTA Section */}
       <section className="py-5 text-white text-center" style={{ backgroundColor: agrichainGreen }}>
         <div className="container">
-          <h2 className="fw-bold mb-3">Rejoignez l'écosystème AgriChain</h2>
+          <h2 className="fw-bold mb-3">Rejoignez l'écosystème MadTx</h2>
           <p className="mb-4 mx-auto" style={{ maxWidth: 600 }}>
             Que vous soyez producteur, coopérative ou exportateur, participez à une chaîne plus transparente et équitable.
           </p>
