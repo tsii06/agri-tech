@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
-import { ShoppingCart, Hash, Package2, BadgeEuro, User, BadgeCheck, BadgeX, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
 
 function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -29,8 +26,6 @@ function MesCommandesExportateur() {
           role = await getRoleOfAddress(account);
           setUserRole(role);
         }
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
 
         console.log("Adresse connectée:", account);
         
@@ -74,7 +69,7 @@ function MesCommandesExportateur() {
     };
 
     chargerCommandes();
-  }, [account]);
+  }, [account, userRole]);
 
   const handlePayer = async (commandeId) => {
     try {
@@ -116,18 +111,16 @@ function MesCommandesExportateur() {
 
   const getStatutTransport = (statut) => {
     switch(Number(statut)) {
-      case 0: return "En attente";
-      case 1: return "En cours";
-      case 2: return "Livré";
+      case 0: return "En cours";
+      case 1: return "Livré";
       default: return "Inconnu";
     }
   };
 
   const getStatutTransportColor = (statut) => {
     switch(Number(statut)) {
-      case 0: return "text-warning";
-      case 1: return "text-info";
-      case 2: return "text-success";
+      case 0: return "text-info";
+      case 1: return "text-success";
       default: return "text-secondary";
     }
   };
@@ -201,7 +194,7 @@ function MesCommandesExportateur() {
           </div>
         ) : commandes.length === 0 ? (
           <div className="text-center text-muted">
-            Vous n'avez pas encore passé de commandes.
+            Vous n&apos;avez pas encore passé de commandes.
           </div>
         ) : commandesFiltres.length === 0 ? (
           <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>

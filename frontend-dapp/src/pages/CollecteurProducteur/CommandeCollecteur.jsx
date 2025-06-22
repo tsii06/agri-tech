@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ethers } from "ethers";
+import { useNavigate } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
-import { ClipboardList, Hash, Package2, BadgeEuro, User, BadgeCheck, BadgeX, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ClipboardList, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
 
 
 
@@ -15,9 +13,7 @@ function CommandeCollecteur() {
   const navigate = useNavigate();
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [acteur, setActeur] = useState({});
-  const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -25,12 +21,12 @@ function CommandeCollecteur() {
   const [paiementFiltre, setPaiementFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
 
-  const { role, account, verifeActeur } = useUserContext();
+  const { account } = useUserContext();
 
 
   useEffect(() => {
     if (!window.ethereum) {
-      setError("Veuillez installer Metamask pour accéder à vos commandes.");
+      alert("Veuillez installer Metamask pour accéder à vos commandes.");
       setIsLoading(false);
       return;
     }
@@ -65,13 +61,13 @@ function CommandeCollecteur() {
         commandesTemp.reverse();
         setCommandes(commandesTemp);
       } catch (error) {
-        setError(error.message);
+        console.error(error.message);
       } finally {
         setIsLoading(false);
       }
     };
     chargerCommandes();
-  }, [account]);
+  }, [account, acteur]);
 
   const handlePayer = async (commandeId) => {
     try {
@@ -97,7 +93,7 @@ function CommandeCollecteur() {
       
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
-      setError(error.message);
+      console.error(error.message);
     }
   };
 
@@ -111,18 +107,16 @@ function CommandeCollecteur() {
 
   const getStatutTransport = (statut) => {
     switch(statut) {
-      case 0: return "En attente";
-      case 1: return "En cours";
-      case 2: return "Livré";
+      case 0: return "En cours";
+      case 1: return "Livré";
       default: return "Inconnu";
     }
   };
 
   const getStatutTransportColor = (statut) => {
     switch(statut) {
-      case 0: return "text-warning";
-      case 1: return "text-info";
-      case 2: return "text-success";
+      case 0: return "text-info";
+      case 1: return "text-success";
       default: return "text-secondary";
     }
   };
@@ -203,7 +197,7 @@ function CommandeCollecteur() {
           
           {commandes.length === 0 ? (
             <div className="text-center text-muted">
-              Vous n'avez pas encore passé de commandes.
+              Vous n&apos;avez pas encore passé de commandes.
             </div>
           ) : commandesFiltres.length === 0 ? (
             <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>
@@ -227,10 +221,10 @@ function CommandeCollecteur() {
                         <Wallet size={16} className="me-1" />
                         <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
                       </p>
-                      <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(commande.statutTransport)}`}
+                      <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(Number(commande.statutTransport))}`}
                         style={{gap: 6}}>
                         <Truck size={16} className="me-1" />
-                        <strong>Transport:</strong> {getStatutTransport(commande.statutTransport)}
+                        <strong>Transport:</strong> {getStatutTransport(Number(commande.statutTransport))}
                       </p>
                     </div>
                     <div className="mt-3">
