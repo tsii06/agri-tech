@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useLocation, Link } from "react-router-dom";
 
 const ROLE_LABELS = {
   0: "Producteur",
@@ -97,14 +97,14 @@ function Sidebar({ account, roles, sidebarOpen, setSidebarOpen, getLinkIcon }) {
               >
                 {(ROLE_LINKS[role] || []).map(link => (
                   <li key={link.to}>
-                    <a
-                      href={link.to}
+                    <Link
+                      to={link.to}
                       className="nav-link d-flex align-items-center gap-2 py-2 rounded"
                       style={{ color: "#333" }}
                     >
                       {getLinkIcon && getLinkIcon(link.text)}
                       {link.text}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
