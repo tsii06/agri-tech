@@ -157,7 +157,9 @@ function ListeRecoltes() {
           </div>
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-          <h2 className="h5 mb-0">{hasRole(roles, 3) ? "Liste des Récoltes" : (hasRole(roles, 0) && "Mes Récoltes")}</h2>
+          <h2 className="h5 mb-0">
+            {hasRole(roles, 3) || hasRole(roles, 2) ? "Liste des Récoltes" : (hasRole(roles, 0) && "Mes Récoltes")}
+          </h2>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-4">
           {!address && hasRole(roles, 0) && (
