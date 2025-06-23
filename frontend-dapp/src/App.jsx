@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { UserProvider } from './context/useContextt';
 import { ethers } from "ethers";
 
@@ -37,6 +37,7 @@ import {
   ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
+import { useUserContext } from './context/useContextt';
 
 function App() {
   const [state, setState] = useState({});
@@ -83,6 +84,16 @@ function App() {
 
 function AppLayout({ state, setState, account, setAccount, role, setRole, sidebarOpen, setSidebarOpen, roles }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const prevAccount = useRef();
+
+  useEffect(() => {
+    // Redirige uniquement si le compte a changé (pas à chaque navigation)
+    if (account && prevAccount.current && account !== prevAccount.current && location.pathname !== '/') {
+      navigate('/');
+    }
+    prevAccount.current = account;
+  }, [account, navigate, location.pathname]);
 
   const getNavigationLinks = () => {
     if (!account || !roles.length) return [];

@@ -19,8 +19,10 @@ function MesParcelles() {
   const { roles, account, verifeActeur } = useUserContext();
 
   useEffect(() => {
-    chargerParcelles();
-  }, []);
+    if (account) {
+      chargerParcelles();
+    }
+  }, [account]);
 
 
   const chargerParcelles = async () => {
