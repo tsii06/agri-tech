@@ -46,15 +46,15 @@ function Footer() {
             <h5 className="text-white mb-3">Contact</h5>
             <ul className="list-unstyled text-white-50">
               <li>Antananarivo, Madagascar</li>
-              <li>contact@madagascar-agrichain.com</li>
-              <li>+261 34 12 345 67</li>
+              <li>managerpipal@gmail.com</li>
+              <li>+261 34 76 207 59</li>
             </ul>
           </div>
         </div>
 
         <div className="text-center border-top border-secondary pt-3 mt-4">
           <small className="text-white-50">
-            &copy; {new Date().getFullYear()} Madagascar AgriChain. Tous droits réservés.
+            &copy; {new Date().getFullYear()} Madagascar MadTX. Tous droits réservés.
           </small>
         </div>
       </div>

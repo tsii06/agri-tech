@@ -172,20 +172,20 @@ function Header({ state, setAccount, setRole }) {
                 </Link>
               </li>
             </ul>
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex flex-wrap gap-2 justify-content-end align-items-center" style={{ minWidth: 0 }}>
               {account ? (
                 <>
-                  <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1">
+                  <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1 text-truncate" style={{maxWidth: 120}}>
                     <User size={16} /> {getRoleName(role)}
                   </span>
-                  <span className="fw-medium text-muted d-flex align-items-center gap-1">
+                  <span className="fw-medium text-muted d-flex align-items-center gap-1 text-truncate" style={{maxWidth: 120}}>
                     <User size={16} /> {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
                   </span>
                   <div className="status-indicator" style={{ width: 12, height: 12, borderRadius: '50%', background: role !== null ? 'var(--madtx-green)' : 'var(--madtx-brown)', marginLeft: 8 }}></div>
-                  <button onClick={async () => await changerCompte()} className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                  <button onClick={async () => await changerCompte()} className="btn btn-success btn-sm d-flex align-items-center gap-1 flex-shrink-0">
                     <RefreshCw size={16} /> Changer
                   </button>
-                  <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1">
+                  <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1 flex-shrink-0">
                     <LogOut size={16} /> Déconnecter
                   </button>
                 </>
