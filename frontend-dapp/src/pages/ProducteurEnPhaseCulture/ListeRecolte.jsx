@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ethers } from "ethers";
-import {  getCollecteurProducteurContract } from "../../utils/contract";
+import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
-import { Leaf, Hash, Package2, BadgeEuro, Calendar, BadgeCheck, BadgeX, Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../../utils/roles';
 
 function ListeRecoltes() {
@@ -12,8 +11,6 @@ function ListeRecoltes() {
   const [recoltes, setRecoltes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acteur, setActeur] = useState({});
-  const [_, setState] = useState({});
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [recolteSelectionnee, setRecolteSelectionnee] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -35,8 +32,8 @@ function ListeRecoltes() {
         const recolte = await contract.getRecolte(i);
 
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
-        if(!roles.includes(3))
-          if(roles.includes(0))
+        if (!roles.includes(3))
+          if (roles.includes(0))
             if (recolte.producteur.toLowerCase() !== account.toLowerCase())
               continue;
 
@@ -63,7 +60,7 @@ function ListeRecoltes() {
       const certificat = "Certificat de qualité"; // À remplacer par le vrai certificat
       const tx = await contract.certifieRecolte(recolteId, certificat);
       await tx.wait();
-      
+
       chargerRecoltes();
 
     } catch (error) {
@@ -76,26 +73,26 @@ function ListeRecoltes() {
     try {
       const contract = await getCollecteurProducteurContract();
       const recolte = recoltes.find(r => r.id === recolteId);
-      
+
       // Vérifier que la quantité est valide
       const quantite = Number(quantiteCommande);
       if (isNaN(quantite) || quantite <= 0) {
         setError("Veuillez entrer une quantité valide");
         return;
       }
-      
+
       if (quantite > Number(recolte.quantite)) {
         setError("La quantité demandée est supérieure à la quantité disponible");
         return;
       }
-      
+
       // Passer la commande
       const tx = await contract.passerCommandeVersProducteur(
         recolteId,
         quantite
       );
       await tx.wait();
-      
+
       // Rediriger vers la page des commandes
       navigate('/liste-collecteur-commande');
     } catch (error) {
@@ -133,8 +130,8 @@ function ListeRecoltes() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
-          <div className="input-group" style={{maxWidth: 320}}>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
+          <div className="input-group" style={{ maxWidth: 320 }}>
             <span className="input-group-text"><Search size={16} /></span>
             <input
               type="text"
@@ -142,7 +139,7 @@ function ListeRecoltes() {
               placeholder="Rechercher..."
               value={search}
               onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{borderRadius: '0 8px 8px 0'}}
+              style={{ borderRadius: '0 8px 8px 0' }}
             />
           </div>
           <div className="dropdown">
@@ -170,6 +167,7 @@ function ListeRecoltes() {
           )}
         </div>
 
+        {/* LISTE DES RECOLTES */}
         {isLoading ? (
           <div className="text-center">
             <div className="spinner-border text-primary" role="status">
@@ -220,6 +218,7 @@ function ListeRecoltes() {
             ))}
           </div>
         )}
+
       </div>
       {recoltesAffichees.length < recoltesFiltres.length && (
         <div className="text-center mt-3">
