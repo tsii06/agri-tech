@@ -209,32 +209,32 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
             {/* Main content */}
             <div className="col-md-9 col-lg-10 py-3">
               <Routes>
-                <Route path="liste-produits" element={<ListeProduits />} />
-                <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
-                <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
-                <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
-                <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
+                <Route path="admin" element={<AdminHome />} />
+                <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
+                <Route path="admin/ajouter-role-acteur" element={<AjouterRoleActeur />} />
+                <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
+                <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
+                <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
                 <Route path="creer-parcelle" element={<CreerParcelle />} />
+                <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
+                <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
+                <Route path="liste-produits" element={<ListeProduits />} />
+                <Route path="liste-recolte" element={<ListeRecoltes />} /> 
+                <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
+                <Route path="listerecolte/:address" element={<ListeRecoltes />} />
+                <Route path="listeproduit/:address" element={<ListeProduits />} />
+                <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
                 <Route path="mes-parcelles" element={<MesParcelles />} />
+                <Route path="mes-commandes-exportateur" element={<MesCommandesExportateur />} />
+                <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
                 <Route path="parcelle/:id/photos" element={<PhotosParcelle />} />
                 <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
                 <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
                 <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
-                <Route path="liste-recolte" element={<ListeRecoltes />} />
                 <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
                 <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
-                <Route path="mes-commandes-exportateur" element={<MesCommandesExportateur />} />
-                <Route path="admin" element={<AdminHome />} />
-                <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
-                <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
-                <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
-                <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
-                <Route path="listerecolte/:address" element={<ListeRecoltes />} />
-                <Route path="listeproduit/:address" element={<ListeProduits />} />
-                <Route path="transport" element={<LivraisonRecolte />} />
-                <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
                 <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
-                <Route path="admin/ajouter-role-acteur" element={<AjouterRoleActeur />} />
+                <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>
           </div>

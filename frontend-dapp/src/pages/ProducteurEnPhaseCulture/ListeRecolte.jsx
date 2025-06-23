@@ -27,13 +27,19 @@ function ListeRecoltes() {
   const chargerRecoltes = async () => {
     try {
       const contract = await getCollecteurProducteurContract();
-      let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
+      // let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
       for (let i = 1; i <= compteurRecoltes; i++) {
         const recolte = await contract.getRecolte(i);
-        if (address && recolte.producteur.toLowerCase() !== address.toLowerCase()) continue;
+
+        // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
+        if(!roles.includes(3))
+          if(roles.includes(0))
+            if (recolte.producteur.toLowerCase() !== account.toLowerCase())
+              continue;
+
         recoltesTemp.push(recolte);
       }
       recoltesTemp.reverse();
@@ -154,7 +160,7 @@ function ListeRecoltes() {
           </div>
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-          <h2 className="h5 mb-0">{address ? "Récoltes du producteur" : hasRole(roles, 0) ? "Mes Récoltes" : "Liste des Récoltes"}</h2>
+          <h2 className="h5 mb-0">{hasRole(roles, 3) ? "Liste des Récoltes" : (hasRole(roles, 0) && "Mes Récoltes")}</h2>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-4">
           {!address && hasRole(roles, 0) && (
