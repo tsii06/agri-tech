@@ -20,6 +20,7 @@ function MesParcelles() {
 
   useEffect(() => {
     if (account) {
+      // console.log("dans useEffect :", roles);
       chargerParcelles();
     }
   }, [account]);
@@ -41,9 +42,10 @@ function MesParcelles() {
       for (let i = 1; i <= compteurParcelles; i++) {
         parcelle = await contract.getParcelle(i);
 
-        // Afficher uniquement les parcelles de l'adresse connectée
-        if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
-          continue;
+        // Afficher uniquement les parcelles de l'adresse connectée si c'est un producteur
+        if(roles.includes(0))
+          if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
+            continue;
 
         parcellesPromises.push(parcelle);
       }
@@ -57,6 +59,9 @@ function MesParcelles() {
       setLoading(false);
     }
   };
+
+  
+      // console.log("endehors useEffect :", roles);
 
   // Filtrage parcelles selon recherche et certificat
   const parcellesFiltres = parcelles.filter((parcelle) => {
@@ -73,10 +78,6 @@ function MesParcelles() {
     return matchSearch && matchCertif;
   });
   const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
-
-  // Affichage du debug
-  console.log("roles reçus:", roles);
-  console.log("type de roles:", Array.isArray(roles) ? 'array' : typeof roles);
 
   if (loading) {
     return (
