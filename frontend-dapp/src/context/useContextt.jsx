@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { getGestionnaireActeursContract } from '../utils/contract';
-import { ethers } from 'ethers';
 
 const UserContext = createContext();
 
@@ -15,12 +14,14 @@ export const UserProvider = ({ children, state }) => {
             const rolesArray = await contract.getRoles(userAddress);
 
             // verifie que l'user est un acteur
-            if(!rolesArray.length <= 0)
+            if(rolesArray.length <= 0)
+                setIsActeur(false);
+            else 
                 setIsActeur(true);
             
             setRoles(rolesArray.map(r => Number(r)));
         } catch (error) {
-            console.error("Erreur lors de la vérification des rôles :", error);
+            console.error("Erreur lors de la vérification des rôles :", error.message);
             setRoles([]);
             setIsActeur(false);
         }

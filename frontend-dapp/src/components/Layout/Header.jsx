@@ -70,7 +70,7 @@ function Header({ state, setAccount, setRole, setState }) {
     }
   };
 
-  const logicChangerCompte = async () => {
+  const changerCompte = async () => {
     if (window.ethereum) {
       try {
         await window.ethereum.request({
@@ -85,16 +85,12 @@ function Header({ state, setAccount, setRole, setState }) {
           setAccount && setAccount(accounts[0]);
           await verifierActeur(accounts[0]);
         }
+        setState({}); // render UserProvider
       } catch (error) {
         console.error("Erreur lors du changement de compte:", error);
         alert("Erreur lors du changement de compte");
       }
     }
-  };
-
-  const changerCompte = () => {
-    logicChangerCompte()
-      .then(() => setState({})) // render de UserProvider
   };
 
   const deconnecterWallet = () => {
