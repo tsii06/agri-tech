@@ -1,4 +1,3 @@
-import React from 'react';
 import { Leaf, Github, Twitter, Linkedin } from 'lucide-react';
 
 function Footer() {
@@ -15,7 +14,7 @@ function Footer() {
             </div>
             <p className="text-light small">
               Traçabilité de produits agricoles sur la blockchain pour plus de transparence, 
-              de confiance et d'efficacité dans la chaîne d'approvisionnement à Madagascar.
+              de confiance et d&apos;efficacité dans la chaîne d&apos;approvisionnement à Madagascar.
             </p>
             <div className="d-flex gap-3">
               <a href="#" className="text-white-50 hover-opacity text-decoration-none">

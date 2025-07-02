@@ -11,7 +11,6 @@ function AcheterRecolte() {
   const [recolte, setRecolte] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acteur, setActeur] = useState({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -24,7 +23,6 @@ function AcheterRecolte() {
 
         // Récupérer l'acteur connecté
         const _acteur = await contract.acteurs(account);
-        setActeur(_acteur);
 
         // Vérifier que l'utilisateur est un collecteur
         if (getRoleName(_acteur.role) !== "COLLECTEUR") {

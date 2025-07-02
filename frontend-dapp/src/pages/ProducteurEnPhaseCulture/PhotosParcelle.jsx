@@ -35,7 +35,7 @@ function PhotosParcelle() {
       const contract = await getContract();
       const tx = await contract.ajouterPhoto(id, nouvellePhoto);
       await tx.wait();
-      
+
       alert("Photo ajoutée avec succès !");
       setNouvellePhoto("");
       await chargerPhotos();
@@ -58,7 +58,7 @@ function PhotosParcelle() {
   return (
     <div className="container py-4">
       <h2 className="h4 mb-4">Photos de la parcelle #{id}</h2>
-      
+
       <form onSubmit={ajouterPhoto} className="mb-4">
         <div className="input-group">
           <input
@@ -78,7 +78,7 @@ function PhotosParcelle() {
           </button>
         </div>
       </form>
-      
+
       {photos.length > 0 ? (
         <div className="row g-3">
           {photos.map((photo, index) => (
@@ -88,9 +88,6 @@ function PhotosParcelle() {
                   src={photo}
                   alt={`Photo ${index + 1} de la parcelle ${id}`}
                   className="card-img-top"
-                  onError={(e) => {
-                    // e.target.src = "https://via.placeholder.com/400x300?text=Image+non+disponible";
-                  }}
                 />
                 <div className="card-body">
                   <p className="text-muted small">Photo {index + 1}</p>
@@ -100,7 +97,7 @@ function PhotosParcelle() {
                     rel="noopener noreferrer"
                     className="btn btn-link p-0"
                   >
-                    Voir l'image originale
+                    Voir l&apos;image originale
                   </a>
                 </div>
               </div>
@@ -108,7 +105,7 @@ function PhotosParcelle() {
           ))}
         </div>
       ) : (
-        <div className="text-center text-muted">Aucune photo n'a encore été ajoutée pour cette parcelle.</div>
+        <div className="text-center text-muted">Aucune photo n&apos;a encore été ajoutée pour cette parcelle.</div>
       )}
     </div>
   );

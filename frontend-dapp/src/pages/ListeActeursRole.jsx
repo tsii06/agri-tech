@@ -1,20 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import { getGestionnaireActeursContract } from "../utils/contract";
 import { User, Mail, Phone, BadgeCheck, BadgeX, KeyRound, UserCheck, Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../utils/roles';
 
-const ROLES = [
-  "Producteur",
-  "Fournisseur",
-  "Certificateur",
-  "Collecteur",
-  "Auditeur",
-  "Transporteur",
-  "Exportateur",
-  "Administration"
-];
 
 export default function ListeActeursRole() {
   const { roles } = useUserContext();
@@ -63,7 +53,9 @@ export default function ListeActeursRole() {
               role: details[1],
               idBlockchain: details[0],
             });
-          } catch (e) {}
+          } catch (e) {
+            console.error("Erreur lors de la recuperation de details acteurs : ", e);
+          }
         }
         setActeurs(detailsList);
       })
@@ -89,14 +81,14 @@ export default function ListeActeursRole() {
   const acteursAffiches = acteursFiltres.slice(0, visibleCount);
 
   if (roleCible === null) {
-    return <div className="container mt-4">Vous n'avez pas accès à cette page.</div>;
+    return <div className="container mt-4">Vous n&apos;avez pas accès à cette page.</div>;
   }
 
   return (
     <div className="container mt-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
-          <div className="input-group" style={{maxWidth: 320}}>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
+          <div className="input-group" style={{ maxWidth: 320 }}>
             <span className="input-group-text"><Search size={16} /></span>
             <input
               type="text"
@@ -104,7 +96,7 @@ export default function ListeActeursRole() {
               placeholder="Rechercher..."
               value={search}
               onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{borderRadius: '0 8px 8px 0'}}
+              style={{ borderRadius: '0 8px 8px 0' }}
             />
           </div>
           <div className="dropdown">
@@ -147,7 +139,7 @@ export default function ListeActeursRole() {
                     <p><Mail size={16} className="me-2 text-success" /><strong>Email:</strong> {acteur.email}</p>
                     <p><Phone size={16} className="me-2 text-success" /><strong>Téléphone:</strong> {acteur.telephone}</p>
                     <p><strong>Adresse:</strong> {acteur.adresse}</p>
-                    <p className="fw-semibold d-flex align-items-center" style={{gap: 6}}>
+                    <p className="fw-semibold d-flex align-items-center" style={{ gap: 6 }}>
                       {acteur.actif ? <BadgeCheck size={16} className="me-1 text-success" /> : <BadgeX size={16} className="me-1 text-danger" />}
                       <strong>Actif:</strong> {acteur.actif ? "Oui" : "Non"}
                     </p>

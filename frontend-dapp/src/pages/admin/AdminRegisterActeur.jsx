@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 
 const ROLES = [
@@ -82,7 +82,7 @@ export default function AdminRegisterActeur() {
                 className="form-control"
               />
             </div>
-  
+
             <div className="col-md-6 mb-3">
               <label className="form-label">Rôle</label>
               <select
@@ -98,9 +98,9 @@ export default function AdminRegisterActeur() {
                 ))}
               </select>
             </div>
-  
+
             <div className="col-md-6 mb-3">
-              <label className="form-label">Type d'entité</label>
+              <label className="form-label">Type d&apos;entité</label>
               <select
                 name="typeEntite"
                 value={form.typeEntite}
@@ -114,7 +114,7 @@ export default function AdminRegisterActeur() {
                 ))}
               </select>
             </div>
-  
+
             <div className="col-md-6 mb-3">
               <label className="form-label">Nom</label>
               <input
@@ -125,7 +125,7 @@ export default function AdminRegisterActeur() {
                 className="form-control"
               />
             </div>
-  
+
             <div className="col-md-6 mb-3">
               <label className="form-label">NIF ou CIN</label>
               <input
@@ -136,7 +136,7 @@ export default function AdminRegisterActeur() {
                 className="form-control"
               />
             </div>
-  
+
             <div className="col-md-12 mb-3">
               <label className="form-label">Adresse officielle</label>
               <input
@@ -147,7 +147,7 @@ export default function AdminRegisterActeur() {
                 className="form-control"
               />
             </div>
-  
+
             <div className="col-md-6 mb-3">
               <label className="form-label">Email</label>
               <input
@@ -159,7 +159,7 @@ export default function AdminRegisterActeur() {
                 className="form-control"
               />
             </div>
-  
+
             <div className="col-md-6 mb-3">
               <label className="form-label">Téléphone</label>
               <input
@@ -171,7 +171,7 @@ export default function AdminRegisterActeur() {
               />
             </div>
           </div>
-  
+
           <div className="d-flex justify-content-start">
             <button
               type="submit"
@@ -181,7 +181,7 @@ export default function AdminRegisterActeur() {
               {loading ? "Enregistrement..." : "Enregistrer"}
             </button>
           </div>
-  
+
           {message && <div className="alert alert-info mt-3">{message}</div>}
         </form>
       </div>

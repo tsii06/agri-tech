@@ -143,7 +143,7 @@ function MesParcelles() {
           <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
             <h2 className="h5 mb-0">Liste des Parcelles</h2>
           </div>
-          
+
           {/* LISTE DES PARCELLES */}
 
           {loading ? (

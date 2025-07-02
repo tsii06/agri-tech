@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate,useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 
 function FaireRecolte() {
@@ -7,7 +7,6 @@ function FaireRecolte() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const idParcelle = useRef();
   const quantite = useRef();
   const prix = useRef();
   const dateRecolte = useRef();

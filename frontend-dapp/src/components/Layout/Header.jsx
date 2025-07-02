@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 import {
-  Menu,
   User,
   LogOut,
   Wallet,

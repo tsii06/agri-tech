@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-import { getCollecteurExportateurContract, executeContractMethod } from "../../utils/contract";
+import { executeContractMethod, getCollecteurExportateurContract } from "../../utils/contract";
 
 function EffectuerPaiement() {
   const { id } = useParams(); // id de la commande
@@ -16,7 +16,7 @@ function EffectuerPaiement() {
   useEffect(() => {
     const chargerDetails = async () => {
       try {
-        const contract = await getCollecteurContract();
+        const contract = await getCollecteurExportateurContract();
         const commandeInfo = await contract.commandes(id);
         setCommande({
           idProduit: commandeInfo.idProduit.toString(),
@@ -51,9 +51,9 @@ function EffectuerPaiement() {
     setIsProcessing(true);
 
     try {
-      const contract = await getCollecteurContract();
+      const contract = await getCollecteurExportateurContract();
       const montantEnWei = ethers.parseEther(montant);
-      
+
       const tx = await executeContractMethod(
         contract,
         contract.effectuerPaiement,

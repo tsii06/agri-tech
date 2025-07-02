@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 
 const ROLES = [
@@ -49,7 +49,9 @@ export default function AdminListeActeurs() {
               actif: details[2],
               idBlockchain: details[0],
             });
-          } catch (e) { /* ignorer les erreurs d'acteur inexistant */ }
+          } catch (e) {
+            console.error("Erreur lors de la recuperation de details acteur : ", e);
+          }
         }
       }
       setActeurs(all);
@@ -141,7 +143,7 @@ export default function AdminListeActeurs() {
       {editIndex !== null && (
         <div className="card mt-4">
           <div className="card-body">
-            <h5>Modifier l'acteur</h5>
+            <h5>Modifier l&apos;acteur</h5>
             <form onSubmit={handleEditSubmit}>
               <label>Nom:
                 <input name="nom" value={editForm.nom} onChange={handleEditChange} className="form-control" required />

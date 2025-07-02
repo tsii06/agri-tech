@@ -59,11 +59,11 @@ function LivraisonRecolte() {
         setIsLoading(false);
       }
     };
-      chargerDetails();
+    chargerDetails();
   }, []);
 
   const getStatutTransportLabel = (statutCode) => {
-    switch(statutCode) {
+    switch (statutCode) {
       case 0: return <span className="text-info fw-bold">En cours</span>;
       case 1: return <span className="text-success fw-bold">Livré</span>;
       default: return "Inconnu";
@@ -71,7 +71,7 @@ function LivraisonRecolte() {
   };
 
   const getStatutTransportColor = (statut) => {
-    switch(Number(statut)) {
+    switch (Number(statut)) {
       case 0: return "text-info";
       case 1: return "text-success";
       default: return "text-secondary";
@@ -162,32 +162,32 @@ function LivraisonRecolte() {
         <div className="row g-3">
           {commandes.map((commande) => (
             <div key={commande.id} className="col-md-4">
-                <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
-                  <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
-                    <ShoppingCart size={36} />
-                  </div>
-                  <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
-                  <div className="card-text small">
-                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
-                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
-                    <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
-                    <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
-                    <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(commande.statutTransport)}`}
-                      style={{gap: 6}}>
-                      <Truck size={16} className="me-1" />
-                      <strong>Transport:</strong> {getStatutTransportLabel(commande.statutTransport)}
-                    </p>
-                  </div>
-                  <div className="d-flex gap-2">
-                    <button className="btn-agrichain-outline" onClick={() => { setShowConditionModal(commande.id); }}>
-                      Condition de transport
-                    </button>
-                    <button className="btn-agrichain" onClick={() => handleSubmitStatut(commande.id)}>
-                      Changer le statut
-                    </button>
+              <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
+                  <ShoppingCart size={36} />
                 </div>
+                <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
+                <div className="card-text small">
+                  <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
+                  <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
+                  <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
+                  <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
+                  <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(commande.statutTransport)}`}
+                    style={{ gap: 6 }}>
+                    <Truck size={16} className="me-1" />
+                    <strong>Transport:</strong> {getStatutTransportLabel(commande.statutTransport)}
+                  </p>
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn-agrichain-outline" onClick={() => { setShowConditionModal(commande.id); }}>
+                    Condition de transport
+                  </button>
+                  <button className="btn-agrichain" onClick={() => handleSubmitStatut(commande.id)}>
+                    Changer le statut
+                  </button>
                 </div>
               </div>
+            </div>
           ))}
         </div>
       </div>
@@ -237,7 +237,7 @@ function LivraisonRecolte() {
                   <label className="form-label">Température</label>
                   <input type="text" className="form-control" value={temperature} onChange={e => setTemperature(e.target.value)} placeholder="Ex: 25C" />
                 </div>
-          <div className="mb-3">
+                <div className="mb-3">
                   <label className="form-label">Humidité</label>
                   <input type="text" className="form-control" value={humidite} onChange={e => setHumidite(e.target.value)} placeholder="Ex: 60%" />
                 </div>
@@ -258,7 +258,7 @@ function LivraisonRecolte() {
               </div>
             </div>
           </div>
-      </div>
+        </div>
       )}
     </div>
   );

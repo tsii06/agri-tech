@@ -73,7 +73,7 @@ function CommandeCollecteur() {
     try {
       const contract = await getCollecteurProducteurContract();
       const commande = commandes.find(c => c.id === commandeId);
-      
+
       // Effectuer le paiement
       // Les paramètres sont: idCommande, montant, mode
       const tx = await contract.effectuerPaiementVersProducteur(
@@ -87,10 +87,10 @@ function CommandeCollecteur() {
 
       // Fermer le modal
       setShowModal(false);
-      
+
       // Rediriger vers la page des produits
       navigate('/liste-produits');
-      
+
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       console.error(error.message);
@@ -106,7 +106,7 @@ function CommandeCollecteur() {
   };
 
   const getStatutTransport = (statut) => {
-    switch(statut) {
+    switch (statut) {
       case 0: return "En cours";
       case 1: return "Livré";
       default: return "Inconnu";
@@ -114,7 +114,7 @@ function CommandeCollecteur() {
   };
 
   const getStatutTransportColor = (statut) => {
-    switch(statut) {
+    switch (statut) {
       case 0: return "text-info";
       case 1: return "text-success";
       default: return "text-secondary";
@@ -164,8 +164,8 @@ function CommandeCollecteur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
-          <div className="input-group" style={{maxWidth: 320}}>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
+          <div className="input-group" style={{ maxWidth: 320 }}>
             <span className="input-group-text"><Search size={16} /></span>
             <input
               type="text"
@@ -173,7 +173,7 @@ function CommandeCollecteur() {
               placeholder="Rechercher..."
               value={search}
               onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{borderRadius: '0 8px 8px 0'}}
+              style={{ borderRadius: '0 8px 8px 0' }}
             />
           </div>
           <div className="dropdown">
@@ -194,7 +194,7 @@ function CommandeCollecteur() {
           <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
             <h2 className="h5 mb-0">Mes Commandes Collecteur</h2>
           </div>
-          
+
           {commandes.length === 0 ? (
             <div className="text-center text-muted">
               Vous n&apos;avez pas encore passé de commandes.
@@ -217,12 +217,12 @@ function CommandeCollecteur() {
                       <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
                       <p><User size={16} className="me-2 text-success" /><strong>Producteur:</strong> {commande.producteur.slice(0, 6)}...{commande.producteur.slice(-4)}</p>
                       <p className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(commande.payer)}`}
-                        style={{gap: 6}}>
+                        style={{ gap: 6 }}>
                         <Wallet size={16} className="me-1" />
                         <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
                       </p>
                       <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(Number(commande.statutTransport))}`}
-                        style={{gap: 6}}>
+                        style={{ gap: 6 }}>
                         <Truck size={16} className="me-1" />
                         <strong>Transport:</strong> {getStatutTransport(Number(commande.statutTransport))}
                       </p>
@@ -251,49 +251,49 @@ function CommandeCollecteur() {
       {/* Modal de paiement */}
       {showModal && commandeSelectionnee && (
         <>
-        <div className="modal-backdrop fade show"></div>
+          <div className="modal-backdrop fade show"></div>
 
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Payer la commande</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
-                  <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
-                  <p><strong>Prix total:</strong> {commandeSelectionnee.prix} Ar</p>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Payer la commande</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-                <div className="mb-3">
-                  <label className="form-label">Mode de paiement</label>
-                  <select 
-                    className="form-select"
-                    value={modePaiement}
-                    onChange={(e) => setModePaiement(Number(e.target.value))}
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
+                    <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
+                    <p><strong>Prix total:</strong> {commandeSelectionnee.prix} Ar</p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Mode de paiement</label>
+                    <select
+                      className="form-select"
+                      value={modePaiement}
+                      onChange={(e) => setModePaiement(Number(e.target.value))}
+                    >
+                      <option value={0}>Virement bancaire</option>
+                      <option value={1}>Cash</option>
+                      <option value={2}>Mobile Money</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-agrichain-outline" onClick={() => setShowModal(false)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-agrichain"
+                    onClick={() => handlePayer(commandeSelectionnee.id)}
                   >
-                    <option value={0}>Virement bancaire</option>
-                    <option value={1}>Cash</option>
-                    <option value={2}>Mobile Money</option>
-                  </select>
+                    Confirmer le paiement
+                  </button>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-agrichain-outline" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn-agrichain"
-                  onClick={() => handlePayer(commandeSelectionnee.id)}
-                >
-                  Confirmer le paiement
-                </button>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
 

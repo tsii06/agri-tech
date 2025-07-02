@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 
 const ROLES = [
@@ -39,7 +39,7 @@ const AjouterRoleActeur = () => {
     <div className="container py-4">
       <h2 className="mb-4">Ajouter un rôle à un acteur</h2>
       <div className="mb-3">
-        <label className="form-label">Adresse de l'acteur</label>
+        <label className="form-label">Adresse de l&apos;acteur</label>
         <input
           type="text"
           className="form-control"

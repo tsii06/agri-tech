@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Hash, Package2, BadgeCheck, Calendar, FileCheck2, Sprout } from "lucide-react";
 import { hasRole } from '../../utils/roles';
@@ -6,7 +5,6 @@ import { hasRole } from '../../utils/roles';
 const ParcelleCard = ({ 
   parcelle, 
   userRole, // 'producteur', 'collecteur', 'exportateur', 'certificateur'
-  onRecolter 
 }) => {
   const {
     id,

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ethers } from "ethers";
+import { useNavigate } from "react-router-dom";
 import { getCollecteurExportateurContract } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
 import { useUserContext } from '../../context/useContextt';
 import { hasRole } from '../../utils/roles';
 
@@ -11,8 +9,6 @@ function CommandeExportateur() {
   const [produits, setProduits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acteur, setActeur] = useState({});
-  const [_, setState] = useState({});
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -56,32 +52,32 @@ function CommandeExportateur() {
   const handleCommander = async (produitId) => {
     try {
       const contract = await getCollecteurExportateurContract();
-      
+
       // Vérifier que la quantité est valide
       const quantite = Number(quantiteCommande);
       if (isNaN(quantite) || quantite <= 0) {
         setError("Veuillez entrer une quantité valide");
         return;
       }
-      
+
       const produit = produits.find(p => p.id === produitId);
       if (quantite > Number(produit.quantite)) {
         setError("La quantité demandée est supérieure à la quantité disponible");
         return;
       }
-      
+
       // Passer la commande
       const tx = await contract.passerCommande(
         produitId,
         quantite
       );
       await tx.wait();
-      
+
       // Fermer le modal
       setShowModal(false);
       setProduitSelectionne(null);
       setQuantiteCommande("");
-      
+
       // Rediriger vers la liste des commandes
       navigate('/mes-commandes-exportateur');
     } catch (error) {
@@ -91,7 +87,7 @@ function CommandeExportateur() {
   };
 
   const getStatutProduit = (statut) => {
-    switch(Number(statut)) {
+    switch (Number(statut)) {
       case 0: return "En attente";
       case 1: return "Validé";
       case 2: return "Rejeté";
@@ -100,7 +96,7 @@ function CommandeExportateur() {
   };
 
   const getStatutProduitColor = (statut) => {
-    switch(Number(statut)) {
+    switch (Number(statut)) {
       case 0: return "text-warning";
       case 1: return "text-success";
       case 2: return "text-danger";
@@ -124,10 +120,10 @@ function CommandeExportateur() {
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
         <h2 className="h5 mb-3">
-          Liste des Produits 
+          Liste des Produits
           <span className="badge bg-info ms-2">Exportateur</span>
         </h2>
-        
+
         {isLoading ? (
           <div className="text-center">
             <div className="spinner-border text-primary" role="status">
@@ -136,7 +132,7 @@ function CommandeExportateur() {
           </div>
         ) : produits.length === 0 ? (
           <div className="text-center text-muted">
-            Aucun produit validé n'est disponible pour le moment.
+            Aucun produit validé n&apos;est disponible pour le moment.
           </div>
         ) : (
           <div className="row g-3">

@@ -123,7 +123,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
         setAccount(userAddress);
         // Appeler ici la logique de récupération du rôle si besoin
       } catch (error) {
-        alert("Erreur lors de la connexion au wallet");
+        alert("Erreur lors de la connexion au wallet : ", error);
       }
     } else {
       alert("Installe Metamask !");
@@ -133,12 +133,12 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header state={state} setState={setState} setAccount={setAccount} setRole={setRole} />
-      
+
       <div className="flex-grow-1">
         {location.pathname === "/" ? (
           <Routes>
             <Route path="/" element={<HomePage account={account} onConnectWallet={connectWallet} />} />
-            
+
           </Routes>
         ) : (
           <div className="row">

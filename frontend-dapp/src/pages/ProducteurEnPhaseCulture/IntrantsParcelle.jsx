@@ -50,7 +50,7 @@ function IntrantsParcelle() {
         parseInt(formData.quantite)
       );
       await tx.wait();
-      
+
       alert("Intrant ajouté avec succès !");
       setFormData({ nom: "", quantite: "" });
       await chargerIntrants();
@@ -67,7 +67,7 @@ function IntrantsParcelle() {
       const contract = await getContract();
       const tx = await contract.validerIntrant(id, nom, valide);
       await tx.wait();
-      
+
       alert("Intrant validé avec succès !");
       await chargerIntrants();
     } catch (error) {
@@ -87,11 +87,11 @@ function IntrantsParcelle() {
   return (
     <div className="container py-4">
       <h2 className="h4 mb-4">Intrants de la parcelle #{id}</h2>
-      
+
       <form onSubmit={ajouterIntrant} className="mb-4">
         <div className="row g-3">
           <div className="col-md-6">
-            <label className="form-label">Nom de l'intrant</label>
+            <label className="form-label">Nom de l&apos;intrant</label>
             <input
               type="text"
               name="nom"
@@ -122,7 +122,7 @@ function IntrantsParcelle() {
           {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
         </button>
       </form>
-      
+
       {intrants.length > 0 ? (
         <div className="row g-3">
           {intrants.map((intrant, index) => (
@@ -131,7 +131,7 @@ function IntrantsParcelle() {
                 <h5 className="card-title">{intrant.nom}</h5>
                 <p><strong>Quantité:</strong> {intrant.quantite}</p>
                 <p>
-                  <strong>Statut:</strong> 
+                  <strong>Statut:</strong>
                   <span className={`badge ms-2 ${intrant.valide ? "bg-success" : "bg-warning"}`}>
                     {intrant.valide ? "Validé" : "Encore non validé"}
                   </span>
@@ -151,7 +151,7 @@ function IntrantsParcelle() {
           ))}
         </div>
       ) : (
-        <div className="text-center text-muted">Aucun intrant n'a encore été ajouté pour cette parcelle.</div>
+        <div className="text-center text-muted">Aucun intrant n&apos;a encore été ajouté pour cette parcelle.</div>
       )}
     </div>
   );

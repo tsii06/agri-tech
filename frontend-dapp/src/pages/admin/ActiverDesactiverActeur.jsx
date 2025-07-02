@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 
 const ActiverDesactiverActeur = () => {
@@ -66,7 +66,7 @@ const ActiverDesactiverActeur = () => {
     <div className="container py-4">
       <h2 className="mb-4">Activer / Désactiver un acteur</h2>
       <div className="mb-3">
-        <label className="form-label">Adresse de l'acteur</label>
+        <label className="form-label">Adresse de l&apos;acteur</label>
         <input
           type="text"
           className="form-control"
@@ -89,11 +89,11 @@ const ActiverDesactiverActeur = () => {
           </div>
           {statut ? (
             <button className="btn-agrichain-outline mt-2" onClick={desactiverActeur} disabled={isLoading}>
-              Désactiver l'acteur
+              Désactiver l&apos;acteur
             </button>
           ) : (
             <button className="btn-agrichain mt-2" onClick={activerActeur} disabled={isLoading}>
-              Activer l'acteur
+              Activer l&apos;acteur
             </button>
           )}
         </div>

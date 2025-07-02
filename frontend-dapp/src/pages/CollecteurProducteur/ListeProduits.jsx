@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
 import { getCollecteurExportateurContract } from "../../utils/contract";
-import { getRoleName } from "../../components/Layout/Header";
 import { useParams } from "react-router-dom";
 import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, BadgeCheck, BadgeX, Search, ChevronDown } from "lucide-react";
 import { useUserContext } from '../../context/useContextt';
@@ -67,21 +65,21 @@ function ListeProduits() {
   const handleModifierPrix = async (produitId) => {
     try {
       const contract = await getCollecteurExportateurContract();
-      
+
       // Vérifier que le nouveau prix est valide
       const prix = Number(nouveauPrix);
       if (isNaN(prix) || prix <= 0) {
         setError("Veuillez entrer un prix valide");
         return;
       }
-      
+
       // Modifier le prix
       const tx = await contract.setPriceProduit(
         produitId,
         prix
       );
       await tx.wait();
-      
+
       // Mettre à jour l'état local
       const produitsTemp = [...produits];
       const index = produitsTemp.findIndex(p => p.id === produitId);
@@ -103,11 +101,11 @@ function ListeProduits() {
   const handleValiderProduit = async (produitId) => {
     try {
       const contract = await getCollecteurExportateurContract();
-      
+
       // Valider le produit (true pour valider, false pour rejeter)
       const tx = await contract.validerProduit(produitId, true);
       await tx.wait();
-      
+
       // Mettre à jour l'état local
       const produitsTemp = [...produits];
       const index = produitsTemp.findIndex(p => p.id === produitId);
@@ -122,7 +120,7 @@ function ListeProduits() {
   };
 
   const getStatutProduit = (statut) => {
-    switch(Number(statut)) {
+    switch (Number(statut)) {
       case 0: return "En attente";
       case 1: return "Validé";
       case 2: return "Rejeté";
@@ -131,7 +129,7 @@ function ListeProduits() {
   };
 
   const getStatutProduitColor = (statut) => {
-    switch(Number(statut)) {
+    switch (Number(statut)) {
       case 0: return "text-warning";
       case 1: return "text-success";
       case 2: return "text-danger";
@@ -200,8 +198,8 @@ function ListeProduits() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
-          <div className="input-group" style={{maxWidth: 320}}>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
+          <div className="input-group" style={{ maxWidth: 320 }}>
             <span className="input-group-text"><Search size={16} /></span>
             <input
               type="text"
@@ -209,7 +207,7 @@ function ListeProduits() {
               placeholder="Rechercher..."
               value={search}
               onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{borderRadius: '0 8px 8px 0'}}
+              style={{ borderRadius: '0 8px 8px 0' }}
             />
           </div>
           <div className="dropdown">
@@ -231,7 +229,7 @@ function ListeProduits() {
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
           <h2 className="h5 mb-0">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
         </div>
-        
+
         {isLoading ? (
           <div className="text-center">
             <div className="spinner-border text-primary" role="status">
@@ -240,7 +238,7 @@ function ListeProduits() {
           </div>
         ) : produits.length === 0 ? (
           <div className="text-center text-muted">
-            Vous n'avez pas encore de produits.
+            Vous n&apos;avez pas encore de produits.
           </div>
         ) : produitsFiltres.length === 0 ? (
           <div className="text-center text-muted">Aucun produit ne correspond à la recherche ou au filtre.</div>
@@ -260,7 +258,7 @@ function ListeProduits() {
                     <p><Calendar size={16} className="me-2 text-success" /><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
                     <p><FileCheck2 size={16} className="me-2 text-success" /><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
                     <p className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(produit.statut)}`}
-                      style={{gap: 6}}>
+                      style={{ gap: 6 }}>
                       {produit.statut === 1 ? <BadgeCheck size={16} className="me-1" /> : produit.statut === 2 ? <BadgeX size={16} className="me-1" /> : <Hash size={16} className="me-1" />}
                       <strong>Statut:</strong> {getStatutProduit(produit.statut)}
                     </p>
@@ -308,88 +306,88 @@ function ListeProduits() {
       {/* Modal de modification du prix */}
       {showModal === true && produitSelectionne && (
         <>
-        <div className="modal-backdrop fade show"></div>
+          <div className="modal-backdrop fade show"></div>
 
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Modifier le prix de {produitSelectionne.nom}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Prix actuel: {produitSelectionne.prixUnit} Ar</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={nouveauPrix}
-                    onChange={(e) => setNouveauPrix(e.target.value)}
-                    placeholder="Nouveau prix"
-                  />
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Modifier le prix de {produitSelectionne.nom}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleModifierPrix(produitSelectionne.id)}
-                >
-                  Confirmer la modification
-                </button>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Prix actuel: {produitSelectionne.prixUnit} Ar</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={nouveauPrix}
+                      onChange={(e) => setNouveauPrix(e.target.value)}
+                      placeholder="Nouveau prix"
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleModifierPrix(produitSelectionne.id)}
+                  >
+                    Confirmer la modification
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
 
       {/* Modal Commander pour l'exportateur */}
       {showModal === 'commander' && produitSelectionne && (
         <>
-        <div className="modal-backdrop fade show"></div>
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Commander {produitSelectionne.nom}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Quantité disponible: {produitSelectionne.quantite} kg</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={quantiteCommande || ''}
-                    onChange={e => setQuantiteCommande(e.target.value)}
-                    placeholder="Quantité à commander"
-                  />
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Commander {produitSelectionne.nom}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-                <div className="mb-3">
-                  <p>Prix unitaire: {produitSelectionne.prixUnit} Ar</p>
-                  <p>Total: {Number(quantiteCommande) * Number(produitSelectionne.prixUnit) || 0} Ar</p>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Quantité disponible: {produitSelectionne.quantite} kg</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={quantiteCommande || ''}
+                      onChange={e => setQuantiteCommande(e.target.value)}
+                      placeholder="Quantité à commander"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <p>Prix unitaire: {produitSelectionne.prixUnit} Ar</p>
+                    <p>Total: {Number(quantiteCommande) * Number(produitSelectionne.prixUnit) || 0} Ar</p>
+                  </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleCommanderProduit(produitSelectionne.id)}
-                  disabled={!quantiteCommande || Number(quantiteCommande) <= 0 || Number(quantiteCommande) > Number(produitSelectionne.quantite)}
-                >
-                  Confirmer la commande
-                </button>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleCommanderProduit(produitSelectionne.id)}
+                    disabled={!quantiteCommande || Number(quantiteCommande) <= 0 || Number(quantiteCommande) > Number(produitSelectionne.quantite)}
+                  >
+                    Confirmer la commande
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
 

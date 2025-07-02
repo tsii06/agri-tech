@@ -36,7 +36,7 @@ function InspectionsParcelle() {
       const contract = await getContract();
       const tx = await contract.ajouterInspection(id, rapport);
       await tx.wait();
-      
+
       alert("Inspection ajoutée avec succès !");
       setRapport("");
       await chargerInspections();
@@ -59,10 +59,10 @@ function InspectionsParcelle() {
   return (
     <div className="container py-4">
       <h2 className="h4 mb-4">Inspections de la parcelle #{id}</h2>
-      
+
       <form onSubmit={ajouterInspection} className="mb-4">
         <div className="mb-3">
-          <label className="form-label">Rapport d'inspection</label>
+          <label className="form-label">Rapport d&apos;inspection</label>
           <textarea
             value={rapport}
             onChange={(e) => setRapport(e.target.value)}
@@ -80,7 +80,7 @@ function InspectionsParcelle() {
           {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'inspection"}
         </button>
       </form>
-      
+
       {inspections.length > 0 ? (
         <div className="row g-3">
           {inspections.map((inspection, index) => (
@@ -104,7 +104,7 @@ function InspectionsParcelle() {
           ))}
         </div>
       ) : (
-        <div className="text-center text-muted">Aucune inspection n'a encore été effectuée pour cette parcelle.</div>
+        <div className="text-center text-muted">Aucune inspection n&apos;a encore été effectuée pour cette parcelle.</div>
       )}
     </div>
   );

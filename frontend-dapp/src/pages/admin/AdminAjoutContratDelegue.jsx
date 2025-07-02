@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 
 export default function AdminAjoutContratDelegue() {
@@ -47,7 +47,7 @@ export default function AdminAjoutContratDelegue() {
         <h4 className="card-title mb-4">Ajouter un contrat délégué à un acteur</h4>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Adresse de l'acteur</label>
+            <label className="form-label">Adresse de l&apos;acteur</label>
             <input
               name="acteur"
               value={form.acteur}

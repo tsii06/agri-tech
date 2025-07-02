@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
