@@ -46,6 +46,7 @@ function Header({ state, setAccount, setRole }) {
   };
 
   const connectWallet = async () => {
+    sessionStorage.removeItem('madtx-logout');
     if (window.ethereum) {
       try {
         await window.ethereum.request({
@@ -94,6 +95,8 @@ function Header({ state, setAccount, setRole }) {
     setRoleLocal(null);
     setAccount && setAccount(null);
     setRole && setRole(null);
+    sessionStorage.setItem('madtx-logout', '1');
+    window.location.href = '/';
   };
 
   const verifierActeur = async (userAddress) => {
@@ -114,6 +117,7 @@ function Header({ state, setAccount, setRole }) {
   };
 
   useEffect(() => {
+    if (sessionStorage.getItem('madtx-logout') === '1') return;
     verifierConnexionInitiale();
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
