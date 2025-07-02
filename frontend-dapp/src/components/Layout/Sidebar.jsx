@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const ROLE_LABELS = {
   0: "Producteur",
@@ -46,9 +46,9 @@ const ROLE_LINKS = {
 };
 
 
-function Sidebar({ account, roles, sidebarOpen, setSidebarOpen, getLinkIcon }) {
-  const location = useLocation();
+function Sidebar({ account, roles, getLinkIcon }) {
   const [openGroups, setOpenGroups] = useState({});
+  const navigator = useNavigate();
 
   if (!account || !roles || roles.length === 0) return null;
 
@@ -71,11 +71,11 @@ function Sidebar({ account, roles, sidebarOpen, setSidebarOpen, getLinkIcon }) {
                   style={{ cursor: "pointer", fontWeight: 600, color: "#4e944f" }}
                   onClick={() => {
                     handleToggle(role);
-                    window.location.href = "/admin";
+                    navigator("/admin");
                   }}
                 >
                   <span>{ROLE_LABELS[role]}</span>
-                  <span>{openGroups[role] ? "▼" : "►"}</span>
+                  {/* <span>{openGroups[role] ? "▼" : "►"}</span> */}
                 </div>
               ) : (
                 <div

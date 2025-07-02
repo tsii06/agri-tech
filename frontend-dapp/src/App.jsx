@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { UserProvider } from './context/useContextt';
 import { ethers } from "ethers";
@@ -200,12 +200,12 @@ function AdminHome() {
     <div className="container mt-4">
       <h2>Espace Administration</h2>
       <ul>
-        <li><a href="/admin/enregistrer-acteur">Enregistrer un acteur</a></li>
-        <li><a href="/admin/ajouter-contrat-delegue">Ajouter un contrat délégué</a></li>
-        <li><a href="/admin/liste-acteurs">Liste des acteurs</a></li>
-        <li><a href="/admin/activer-desactiver-acteur">Activer / Désactiver un acteur</a></li>
-        <li><a href="/retirer-contrat-delegue">Retirer un contrat délégué</a></li>
-        <li><a href="/admin/ajouter-role-acteur">Ajouter un rôle à un acteur</a></li>
+        <li><Link to="/admin/enregistrer-acteur">Enregistrer un acteur</Link></li>
+        <li><Link to="/admin/ajouter-contrat-delegue">Ajouter un contrat délégué</Link></li>
+        <li><Link to="/admin/liste-acteurs">Liste des acteurs</Link></li>
+        <li><Link to="/admin/activer-desactiver-acteur">Activer / Désactiver un acteur</Link></li>
+        <li><Link to="/retirer-contrat-delegue">Retirer un contrat délégué</Link></li>
+        <li><Link to="/admin/ajouter-role-acteur">Ajouter un rôle à un acteur</Link></li>
       </ul>
     </div>
   );
