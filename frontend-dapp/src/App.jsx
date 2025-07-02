@@ -38,7 +38,6 @@ import {
   ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
-import { useUserContext } from './context/useContextt';
 
 function App() {
   const [state, setState] = useState({});
@@ -55,6 +54,7 @@ function App() {
           const rolesArray = await contract.getRoles(account);
           setRoles(rolesArray.map(r => Number(r)));
         } catch (e) {
+          console.error("Erreurs lors de l'initialisation des roles de l'user : ", e);
           setRoles([]);
         }
       } else {
@@ -83,7 +83,7 @@ function App() {
   );
 }
 
-function AppLayout({ state, setState, account, setAccount, role, setRole, sidebarOpen, setSidebarOpen, roles }) {
+function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen, setSidebarOpen, roles }) {
   const location = useLocation();
   const navigate = useNavigate();
   const prevAccount = useRef();
@@ -95,61 +95,6 @@ function AppLayout({ state, setState, account, setAccount, role, setRole, sideba
     }
     prevAccount.current = account;
   }, [account, navigate, location.pathname]);
-
-  const getNavigationLinks = () => {
-    if (!account || !roles.length) return [];
-    const linksSet = new Set();
-    const links = [];
-    roles.forEach(role => {
-      let roleLinks = [];
-      switch (role) {
-        case 0:
-          roleLinks = [
-            { to: "/mes-parcelles", text: "Mes Parcelles" },
-            { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
-            { to: "/liste-recolte", text: "Mes récoltes" }
-          ]; break;
-        case 1:
-          roleLinks = [{ to: "/mes-parcelles", text: "Gérer les Intrants" }]; break;
-        case 2:
-          roleLinks = [
-            { to: "/mes-parcelles", text: "Validation des intrants" },
-            { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
-          ]; break;
-        case 3:
-          roleLinks = [
-            { to: "/liste-recolte", text: "Passer commande" },
-            { to: "/liste-collecteur-commande", text: "Mes commandes" },
-            { to: "/liste-produits", text: "Liste des produits" },
-            { to: "/liste-acteurs-role", text: "Liste des Producteurs" }
-          ]; break;
-        case 4:
-          roleLinks = [{ to: "/mes-parcelles", text: "Inspections" }]; break;
-        case 5:
-          roleLinks = [{ to: "/transport", text: "Gestion des transports" }]; break;
-        case 6:
-          roleLinks = [
-            { to: "/mes-parcelles", text: "Parcelles" },
-            { to: "/mes-commandes-exportateur", text: "Mes commandes" },
-            { to: "/passer-commande-collecteur", text: "Passer commande" },
-            { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
-            { to: "/liste-produits", text: "Liste des produits" }
-          ]; break;
-        default: break;
-      }
-      roleLinks.forEach(link => {
-        const key = link.to + link.text;
-        if (!linksSet.has(key)) {
-          linksSet.add(key);
-          links.push(link);
-        }
-      });
-    });
-    if (roles.includes(7)) {
-      links.push({ to: "/admin", text: "Admin" });
-    }
-    return links;
-  };
 
   const getLinkIcon = (text) => {
     const t = text.toLowerCase();

@@ -28,12 +28,16 @@ export const UserProvider = ({ children, state }) => {
 
     useEffect(() => {
         const checkAccount = async () => {
-            if (window.ethereum) {
-                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                if (accounts.length > 0) {
-                    setAccount(accounts[0]);
-                    await verifeActeur(accounts[0]);
+            try {
+                if (window.ethereum) {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        setAccount(accounts[0]);
+                        await verifeActeur(accounts[0]);
+                    }
                 }
+            } catch(err) {
+                console.error("Erreur lors de l'initialisation dans UserProvider : ", err);
             }
         };
 

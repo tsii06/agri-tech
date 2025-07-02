@@ -24,7 +24,7 @@ export const getRoleName = (roleNumber) => {
   return roles[roleNumber] || "INCONNU";
 };
 
-function Header({ state, setAccount, setRole }) {
+function Header({ state, setAccount, setRole, setState }) {
   const [account, setAccountLocal] = useState(null);
   const [role, setRoleLocal] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,7 +70,7 @@ function Header({ state, setAccount, setRole }) {
     }
   };
 
-  const changerCompte = async () => {
+  const logicChangerCompte = async () => {
     if (window.ethereum) {
       try {
         await window.ethereum.request({
@@ -90,6 +90,11 @@ function Header({ state, setAccount, setRole }) {
         alert("Erreur lors du changement de compte");
       }
     }
+  };
+
+  const changerCompte = () => {
+    logicChangerCompte()
+      .then(() => setState({})) // render de UserProvider
   };
 
   const deconnecterWallet = () => {
