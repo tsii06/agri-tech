@@ -31,12 +31,14 @@ import ListeActeursRole from "./pages/ListeActeursRole";
 import ActiverDesactiverActeur from "./pages/Admin/ActiverDesactiverActeur";
 import RetirerContratDelegue from "./pages/RetirerContratDelegue";
 import AjouterRoleActeur from "./pages/Admin/AjouterRoleActeur";
+import Dashboard from "./pages/Dashboard";
 
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
   ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
+import { useUserContext } from './context/useContextt';
 
 function App() {
   const [state, setState] = useState({});
@@ -53,7 +55,6 @@ function App() {
           const rolesArray = await contract.getRoles(account);
           setRoles(rolesArray.map(r => Number(r)));
         } catch (e) {
-          console.error("Erreurs lors de l'initialisation des roles de l'user : ", e);
           setRoles([]);
         }
       } else {
@@ -82,7 +83,7 @@ function App() {
   );
 }
 
-function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen, setSidebarOpen, roles }) {
+function AppLayout({ state, setState, account, setAccount, role, setRole, sidebarOpen, setSidebarOpen, roles }) {
   const location = useLocation();
   const navigate = useNavigate();
   const prevAccount = useRef();
@@ -94,6 +95,61 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
     }
     prevAccount.current = account;
   }, [account, navigate, location.pathname]);
+
+  const getNavigationLinks = () => {
+    if (!account || !roles.length) return [];
+    const linksSet = new Set();
+    const links = [];
+    roles.forEach(role => {
+      let roleLinks = [];
+      switch (role) {
+        case 0:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Mes Parcelles" },
+            { to: "/creer-parcelle", text: "Nouvelle Parcelle" },
+            { to: "/liste-recolte", text: "Mes récoltes" }
+          ]; break;
+        case 1:
+          roleLinks = [{ to: "/mes-parcelles", text: "Gérer les Intrants" }]; break;
+        case 2:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Validation des intrants" },
+            { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+          ]; break;
+        case 3:
+          roleLinks = [
+            { to: "/liste-recolte", text: "Passer commande" },
+            { to: "/liste-collecteur-commande", text: "Mes commandes" },
+            { to: "/liste-produits", text: "Liste des produits" },
+            { to: "/liste-acteurs-role", text: "Liste des Producteurs" }
+          ]; break;
+        case 4:
+          roleLinks = [{ to: "/mes-parcelles", text: "Inspections" }]; break;
+        case 5:
+          roleLinks = [{ to: "/transport", text: "Gestion des transports" }]; break;
+        case 6:
+          roleLinks = [
+            { to: "/mes-parcelles", text: "Parcelles" },
+            { to: "/mes-commandes-exportateur", text: "Mes commandes" },
+            { to: "/passer-commande-collecteur", text: "Passer commande" },
+            { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
+            { to: "/liste-produits", text: "Liste des produits" }
+          ]; break;
+        default: break;
+      }
+      roleLinks.forEach(link => {
+        const key = link.to + link.text;
+        if (!linksSet.has(key)) {
+          linksSet.add(key);
+          links.push(link);
+        }
+      });
+    });
+    if (roles.includes(7)) {
+      links.push({ to: "/admin", text: "Admin" });
+    }
+    return links;
+  };
 
   const getLinkIcon = (text) => {
     const t = text.toLowerCase();
@@ -132,11 +188,12 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
   return (
     <div className="d-flex flex-column min-vh-100">
       <Header state={state} setState={setState} setAccount={setAccount} setRole={setRole} />
-
+      
       <div className="flex-grow-1">
         {location.pathname === "/" ? (
           <Routes>
             <Route path="/" element={<HomePage account={account} onConnectWallet={connectWallet} />} />
+            
           </Routes>
         ) : (
           <div className="row">
@@ -154,32 +211,33 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
             {/* Main content */}
             <div className="col-md-9 col-lg-10 py-3">
               <Routes>
-                <Route path="admin" element={<AdminHome />} />
-                <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
-                <Route path="admin/ajouter-role-acteur" element={<AjouterRoleActeur />} />
-                <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
-                <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
-                <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
-                <Route path="creer-parcelle" element={<CreerParcelle />} />
-                <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
-                <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="liste-produits" element={<ListeProduits />} />
-                <Route path="liste-recolte" element={<ListeRecoltes />} />
-                <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
-                <Route path="listerecolte/:address" element={<ListeRecoltes />} />
-                <Route path="listeproduit/:address" element={<ListeProduits />} />
-                <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
-                <Route path="mes-parcelles" element={<MesParcelles />} />
-                <Route path="mes-commandes-exportateur" element={<MesCommandesExportateur />} />
+                <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
                 <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
+                <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
+                <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
+                <Route path="creer-parcelle" element={<CreerParcelle />} />
+                <Route path="mes-parcelles" element={<MesParcelles />} />
                 <Route path="parcelle/:id/photos" element={<PhotosParcelle />} />
                 <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
                 <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
                 <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
+                <Route path="liste-recolte" element={<ListeRecoltes />} />
                 <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
                 <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
-                <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
+                <Route path="mes-commandes-exportateur" element={<MesCommandesExportateur />} />
+                <Route path="admin" element={<AdminHome />} />
+                <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
+                <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />
+                <Route path="admin/liste-acteurs" element={<AdminListeActeurs />} />
+                <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
+                <Route path="listerecolte/:address" element={<ListeRecoltes />} />
+                <Route path="listeproduit/:address" element={<ListeProduits />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
+                <Route path="admin/activer-desactiver-acteur" element={<ActiverDesactiverActeur />} />
+                <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
+                <Route path="admin/ajouter-role-acteur" element={<AjouterRoleActeur />} />
               </Routes>
             </div>
           </div>

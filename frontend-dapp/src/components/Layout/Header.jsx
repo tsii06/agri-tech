@@ -23,7 +23,7 @@ export const getRoleName = (roleNumber) => {
   return roles[roleNumber] || "INCONNU";
 };
 
-function Header({ state, setAccount, setRole, setState }) {
+function Header({ state, setAccount, setRole }) {
   const [account, setAccountLocal] = useState(null);
   const [role, setRoleLocal] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,7 +68,7 @@ function Header({ state, setAccount, setRole, setState }) {
     }
   };
 
-  const LogicChangerCompte = async () => {
+  const changerCompte = async () => {
     if (window.ethereum) {
       try {
         await window.ethereum.request({
@@ -88,11 +88,6 @@ function Header({ state, setAccount, setRole, setState }) {
         alert("Erreur lors du changement de compte");
       }
     }
-  };
-
-  const changerCompte = () => {
-    LogicChangerCompte()
-      .then(() => setState({})) // render de UserProvider
   };
 
   const deconnecterWallet = () => {
@@ -171,15 +166,11 @@ function Header({ state, setAccount, setRole, setState }) {
           <div className={`collapse navbar-collapse${menuOpen ? " show" : ""}`} id="mainNavbar">
             <ul className="navbar-nav me-auto mb-2 mb-md-0">
               <li className="nav-item">
-                <Link to="/mes-parcelles" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
-                  Parcelles
+                <Link to="/dashboard" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+                  Dashboard
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/contact" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
-                  Contact
-                </Link>
-              </li>
+
             </ul>
             <div className="d-flex flex-wrap gap-2 justify-content-end align-items-center" style={{ minWidth: 0 }}>
               {account ? (

@@ -23,6 +23,10 @@ function ListeProduits() {
   const { roles, account } = useUserContext();
 
   useEffect(() => {
+    if (!account && !address) {
+      setIsLoading(false);
+      return;
+    }
     const chargerProduits = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
@@ -58,7 +62,7 @@ function ListeProduits() {
       }
     };
     chargerProduits();
-  }, [address, _]);
+  }, [address, account, _]);
 
   const handleModifierPrix = async (produitId) => {
     try {
@@ -176,6 +180,10 @@ function ListeProduits() {
       setError(error.message);
     }
   };
+
+  if (!account && !address) {
+    return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir les produits.</div>;
+  }
 
   if (error) {
     return (

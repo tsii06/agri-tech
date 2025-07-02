@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
+import {hasRole} from '../../utils/roles';
 
 
 function MesParcelles() {
@@ -14,13 +16,14 @@ function MesParcelles() {
   const [visibleCount, setVisibleCount] = useState(9);
 
   // Utilisation du tableau de rôles
-  const { roles, account } = useUserContext();
+  const { roles, account, verifeActeur } = useUserContext();
 
   useEffect(() => {
-    if (account) {
-      // console.log("dans useEffect :", roles);
-      chargerParcelles();
+    if (!account) {
+      setLoading(false);
+      return;
     }
+    chargerParcelles();
   }, [account]);
 
 
@@ -40,10 +43,9 @@ function MesParcelles() {
       for (let i = 1; i <= compteurParcelles; i++) {
         parcelle = await contract.getParcelle(i);
 
-        // Afficher uniquement les parcelles de l'adresse connectée si c'est un producteur
-        if (roles.includes(0))
-          if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
-            continue;
+        // Afficher uniquement les parcelles de l'adresse connectée
+        if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
+          continue;
 
         parcellesPromises.push(parcelle);
       }
@@ -57,9 +59,6 @@ function MesParcelles() {
       setLoading(false);
     }
   };
-
-
-  // console.log("endehors useEffect :", roles);
 
   // Filtrage parcelles selon recherche et certificat
   const parcellesFiltres = parcelles.filter((parcelle) => {
@@ -77,6 +76,21 @@ function MesParcelles() {
   });
   const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
 
+  // Affichage du debug
+  console.log("roles reçus:", roles);
+  console.log("type de roles:", Array.isArray(roles) ? 'array' : typeof roles);
+
+  if (!account) {
+    return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir vos parcelles.</div>;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -107,8 +121,8 @@ function MesParcelles() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
-          <div className="input-group" style={{ maxWidth: 320 }}>
+        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{marginBottom: 24}}>
+          <div className="input-group" style={{maxWidth: 320}}>
             <span className="input-group-text"><Search size={16} /></span>
             <input
               type="text"
@@ -116,7 +130,7 @@ function MesParcelles() {
               placeholder="Rechercher..."
               value={search}
               onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{ borderRadius: '0 8px 8px 0' }}
+              style={{borderRadius: '0 8px 8px 0'}}
             />
           </div>
           <div className="dropdown">
@@ -137,53 +151,43 @@ function MesParcelles() {
           <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
             <h2 className="h5 mb-0">Liste des Parcelles</h2>
           </div>
-
-          {/* LISTE DES PARCELLES */}
-
-          {loading ? (
-            <div className="text-center">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Chargement...</span>
-              </div>
+          {parcelles.length > 0 ? (
+        <div className="row g-3">
+          {parcellesAffichees.map((parcelle) => (
+            <div key={parcelle.id} className="col-md-4">
+              <ParcelleCard 
+                parcelle={parcelle}
+                userRole={roles}
+              />
             </div>
-          ) : parcelles.length > 0 ? (
-            <div className="row g-3">
-              {parcellesAffichees.map((parcelle) => (
-                <div key={parcelle.id} className="col-md-4">
-                  <ParcelleCard
-                    parcelle={parcelle}
-                    userRole={roles}
-                  />
-                </div>
-              ))}
+          ))}
+        </div>
+      ) : parcellesFiltres.length === 0 ? (
+        <div className="text-center text-muted">Aucune parcelle ne correspond à la recherche ou au filtre.</div>
+      ) : (
+        <div className="row g-3">
+          {parcellesAffichees.map((parcelle) => (
+            <div key={parcelle.id} className="col-md-4">
+              <ParcelleCard 
+                parcelle={parcelle}
+                userRole={roles}
+              />
             </div>
-          ) : parcellesFiltres.length === 0 ? (
-            <div className="text-center text-muted">Aucune parcelle ne correspond à la recherche ou au filtre.</div>
-          ) : (
-            <div className="row g-3">
-              {parcellesAffichees.map((parcelle) => (
-                <div key={parcelle.id} className="col-md-4">
-                  <ParcelleCard
-                    parcelle={parcelle}
-                    userRole={roles}
-                  />
-                </div>
-              ))}
-            </div>
+          ))}
+        </div>
+      )}
 
-          )}
-
-          {parcellesAffichees.length < parcellesFiltres.length && (
-            <div className="text-center mt-3">
-              <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
-                Charger plus
-              </button>
-            </div>
-          )}
+      {parcellesAffichees.length < parcellesFiltres.length && (
+        <div className="text-center mt-3">
+          <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+            Charger plus
+          </button>
+        </div>
+      )}
         </div>
       </div>
 
-
+      
     </div>
   );
 }
