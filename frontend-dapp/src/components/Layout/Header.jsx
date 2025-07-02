@@ -18,7 +18,8 @@ export const getRoleName = (roleNumber) => {
     3: "COLLECTEUR",
     4: "AUDITEUR",
     5: "TRANSPORTEUR",
-    6: "EXPORTATEUR"
+    6: "EXPORTATEUR",
+    7: "ADMINISTRATEUR"
   };
   return roles[roleNumber] || "INCONNU";
 };
@@ -58,6 +59,7 @@ function Header({ state, setAccount, setRole, setState }) {
         setAccountLocal(userAddress);
         setAccount && setAccount(userAddress);
         await verifierActeur(userAddress);
+        setState({}); // render UserProvider
       } catch (error) {
         console.error("Erreur de connexion:", error);
         alert("Erreur lors de la connexion au wallet");

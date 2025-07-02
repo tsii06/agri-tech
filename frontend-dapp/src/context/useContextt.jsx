@@ -5,16 +5,23 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children, state }) => {
     const [roles, setRoles] = useState([]);
+    const [isActeur, setIsActeur] = useState(false);
     const [account, setAccount] = useState("");
 
     const verifeActeur = async (userAddress) => {
         try {
             const contract = await getGestionnaireActeursContract();
             const rolesArray = await contract.getRoles(userAddress);
+
+            // verifie que l'user est un acteur
+            if(!rolesArray.length <= 0)
+                setIsActeur(true);
+            
             setRoles(rolesArray.map(r => Number(r)));
         } catch (error) {
             console.error("Erreur lors de la vérification des rôles :", error);
             setRoles([]);
+            setIsActeur(false);
         }
     };
 
@@ -36,7 +43,7 @@ export const UserProvider = ({ children, state }) => {
         checkAccount();
     }, [state]);
 
-    if(roles.length <= 0)
+    if(isActeur && roles.length <= 0)
         return <div className='container-fluid d-flex justify-content-center pt-5'><div className="spinner-border"></div> &nbsp; Chargement...</div>
 
     return (
