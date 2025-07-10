@@ -17,6 +17,7 @@
     "ethers": "^6.13.5",
     "framer-motion": "^12.16.0",
     "lucide-react": "^0.477.0",
+    "pinata": "^2.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
