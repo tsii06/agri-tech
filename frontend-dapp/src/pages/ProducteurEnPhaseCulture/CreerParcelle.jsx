@@ -55,18 +55,30 @@ function CreerParcelle() {
         throw new Error("Certificat phytosanitaire manquant");
       } else {
         try {
-          const upload = await myPinataSDK.upload.public.file(certificat).keyvalues({
-            dateEmission: dateEmission.current.value,
-            dateExpiration: dateExpiration.current.value,
-            region: region.current.value,
-            autorite_certificatrice: autorite_certificatrice.current.value,
-            adresseProducteur: account,
-            idParcelle: Number(idNewParcelle)
-          });
+          const upload = await myPinataSDK.upload.public.file(certificat)
+            .keyvalues({
+              dateEmission: dateEmission.current.value,
+              dateExpiration: dateExpiration.current.value,
+              region: region.current.value,
+              autorite_certificatrice: autorite_certificatrice.current.value,
+              adresseProducteur: account,
+              idParcelle: Number(idNewParcelle).toString()
+            });
+
+          // si le fichier a ete deja dans ipfs, on declenche une erreur
+          if (upload.is_duplicate) {
+            setError("Le certificat phytosanitaire a déjà utiliser.")
+            throw new Error("Le certificat phytosanitaire a déjà été téléchargé.");
+          }
           hashCertificat = upload.cid;
+          console.log("upload : ", upload);
         } catch (e) {
-          console.error("Erreur lors de l'upload du certificat parcelle : ", e);
-          setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
+          console.error("Erreur lors de l'upload du certificat parcelle : ", e.message);
+          // si c'est une erreur de duplication
+          if (e.message === "Le certificat phytosanitaire a déjà été téléchargé.")
+            setError("Le certificat phytosanitaire a déjà été utilisé.");
+          else
+            setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
           return; // annule tous si il y a erreur lors de l'upload
         }
       }
@@ -142,11 +154,11 @@ function CreerParcelle() {
 
           <div className="row mb-3">
             <div className="col">
-              <label className="form-label text-muted">Date d'emession</label>
+              <label className="form-label text-muted">Date d&apos;emession</label>
               <input type="date" className="form-control" required ref={dateEmission} />
             </div>
             <div className="col">
-              <label className="form-label text-muted">Date d'expiration</label>
+              <label className="form-label text-muted">Date d&apos;expiration</label>
               <input type="date" className="form-control" required ref={dateExpiration} />
             </div>
           </div>
