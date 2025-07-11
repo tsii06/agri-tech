@@ -9,6 +9,7 @@ contract ProducteurEnPhaseCulture {
     mapping(uint32 => StructLib.Parcelle) public parcelles;
     uint32 public compteurParcelles;
     uint32 public compteurInspections;
+    uint32 public compteurIntrants;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
 
@@ -85,14 +86,16 @@ contract ProducteurEnPhaseCulture {
         parcelles[_idParcelle].photos.push(_urlPhoto);
     }
 
-    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite) public seulementFournisseur {
-        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false));
+    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite, string memory _categorie, address _fournisseur) public seulementFournisseur {
+        compteurIntrants++;
+        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false, compteurIntrants, _categorie, _fournisseur, ""));
     }
 
-    function validerIntrant(uint32 _idParcelle, string memory _nom, bool _valide) public seulementCertificateur {
+    function validerIntrant(uint32 _idParcelle, uint32 _id, bool _valide, string memory _certificatPhytosanitaire) public seulementCertificateur {
         for (uint32 i = 0; i < parcelles[_idParcelle].intrants.length; i++) {
-            if (keccak256(abi.encodePacked(parcelles[_idParcelle].intrants[i].nom)) == keccak256(abi.encodePacked(_nom))) {
+            if (parcelles[_idParcelle].intrants[i].id == _id) {
                 parcelles[_idParcelle].intrants[i].valide = _valide;
+                parcelles[_idParcelle].intrants[i].certificatPhytosanitaire = _certificatPhytosanitaire;
                 break;
             }
         }

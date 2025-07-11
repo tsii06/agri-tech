@@ -41,9 +41,10 @@ library StructLib {
         string nom;
         uint32 quantite;
         bool valide;
-        // string categorie;
-        // address fournisseur;
-        // string certificatPhytosanitaire;
+        uint32 id;
+        string categorie;
+        address fournisseur;
+        string certificatPhytosanitaire;
     }
 
     struct Inspection {

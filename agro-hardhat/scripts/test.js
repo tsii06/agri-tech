@@ -1,9 +1,15 @@
 const { ethers } = require('hardhat');
 
 async function main() {
-    const acteursContrat = await ethers.getContractAt("CollecteurExportateur", "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853");
+    // const factory = await ethers.getContractFactory("ProducteurEnPhaseCulture");
+    // const contrat = await factory.deploy();
+    // await contrat.waitForDeployment();
 
-    console.log(await acteursContrat.getCommande(2));
+    // const proxy = await ethers.getContractAt("ContratProxy", "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9");
+    const proxy = await ethers.getContractAt("ProducteurEnPhaseCulture", "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9");
+    // await proxy.updateImplementation(await contrat.getAddress());
+    console.log(await proxy.getIntrants(5));
+
 }
 
 main().catch(error => {
