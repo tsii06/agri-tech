@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getContract } from "../../utils/contract";
+import { useUserContext } from "../../context/useContextt";
+
+
 
 function IntrantsParcelle() {
   const { id } = useParams();
@@ -8,9 +11,11 @@ function IntrantsParcelle() {
   const [loading, setLoading] = useState(true);
   const [ajoutEnCours, setAjoutEnCours] = useState(false);
   const [formData, setFormData] = useState({
+    categorie: "",
     nom: "",
-    quantite: ""
+    quantite: "",
   });
+  const { account } = useUserContext();
 
   useEffect(() => {
     chargerIntrants();
@@ -47,7 +52,9 @@ function IntrantsParcelle() {
       const tx = await contract.ajouterIntrant(
         id,
         formData.nom,
-        parseInt(formData.quantite)
+        parseInt(formData.quantite),
+        formData.categorie, // categorie
+        account
       );
       await tx.wait();
 
@@ -90,7 +97,23 @@ function IntrantsParcelle() {
 
       <form onSubmit={ajouterIntrant} className="mb-4">
         <div className="row g-3">
-          <div className="col-md-6">
+          <div className="col-md-4">
+            <label className="form-label">Categorie</label>
+            <select
+              type="text"
+              name="categorie"
+              value={formData.categorie}
+              onChange={handleChange}
+              required
+              className="form-select"
+            >
+              <option value="">Sélectionner une catégorie</option>
+              <option value="engrais">Engrais</option>
+              <option value="pesticides">Pesticides</option>
+              <option value="semences">Semences</option>
+            </select>
+          </div>
+          <div className="col-md-4">
             <label className="form-label">Nom de l&apos;intrant</label>
             <input
               type="text"
@@ -101,7 +124,7 @@ function IntrantsParcelle() {
               className="form-control"
             />
           </div>
-          <div className="col-md-6">
+          <div className="col-md-4">
             <label className="form-label">Quantité</label>
             <input
               type="number"
@@ -129,11 +152,12 @@ function IntrantsParcelle() {
             <div key={index} className="col-md-4">
               <div className="card shadow-sm p-3">
                 <h5 className="card-title">{intrant.nom}</h5>
+                <p><strong>Categorie:</strong> {intrant.categorie}</p>
                 <p><strong>Quantité:</strong> {intrant.quantite}</p>
                 <p>
                   <strong>Statut:</strong>
                   <span className={`badge ms-2 ${intrant.valide ? "bg-success" : "bg-warning"}`}>
-                    {intrant.valide ? "Validé" : "Encore non validé"}
+                    {intrant.valide ? "certifié" : "Encore non certifié"}
                   </span>
                 </p>
                 {!intrant.valide && (
@@ -142,7 +166,7 @@ function IntrantsParcelle() {
                       onClick={() => validerIntrant(intrant.nom, true)}
                       className="btn-agrichain-outline"
                     >
-                      Valider
+                      Certifier
                     </button>
                   </div>
                 )}
