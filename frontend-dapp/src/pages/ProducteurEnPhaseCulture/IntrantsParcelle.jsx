@@ -96,56 +96,58 @@ function IntrantsParcelle() {
     <div className="container py-4">
       <h2 className="h4 mb-4">Intrants de la parcelle #{id}</h2>
 
-      <form onSubmit={ajouterIntrant} className="mb-4">
-        <div className="row g-3">
-          <div className="col-md-4">
-            <label className="form-label">Categorie</label>
-            <select
-              type="text"
-              name="categorie"
-              value={formData.categorie}
-              onChange={handleChange}
-              required
-              className="form-select"
-            >
-              <option value="">Sélectionner une catégorie</option>
-              <option value="engrais">Engrais</option>
-              <option value="pesticides">Pesticides</option>
-              <option value="semences">Semences</option>
-            </select>
+      {hasRole(roles, 1) && (
+        <form onSubmit={ajouterIntrant} className="mb-4">
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">Categorie</label>
+              <select
+                type="text"
+                name="categorie"
+                value={formData.categorie}
+                onChange={handleChange}
+                required
+                className="form-select"
+              >
+                <option value="">Sélectionner une catégorie</option>
+                <option value="engrais">Engrais</option>
+                <option value="pesticides">Pesticides</option>
+                <option value="semences">Semences</option>
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Nom de l&apos;intrant</label>
+              <input
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={handleChange}
+                required
+                className="form-control"
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Quantité</label>
+              <input
+                type="number"
+                name="quantite"
+                value={formData.quantite}
+                onChange={handleChange}
+                required
+                min="1"
+                className="form-control"
+              />
+            </div>
           </div>
-          <div className="col-md-4">
-            <label className="form-label">Nom de l&apos;intrant</label>
-            <input
-              type="text"
-              name="nom"
-              value={formData.nom}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-          <div className="col-md-4">
-            <label className="form-label">Quantité</label>
-            <input
-              type="number"
-              name="quantite"
-              value={formData.quantite}
-              onChange={handleChange}
-              required
-              min="1"
-              className="form-control"
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={ajoutEnCours}
-          className={`btn-agrichain mt-3${ajoutEnCours ? " disabled" : ""}`}
-        >
-          {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={ajoutEnCours}
+            className={`btn-agrichain mt-3${ajoutEnCours ? " disabled" : ""}`}
+          >
+            {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
+          </button>
+        </form>
+      )}
 
       {intrants.length > 0 ? (
         <div className="row g-3">
