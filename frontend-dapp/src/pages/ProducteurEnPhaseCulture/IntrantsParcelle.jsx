@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
+import { hasRole } from "../../utils/roles";
 
 
 
@@ -15,7 +16,7 @@ function IntrantsParcelle() {
     nom: "",
     quantite: "",
   });
-  const { account } = useUserContext();
+  const { roles, account } = useUserContext();
 
   useEffect(() => {
     chargerIntrants();
@@ -160,7 +161,7 @@ function IntrantsParcelle() {
                     {intrant.valide ? "certifié" : "Encore non certifié"}
                   </span>
                 </p>
-                {!intrant.valide && (
+                {!intrant.valide && hasRole(roles, 2) && (
                   <div className="mt-3 d-flex gap-2">
                     <button
                       onClick={() => validerIntrant(intrant.nom, true)}
