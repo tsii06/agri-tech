@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Hash, Package2, BadgeCheck, Calendar, FileCheck2, Sprout } from "lucide-react";
+import { MapPin, Package2, BadgeCheck, Calendar, FileCheck2 } from "lucide-react";
 import { hasRole } from '../../utils/roles';
 
-const ParcelleCard = ({ 
-  parcelle, 
+const ParcelleCard = ({
+  parcelle,
   userRole, // 'producteur', 'collecteur', 'exportateur', 'certificateur'
 }) => {
   const {
@@ -64,7 +64,18 @@ const ParcelleCard = ({
         <p><MapPin size={16} className="me-2 text-success" /><strong>Localisation:</strong> {latitude}, {longitude}</p>
         <p><Calendar size={16} className="me-2 text-success" /><strong>Date de récolte prévue:</strong> {dateRecolte}</p>
         {certificatPhytosanitaire && (
-          <p><FileCheck2 size={16} className="me-2 text-success" /><strong>Certificat phytosanitaire:</strong> {certificatPhytosanitaire}</p>
+          <p>
+            <FileCheck2 size={16} className="me-2 text-success" />
+            <strong>Certificat phytosanitaire:</strong>
+            <a
+              href={`https://gateway.pinata.cloud/ipfs/${certificatPhytosanitaire}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ms-2 text-decoration-none text-success"
+            >
+              Voir ici
+            </a>
+          </p>
         )}
       </div>
       <div className="d-flex justify-content-between mt-2">
