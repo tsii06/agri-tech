@@ -8,7 +8,6 @@ const ParcelleCard = ({
 }) => {
   const {
     id,
-    produit,
     qualiteSemence,
     methodeCulture,
     latitude,
@@ -58,10 +57,8 @@ const ParcelleCard = ({
       <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
         <MapPin size={36} />
       </div>
-      <h5 className="card-title text-center mb-3">{produit}</h5>
+      <h5 className="card-title text-center mb-3"><strong>ID:</strong> {id}</h5>
       <div className="card-text">
-        <p><Hash size={16} className="me-2 text-success" /><strong>Id de la parcelle:</strong> {id}</p>
-        <p><Sprout size={16} className="me-2 text-success" /><strong>Produit:</strong> {produit}</p>
         <p><Package2 size={16} className="me-2 text-success" /><strong>Qualité des semences:</strong> {qualiteSemence}</p>
         <p><BadgeCheck size={16} className="me-2 text-success" /><strong>Méthode de culture:</strong> {methodeCulture}</p>
         <p><MapPin size={16} className="me-2 text-success" /><strong>Localisation:</strong> {latitude}, {longitude}</p>
