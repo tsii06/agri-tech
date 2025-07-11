@@ -37,6 +37,7 @@ function CreerParcelle() {
   const dateExpiration = useRef(null);
   const region = useRef(null);
   const autorite_certificatrice = useRef(null);
+  const numero_certificat = useRef(null);
   // adresse de l'user
   const { account } = useUserContext();
 
@@ -44,10 +45,11 @@ function CreerParcelle() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    let hashCertificat = ""; // hash du certificat sur ipfs
+    let idCertificat = ""; // pour supprimer le certificat de ipfs si il y erreur lors de la creation de parcelle.
 
     try {
       const contract = await getContract();
-      let hashCertificat = ""; // hash du certificat sur ipfs
       const idNewParcelle = await contract.getCompteurParcelle();
 
       // UPLOADE CERTIFICAT PHYTOSANITAIRE
@@ -62,7 +64,8 @@ function CreerParcelle() {
               region: region.current.value,
               autorite_certificatrice: autorite_certificatrice.current.value,
               adresseProducteur: account,
-              idParcelle: Number(idNewParcelle).toString()
+              idParcelle: Number(idNewParcelle).toString(),
+              numeroCertificat: numero_certificat.current.value
             });
 
           // si le fichier a ete deja dans ipfs, on declenche une erreur
@@ -71,6 +74,7 @@ function CreerParcelle() {
             throw new Error("Le certificat phytosanitaire a déjà été téléchargé.");
           }
           hashCertificat = upload.cid;
+          idCertificat = upload.id;
           console.log("upload : ", upload);
         } catch (e) {
           console.error("Erreur lors de l'upload du certificat parcelle : ", e.message);
@@ -79,7 +83,7 @@ function CreerParcelle() {
             setError("Le certificat phytosanitaire a déjà été utilisé.");
           else
             setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
-          return; // annule tous si il y a erreur lors de l'upload
+          return; // annule la creation de parcelle si il y a erreur lors de l'upload
         }
       }
 
@@ -90,7 +94,7 @@ function CreerParcelle() {
         location.lat.toString(),
         location.lng.toString(),
         dateRecolte.current.value,
-        hashCertificat
+        hashCertificat,
       );
 
       await tx.wait();
@@ -99,6 +103,8 @@ function CreerParcelle() {
     } catch (error) {
       console.error("Erreur lors de la création de la parcelle:", error);
       setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
+      // supprimer le certificat uploader sur ipfs.
+      await myPinataSDK.files.public.delete([idCertificat]);
     } finally {
       setLoading(false);
     }
@@ -150,6 +156,11 @@ function CreerParcelle() {
 
           <div className="mb-3">
             <input type="file" className="form-control" required onChange={e => setCertificat(e.target.files[0])} />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="numero_certificat" className="form-label text-muted">Numero du certificat</label>
+            <input type="text" className="form-control" required id="numero_certificat" ref={numero_certificat} />
           </div>
 
           <div className="row mb-3">
