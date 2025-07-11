@@ -35,7 +35,7 @@ const ParcelleCard = ({
     if (hasRole(userRole, 1)) {
       links.push(
         <Link key="intrants-fournisseur" to={`/parcelle/${id}/intrants`} className="btn btn-link">
-          Intrants (Fournisseur)
+          Voir les intrants
         </Link>
       );
     }
