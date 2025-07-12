@@ -11,6 +11,7 @@ function IntrantsParcelle() {
   const { id } = useParams();
   const [intrants, setIntrants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [ajoutEnCours, setAjoutEnCours] = useState(false);
   const [formData, setFormData] = useState({
     categorie: "",
@@ -81,6 +82,7 @@ function IntrantsParcelle() {
 
   const validerIntrant = async (event, valide) => {
     event.preventDefault();
+    setBtnLoading(true);
     let idCertificat = 0;
     try {
       const contract = await getContract();
@@ -117,6 +119,8 @@ function IntrantsParcelle() {
       alert("Erreur lors de la validation de l'intrant");
       // supprimer le certificat uploader sur ipfs si il y a erreur lors de la validation de l'intrant.
       await myPinataSDK.files.public.delete([idCertificat]);
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -275,12 +279,19 @@ function IntrantsParcelle() {
                     <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                       Annuler
                     </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                    >
-                      Certifier
-                    </button>
+                    {btnLoading ? (
+                      <button type="button" className="btn btn-primary" disabled>
+                        <div className="spinner-border spinner-border-sm text-light" role="status"></div>
+                        &nbsp;Certifier
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                      >
+                        Certifier
+                      </button>
+                    )}
                   </div>
                 </div>
               </form>
