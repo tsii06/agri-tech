@@ -12,3 +12,23 @@ const myPinataSDK = new PinataSDK({
 });
 
 export default myPinataSDK;
+
+export const uploadFile = async (file, metadata) => {
+    try {
+        const res = await myPinataSDK.upload.public.file(file).keyvalues(metadata);
+
+        // si le fichier a ete deja dans ipfs, on declenche une erreur
+        if (res.is_duplicate) {
+            throw new Error("Le certificat phytosanitaire a déjà été téléchargé.");
+        }
+
+        return res;
+    } catch (e) {
+        console.error("Erreur lors de l'upload du fichier : ", e.message);
+        if (e.message === "Le certificat phytosanitaire a déjà été téléchargé.")
+            alert("Le certificat phytosanitaire a déjà été utilisé.");
+        else
+            alert("Erreur lors de l'upload du certificat. Veuillez réessayer plus tard.");
+        return false;
+    }
+};

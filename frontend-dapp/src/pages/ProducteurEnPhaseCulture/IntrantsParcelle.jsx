@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
+import myPinataSDK, { uploadFile } from "../../utils/pinata";
 
 
 
@@ -17,6 +18,14 @@ function IntrantsParcelle() {
     quantite: "",
   });
   const { roles, account } = useUserContext();
+  const [certificat, setCertificat] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  // pour la certification
+  const [selectedIntrant, setSelectedIntrant] = useState({});
+  const dateEmission = useRef();
+  const dateExpiration = useRef();
+  const dateInspection = useRef();
+  const autoriteCertificatrice = useRef();
 
   useEffect(() => {
     chargerIntrants();
@@ -59,9 +68,9 @@ function IntrantsParcelle() {
       );
       await tx.wait();
 
-      alert("Intrant ajouté avec succès !");
       setFormData({ nom: "", quantite: "" });
       await chargerIntrants();
+      alert("Intrant ajouté avec succès !");
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'intrant:", error);
       alert("Erreur lors de l'ajout de l'intrant");
@@ -70,17 +79,44 @@ function IntrantsParcelle() {
     }
   };
 
-  const validerIntrant = async (nom, valide) => {
+  const validerIntrant = async (event, valide) => {
+    event.preventDefault();
+    let idCertificat = 0;
     try {
       const contract = await getContract();
-      const tx = await contract.validerIntrant(id, nom, valide);
+      const parcelle = await contract.getParcelle(id);
+      let hashIpfs = "";
+      const metadata = {
+        dateEmission: dateEmission.current.value,
+        dateExpiration: dateExpiration.current.value,
+        dateInspection: dateInspection.current.value,
+        autoriteCertificatrice: autoriteCertificatrice.current.value,
+        idParcelle: id,
+        categorie: selectedIntrant.categorie,
+        adresseFournisseur: selectedIntrant.fournisseur,
+        adresseProducteur: parcelle.producteur,
+        adresseCertificateur: account
+      };
+      // uploader d'abord le certificate
+      const upload = await uploadFile(certificat, metadata);
+      if (!upload)
+        return;
+      else {
+        hashIpfs = upload.cid;
+        idCertificat = upload.id;
+      }
+
+      const tx = await contract.validerIntrant(id, selectedIntrant.id, valide, hashIpfs);
       await tx.wait();
 
-      alert("Intrant validé avec succès !");
       await chargerIntrants();
+      alert("Intrant validé avec succès !");
+      setShowModal(false);
     } catch (error) {
       console.error("Erreur lors de la validation de l'intrant:", error);
       alert("Erreur lors de la validation de l'intrant");
+      // supprimer le certificat uploader sur ipfs si il y a erreur lors de la validation de l'intrant.
+      await myPinataSDK.files.public.delete([idCertificat]);
     }
   };
 
@@ -156,22 +192,35 @@ function IntrantsParcelle() {
               <div className="card shadow-sm p-3">
                 <h5 className="card-title">{intrant.nom}</h5>
                 <p><strong>Categorie:</strong> {intrant.categorie}</p>
-                <p><strong>Quantité:</strong> {intrant.quantite}</p>
+                <p><strong>Quantité:</strong> {intrant.quantite} KG</p>
+                <p><strong>Adresse du fournisseur:</strong> {intrant.fournisseur}</p>
                 <p>
                   <strong>Statut:</strong>
                   <span className={`badge ms-2 ${intrant.valide ? "bg-success" : "bg-warning"}`}>
                     {intrant.valide ? "certifié" : "Encore non certifié"}
                   </span>
                 </p>
-                {!intrant.valide && hasRole(roles, 2) && (
+                {!intrant.valide && hasRole(roles, 2) ? (
                   <div className="mt-3 d-flex gap-2">
                     <button
-                      onClick={() => validerIntrant(intrant.nom, true)}
+                      onClick={() => { setShowModal(true); setSelectedIntrant(intrant) }}
                       className="btn-agrichain-outline"
                     >
                       Certifier
                     </button>
                   </div>
+                ) : (
+                  <p>
+                    <strong>Certificat:</strong>
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${intrant.certificatPhytosanitaire}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ms-2 text-decoration-none text-success"
+                    >
+                      Voir ici
+                    </a>
+                  </p>
                 )}
               </div>
             </div>
@@ -180,6 +229,66 @@ function IntrantsParcelle() {
       ) : (
         <div className="text-center text-muted">Aucun intrant n&apos;a encore été ajouté pour cette parcelle.</div>
       )}
+
+      {/* MODAL CERTIFICATION INTRANT (AJOUT METADATA) */}
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <form action="" onSubmit={(event) => validerIntrant(event, true)}>
+                <div className="modal-content bg-light">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Ajout certificat de l&apos;intrant &quot;{selectedIntrant.nom}&quot;</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                  </div>
+
+                  {/* Corps du modal */}
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label htmlFor="certificat" className="form-label text-muted">Certificat</label>
+                      <input type="file" id="certificat" className="form-control" placeholder="Username" onChange={e => setCertificat(e.target.files[0])} required />
+                    </div>
+                    <div className="row mb-3">
+                      <div className="col">
+                        <label className="form-label text-muted">Date d&apos;emession</label>
+                        <input type="date" className="form-control" required ref={dateEmission} />
+                      </div>
+                      <div className="col">
+                        <label className="form-label text-muted">Date d&apos;expiration</label>
+                        <input type="date" className="form-control" required ref={dateExpiration} />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label text-muted">Date d&apos;inspection</label>
+                      <input type="date" className="form-control" required ref={dateInspection} />
+                    </div>
+                    <div className="mb-3">
+                      <label htmlFor="autorite_certificatrice" className="form-label text-muted">Autorité certificatrice</label>
+                      <input type="text" className="form-control" required id="autorite_certificatrice" ref={autoriteCertificatrice} />
+                    </div>
+                  </div>
+
+                  {/* Pied du modal */}
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                    >
+                      Certifier
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

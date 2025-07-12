@@ -36,7 +36,7 @@ function CreerParcelle() {
   const dateEmission = useRef(null);
   const dateExpiration = useRef(null);
   const region = useRef(null);
-  const autorite_certificatrice = useRef(null);
+  const autoriteCertificatrice = useRef(null);
   const numero_certificat = useRef(null);
   // adresse de l'user
   const { account } = useUserContext();
@@ -62,7 +62,7 @@ function CreerParcelle() {
               dateEmission: dateEmission.current.value,
               dateExpiration: dateExpiration.current.value,
               region: region.current.value,
-              autorite_certificatrice: autorite_certificatrice.current.value,
+              autoriteCertificatrice: autoriteCertificatrice.current.value,
               adresseProducteur: account,
               idParcelle: Number(idNewParcelle).toString(),
               numeroCertificat: numero_certificat.current.value
@@ -187,8 +187,8 @@ function CreerParcelle() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="autorite_certificatrice" className="form-label text-muted">Autorité certificatrice</label>
-            <input type="text" className="form-control" required id="autorite_certificatrice" ref={autorite_certificatrice} />
+            <label htmlFor="autoriteCertificatrice" className="form-label text-muted">Autorité certificatrice</label>
+            <input type="text" className="form-control" required id="autoriteCertificatrice" ref={autoriteCertificatrice} />
           </div>
         </fieldset>
 

@@ -261,7 +261,7 @@ async function main() {
     // 8. Ajouter un intrant par le fournisseur
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(fournisseur1, await producteurEnPhaseCultureProxy.getAddress());
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20, "semences", fournisseur1);
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20, "engrais", fournisseur1);
     // 9. Transporteur enregistre une condition de transport
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteur1, await collecteurExportateurProxy.getAddress());
