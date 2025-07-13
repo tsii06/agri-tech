@@ -236,7 +236,7 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID recolte:</strong> {recolte.id}</p>
                     <p><strong>ID parcelle:</strong> {recolte.idParcelle}</p>
-                    <p><strong>Producteur:</strong> {recolte.producteur}</p>
+                    <p><strong>Producteur:</strong> {`${recolte.producteur.substring(0, 6)}...${recolte.producteur.substring(recolte.producteur.length - 4)}`}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite}</p>
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
