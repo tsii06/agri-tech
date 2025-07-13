@@ -21,7 +21,6 @@ import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle"
 import InspectionsParcelle from "./pages/CertificateurAuditeur/InspectionsParcelle";
 import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
 import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
-import CommandeExportateur from "./pages/CollecteurExportateur/CommandeExportateur";
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
 import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
