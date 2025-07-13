@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
-import { ClipboardList, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ClipboardList, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Circle } from "lucide-react";
 
 
 
@@ -43,18 +43,7 @@ function CommandeCollecteur() {
         for (let i = 1; i <= compteurCommandes; i++) {
           const commande = await contract.getCommande(i);
           if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
-            const recolte = await contract.getRecolte(commande.idRecolte);
-            commandesTemp.push({
-              id: commande.id,
-              idRecolte: commande.idRecolte,
-              quantite: commande.quantite,
-              prix: commande.prix,
-              payer: commande.payer,
-              statutTransport: commande.statutTransport,
-              producteur: commande.producteur,
-              collecteur: commande.collecteur,
-              nomProduit: recolte.nomProduit
-            });
+            commandesTemp.push(commande);
           }
         }
         setActeur(acteur);
@@ -101,10 +90,6 @@ function CommandeCollecteur() {
     return payer ? "Payé" : "Non payé";
   };
 
-  const getStatutPaiementColor = (payer) => {
-    return payer ? "text-success" : "text-warning";
-  };
-
   const getStatutTransport = (statut) => {
     switch (statut) {
       case 0: return "En cours";
@@ -113,11 +98,18 @@ function CommandeCollecteur() {
     }
   };
 
-  const getStatutTransportColor = (statut) => {
-    switch (statut) {
-      case 0: return "text-info";
-      case 1: return "text-success";
-      default: return "text-secondary";
+  const getStatutRecolte = (status) => {
+    switch (status) {
+      case 0: return "En attente";
+      case 1: return "Validé";
+      case 2: return "Rejeté";
+    }
+  };
+  const getColorStatutRecolte = (status) => {
+    switch (status) {
+      case 0: return "bg-warning";
+      case 1: return "bg-success";
+      case 2: return "bg-danger";
     }
   };
 
@@ -216,19 +208,30 @@ function CommandeCollecteur() {
                       <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
                       <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
                       <p><User size={16} className="me-2 text-success" /><strong>Producteur:</strong> {commande.producteur.slice(0, 6)}...{commande.producteur.slice(-4)}</p>
-                      <p className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(commande.payer)}`}
-                        style={{ gap: 6 }}>
-                        <Wallet size={16} className="me-1" />
-                        <strong>Paiement:</strong> {getStatutPaiement(commande.payer)}
+                      <p>
+                        <Truck size={16} className="me-2 text-success" />
+                        <strong>Transport:</strong>
+                        <span className={`badge ms-2 ${commande.statutTransport == 1 ? "bg-success" : "bg-warning"}`}>
+                          {getStatutTransport(Number(commande.statutTransport))}
+                        </span>
                       </p>
-                      <p className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(Number(commande.statutTransport))}`}
-                        style={{ gap: 6 }}>
-                        <Truck size={16} className="me-1" />
-                        <strong>Transport:</strong> {getStatutTransport(Number(commande.statutTransport))}
+                      <p>
+                        <Circle size={16} className="me-2 text-success" />
+                        <strong>Status:</strong>
+                        <span className={`badge ms-2 ${getColorStatutRecolte(Number(commande.statutRecolte))}`}>
+                          {getStatutRecolte(Number(commande.statutRecolte))}
+                        </span>
+                      </p>
+                      <p>
+                        <Wallet size={16} className="me-2 text-success" />
+                        <strong>Paiement:</strong>
+                        <span className={`badge ms-2 ${commande.payer ? "bg-success" : "bg-warning"}`}>
+                          {getStatutPaiement(commande.payer)}
+                        </span>
                       </p>
                     </div>
                     <div className="mt-3">
-                      {!commande.payer && (
+                      {!commande.payer && commande.statutRecolte == 1 && (
                         <button
                           onClick={() => {
                             setCommandeSelectionnee(commande);
