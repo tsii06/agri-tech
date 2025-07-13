@@ -13,6 +13,7 @@ function CommandeCollecteur() {
   const navigate = useNavigate();
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [acteur, setActeur] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
@@ -23,6 +24,26 @@ function CommandeCollecteur() {
 
   const { account } = useUserContext();
 
+  const chargerCommandes = async () => {
+    try {
+      const contract = await getCollecteurProducteurContract();
+      const compteurCommandes = await contract.compteurCommandes();
+      const commandesTemp = [];
+      for (let i = 1; i <= compteurCommandes; i++) {
+        const commande = await contract.getCommande(i);
+        if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
+          commandesTemp.push(commande);
+        }
+      }
+      setActeur(acteur);
+      commandesTemp.reverse();
+      setCommandes(commandesTemp);
+    } catch (error) {
+      console.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -35,26 +56,7 @@ function CommandeCollecteur() {
       return;
     }
     setIsLoading(true);
-    const chargerCommandes = async () => {
-      try {
-        const contract = await getCollecteurProducteurContract();
-        const compteurCommandes = await contract.compteurCommandes();
-        const commandesTemp = [];
-        for (let i = 1; i <= compteurCommandes; i++) {
-          const commande = await contract.getCommande(i);
-          if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
-            commandesTemp.push(commande);
-          }
-        }
-        setActeur(acteur);
-        commandesTemp.reverse();
-        setCommandes(commandesTemp);
-      } catch (error) {
-        console.error(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+
     chargerCommandes();
   }, [account, acteur]);
 
@@ -82,7 +84,20 @@ function CommandeCollecteur() {
 
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
-      console.error(error.message);
+    }
+  };
+
+  const validerCommande = async (_idCommande, _valide) => {
+    setBtnLoading(true);
+    try {
+      const contract = await getCollecteurProducteurContract();
+      const tx = await contract.validerCommandeRecolte(_idCommande, _valide);
+      await tx.wait();
+      await chargerCommandes();
+    } catch (e) {
+      console.error("Erreur lors de la vaidation d'une commande :", e.message);
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -231,6 +246,26 @@ function CommandeCollecteur() {
                       </p>
                     </div>
                     <div className="mt-3">
+                      {/* Pour valider la commande */}
+                      {commande.statutTransport == 1 && commande.statutRecolte == 0 && (
+                        <>
+                          <button
+                            onClick={() => validerCommande(commande.id, false)}
+                            className="me-1 btn-agrichain-danger"
+                            disabled={btnLoading}
+                            >
+                            Rejeter
+                          </button>
+                          <button
+                            onClick={() => validerCommande(commande.id, true)}
+                            className="btn-agrichain"
+                            disabled={btnLoading}
+                          >
+                            Valider
+                          </button>
+                        </>
+                      )}
+                      {/* Pour payer la commande */}
                       {!commande.payer && commande.statutRecolte == 1 && (
                         <button
                           onClick={() => {

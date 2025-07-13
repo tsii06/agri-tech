@@ -177,6 +177,16 @@ header h1, .navbar-brand, .project-title, .main-title {
   font-weight: 600;
   transition: background 0.2s;
 }
+.btn-agrichain-danger {
+  background: var(--bs-danger);
+  color: #fff !important;
+  border: none;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.btn-agrichain-danger:disabled, .btn-agrichain:disabled {
+  opacity: 0.5;
+}
 .btn-agrichain:hover, .btn-agrichain:focus {
   background: #388e3c;
   color: #fff !important;
