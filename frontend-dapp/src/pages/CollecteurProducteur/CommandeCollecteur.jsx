@@ -61,6 +61,7 @@ function CommandeCollecteur() {
   }, [account, acteur]);
 
   const handlePayer = async (commandeId) => {
+    setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
       const commande = commandes.find(c => c.id === commandeId);
@@ -84,6 +85,8 @@ function CommandeCollecteur() {
 
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -325,6 +328,7 @@ function CommandeCollecteur() {
                     type="button"
                     className="btn-agrichain"
                     onClick={() => handlePayer(commandeSelectionnee.id)}
+                    disabled={btnLoading}
                   >
                     Confirmer le paiement
                   </button>
