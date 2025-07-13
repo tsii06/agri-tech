@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import myPinataSDK from "../../utils/pinata";
+import myPinataSDK, { uploadFile } from "../../utils/pinata";
 import { useUserContext } from "../../context/useContextt";
 
 
@@ -56,34 +56,22 @@ function CreerParcelle() {
       if (!certificat) {
         throw new Error("Certificat phytosanitaire manquant");
       } else {
-        try {
-          const upload = await myPinataSDK.upload.public.file(certificat)
-            .keyvalues({
-              dateEmission: dateEmission.current.value,
-              dateExpiration: dateExpiration.current.value,
-              region: region.current.value,
-              autoriteCertificatrice: autoriteCertificatrice.current.value,
-              adresseProducteur: account,
-              idParcelle: Number(idNewParcelle).toString(),
-              numeroCertificat: numero_certificat.current.value
-            });
-
-          // si le fichier a ete deja dans ipfs, on declenche une erreur
-          if (upload.is_duplicate) {
-            setError("Le certificat phytosanitaire a déjà utiliser.")
-            throw new Error("Le certificat phytosanitaire a déjà été téléchargé.");
-          }
+        // uploader d'abord le certificate
+        const metadata = {
+          dateEmission: dateEmission.current.value,
+          dateExpiration: dateExpiration.current.value,
+          region: region.current.value,
+          autoriteCertificatrice: autoriteCertificatrice.current.value,
+          adresseProducteur: account,
+          idParcelle: Number(idNewParcelle).toString(),
+          numeroCertificat: numero_certificat.current.value
+        };
+        const upload = await uploadFile(certificat, metadata);
+        if (!upload)
+          return;
+        else {
           hashCertificat = upload.cid;
           idCertificat = upload.id;
-          console.log("upload : ", upload);
-        } catch (e) {
-          console.error("Erreur lors de l'upload du certificat parcelle : ", e.message);
-          // si c'est une erreur de duplication
-          if (e.message === "Le certificat phytosanitaire a déjà été téléchargé.")
-            setError("Le certificat phytosanitaire a déjà été utilisé.");
-          else
-            setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
-          return; // annule la creation de parcelle si il y a erreur lors de l'upload
         }
       }
 
