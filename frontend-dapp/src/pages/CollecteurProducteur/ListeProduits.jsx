@@ -62,7 +62,7 @@ function ListeProduits() {
       }
     };
     chargerProduits();
-  }, [address, account, _]);
+  }, [address, account, _, roles]);
 
   const handleModifierPrix = async (produitId) => {
     setBtnLoading(true);
