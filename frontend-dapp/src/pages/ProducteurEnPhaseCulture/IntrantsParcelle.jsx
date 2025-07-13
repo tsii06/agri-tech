@@ -27,6 +27,7 @@ function IntrantsParcelle() {
   const dateExpiration = useRef();
   const dateInspection = useRef();
   const autoriteCertificatrice = useRef();
+  const numeroCertificat = useRef();
 
   useEffect(() => {
     chargerIntrants();
@@ -86,7 +87,6 @@ function IntrantsParcelle() {
     let idCertificat = 0;
     try {
       const contract = await getContract();
-      const parcelle = await contract.getParcelle(id);
       let hashIpfs = "";
       const metadata = {
         dateEmission: dateEmission.current.value,
@@ -96,8 +96,8 @@ function IntrantsParcelle() {
         idParcelle: id,
         categorie: selectedIntrant.categorie,
         adresseFournisseur: selectedIntrant.fournisseur,
-        adresseProducteur: parcelle.producteur,
-        adresseCertificateur: account
+        adresseCertificateur: account,
+        numeroCertificat: numeroCertificat.current.value,
       };
       // uploader d'abord le certificate
       const upload = await uploadFile(certificat, metadata);
@@ -149,7 +149,7 @@ function IntrantsParcelle() {
                 required
                 className="form-select"
               >
-                <option value="">Sélectionner une catégorie</option>
+                <option value="" className="text-muted">Sélectionner une catégorie</option>
                 <option value="engrais">Engrais</option>
                 <option value="pesticides">Pesticides</option>
                 <option value="semences">Semences</option>
@@ -204,7 +204,7 @@ function IntrantsParcelle() {
                     {intrant.valide ? "certifié" : "Encore non certifié"}
                   </span>
                 </p>
-                {!intrant.valide && hasRole(roles, 2) ? (
+                {!intrant.valide && hasRole(roles, 2) && (
                   <div className="mt-3 d-flex gap-2">
                     <button
                       onClick={() => { setShowModal(true); setSelectedIntrant(intrant) }}
@@ -213,7 +213,8 @@ function IntrantsParcelle() {
                       Certifier
                     </button>
                   </div>
-                ) : (
+                )} 
+                {intrant.valide && (
                   <p>
                     <strong>Certificat:</strong>
                     <a
@@ -253,6 +254,10 @@ function IntrantsParcelle() {
                     <div className="mb-3">
                       <label htmlFor="certificat" className="form-label text-muted">Certificat</label>
                       <input type="file" id="certificat" className="form-control" placeholder="Username" onChange={e => setCertificat(e.target.files[0])} required />
+                    </div>
+                    <div className="mb-3">
+                      <label htmlFor="numeroCertificat" className="form-label text-muted">Numéro du certificat</label>
+                      <input type="text" id="numeroCertificat" className="form-control" ref={numeroCertificat} required />
                     </div>
                     <div className="row mb-3">
                       <div className="col">
