@@ -180,7 +180,6 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="parcelle/:id/inspections" element={<InspectionsParcelle />} />
                 <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
                 <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
-                <Route path="passer-commande-collecteur" element={<CommandeExportateur />} />
                 <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>

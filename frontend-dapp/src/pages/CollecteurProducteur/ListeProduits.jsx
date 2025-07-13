@@ -38,7 +38,7 @@ function ListeProduits() {
         const produitsTemp = [];
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
-          if (cible && produit.collecteur.toLowerCase() !== cible) continue;
+          if (hasRole(roles, 3) && cible && produit.collecteur.toLowerCase() !== cible) continue;
           produitsTemp.push({
             id: i,
             idRecolte: produit.idRecolte.toString(),
@@ -121,6 +121,7 @@ function ListeProduits() {
 
   // Fonction pour commander un produit (exportateur)
   const handleCommanderProduit = async (produitId) => {
+    setBtnLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
       // Vérifier la quantité
@@ -145,6 +146,8 @@ function ListeProduits() {
     } catch (error) {
       console.error("Erreur lors de la commande d'un produit :", error.message);
       setError("Erreur lors de la commande d'un produit. Veuillez réessayer plus tard.");
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -248,7 +251,7 @@ function ListeProduits() {
                         Modifier le prix
                       </button>
                     )}
-                    {hasRole(roles, 6) && produit.statut === 1 && (
+                    {hasRole(roles, 6) && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);
@@ -345,7 +348,7 @@ function ListeProduits() {
                     type="button"
                     className="btn btn-primary"
                     onClick={() => handleCommanderProduit(produitSelectionne.id)}
-                    disabled={!quantiteCommande || Number(quantiteCommande) <= 0 || Number(quantiteCommande) > Number(produitSelectionne.quantite)}
+                    disabled={!quantiteCommande || Number(quantiteCommande) <= 0 || Number(quantiteCommande) > Number(produitSelectionne.quantite) || btnLoading}
                   >
                     Confirmer la commande
                   </button>
