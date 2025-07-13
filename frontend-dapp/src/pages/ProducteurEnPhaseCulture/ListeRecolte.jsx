@@ -107,7 +107,8 @@ function ListeRecoltes() {
       setShowModalCertification(false);
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
-      setError(error.message);
+      setError("Erreur lors de la certification de la récolte. Veuillez réessayer.");
+      alert("Erreur lors de la certification de la récolte. Veuillez réessayer.");
       // supprimer le certificat uploader sur ipfs si il y a erreur lors de la validation de l'intrant.
       await myPinataSDK.files.public.delete([idCertificat]);
     } finally {
@@ -143,7 +144,7 @@ function ListeRecoltes() {
       navigate('/liste-collecteur-commande');
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
-      setError(error.message);
+      setError("Erreur lors de la commande. Veuillez réessayer.");
     }
   };
 
@@ -163,18 +164,6 @@ function ListeRecoltes() {
 
   if (!account && !address) {
     return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir vos récoltes.</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center text-red-600">
-            Erreur lors du chargement des récoltes: {error}
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -218,6 +207,13 @@ function ListeRecoltes() {
             </Link>
           )}
         </div>
+
+        {/* Affichage des erreurs */}
+        {error && (
+          <div className="alert alert-danger d-flex align-items-center" role="alert">
+            <div>{error}</div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="text-center">
