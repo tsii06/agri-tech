@@ -2,7 +2,7 @@ import { Leaf, Github, Twitter, Linkedin } from 'lucide-react';
 
 function Footer() {
   return (
-    <footer className="bg-dark text-white pt-5 pb-4 pt-5">
+    <footer className="bg-dark text-white pt-5 pb-4 pt-5 mt-1">
       <div className="container">
         <div className="row">
           

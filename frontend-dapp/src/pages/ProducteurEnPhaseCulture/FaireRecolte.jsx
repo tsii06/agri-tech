@@ -62,11 +62,11 @@ function FaireRecolte() {
           <label className="form-label text-muted">Nom du produit</label>
           <select className="form-control" required ref={nomProduit}>
             <option value="">Sélectionnez un produit</option>
-            <option value="vanille">Vanille Bourbon</option>
-            <option value="girofle">Girofle</option>
-            <option value="poivre_noir">Poivre noir</option>
-            <option value="curcuma">Curcuma</option>
-            <option value="ravintsara">Huile essentielle de Ravintsara</option>
+            <option value="Vanille Bourbon">Vanille Bourbon</option>
+            <option value="Girofle">Girofle</option>
+            <option value="Poivre noir">Poivre noir</option>
+            <option value="Curcuma">Curcuma</option>
+            <option value="Ravintsara ">Huile essentielle de Ravintsara</option>
 
           </select>
 

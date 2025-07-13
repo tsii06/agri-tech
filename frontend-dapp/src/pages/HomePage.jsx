@@ -83,7 +83,7 @@ function HomePage({ account, onConnectWallet }) {
       </section>
 
       {/* Features Section */}
-      <section className="py-5 bg-white">
+      <section className="py-5 bg-white mb-1">
         <div className="container text-center">
           <h2 className="fw-bold mb-3" style={{ color: agrichainGreen }}>
             Pourquoi choisir MadTx ?

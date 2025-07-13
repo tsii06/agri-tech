@@ -194,11 +194,17 @@ function ListeRecoltes() {
                 <div className="card border shadow-sm p-3">
                   <h5 className="card-title">{recolte.nomProduit}</h5>
                   <div className="card-text small">
-                    <p><strong>ID:</strong> {recolte.id}</p>
+                    <p><strong>ID recolte:</strong> {recolte.id}</p>
+                    <p><strong>ID parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite}</p>
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
-                    <p><strong>Certifié:</strong> {recolte.certifie ? "Oui" : "Non"}</p>
+                    <p>
+                  <strong>Statut:</strong>
+                  <span className={`badge ms-2 ${recolte.certifie ? "bg-success" : "bg-warning"}`}>
+                    {recolte.certifie ? "certifié" : "Encore non certifié"}
+                  </span>
+                </p>
                   </div>
                   <div className="mt-3">
                     {hasRole(roles, 2) && !recolte.certifie && (
