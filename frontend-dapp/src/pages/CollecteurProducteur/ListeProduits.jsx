@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract } from "../../utils/contract";
 import { useParams } from "react-router-dom";
-import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, BadgeCheck, BadgeX, Search, ChevronDown } from "lucide-react";
+import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, Search, ChevronDown, User } from "lucide-react";
 import { useUserContext } from '../../context/useContextt';
 import { hasRole } from '../../utils/roles';
 
@@ -9,6 +9,7 @@ function ListeProduits() {
   const { address } = useParams();
   const [produits, setProduits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
   const [_, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
@@ -52,9 +53,10 @@ function ListeProduits() {
         }
         produitsTemp.reverse();
         setProduits(produitsTemp);
+        setError(false);
       } catch (error) {
         console.error("Erreur lors du chargement des produits:", error);
-        setError(error.message);
+        setError("Erreur lors du chargement des produits");
       } finally {
         setIsLoading(false);
       }
@@ -63,13 +65,14 @@ function ListeProduits() {
   }, [address, account, _]);
 
   const handleModifierPrix = async (produitId) => {
+    setBtnLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
 
       // Vérifier que le nouveau prix est valide
       const prix = Number(nouveauPrix);
       if (isNaN(prix) || prix <= 0) {
-        setError("Veuillez entrer un prix valide");
+        alert("Veuillez entrer un prix valide");
         return;
       }
 
@@ -92,48 +95,12 @@ function ListeProduits() {
       setShowModal(false);
       setProduitSelectionne(null);
       setNouveauPrix("");
+      setError(false);
     } catch (error) {
       console.error("Erreur lors de la modification du prix:", error);
-      setError(error.message);
-    }
-  };
-
-  const handleValiderProduit = async (produitId) => {
-    try {
-      const contract = await getCollecteurExportateurContract();
-
-      // Valider le produit (true pour valider, false pour rejeter)
-      const tx = await contract.validerProduit(produitId, true);
-      await tx.wait();
-
-      // Mettre à jour l'état local
-      const produitsTemp = [...produits];
-      const index = produitsTemp.findIndex(p => p.id === produitId);
-      if (index !== -1) {
-        produitsTemp[index].statut = 1; // 1 = Validé
-        setProduits(produitsTemp);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la validation du produit:", error);
-      setError(error.message);
-    }
-  };
-
-  const getStatutProduit = (statut) => {
-    switch (Number(statut)) {
-      case 0: return "En attente";
-      case 1: return "Validé";
-      case 2: return "Rejeté";
-      default: return "Inconnu";
-    }
-  };
-
-  const getStatutProduitColor = (statut) => {
-    switch (Number(statut)) {
-      case 0: return "text-warning";
-      case 1: return "text-success";
-      case 2: return "text-danger";
-      default: return "text-secondary";
+      setError("Erreur lors de la modification du prix. Veuillez réessayer plus tard.");
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -174,25 +141,15 @@ function ListeProduits() {
       setQuantiteCommande("");
       // Optionnel : rafraîchir la liste
       setState({});
+      setError(false);
     } catch (error) {
-      setError(error.message);
+      console.error("Erreur lors de la commande d'un produit :", error.message);
+      setError("Erreur lors de la commande d'un produit. Veuillez réessayer plus tard.");
     }
   };
 
   if (!account && !address) {
     return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir les produits.</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center text-red-600">
-            Erreur lors du chargement des produits: {error}
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -227,7 +184,13 @@ function ListeProduits() {
           </div>
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-          <h2 className="h5 mb-0">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
+          <h2 className="h5 mb-3">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
+
+          {error && (
+            <div className="alert alert-danger d-flex align-items-center" role="alert">
+              <div>{error}</div>
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -252,19 +215,28 @@ function ListeProduits() {
                   </div>
                   <h5 className="card-title text-center mb-3">{produit.nom}</h5>
                   <div className="card-text small">
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {produit.id}</p>
                     <p><Hash size={16} className="me-2 text-success" /><strong>ID Récolte:</strong> {produit.idRecolte}</p>
                     <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {produit.quantite} kg</p>
                     <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix unitaire:</strong> {produit.prixUnit} Ar</p>
                     <p><Calendar size={16} className="me-2 text-success" /><strong>Date de récolte:</strong> {produit.dateRecolte}</p>
-                    <p><FileCheck2 size={16} className="me-2 text-success" /><strong>Certificat phytosanitaire:</strong> {produit.certificatPhytosanitaire}</p>
-                    <p className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(produit.statut)}`}
-                      style={{ gap: 6 }}>
-                      {produit.statut === 1 ? <BadgeCheck size={16} className="me-1" /> : produit.statut === 2 ? <BadgeX size={16} className="me-1" /> : <Hash size={16} className="me-1" />}
-                      <strong>Statut:</strong> {getStatutProduit(produit.statut)}
+                    <p><User size={16} className="me-2 text-success" />
+                      <strong>Collecteur:</strong>&nbsp;
+                      {produit.collecteur.slice(0, 6)}...{produit.collecteur.slice(-4)}
+                    </p>
+                    <p><FileCheck2 size={16} className="me-2 text-success" /><strong>Certificat phytosanitaire:</strong>
+                      <a
+                        href={`https://gateway.pinata.cloud/ipfs/${produit.certificatPhytosanitaire}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ms-2 text-decoration-none text-success"
+                      >
+                        Voir ici
+                      </a>
                     </p>
                   </div>
                   <div className="mt-3">
-                    {hasRole(roles, 3) && produit.statut === 1 && (
+                    {hasRole(roles, 3) && (
                       <button
                         onClick={() => {
                           setProduitSelectionne(produit);
@@ -274,14 +246,6 @@ function ListeProduits() {
                         className="btn btn-agrichain"
                       >
                         Modifier le prix
-                      </button>
-                    )}
-                    {hasRole(roles, 6) && produit.statut === 0 && (
-                      <button
-                        onClick={() => handleValiderProduit(produit.id)}
-                        className="btn-agrichain-outline"
-                      >
-                        Valider le produit
                       </button>
                     )}
                     {hasRole(roles, 6) && produit.statut === 1 && (
@@ -335,6 +299,7 @@ function ListeProduits() {
                     type="button"
                     className="btn btn-primary"
                     onClick={() => handleModifierPrix(produitSelectionne.id)}
+                    disabled={btnLoading}
                   >
                     Confirmer la modification
                   </button>
