@@ -46,6 +46,7 @@ contract CollecteurProducteur {
     // ================================== evenements =================================================
     event StatutTransportMisAJour(uint32 indexed idCommande, StructLib.StatutTransport statut, address transporteur);
     event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp, address transporteur);
+    event ValidationCommandeRecolte(uint32 indexed idCommande, bool status);
 
 
     // ================================== initialiser =================================================
@@ -103,7 +104,18 @@ contract CollecteurProducteur {
 
         compteurCommandes++;
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender);
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente);
+    }
+    function validerCommandeRecolte(uint32 _idCommande, bool _valide) public seulementCollecteur {
+        require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore arriver");
+        require(commandes[_idCommande].statutRecolte == StructLib.StatutProduit.EnAttente, "Commande deja traiter.");
+
+        if(_valide)
+            commandes[_idCommande].statutRecolte = StructLib.StatutProduit.Valide;
+        else
+            commandes[_idCommande].statutRecolte = StructLib.StatutProduit.Rejete;
+
+        emit ValidationCommandeRecolte(_idCommande, _valide);
     }
     function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur {
         StructLib.CommandeRecolte memory commande = commandes[_idCommande];
@@ -112,6 +124,7 @@ contract CollecteurProducteur {
         require(_idCommande <= compteurCommandes, "Commande non existant");
         require(!commande.payer, "Commande deja payer");
         require(_montant == commande.prix, "Prix incorrect");
+        require(commande.statutRecolte == StructLib.StatutProduit.Valide, "Produit rejeter");
 
         // ajout automatique de produit dans le contrat CollecteurExportateur
         moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, recolte.prixUnit, msg.sender, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);

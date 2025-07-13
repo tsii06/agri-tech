@@ -52,7 +52,7 @@ contract CollecteurExportateur {
     function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) public {
         compteurProduits++;
 
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _nomProduit, _quantite, _prix, StructLib.StatutProduit.EnAttente, _dateRecolte, _certificatPhytosanitaire, _collecteur);
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _nomProduit, _quantite, _prix, _dateRecolte, _certificatPhytosanitaire, _collecteur);
 
         emit ProduitAjoute(compteurProduits, _nomProduit, _quantite, _prix, _idRecolte, _dateRecolte, _certificatPhytosanitaire);
     }
@@ -61,15 +61,15 @@ contract CollecteurExportateur {
         produits[_idProduit].prixUnit = _prix;
     }
 
-    function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
-        require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
-        if (_valide) {
-            produits[_idProduit].statut = StructLib.StatutProduit.Valide;
-        } else {
-            produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
-        }
-        emit ProduitValide(_idProduit, _valide);
-    }
+    // function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
+    //     require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
+    //     if (_valide) {
+    //         produits[_idProduit].statut = StructLib.StatutProduit.Valide;
+    //     } else {
+    //         produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
+    //     }
+    //     emit ProduitValide(_idProduit, _valide);
+    // }
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
@@ -89,8 +89,8 @@ contract CollecteurExportateur {
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
         StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
-        require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
-        require(msg.value == _produit.prixUnit * commandes[_idCommande].quantite, "Montant incorrect");
+        // require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
+        require(msg.value == commandes[_idCommande].prix, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
 
         // definit la commande comme deja payee

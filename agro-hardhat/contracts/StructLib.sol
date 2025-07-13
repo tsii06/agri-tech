@@ -108,6 +108,7 @@ library StructLib {
         StatutTransport statutTransport;
         address producteur;
         address collecteur;
+        StatutProduit statutRecolte;
     }
 
     struct Produit {
@@ -116,7 +117,6 @@ library StructLib {
         string nom;
         uint32 quantite;
         uint32 prixUnit;
-        StatutProduit statut;
         string dateRecolte;
         string certificatPhytosanitaire;
         address collecteur;
