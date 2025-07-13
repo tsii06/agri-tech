@@ -167,7 +167,7 @@ function CreerParcelle() {
             <select className="form-select" id="region" ref={region}>
               <option>Antananarivo</option>
               <option>Antsiranana</option>
-              <option>Antsirabe</option>
+              <option>Mahajanga</option>
               <option>Toamasina</option>
               <option>Fianarantsoa</option>
               <option>Toliara</option>

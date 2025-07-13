@@ -23,11 +23,11 @@ function IntrantsParcelle() {
   const [showModal, setShowModal] = useState(false);
   // pour la certification
   const [selectedIntrant, setSelectedIntrant] = useState({});
-  const dateEmission = useRef();
-  const dateExpiration = useRef();
-  const dateInspection = useRef();
-  const autoriteCertificatrice = useRef();
-  const numeroCertificat = useRef();
+  const dateEmission = useRef(null);
+  const dateExpiration = useRef(null);
+  const dateInspection = useRef(null);
+  const autoriteCertificatrice = useRef(null);
+  const numeroCertificat = useRef(null);
 
   useEffect(() => {
     chargerIntrants();

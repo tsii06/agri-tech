@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../../utils/roles';
+import myPinataSDK, { uploadFile } from "../../utils/pinata";
+
+
+
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -17,6 +21,16 @@ function ListeRecoltes() {
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
+  // Pour certification
+  const [showModalCertification, setShowModalCertification] = useState(false);
+  const [certificat, setCertificat] = useState(null);
+  const [btnLoading, setBtnLoading] = useState(null);
+  const dateEmission = useRef(null);
+  const dateExpiration = useRef(null);
+  const dateInspection = useRef(null);
+  const autoriteCertificatrice = useRef(null);
+  const numeroCertificat = useRef(null);
+  const region = useRef(null);
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
@@ -56,18 +70,48 @@ function ListeRecoltes() {
     chargerRecoltes();
   }, [address, account]);
 
-  const handleCertifier = async (recolteId) => {
+  const handleCertifier = async (event) => {
+    event.preventDefault();
+    setBtnLoading(true);
+
+    let hashIpfs = "";
+    let idCertificat = 0;
+    const metadata = {
+      dateEmission: dateEmission.current.value,
+      dateExpiration: dateExpiration.current.value,
+      dateInspection: dateInspection.current.value,
+      autoriteCertificatrice: autoriteCertificatrice.current.value,
+      adresseCertificateur: account,
+      adresseProducteur: recolteSelectionnee.producteur,
+      produit: recolteSelectionnee.nomProduit,
+      numeroCertificat: numeroCertificat.current.value,
+      region: region.current.value,
+    };
+    // uploader d'abord le certificate
+    const upload = await uploadFile(certificat, metadata);
+    if (!upload) {
+      setBtnLoading(false);
+      return;
+    }
+    else {
+      hashIpfs = upload.cid;
+      idCertificat = upload.id;
+    }
+
     try {
       const contract = await getCollecteurProducteurContract();
-      const certificat = "Certificat de qualité"; // À remplacer par le vrai certificat
-      const tx = await contract.certifieRecolte(recolteId, certificat);
+      const tx = await contract.certifieRecolte(recolteSelectionnee.id, hashIpfs);
       await tx.wait();
 
       chargerRecoltes();
-
+      setShowModalCertification(false);
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError(error.message);
+      // supprimer le certificat uploader sur ipfs si il y a erreur lors de la validation de l'intrant.
+      await myPinataSDK.files.public.delete([idCertificat]);
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -196,20 +240,35 @@ function ListeRecoltes() {
                   <div className="card-text small">
                     <p><strong>ID recolte:</strong> {recolte.id}</p>
                     <p><strong>ID parcelle:</strong> {recolte.idParcelle}</p>
+                    <p><strong>Producteur:</strong> {recolte.producteur}</p>
                     <p><strong>Quantité:</strong> {recolte.quantite}</p>
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p>
-                  <strong>Statut:</strong>
-                  <span className={`badge ms-2 ${recolte.certifie ? "bg-success" : "bg-warning"}`}>
-                    {recolte.certifie ? "certifié" : "Encore non certifié"}
-                  </span>
-                </p>
+                      <strong>Statut:</strong>
+                      <span className={`badge ms-2 ${recolte.certifie ? "bg-success" : "bg-warning"}`}>
+                        {recolte.certifie ? "certifié" : "Encore non certifié"}
+                      </span>
+                    </p>
+                    {recolte.certifie && (
+                      <p>
+                        <strong>Certificat:&nbsp;</strong>
+                        <a
+                          href={`https://gateway.pinata.cloud/ipfs/${recolte.certificatPhytosanitaire}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ms-2 text-decoration-none text-success"
+                        >
+                          Voir ici
+                        </a>
+                      </p>
+                    )}
                   </div>
                   <div className="mt-3">
                     {hasRole(roles, 2) && !recolte.certifie && (
                       <button
-                        onClick={() => handleCertifier(recolte.id)}
+                        onClick={() => { setShowModalCertification(true); setRecolteSelectionnee(recolte) }}
+                        // onClick={() => handleCertifier(recolte.id)}
                         className="btn btn-sm btn-primary me-2"
                       >
                         Certifier
@@ -240,6 +299,7 @@ function ListeRecoltes() {
           </button>
         </div>
       )}
+
       {/* Modal de commande */}
       {showModal && recolteSelectionnee && (
         <div className="modal show d-block" tabIndex="-1">
@@ -267,6 +327,87 @@ function ListeRecoltes() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL CERTIFICATION */}
+      {showModalCertification && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <form action="" onSubmit={(event) => handleCertifier(event)}>
+                <div className="modal-content bg-light">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Ajout certificat du produit &quot;{recolteSelectionnee.nomProduit}&quot;</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowModalCertification(false)}></button>
+                  </div>
+
+                  {/* Corps du modal */}
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label htmlFor="certificat" className="form-label text-muted">Certificat</label>
+                      <input type="file" id="certificat" className="form-control" placeholder="Username" onChange={e => setCertificat(e.target.files[0])} required />
+                    </div>
+                    <div className="mb-3">
+                      <label htmlFor="numeroCertificat" className="form-label text-muted">Numéro du certificat</label>
+                      <input type="text" id="numeroCertificat" className="form-control" ref={numeroCertificat} required />
+                    </div>
+                    <div className="row mb-3">
+                      <div className="col">
+                        <label className="form-label text-muted">Date d&apos;emession</label>
+                        <input type="date" className="form-control" required ref={dateEmission} />
+                      </div>
+                      <div className="col">
+                        <label className="form-label text-muted">Date d&apos;expiration</label>
+                        <input type="date" className="form-control" required ref={dateExpiration} />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label text-muted">Date d&apos;inspection</label>
+                      <input type="date" className="form-control" required ref={dateInspection} />
+                    </div>
+                    <div className="mb-3">
+                      <label htmlFor="region" className="form-label text-muted">Region</label>
+                      <select className="form-select" id="region" ref={region}>
+                        <option>Antananarivo</option>
+                        <option>Antsiranana</option>
+                        <option>Mahajanga</option>
+                        <option>Toamasina</option>
+                        <option>Fianarantsoa</option>
+                        <option>Toliara</option>
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label htmlFor="autorite_certificatrice" className="form-label text-muted">Autorité certificatrice</label>
+                      <input type="text" className="form-control" required id="autorite_certificatrice" ref={autoriteCertificatrice} />
+                    </div>
+                  </div>
+
+                  {/* Pied du modal */}
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModalCertification(false)}>
+                      Annuler
+                    </button>
+                    {btnLoading ? (
+                      <button type="button" className="btn btn-primary" disabled>
+                        <div className="spinner-border spinner-border-sm text-light" role="status"></div>
+                        &nbsp;Certifier
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                      >
+                        Certifier
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
