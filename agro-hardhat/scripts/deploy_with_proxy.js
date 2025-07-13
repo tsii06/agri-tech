@@ -118,7 +118,7 @@ async function main() {
         "-18.8792",
         "47.5079",
         "2024-07-01",
-        "CertificatPhyto-1"
+        "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"
     );
     await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle(
         "Semence B",
@@ -126,7 +126,7 @@ async function main() {
         "-18.8793",
         "47.5080",
         "2024-07-02",
-        "CertificatPhyto-2"
+        "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"
     );
 
     // 2. Créer des récoltes pour chaque parcelle (via CollecteurProducteur)
@@ -151,14 +151,14 @@ async function main() {
     );
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateurAddress, await collecteurProducteurProxy.getAddress());
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "Certificat de qualité BIO");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
 
     // 4. Création de produits à partir des récoltes (par le collecteur)
     console.log("Création de produits à partir des récoltes...");
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(collecteurAddress, await collecteurExportateurProxy.getAddress());
-    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, 700, collecteurAddress, "Riz Bio", "2024-07-10", "CertificatPhyto-1");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, 800, collecteurAddress, "Riz Classique", "2024-07-12", "CertificatPhyto-2");
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, 700, collecteurAddress, "Riz Bio", "2024-07-10", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, 800, collecteurAddress, "Riz Classique", "2024-07-12", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
 
     // 5. Commande du collecteur vers producteur
     console.log("Commande du collecteur vers producteur...");
@@ -217,10 +217,10 @@ async function main() {
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(producteur2, await producteurEnPhaseCultureProxy.getAddress());
     await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteur2)).creerParcelle(
-        "Semence C", "Bio", "-18.88", "47.51", "2024-07-03", "CertificatPhyto-3"
+        "Semence C", "Bio", "-18.88", "47.51", "2024-07-03", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"
     );
     await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteur2)).creerParcelle(
-        "Semence D", "Conventionnel", "-18.89", "47.52", "2024-07-04", "CertificatPhyto-4"
+        "Semence D", "Conventionnel", "-18.89", "47.52", "2024-07-04", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"
     );
 
     // 3. Créer des récoltes (certaines non certifiées)
@@ -232,14 +232,14 @@ async function main() {
     // 4. Certifier une seule récolte
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateur2, await collecteurProducteurProxy.getAddress());
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "Certificat Premium");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
     // La récolte 4 reste non certifiée
 
     // 5. Créer des produits (certifiés et non certifiés)
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(collecteur2, await collecteurExportateurProxy.getAddress());
-    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, 900, collecteur2, "Riz Premium", "2024-07-15", "CertificatPhyto-3"); // certifié
-    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, 950, collecteur2, "Riz Standard", "2024-07-16", ""); // non certifié
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, 900, collecteur2, "Riz Premium", "2024-07-15", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"); // certifié
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, 950, collecteur2, "Riz Standard", "2024-07-16", "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4"); // non certifié
 
     // 6. Créer des commandes (payées et non payées)
     // Commande payée
