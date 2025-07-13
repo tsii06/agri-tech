@@ -237,7 +237,7 @@ function ListeRecoltes() {
                     <p><strong>ID recolte:</strong> {recolte.id}</p>
                     <p><strong>ID parcelle:</strong> {recolte.idParcelle}</p>
                     <p><strong>Producteur:</strong> {`${recolte.producteur.substring(0, 6)}...${recolte.producteur.substring(recolte.producteur.length - 4)}`}</p>
-                    <p><strong>Quantité:</strong> {recolte.quantite}</p>
+                    <p><strong>Quantité:</strong> {recolte.quantite} KG</p>
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p>
@@ -298,31 +298,36 @@ function ListeRecoltes() {
 
       {/* Modal de commande */}
       {showModal && recolteSelectionnee && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <label>Quantité à commander :</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={quantiteCommande}
-                  onChange={e => setQuantiteCommande(e.target.value)}
-                  min={1}
-                  max={recolteSelectionnee.quantite}
-                />
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
-                <button className="btn btn-primary" onClick={() => handleCommander(recolteSelectionnee.id)}>Valider la commande</button>
+        <>
+          <div className="modal-backdrop fade show"></div>
+
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content bg-light">
+                <div className="modal-header">
+                  <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <label htmlFor="quantiteCommande">Quantité à commander :</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="quantiteCommande"
+                    value={quantiteCommande}
+                    onChange={e => setQuantiteCommande(e.target.value)}
+                    min={1}
+                    max={recolteSelectionnee.quantite}
+                  />
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
+                  <button className="btn btn-primary" onClick={() => handleCommander(recolteSelectionnee.id)}>Valider la commande</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* MODAL CERTIFICATION */}
