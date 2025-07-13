@@ -209,6 +209,7 @@ function LivraisonRecolte() {
                   <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
                   <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
                   <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
+                  <p><User size={16} className="me-2 text-success" /><strong>Exportateur:</strong> {commande.exportateur.slice(0, 6)}...{commande.exportateur.slice(-4)}</p>
                   <p>
                     <Truck size={16} className="me-1" />
                     <strong>Transport:</strong> {getStatutTransportLabel(commande.statutTransport)}
