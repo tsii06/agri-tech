@@ -172,11 +172,8 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(exportateurAddress, await collecteurExportateurProxy.getAddress());
     await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 100);
 
-
-    // Valider le produit (par l'exportateur)
-    await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).validerProduit(1, true); // true = validé
     // 7. Paiement de l'exportateur pour une commande
-    console.log("Paiement de l'exportateur...");
+    // console.log("Paiement de l'exportateur...");
     // await collecteurExportateur.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 70000, 0, { value: ethers.parseEther("0.01") });
 
     
