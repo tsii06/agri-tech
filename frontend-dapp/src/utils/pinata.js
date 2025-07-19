@@ -32,3 +32,24 @@ export const uploadFile = async (file, metadata) => {
         return false;
     }
 };
+
+export const uploadPhoto = async (file, parcelleId) => {
+    try {
+        const metadata = {
+            type: 'photo-parcelle',
+            parcelleId: parcelleId ? String(parcelleId) : undefined
+        };
+        const res = await myPinataSDK.upload.public.file(file).keyvalues(metadata);
+        if (res.is_duplicate) {
+            throw new Error("Cette photo a déjà été téléchargée sur IPFS.");
+        }
+        return res;
+    } catch (e) {
+        console.error("Erreur lors de l'upload de la photo : ", e.message);
+        if (e.message === "Cette photo a déjà été téléchargée sur IPFS.")
+            alert("Cette photo a déjà été utilisée.");
+        else
+            alert("Erreur lors de l'upload de la photo. Veuillez réessayer plus tard.");
+        return false;
+    }
+};
