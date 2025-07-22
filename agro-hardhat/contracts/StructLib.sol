@@ -82,7 +82,7 @@ library StructLib {
 
     struct Recolte {
         uint32 id;
-        uint32 idParcelle;
+        uint32[] idParcelle;
         uint32 quantite;
         uint32 prixUnit;
         bool certifie;

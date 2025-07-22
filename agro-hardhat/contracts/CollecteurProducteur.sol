@@ -74,13 +74,15 @@ contract CollecteurProducteur {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32 _idParcelle, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
-        StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelle);
-        require(_idParcelle <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant");
-        require(parcelle.producteur == msg.sender, "Vous n'etes pas proprietaire de ce parcellle");
+    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
+        for(uint32 i=0 ; i<_idParcelles.length ; i++) {
+            require(_idParcelles[i] <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant.");
+            StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelles[i]);
+            require(parcelle.producteur == msg.sender, "Vous n'est pas proprietaire du parcelle.");
+        }
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelle, _quantite, _prix, false, "", _dateRecolte, msg.sender, _nomProduit);
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", _dateRecolte, msg.sender, _nomProduit);
     }
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
         require(_idRecolte <= compteurRecoltes, "Recolte non existant");
