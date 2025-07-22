@@ -57,7 +57,8 @@ contract ProducteurEnPhaseCulture {
         compteurParcelles++;
         parcelles[compteurParcelles].id = compteurParcelles;
         parcelles[compteurParcelles].producteur = msg.sender;
-        parcelles[compteurParcelles].metadaIpfs = _ipfs;
+        parcelles[compteurParcelles].cid = _ipfs;
+        parcelles[compteurParcelles].hashMerkle = "";
     }
 
     function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {

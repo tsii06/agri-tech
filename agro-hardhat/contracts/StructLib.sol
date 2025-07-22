@@ -64,7 +64,8 @@ library StructLib {
     struct Parcelle {
         uint32 id;
         address producteur;
-        string metadaIpfs;
+        string cid;
+        string hashMerkle;
         string[] photos;
         Intrant[] intrants;
         Inspection[] inspections;
