@@ -64,18 +64,7 @@ library StructLib {
     struct Parcelle {
         uint32 id;
         address producteur;
-        string qualiteSemence;
-        string methodeCulture;
-        bool certifie;
-        Etape etape;
-        string latitude;
-        string longitude;
-        string[] photos;
-        Intrant[] intrants;
-        Inspection[] inspections;
-        EnregistrementCondition[] conditions;
-        string dateRecolte;
-        string certificatPhytosanitaire;
+        string ipfs;
     }
 
     struct Paiement {
