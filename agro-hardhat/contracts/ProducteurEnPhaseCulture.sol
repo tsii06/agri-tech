@@ -8,6 +8,8 @@ contract ProducteurEnPhaseCulture {
     GestionnaireActeurs public gestionnaireActeurs;
     mapping(uint32 => StructLib.Parcelle) public parcelles;
     uint32 public compteurParcelles;
+    uint32 public compteurInspections;
+    uint32 public compteurIntrants;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
 
@@ -55,7 +57,31 @@ contract ProducteurEnPhaseCulture {
         compteurParcelles++;
         parcelles[compteurParcelles].id = compteurParcelles;
         parcelles[compteurParcelles].producteur = msg.sender;
-        parcelles[compteurParcelles].ipfs = _ipfs;
+        parcelles[compteurParcelles].metadaIpfs = _ipfs;
+    }
+
+    function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
+        parcelles[_idParcelle].photos.push(_urlPhoto);
+    }
+
+    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite, string memory _categorie, address _fournisseur) public seulementFournisseur {
+        compteurIntrants++;
+        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false, compteurIntrants, _categorie, _fournisseur, ""));
+    }
+
+    function validerIntrant(uint32 _idParcelle, uint32 _id, bool _valide, string memory _certificatPhytosanitaire) public seulementCertificateur {
+        for (uint32 i = 0; i < parcelles[_idParcelle].intrants.length; i++) {
+            if (parcelles[_idParcelle].intrants[i].id == _id) {
+                parcelles[_idParcelle].intrants[i].valide = _valide;
+                parcelles[_idParcelle].intrants[i].certificatPhytosanitaire = _certificatPhytosanitaire;
+                break;
+            }
+        }
+    }
+
+    function ajouterInspection(uint32 _idParcelle, string memory _rapport) public seulementAuditeur {
+        compteurInspections++;
+        parcelles[_idParcelle].inspections.push(StructLib.Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
     }
     // ====================================== getter ==========================================================
 
