@@ -61,7 +61,7 @@ contract ProducteurEnPhaseCulture {
         parcelles[compteurParcelles].hashMerkle = "";
     }
 
-    function ajoutHashMerkle(uint32 _idParcelle, string memory _hash) public {
+    function ajoutHashMerkleParcelle(uint32 _idParcelle, string memory _hash) public {
         require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
         parcelles[_idParcelle].hashMerkle = _hash;
     }
