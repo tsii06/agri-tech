@@ -90,6 +90,7 @@ library StructLib {
         string dateRecolte;
         address producteur;
         string nomProduit;
+        string hashMerkel;
     }
 
     struct CommandeRecolte {
