@@ -7,7 +7,7 @@ import "./gestionnaireActeurs.sol";
 contract CollecteurExportateur {
     // ------------------------- Attributs --------------------------------------------------------------
     mapping(uint32 => StructLib.Produit) public produits;
-    mapping(uint32 => StructLib.LotProduit) public LotProduits;
+    mapping(uint32 => StructLib.LotProduit) public lotProduits;
     mapping(uint32 => StructLib.EnregistrementCondition) public conditions;
     mapping(uint32 => StructLib.Paiement) public paiements;
     // Pour stocker tous les commandes du contrat
@@ -64,41 +64,41 @@ contract CollecteurExportateur {
         uint32[] memory _idRecoltes = new uint32[](_idProduits.length);
         uint32 _quantite = 0;
         for(uint32 i=0 ; i<_idProduits.length ; i++) {
-            require(_idProduits[i] <= compteurLotProduits, "Produit non existant.");
-            StructLib.Produit memory produit = produits[i];
+            require(_idProduits[i] <= compteurProduits, "Produit non existant.");
+            StructLib.Produit memory produit = produits[_idProduits[i]];
             _idRecoltes[i] = produit.idRecolte;
             _quantite += produit.quantite;
             require(produit.collecteur == msg.sender, "Vous n'est pas proprietaire de ce produit.");
         }
         compteurLotProduits++;
-        LotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _quantite, _prix, msg.sender, _cid, "");
+        lotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _quantite, _prix, msg.sender, _cid, "");
 
         emit AjoutLotProduit(msg.sender, compteurLotProduits, _quantite, _prix);
     }
     
     function setPriceProduit(uint32 _idLotProduit, uint32 _prix) public seulementCollecteur {
-        require(LotProduits[_idLotProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
-        LotProduits[_idLotProduit].prix = _prix;
+        require(lotProduits[_idLotProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
+        lotProduits[_idLotProduit].prix = _prix;
     }
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint32 _idLotProduit, uint32 _quantite) public seulementExportateur {
         // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
-        require(_quantite <= LotProduits[_idLotProduit].quantite, "Quantite invalide");
+        require(_quantite <= lotProduits[_idLotProduit].quantite, "Quantite invalide");
 
-        uint32 _prix = _quantite * LotProduits[_idLotProduit].prix;
+        uint32 _prix = _quantite * lotProduits[_idLotProduit].prix;
         // la quantite de produit doit etre diminuer.
-        uint32 temp = LotProduits[_idLotProduit].quantite - _quantite;
-        LotProduits[_idLotProduit].quantite = temp;
+        uint32 temp = lotProduits[_idLotProduit].quantite - _quantite;
+        lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, LotProduits[_idLotProduit].collecteur, msg.sender);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender);
 
         emit CommandePasser(msg.sender, _idLotProduit);
     }
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
-        StructLib.LotProduit memory _lotProduit = LotProduits[commandes[_idCommande].idLotProduit];
+        StructLib.LotProduit memory _lotProduit = lotProduits[commandes[_idCommande].idLotProduit];
         require(msg.value == commandes[_idCommande].prix, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
 
@@ -144,6 +144,9 @@ contract CollecteurExportateur {
 
     function getProduit(uint32 id) public view returns(StructLib.Produit memory) {
         return produits[id];
+    }
+    function getLotProduit(uint32 id) public view returns(StructLib.LotProduit memory) {
+        return lotProduits[id];
     }
     function getCondition(uint32 id) public view returns(StructLib.EnregistrementCondition memory) {
         return conditions[id];

@@ -117,6 +117,7 @@ const initializerWithData = async () => {
     // certifier recoltes
     await collecteurProducteur.connect(certificateur).certifieRecolte(1, "asdfasdf");
     await collecteurProducteur.connect(certificateur).certifieRecolte(2, "asdfasdf");
+    await collecteurProducteur.connect(certificateur).certifieRecolte(3, "asdfasdf");
 
     // passer commande sur des recoltes
     await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(1, 5);
