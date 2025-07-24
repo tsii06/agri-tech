@@ -87,10 +87,8 @@ library StructLib {
         uint32 prixUnit;
         bool certifie;
         string certificatPhytosanitaire;
-        string dateRecolte;
         address producteur;
-        string nomProduit;
-        string hashMerkel;
+        string hashMerkle;
     }
 
     struct CommandeRecolte {

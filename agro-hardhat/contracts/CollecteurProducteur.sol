@@ -74,7 +74,7 @@ contract CollecteurProducteur {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix, string memory _dateRecolte, string memory _nomProduit) public seulementProducteur {
+    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix) public seulementProducteur {
         for(uint32 i=0 ; i<_idParcelles.length ; i++) {
             require(_idParcelles[i] <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant.");
             StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelles[i]);
@@ -82,13 +82,13 @@ contract CollecteurProducteur {
         }
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", _dateRecolte, msg.sender, _nomProduit, "");
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, "");
     }
 
     function ajoutHashMerkleRecolte(uint32 _idRecolte, string memory _hash) public {
         require(_idRecolte <= compteurRecoltes, "Recolte non existant.");
         recoltes[_idRecolte].hashMerkle = _hash;
-    }
+    }    
     
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur {
         require(_idRecolte <= compteurRecoltes, "Recolte non existant");
@@ -134,8 +134,9 @@ contract CollecteurProducteur {
         require(_montant == commande.prix, "Prix incorrect");
         require(commande.statutRecolte == StructLib.StatutProduit.Valide, "Produit rejeter");
 
+        // A REVOIR
         // ajout automatique de produit dans le contrat CollecteurExportateur
-        moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, recolte.prixUnit, msg.sender, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
+        // moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, recolte.prixUnit, msg.sender, recolte.nomProduit, recolte.dateRecolte, recolte.certificatPhytosanitaire);
 
         // definie la commande comme deja payer
         commandes[_idCommande].payer = true;
