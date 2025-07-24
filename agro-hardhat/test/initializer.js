@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 
 const initializer = async () => {
-    const [admin, producteur, collecteur, certificateur] = await ethers.getSigners();
+    const [admin, producteur, collecteur, certificateur, transporteur] = await ethers.getSigners();
 
     let contractFactory = await ethers.getContractFactory("GestionnaireActeurs");
     // GestionnaireActeurs
@@ -59,6 +59,17 @@ const initializer = async () => {
         "email",
         "telephone",
     );
+    // transporteur
+    await gestionnaireActeurs.enregistrerActeur(
+        transporteur.address,
+        5,
+        0,
+        "Nom",
+        "NifouCIN",
+        "adresseOfficiel",
+        "email",
+        "telephone",
+    );
 
     // ajout contrat delegue
     await gestionnaireActeurs.ajouterContratDelegue(producteur.address, producteurEnPhaseCulture.getAddress());
@@ -75,7 +86,8 @@ const initializer = async () => {
         admin: admin,
         producteur: producteur,
         collecteur: collecteur,
-        certificateur: certificateur
+        certificateur: certificateur,
+        transporteur: transporteur,
     };
 };
 
@@ -89,7 +101,8 @@ const initializerWithData = async () => {
         admin,
         producteur,
         collecteur,
-        certificateur
+        certificateur,
+        transporteur
     } = await initializer();
 
     // creation des parcelles
@@ -99,6 +112,30 @@ const initializerWithData = async () => {
     // ajout recolte
     await collecteurProducteur.connect(producteur).ajoutRecolte([1,2], 10, 100, "askldvowierfoaishdfasdf");
     await collecteurProducteur.connect(producteur).ajoutRecolte([2], 15, 45, "askldvowierfoaishdfasdf");
+    await collecteurProducteur.connect(producteur).ajoutRecolte([1], 23, 77, "askldvowierfoaishdfasdf");
+
+    // certifier recoltes
+    await collecteurProducteur.connect(certificateur).certifieRecolte(1, "asdfasdf");
+    await collecteurProducteur.connect(certificateur).certifieRecolte(2, "asdfasdf");
+
+    // passer commande sur des recoltes
+    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(1, 5);
+    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(2, 10);
+    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(3, 17);
+
+    // livrer les commandes
+    await collecteurProducteur.connect(transporteur).mettreAJourStatutTransport(1, 1);
+    await collecteurProducteur.connect(transporteur).mettreAJourStatutTransport(2, 1);
+    await collecteurProducteur.connect(transporteur).mettreAJourStatutTransport(3, 1);
+
+    // valider les commandes
+    await collecteurProducteur.connect(collecteur).validerCommandeRecolte(1, true);
+    await collecteurProducteur.connect(collecteur).validerCommandeRecolte(2, true);
+    await collecteurProducteur.connect(collecteur).validerCommandeRecolte(3, true);
+
+    // payer les commandes sur les recoltes
+    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(1, 500, 0);
+    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(2, 450, 0);
 
 
     return {
@@ -110,7 +147,8 @@ const initializerWithData = async () => {
         admin: admin,
         producteur: producteur,
         collecteur: collecteur,
-        certificateur: certificateur
+        certificateur: certificateur,
+        transporteur: transporteur,
     };
 };
 

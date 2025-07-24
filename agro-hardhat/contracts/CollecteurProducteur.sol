@@ -131,7 +131,7 @@ contract CollecteurProducteur {
         require(_idCommande <= compteurCommandes, "Commande non existant");
         require(!commande.payer, "Commande deja payer");
         require(_montant == commande.prix, "Prix incorrect");
-        require(commande.statutRecolte == StructLib.StatutProduit.Valide, "Produit rejeter");
+        require(commande.statutRecolte == StructLib.StatutProduit.Valide, "Produit non valider.");
 
         // ajout automatique de produit dans le contrat CollecteurExportateur
         moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, msg.sender);

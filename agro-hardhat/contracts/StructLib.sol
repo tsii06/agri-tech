@@ -107,11 +107,7 @@ library StructLib {
     struct Produit {
         uint32 id;
         uint32 idRecolte;
-        // string nom;
         uint32 quantite;
-        // uint32 prixUnit;
-        // string dateRecolte;
-        // string certificatPhytosanitaire;
         address collecteur;
     }
 
