@@ -7,12 +7,14 @@ import "./gestionnaireActeurs.sol";
 contract CollecteurExportateur {
     // ------------------------- Attributs --------------------------------------------------------------
     mapping(uint32 => StructLib.Produit) public produits;
+    mapping(uint32 => StructLib.LotProduit) public LotProduits;
     mapping(uint32 => StructLib.EnregistrementCondition) public conditions;
     mapping(uint32 => StructLib.Paiement) public paiements;
     // Pour stocker tous les commandes du contrat
     mapping (uint32 => StructLib.CommandeProduit) public commandes;
     uint32 public compteurCommandes;
     uint32 public compteurProduits;
+    uint32 public compteurLotProduits;
     uint32 public compteurConditions;
     uint32 public compteurPaiements;
     // limite le nombre d'appel a la fonction initialiser a 1
@@ -21,13 +23,14 @@ contract CollecteurExportateur {
     GestionnaireActeurs public gestionnaireActeurs;
     // ------------------------- Fin Attributs ----------------------------------------------------------
 
-    event ProduitAjoute(uint32 indexed idProduit, string nom, uint32 quantite, uint32 prix, uint32 idRecolte, string dateRecolte, string certificatPhytosanitaire);
+    event ProduitAjoute(uint32 indexed idProduit, uint32 quantite, uint32 idRecolte);
     event ProduitValide(uint32 indexed idProduit, bool valide);
     event PaiementEffectue(uint32 indexed idProduit, uint32 idPaiement, address payeur, uint32 montant, StructLib.ModePaiement mode);
     event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp);
     event StatutTransportMisAJour(uint32 indexed idProduit, StructLib.StatutTransport statut);
     // Evenement produit lorsqu une commande est passer
     event CommandePasser(address indexed exportateur, uint32 idProduit);
+    event AjoutLotProduit(address indexed collecteur, uint32 idLotProduit, uint32 quantite, uint32 prix);
 
     modifier seulementCollecteur() {
         require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
@@ -49,47 +52,53 @@ contract CollecteurExportateur {
     }
 
     // ==================================== Produit =========================================================
-    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, uint32 _prix, address _collecteur, string memory _nomProduit, string memory _dateRecolte, string memory _certificatPhytosanitaire) public {
+    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, address _collecteur) public {
         compteurProduits++;
 
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _nomProduit, _quantite, _prix, _dateRecolte, _certificatPhytosanitaire, _collecteur);
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur);
 
-        emit ProduitAjoute(compteurProduits, _nomProduit, _quantite, _prix, _idRecolte, _dateRecolte, _certificatPhytosanitaire);
-    }
-    function setPriceProduit(uint32 _idProduit, uint32 _prix) public seulementCollecteur {
-        require(produits[_idProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
-        produits[_idProduit].prixUnit = _prix;
+        emit ProduitAjoute(compteurProduits, _quantite, _idRecolte);
     }
 
-    // function validerProduit(uint32 _idProduit, bool _valide) public seulementExportateur {
-    //     require(produits[_idProduit].statut == StructLib.StatutProduit.EnAttente, "Produit deja traite");
-    //     if (_valide) {
-    //         produits[_idProduit].statut = StructLib.StatutProduit.Valide;
-    //     } else {
-    //         produits[_idProduit].statut = StructLib.StatutProduit.Rejete;
-    //     }
-    //     emit ProduitValide(_idProduit, _valide);
-    // }
+    function ajouterLotProduit(uint32[] memory _idProduits, string memory _cid, uint32 _prix) public seulementCollecteur {
+        uint32[] memory _idRecoltes = new uint32[](_idProduits.length);
+        uint32 _quantite = 0;
+        for(uint32 i=0 ; i<_idProduits.length ; i++) {
+            require(_idProduits[i] <= compteurLotProduits, "Produit non existant.");
+            StructLib.Produit memory produit = produits[i];
+            _idRecoltes[i] = produit.idRecolte;
+            _quantite += produit.quantite;
+            require(produit.collecteur == msg.sender, "Vous n'est pas proprietaire de ce produit.");
+        }
+        compteurLotProduits++;
+        LotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _quantite, _prix, msg.sender, _cid, "");
+
+        emit AjoutLotProduit(msg.sender, compteurLotProduits, _quantite, _prix);
+    }
+    
+    function setPriceProduit(uint32 _idLotProduit, uint32 _prix) public seulementCollecteur {
+        require(LotProduits[_idLotProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
+        LotProduits[_idLotProduit].prix = _prix;
+    }
 
     // Modifie la fonction qui passe une commande
-    function passerCommande(uint32 idProduit, uint32 _quantite) public seulementExportateur {
+    function passerCommande(uint32 _idLotProduit, uint32 _quantite) public seulementExportateur {
         // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
-        require(_quantite <= produits[idProduit].quantite, "Quantite invalide");
+        require(_quantite <= LotProduits[_idLotProduit].quantite, "Quantite invalide");
 
-        uint32 _prix = _quantite * produits[idProduit].prixUnit;
+        uint32 _prix = _quantite * LotProduits[_idLotProduit].prix;
         // la quantite de produit doit etre diminuer.
-        uint32 temp = produits[idProduit].quantite - _quantite;
-        produits[idProduit].quantite = temp;
+        uint32 temp = LotProduits[_idLotProduit].quantite - _quantite;
+        LotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, idProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, produits[idProduit].collecteur, msg.sender);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, LotProduits[_idLotProduit].collecteur, msg.sender);
 
-        emit CommandePasser(msg.sender, idProduit);
+        emit CommandePasser(msg.sender, _idLotProduit);
     }
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
-        StructLib.Produit memory _produit = produits[commandes[_idCommande].idProduit];
-        // require(_produit.statut == StructLib.StatutProduit.Valide, "Produit non valide");
+        StructLib.LotProduit memory _lotProduit = LotProduits[commandes[_idCommande].idLotProduit];
         require(msg.value == commandes[_idCommande].prix, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
 
@@ -98,9 +107,9 @@ contract CollecteurExportateur {
 
         compteurPaiements++;
         paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp);
-        emit PaiementEffectue(_produit.id, compteurPaiements, msg.sender, _montant, _mode);
+        emit PaiementEffectue(_lotProduit.id, compteurPaiements, msg.sender, _montant, _mode);
 
-        address payable collecteur = payable(_produit.collecteur);
+        address payable collecteur = payable(_lotProduit.collecteur);
         collecteur.transfer(msg.value);
     }
 

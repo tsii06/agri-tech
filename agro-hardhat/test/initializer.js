@@ -79,4 +79,42 @@ const initializer = async () => {
     };
 };
 
-module.exports = initializer;
+const initializerWithData = async () => {
+    const { 
+        gestionnaireActeurs,
+        producteurEnPhaseCulture,
+        collecteurProducteur,
+        collecteurExportateur,
+
+        admin,
+        producteur,
+        collecteur,
+        certificateur
+    } = await initializer();
+
+    // creation des parcelles
+    await producteurEnPhaseCulture.connect(producteur).creerParcelle("gngn");
+    await producteurEnPhaseCulture.connect(producteur).creerParcelle("codecode");
+
+    // ajout recolte
+    await collecteurProducteur.connect(producteur).ajoutRecolte([1,2], 10, 100, "askldvowierfoaishdfasdf");
+    await collecteurProducteur.connect(producteur).ajoutRecolte([2], 15, 45, "askldvowierfoaishdfasdf");
+
+
+    return {
+        gestionnaireActeurs: gestionnaireActeurs,
+        producteurEnPhaseCulture: producteurEnPhaseCulture,
+        collecteurProducteur: collecteurProducteur,
+        collecteurExportateur: collecteurExportateur,
+
+        admin: admin,
+        producteur: producteur,
+        collecteur: collecteur,
+        certificateur: certificateur
+    };
+};
+
+module.exports = {
+    initializer,
+    initializerWithData
+};

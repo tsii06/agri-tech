@@ -107,17 +107,27 @@ library StructLib {
     struct Produit {
         uint32 id;
         uint32 idRecolte;
-        string nom;
+        // string nom;
         uint32 quantite;
-        uint32 prixUnit;
-        string dateRecolte;
-        string certificatPhytosanitaire;
+        // uint32 prixUnit;
+        // string dateRecolte;
+        // string certificatPhytosanitaire;
         address collecteur;
+    }
+
+    struct LotProduit {
+        uint32 id;
+        uint32[] idRecolte;
+        uint32 quantite;
+        uint32 prix;
+        address collecteur;
+        string cid;
+        string hashMerkle;
     }
 
     struct CommandeProduit {
         uint32 id;
-        uint32 idProduit;
+        uint32 idLotProduit;
         uint32 quantite;
         uint32 prix;
         bool payer;
