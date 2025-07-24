@@ -74,7 +74,7 @@ contract CollecteurProducteur {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix) public seulementProducteur {
+    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix, string memory _cid) public seulementProducteur {
         for(uint32 i=0 ; i<_idParcelles.length ; i++) {
             require(_idParcelles[i] <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant.");
             StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelles[i]);
@@ -82,7 +82,7 @@ contract CollecteurProducteur {
         }
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, "");
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, "", _cid);
     }
 
     function ajoutHashMerkleRecolte(uint32 _idRecolte, string memory _hash) public {

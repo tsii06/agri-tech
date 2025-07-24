@@ -89,6 +89,7 @@ library StructLib {
         string certificatPhytosanitaire;
         address producteur;
         string hashMerkle;
+        string cid;
     }
 
     struct CommandeRecolte {
