@@ -104,7 +104,7 @@ contract CollecteurExportateur {
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
         StructLib.LotProduit memory _lotProduit = lotProduits[commandes[_idCommande].idLotProduit];
-        require(msg.value == commandes[_idCommande].prix, "Montant incorrect");
+        require(_montant == commandes[_idCommande].prix, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
         require(commandes[_idCommande].statutProduit == StructLib.StatutProduit.Valide, "Commande non valider.");
 
@@ -114,9 +114,6 @@ contract CollecteurExportateur {
         compteurPaiements++;
         paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp);
         emit PaiementEffectue(_lotProduit.id, compteurPaiements, msg.sender, _montant, _mode);
-
-        address payable collecteur = payable(_lotProduit.collecteur);
-        collecteur.transfer(msg.value);
     }
 
     function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
