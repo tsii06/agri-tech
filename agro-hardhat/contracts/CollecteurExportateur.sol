@@ -55,7 +55,7 @@ contract CollecteurExportateur {
     function ajouterProduit(uint32 _idRecolte, uint32 _quantite, address _collecteur) public {
         compteurProduits++;
 
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur);
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur, false);
 
         emit ProduitAjoute(compteurProduits, _quantite, _idRecolte);
     }
@@ -69,8 +69,12 @@ contract CollecteurExportateur {
             _idRecoltes[i] = produit.idRecolte;
             _quantite += produit.quantite;
             require(produit.collecteur == msg.sender, "Vous n'est pas proprietaire de ce produit.");
+            require(!produit.enregistre, "Produit deja enregistre comme lot");
         }
         compteurLotProduits++;
+        for(uint32 i=0 ; i<_idProduits.length ; i++) {
+            produits[_idProduits[i]].enregistre = true;
+        }
         lotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _quantite, _prix, msg.sender, _cid, "");
 
         emit AjoutLotProduit(msg.sender, compteurLotProduits, _quantite, _prix);

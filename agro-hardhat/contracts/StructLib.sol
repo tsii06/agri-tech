@@ -109,6 +109,7 @@ library StructLib {
         uint32 idRecolte;
         uint32 quantite;
         address collecteur;
+        bool enregistre;
     }
 
     struct LotProduit {
