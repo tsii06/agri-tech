@@ -131,6 +131,7 @@ library StructLib {
         StatutTransport statutTransport;
         address collecteur;
         address exportateur;
+        StatutProduit statutProduit;
     }
     
 }

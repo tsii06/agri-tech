@@ -3,13 +3,14 @@ const { initializerWithData } = require('../initializer');
 
 describe("CollecteurExportateur", () => {
     let collecteurExportateur;
-    let collecteur, exportateur;
+    let collecteur, exportateur, transporteur;
 
     beforeEach(async () => {
         ({
             collecteurExportateur,
             collecteur, 
-            exportateur
+            exportateur,
+            transporteur
         } = await initializerWithData());
     });
 
@@ -36,6 +37,25 @@ describe("CollecteurExportateur", () => {
             await collecteurExportateur.connect(exportateur).passerCommande(1, 10);
             const commande = await collecteurExportateur.getCommande(1);
             expect(commande.exportateur).to.equal(exportateur.address);
+        });
+        
+        it("Mettre a jour status transport d'une commande.", async () => {
+            await collecteurExportateur.connect(exportateur).passerCommande(1, 10);
+            let commande = await collecteurExportateur.getCommande(1);
+            expect(Number(commande.statutTransport)).to.equal(0);
+            await collecteurExportateur.connect(transporteur).mettreAJourStatutTransport(1, 1);
+            commande = await collecteurExportateur.getCommande(1);
+            expect(Number(commande.statutTransport)).to.equal(1);
+        });
+        
+        it("Mettre a jour status produit d'une commande.", async () => {
+            await collecteurExportateur.connect(exportateur).passerCommande(1, 10);
+            await collecteurExportateur.connect(transporteur).mettreAJourStatutTransport(1, 1);
+            let commande = await collecteurExportateur.getCommande(1);
+            expect(Number(commande.statutProduit)).to.equal(0);
+            await collecteurExportateur.connect(exportateur).mettreAJourStatutCommande(1, 1);
+            commande = await collecteurExportateur.getCommande(1);
+            expect(Number(commande.statutProduit)).to.equal(1);
         });
     });
 });

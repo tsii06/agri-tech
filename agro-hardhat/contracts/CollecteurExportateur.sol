@@ -31,6 +31,7 @@ contract CollecteurExportateur {
     // Evenement produit lorsqu une commande est passer
     event CommandePasser(address indexed exportateur, uint32 idProduit);
     event AjoutLotProduit(address indexed collecteur, uint32 idLotProduit, uint32 quantite, uint32 prix);
+    event StatusCommandeMisAJour(uint32 indexed idCommande, StructLib.StatutProduit status);
 
     modifier seulementCollecteur() {
         require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "Non autorise: seulement Collecteur");
@@ -96,7 +97,7 @@ contract CollecteurExportateur {
         lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente);
 
         emit CommandePasser(msg.sender, _idLotProduit);
     }
@@ -105,6 +106,7 @@ contract CollecteurExportateur {
         StructLib.LotProduit memory _lotProduit = lotProduits[commandes[_idCommande].idLotProduit];
         require(msg.value == commandes[_idCommande].prix, "Montant incorrect");
         require(!commandes[_idCommande].payer, "Commande deja payer");
+        require(commandes[_idCommande].statutProduit == StructLib.StatutProduit.Valide, "Commande non valider.");
 
         // definit la commande comme deja payee
         commandes[_idCommande].payer = true;
@@ -132,6 +134,12 @@ contract CollecteurExportateur {
         
         commandes[_idCommande].statutTransport = _statut;
         emit StatutTransportMisAJour(_idCommande, _statut);
+    }
+
+    function mettreAJourStatutCommande(uint32 _idCommande, StructLib.StatutProduit _status) public seulementExportateur {
+        require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore livre.");
+        commandes[_idCommande].statutProduit = _status;
+        emit StatusCommandeMisAJour(_idCommande, _status);
     }
 
     // Pour enlever les erreurs eth_call
