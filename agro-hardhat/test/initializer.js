@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 
 const initializer = async () => {
-    const [admin, producteur, collecteur, certificateur, transporteur] = await ethers.getSigners();
+    const [admin, producteur, collecteur, certificateur, transporteur, exportateur] = await ethers.getSigners();
 
     let contractFactory = await ethers.getContractFactory("GestionnaireActeurs");
     // GestionnaireActeurs
@@ -48,6 +48,17 @@ const initializer = async () => {
         "email",
         "telephone",
     );
+    // exportateur
+    await gestionnaireActeurs.enregistrerActeur(
+        exportateur.address,
+        6,
+        0,
+        "Nom",
+        "NifouCIN",
+        "adresseOfficiel",
+        "email",
+        "telephone",
+    );
     // certificateur
     await gestionnaireActeurs.enregistrerActeur(
         certificateur.address,
@@ -76,6 +87,9 @@ const initializer = async () => {
     await gestionnaireActeurs.ajouterContratDelegue(collecteur.address, collecteurProducteur.getAddress());
     await gestionnaireActeurs.ajouterContratDelegue(certificateur.address, collecteurProducteur.getAddress());
     await gestionnaireActeurs.ajouterContratDelegue(certificateur.address, collecteurExportateur.getAddress());
+    await gestionnaireActeurs.ajouterContratDelegue(exportateur.address, collecteurExportateur.getAddress());
+    await gestionnaireActeurs.ajouterContratDelegue(transporteur.address, collecteurExportateur.getAddress());
+    await gestionnaireActeurs.ajouterContratDelegue(transporteur.address, collecteurProducteur.getAddress());
 
     return {
         gestionnaireActeurs: gestionnaireActeurs,
@@ -88,6 +102,7 @@ const initializer = async () => {
         collecteur: collecteur,
         certificateur: certificateur,
         transporteur: transporteur,
+        exportateur: exportateur,
     };
 };
 
@@ -102,7 +117,8 @@ const initializerWithData = async () => {
         producteur,
         collecteur,
         certificateur,
-        transporteur
+        transporteur,
+        exportateur
     } = await initializer();
 
     // creation des parcelles
@@ -150,6 +166,7 @@ const initializerWithData = async () => {
         collecteur: collecteur,
         certificateur: certificateur,
         transporteur: transporteur,
+        exportateur: exportateur,
     };
 };
 
