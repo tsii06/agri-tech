@@ -120,8 +120,8 @@ const initializerWithData = async () => {
     await collecteurProducteur.connect(certificateur).certifieRecolte(3, "asdfasdf");
 
     // passer commande sur des recoltes
-    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(1, 5);
-    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(2, 10);
+    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(1, 5); // effectuer pour test
+    await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(2, 10); // effectuer pour test
     await collecteurProducteur.connect(collecteur).passerCommandeVersProducteur(3, 17);
 
     // livrer les commandes
@@ -135,8 +135,8 @@ const initializerWithData = async () => {
     await collecteurProducteur.connect(collecteur).validerCommandeRecolte(3, true);
 
     // payer les commandes sur les recoltes
-    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(1, 500, 0);
-    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(2, 450, 0);
+    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(1, 500, 0); // effectuer pour test
+    await collecteurProducteur.connect(collecteur).effectuerPaiementVersProducteur(2, 450, 0); // effectuer pour test
 
 
     return {
