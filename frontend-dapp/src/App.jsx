@@ -31,6 +31,7 @@ import ActiverDesactiverActeur from "./pages/Admin/ActiverDesactiverActeur";
 import RetirerContratDelegue from "./pages/RetirerContratDelegue";
 import AjouterRoleActeur from "./pages/Admin/AjouterRoleActeur";
 import Dashboard from "./pages/Dashboard";
+import EspaceClient from "./pages/EspaceClient";
 
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
@@ -137,7 +138,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
         {location.pathname === "/" ? (
           <Routes>
             <Route path="/" element={<HomePage account={account} onConnectWallet={connectWallet} />} />
-
+            
           </Routes>
         ) : (
           <div className="row">
@@ -155,6 +156,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
             {/* Main content */}
             <div className="col-md-9 col-lg-10 py-3">
               <Routes>
+                <Route path="/espace-client" element={<EspaceClient />} />
                 <Route path="admin" element={<AdminHome />} />
                 <Route path="admin/enregistrer-acteur" element={<AdminRegisterActeur />} />
                 <Route path="admin/ajouter-contrat-delegue" element={<AdminAjoutContratDelegue />} />

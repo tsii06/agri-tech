@@ -137,6 +137,9 @@ function HomePage({ account, onConnectWallet }) {
             <Link to="/" className="btn btn-outline-light fw-semibold">
               Commencer comme collecteur
             </Link>
+            <Link to="/espace-client" className="btn btn-outline-light fw-semibold">
+              Espace Client
+            </Link>
           </div>
         </div>
       </section>
