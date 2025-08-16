@@ -148,8 +148,13 @@ async function main() {
     console.log("Création de produits à partir des récoltes...");
     // ajouter contrat deleguer
     await gestionnaireActeurs.ajouterContratDelegue(collecteurAddress, await collecteurExportateur.getAddress());
-    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, 700, collecteurAddress, "Riz Bio", "2024-07-10", "CertificatPhyto-1");
-    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, 800, collecteurAddress, "Riz Classique", "2024-07-12", "CertificatPhyto-2");
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, collecteurAddress);
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, collecteurAddress);
+
+    // 4.1. Création de lots de produits (nécessaire pour passer des commandes)
+    console.log("Création de lots de produits...");
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 700);
+    await collecteurExportateur.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([2], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 800);
 
     // 5. Commande du collecteur vers producteur
     console.log("Commande du collecteur vers producteur...");
@@ -237,8 +242,12 @@ async function main() {
     // 5. Créer des produits (certifiés et non certifiés)
     // ajouter contrat deleguer
     await gestionnaireActeurs.ajouterContratDelegue(collecteur2, await collecteurExportateur.getAddress());
-    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, 900, collecteur2, "Riz Premium", "2024-07-15", "CertificatPhyto-3"); // certifié
-    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, 950, collecteur2, "Riz Standard", "2024-07-16", ""); // non certifié
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, collecteur2); // certifié
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, collecteur2); // non certifié
+
+    // 5.1. Créer des lots de produits pour les commandes
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterLotProduit([3], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 900);
+    await collecteurExportateur.connect(await ethers.getSigner(collecteur2)).ajouterLotProduit([4], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 950);
 
     // 6. Créer des commandes (payées et non payées)
     // Commande payée

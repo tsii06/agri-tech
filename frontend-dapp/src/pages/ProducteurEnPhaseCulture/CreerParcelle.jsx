@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import myPinataSDK, { uploadFile } from "../../utils/pinata";
+import { uploadCertificatPhytosanitaire, getIPFSURL } from "../../utils/ipfsUtils";
+import { calculateParcelleMerkleHash } from "../../utils/merkleUtils";
 import { useUserContext } from "../../context/useContextt";
-
-
 
 const defaultCenter = {
   lat: -18.8792,
@@ -28,9 +27,17 @@ function CreerParcelle() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [location, setLocation] = useState(defaultCenter);
-  const qualiteSemence = useRef("");
-  const methodeCulture = useRef("");
-  const dateRecolte = useRef("");
+  
+  // Données de la parcelle
+  const [parcelleData, setParcelleData] = useState({
+    qualiteSemence: "",
+    methodeCulture: "",
+    dateRecolte: "",
+    photos: [],
+    intrants: [],
+    inspections: []
+  });
+  
   // pour le certificat
   const [certificat, setCertificat] = useState(null);
   const dateEmission = useRef(null);
@@ -38,8 +45,17 @@ function CreerParcelle() {
   const region = useRef(null);
   const autoriteCertificatrice = useRef(null);
   const numero_certificat = useRef(null);
+  
   // adresse de l'user
   const { account } = useUserContext();
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setParcelleData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,8 +72,8 @@ function CreerParcelle() {
       if (!certificat) {
         throw new Error("Certificat phytosanitaire manquant");
       } else {
-        // uploader d'abord le certificate
-        const metadata = {
+        // uploader d'abord le certificat
+        const certificatData = {
           dateEmission: dateEmission.current.value,
           dateExpiration: dateExpiration.current.value,
           region: region.current.value,
@@ -66,126 +82,254 @@ function CreerParcelle() {
           idParcelle: Number(idNewParcelle).toString(),
           numeroCertificat: numero_certificat.current.value
         };
-        const upload = await uploadFile(certificat, metadata);
-        if (!upload)
-          return;
-        else {
+        
+        const upload = await uploadCertificatPhytosanitaire(certificat, certificatData);
+        if (!upload.success) {
+          throw new Error(upload.error || "Erreur lors de l'upload du certificat");
+        } else {
           hashCertificat = upload.cid;
           idCertificat = upload.id;
         }
       }
 
-      // CREATION PARCELLE
-      const tx = await contract.creerParcelle(
-        qualiteSemence.current.value,
-        methodeCulture.current.value,
-        location.lat.toString(),
-        location.lng.toString(),
-        dateRecolte.current.value,
-        hashCertificat,
+      // Créer l'objet parcelle consolidé pour IPFS
+      const parcelleConsolidee = {
+        qualiteSemence: parcelleData.qualiteSemence,
+        methodeCulture: parcelleData.methodeCulture,
+        dateRecolte: parcelleData.dateRecolte,
+        location: {
+          lat: location.lat,
+          lng: location.lng
+        },
+        certificat: hashCertificat,
+        photos: parcelleData.photos,
+        intrants: parcelleData.intrants,
+        inspections: parcelleData.inspections,
+        timestamp: Date.now()
+      };
+
+      // Upload des données consolidées de la parcelle sur IPFS
+      const { uploadConsolidatedData } = await import("../../utils/ipfsUtils");
+      const parcelleUpload = await uploadConsolidatedData(parcelleConsolidee, "parcelle");
+      
+      if (!parcelleUpload.success) {
+        throw new Error("Erreur lors de l'upload des données de la parcelle");
+      }
+
+      // Calculer le hash Merkle initial
+      const hashMerkleInitial = calculateParcelleMerkleHash(
+        { id: Number(idNewParcelle), producteur: account, cid: parcelleUpload.cid },
+        parcelleData.photos,
+        parcelleData.intrants,
+        parcelleData.inspections
       );
 
+      // CREATION PARCELLE avec le nouveau format
+      const tx = await contract.creerParcelle(parcelleUpload.cid);
       await tx.wait();
+
+      // Mettre à jour le hash Merkle de la parcelle
+      const txHashMerkle = await contract.ajoutHashMerkleParcelle(Number(idNewParcelle), hashMerkleInitial);
+      await txHashMerkle.wait();
+
       navigate("/mes-parcelles");
 
     } catch (error) {
       console.error("Erreur lors de la création de la parcelle:", error);
       setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
-      // supprimer le certificat uploader sur ipfs.
-      await myPinataSDK.files.public.delete([idCertificat]);
+      
+      // supprimer le certificat uploader sur ipfs en cas d'erreur
+      if (idCertificat) {
+        const { deleteFromIPFS } = await import("../../utils/ipfsUtils");
+        await deleteFromIPFS(idCertificat);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container py-4">
-      <h2 className="h4 mb-3">Créer une nouvelle parcelle</h2>
-
+    <div className="container mt-4">
+      <h2>Créer une nouvelle parcelle</h2>
+      
       {error && (
-        <div className="alert alert-danger d-flex align-items-center" role="alert">
-          <div>{error}</div>
+        <div className="alert alert-danger" role="alert">
+          {error}
         </div>
       )}
 
-      <form className="card shadow-sm p-4" onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label text-muted">Qualité des semences</label>
-          <input type="text" className="form-control" required ref={qualiteSemence} />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label text-muted">Méthode de culture</label>
-          <input type="text" className="form-control" required ref={methodeCulture} />
-        </div>
-
-
-        <div className="mb-3">
-          <label className="form-label text-muted">Date de récolte prévisionelle</label>
-          <input type="date" className="form-control" required ref={dateRecolte} />
-        </div>
-
-        <MapContainer center={location} zoom={12} style={{ height: '400px', width: '100%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          <Marker position={location} />
-          <LocationMarker setLocation={setLocation} />
-        </MapContainer>
-
-        <div className="mt-3 text-muted">
-          Position sélectionnée : {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-        </div>
-
-        {/* CERTIFICAT PHYTOSANITAIRE */}
-        <fieldset className="mt-5">
-          <legend>Certificat phytosanitaire</legend>
-
-          <div className="mb-3">
-            <input type="file" className="form-control" required onChange={e => setCertificat(e.target.files[0])} />
-          </div>
-
-          <div className="mb-3">
-            <label htmlFor="numero_certificat" className="form-label text-muted">Numero du certificat</label>
-            <input type="text" className="form-control" required id="numero_certificat" ref={numero_certificat} />
-          </div>
-
-          <div className="row mb-3">
-            <div className="col">
-              <label className="form-label text-muted">Date d&apos;emession</label>
-              <input type="date" className="form-control" required ref={dateEmission} />
+      <form onSubmit={handleSubmit}>
+        <div className="row">
+          <div className="col-md-6">
+            <div className="mb-3">
+              <label htmlFor="qualiteSemence" className="form-label">
+                Qualité de la semence
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="qualiteSemence"
+                name="qualiteSemence"
+                value={parcelleData.qualiteSemence}
+                onChange={handleInputChange}
+                required
+              />
             </div>
-            <div className="col">
-              <label className="form-label text-muted">Date d&apos;expiration</label>
-              <input type="date" className="form-control" required ref={dateExpiration} />
+
+            <div className="mb-3">
+              <label htmlFor="methodeCulture" className="form-label">
+                Méthode de culture
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="methodeCulture"
+                name="methodeCulture"
+                value={parcelleData.methodeCulture}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="dateRecolte" className="form-label">
+                Date de récolte prévue
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                id="dateRecolte"
+                name="dateRecolte"
+                value={parcelleData.dateRecolte}
+                onChange={handleInputChange}
+                required
+              />
             </div>
           </div>
 
-          <div className="mb-3">
-            <label htmlFor="region" className="form-label text-muted">Region</label>
-            <select className="form-select" id="region" ref={region}>
-              <option>Antananarivo</option>
-              <option>Antsiranana</option>
-              <option>Mahajanga</option>
-              <option>Toamasina</option>
-              <option>Fianarantsoa</option>
-              <option>Toliara</option>
-            </select>
+          <div className="col-md-6">
+            <div className="mb-3">
+              <label className="form-label">Localisation de la parcelle</label>
+              <div style={{ height: "300px" }}>
+                <MapContainer
+                  center={[location.lat, location.lng]}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <LocationMarker setLocation={setLocation} />
+                  {location && (
+                    <Marker position={[location.lat, location.lng]} />
+                  )}
+                </MapContainer>
+              </div>
+              <small className="form-text text-muted">
+                Cliquez sur la carte pour définir l'emplacement de la parcelle
+              </small>
+            </div>
           </div>
+        </div>
 
-          <div className="mb-3">
-            <label htmlFor="autoriteCertificatrice" className="form-label text-muted">Autorité certificatrice</label>
-            <input type="text" className="form-control" required id="autoriteCertificatrice" ref={autoriteCertificatrice} />
+        {/* Section Certificat Phytosanitaire */}
+        <div className="card mt-4">
+          <div className="card-header">
+            <h5>Certificat Phytosanitaire</h5>
           </div>
-        </fieldset>
+          <div className="card-body">
+            <div className="row">
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="certificat" className="form-label">
+                    Fichier du certificat
+                  </label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="certificat"
+                    onChange={(e) => setCertificat(e.target.files[0])}
+                    accept=".pdf,.doc,.docx"
+                    required
+                  />
+                </div>
 
-        <button
-          disabled={loading}
-          className={`btn w-100 mt-3 ${loading ? "btn-secondary disabled" : "btn-primary"}`}
-        >
-          {loading ? "Création en cours..." : "Créer la parcelle"}
-        </button>
+                <div className="mb-3">
+                  <label htmlFor="dateEmission" className="form-label">
+                    Date d'émission
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    ref={dateEmission}
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="dateExpiration" className="form-label">
+                    Date d'expiration
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    ref={dateExpiration}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <label htmlFor="region" className="form-label">
+                    Région
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    ref={region}
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="autoriteCertificatrice" className="form-label">
+                    Autorité certificatrice
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    ref={autoriteCertificatrice}
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="numero_certificat" className="form-label">
+                    Numéro du certificat
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    ref={numero_certificat}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? "Création en cours..." : "Créer la parcelle"}
+          </button>
+        </div>
       </form>
     </div>
   );

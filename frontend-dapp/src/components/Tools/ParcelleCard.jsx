@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Package2, BadgeCheck, Calendar, FileCheck2 } from "lucide-react";
+import { MapPin, Package2, BadgeCheck, Calendar, FileCheck2, Hash, Database, AlertCircle } from "lucide-react";
 import { hasRole } from '../../utils/roles';
+import { getIPFSURL } from '../../utils/ipfsUtils';
 
 const ParcelleCard = ({
   parcelle,
@@ -8,12 +9,19 @@ const ParcelleCard = ({
 }) => {
   const {
     id,
+    producteur,
     qualiteSemence,
     methodeCulture,
-    latitude,
-    longitude,
+    location,
     dateRecolte,
-    certificatPhytosanitaire
+    certificatPhytosanitaire,
+    cid,
+    hashMerkle,
+    photos = [],
+    intrants = [],
+    inspections = [],
+    ipfsTimestamp,
+    ipfsVersion
   } = parcelle;
 
   const renderLinks = () => {
@@ -23,7 +31,7 @@ const ParcelleCard = ({
     if (hasRole(userRole, 0)) {
       links.push(
         <Link key="photos" to={`/parcelle/${id}/photos`} className="btn btn-link">
-          Photos
+          Photos ({photos.length})
         </Link>,
         <Link key="recolter" to={`/parcelle/${id}/faire-recolte`} className="btn btn-link">
           Récolter
@@ -35,7 +43,7 @@ const ParcelleCard = ({
     if (hasRole(userRole, 1)) {
       links.push(
         <Link key="intrants-fournisseur" to={`/parcelle/${id}/intrants`} className="btn btn-link">
-          Voir les intrants
+          Intrants ({intrants.length})
         </Link>
       );
     }
@@ -44,7 +52,7 @@ const ParcelleCard = ({
     if (hasRole(userRole, 2)) {
       links.push(
         <Link key="intrants-certificateur" to={`/parcelle/${id}/intrants`} className="btn btn-link">
-          Voir les intrants
+          Intrants ({intrants.length})
         </Link>
       );
     }
@@ -52,23 +60,109 @@ const ParcelleCard = ({
     return links;
   };
 
+  const renderStatusBadge = () => {
+    if (cid && hashMerkle) {
+      return (
+        <span className="badge bg-success me-2">
+          <Database size={12} className="me-1" />
+          IPFS + Merkle
+        </span>
+      );
+    } else if (cid) {
+      return (
+        <span className="badge bg-warning me-2">
+          <Database size={12} className="me-1" />
+          IPFS uniquement
+        </span>
+      );
+    } else {
+      return (
+        <span className="badge bg-secondary me-2">
+          <AlertCircle size={12} className="me-1" />
+          Données non consolidées
+        </span>
+      );
+    }
+  };
+
   return (
     <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
       <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
         <MapPin size={36} />
       </div>
-      <h5 className="card-title text-center mb-3"><strong>ID:</strong> {id}</h5>
+      
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h5 className="card-title mb-0"><strong>ID:</strong> {id}</h5>
+        {renderStatusBadge()}
+      </div>
+
       <div className="card-text">
-        <p><Package2 size={16} className="me-2 text-success" /><strong>Qualité des semences:</strong> {qualiteSemence}</p>
-        <p><BadgeCheck size={16} className="me-2 text-success" /><strong>Méthode de culture:</strong> {methodeCulture}</p>
-        <p><MapPin size={16} className="me-2 text-success" /><strong>Localisation:</strong> {latitude}, {longitude}</p>
-        <p><Calendar size={16} className="me-2 text-success" /><strong>Date de récolte prévue:</strong> {dateRecolte}</p>
+        <p>
+          <Package2 size={16} className="me-2 text-success" />
+          <strong>Qualité des semences:</strong> {qualiteSemence}
+        </p>
+        
+        <p>
+          <BadgeCheck size={16} className="me-2 text-success" />
+          <strong>Méthode de culture:</strong> {methodeCulture}
+        </p>
+        
+        <p>
+          <MapPin size={16} className="me-2 text-success" />
+          <strong>Localisation:</strong> 
+          {location && location.lat && location.lng ? 
+            `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 
+            "Non spécifiée"
+          }
+        </p>
+        
+        <p>
+          <Calendar size={16} className="me-2 text-success" />
+          <strong>Date de récolte prévue:</strong> {dateRecolte}
+        </p>
+
+        {/* Informations IPFS et Merkle */}
+        {cid && (
+          <div className="mt-2 p-2 bg-light rounded">
+            <p className="mb-1">
+              <Database size={14} className="me-2 text-primary" />
+              <strong>CID IPFS:</strong> 
+              <a
+                href={getIPFSURL(cid)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ms-2 text-decoration-none text-primary"
+                title="Voir les données consolidées sur IPFS"
+              >
+                {cid.substring(0, 10)}...
+              </a>
+            </p>
+            
+            {hashMerkle && (
+              <p className="mb-1">
+                <Hash size={14} className="me-2 text-success" />
+                <strong>Hash Merkle:</strong> 
+                <span className="ms-2 text-muted" title={hashMerkle}>
+                  {hashMerkle.substring(0, 10)}...
+                </span>
+              </p>
+            )}
+
+            {ipfsTimestamp && (
+              <p className="mb-1 text-muted small">
+                <strong>Dernière mise à jour IPFS:</strong> {new Date(ipfsTimestamp).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Certificat phytosanitaire */}
         {certificatPhytosanitaire && (
-          <p>
+          <p className="mt-2">
             <FileCheck2 size={16} className="me-2 text-success" />
             <strong>Certificat phytosanitaire:</strong>
             <a
-              href={`https://gateway.pinata.cloud/ipfs/${certificatPhytosanitaire}`}
+              href={getIPFSURL(certificatPhytosanitaire)}
               target="_blank"
               rel="noopener noreferrer"
               className="ms-2 text-decoration-none text-success"
@@ -77,10 +171,44 @@ const ParcelleCard = ({
             </a>
           </p>
         )}
+
+        {/* Statistiques de la parcelle */}
+        <div className="mt-2 p-2 bg-light rounded">
+          <div className="row text-center">
+            <div className="col-4">
+              <div className="text-primary fw-bold">{photos.length}</div>
+              <div className="small text-muted">Photos</div>
+            </div>
+            <div className="col-4">
+              <div className="text-success fw-bold">{intrants.length}</div>
+              <div className="small text-muted">Intrants</div>
+            </div>
+            <div className="col-4">
+              <div className="text-info fw-bold">{inspections.length}</div>
+              <div className="small text-muted">Inspections</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="d-flex justify-content-between mt-2">
+
+      <div className="d-flex justify-content-between mt-3">
         {renderLinks()}
       </div>
+
+      {/* Lien vers les détails complets IPFS */}
+      {cid && (
+        <div className="mt-2 text-center">
+          <a
+            href={getIPFSURL(cid)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline-primary btn-sm w-100"
+          >
+            <Database size={14} className="me-1" />
+            Voir toutes les données IPFS
+          </a>
+        </div>
+      )}
     </div>
   );
 };

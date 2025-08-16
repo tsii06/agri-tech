@@ -4,10 +4,8 @@ import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../../utils/roles';
-import myPinataSDK, { uploadFile } from "../../utils/pinata";
-
-
-
+import { uploadCertificatPhytosanitaire, getIPFSURL } from "../../utils/ipfsUtils";
+import { calculateRecolteMerkleHash } from "../../utils/merkleUtils";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -42,6 +40,7 @@ function ListeRecoltes() {
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
+      
       for (let i = 1; i <= compteurRecoltes; i++) {
         const recolte = await contract.getRecolte(i);
 
@@ -50,6 +49,50 @@ function ListeRecoltes() {
           if (roles.includes(0))
             if (recolte.producteur.toLowerCase() !== account.toLowerCase())
               continue;
+
+        // Charger les données IPFS consolidées si la récolte a un CID
+        if (recolte.cid) {
+          try {
+            const response = await fetch(getIPFSURL(recolte.cid));
+            if (response.ok) {
+              const ipfsData = await response.json();
+              
+              // Fusionner les données blockchain avec les données IPFS
+              recolte = {
+                ...recolte,
+                // Données de base de la récolte
+                nomProduit: ipfsData.nomProduit || "Produit non spécifié",
+                dateRecolte: ipfsData.dateRecolte || "Date non spécifiée",
+                // Métadonnées IPFS
+                ipfsTimestamp: ipfsData.timestamp,
+                ipfsVersion: ipfsData.version,
+                // Hash Merkle de la parcelle associée
+                parcelleHashMerkle: ipfsData.parcelleHashMerkle || ""
+              };
+            }
+          } catch (ipfsError) {
+            console.log(`Erreur lors du chargement IPFS pour la récolte ${i}:`, ipfsError);
+            // Garder les données blockchain de base si IPFS échoue
+            recolte = {
+              ...recolte,
+              nomProduit: "Données IPFS non disponibles",
+              dateRecolte: "Données IPFS non disponibles",
+              ipfsTimestamp: null,
+              ipfsVersion: null,
+              parcelleHashMerkle: ""
+            };
+          }
+        } else {
+          // Récolte sans CID IPFS (ancienne structure)
+          recolte = {
+            ...recolte,
+            nomProduit: "Données non consolidées",
+            dateRecolte: "Données non consolidées",
+            ipfsTimestamp: null,
+            ipfsVersion: null,
+            parcelleHashMerkle: ""
+          };
+        }
 
         recoltesTemp.push(recolte);
       }
@@ -74,43 +117,54 @@ function ListeRecoltes() {
     event.preventDefault();
     setBtnLoading(true);
 
-    let hashIpfs = "";
-    let idCertificat = 0;
-    const metadata = {
-      dateEmission: dateEmission.current.value,
-      dateExpiration: dateExpiration.current.value,
-      dateInspection: dateInspection.current.value,
-      autoriteCertificatrice: autoriteCertificatrice.current.value,
-      adresseCertificateur: account,
-      adresseProducteur: recolteSelectionnee.producteur,
-      produit: recolteSelectionnee.nomProduit,
-      numeroCertificat: numeroCertificat.current.value,
-      region: region.current.value,
-    };
-    // uploader d'abord le certificate
-    const upload = await uploadFile(certificat, metadata);
-    if (!upload) {
-      setBtnLoading(false);
-      return;
-    }
-    else {
-      hashIpfs = upload.cid;
-      idCertificat = upload.id;
-    }
-
     try {
+      // Créer les données du certificat
+      const certificatData = {
+        dateEmission: dateEmission.current.value,
+        dateExpiration: dateExpiration.current.value,
+        dateInspection: dateInspection.current.value,
+        autoriteCertificatrice: autoriteCertificatrice.current.value,
+        adresseCertificateur: account,
+        adresseProducteur: recolteSelectionnee.producteur,
+        produit: recolteSelectionnee.nomProduit,
+        numeroCertificat: numeroCertificat.current.value,
+        region: region.current.value,
+        idRecolte: recolteSelectionnee.id,
+        timestamp: Date.now()
+      };
+
+      // Upload du certificat sur IPFS
+      const certificatUpload = await uploadCertificatPhytosanitaire(certificat, certificatData);
+      
+      if (!certificatUpload.success) {
+        throw new Error("Erreur lors de l'upload du certificat sur IPFS");
+      }
+
+      // Certifier la récolte avec le CID du certificat
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.certifieRecolte(recolteSelectionnee.id, hashIpfs);
+      const tx = await contract.certifieRecolte(recolteSelectionnee.id, certificatUpload.cid);
       await tx.wait();
+
+      // Mettre à jour le hash Merkle de la récolte
+      const hashMerkleRecolte = calculateRecolteMerkleHash(
+        {
+          ...recolteSelectionnee,
+          certifie: true,
+          certificatPhytosanitaire: certificatUpload.cid
+        },
+        [] // Parcelles associées (à récupérer si nécessaire)
+      );
+
+      const txHashMerkle = await contract.ajoutHashMerkleRecolte(recolteSelectionnee.id, hashMerkleRecolte);
+      await txHashMerkle.wait();
 
       chargerRecoltes();
       setShowModalCertification(false);
+      alert("Récolte certifiée avec succès !");
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError("Erreur lors de la certification de la récolte. Veuillez réessayer.");
       alert("Erreur lors de la certification de la récolte. Veuillez réessayer.");
-      // supprimer le certificat uploader sur ipfs si il y a erreur lors de la validation de l'intrant.
-      await myPinataSDK.files.public.delete([idCertificat]);
     } finally {
       setBtnLoading(false);
     }
@@ -195,62 +249,102 @@ function ListeRecoltes() {
             </ul>
           </div>
         </div>
+        
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
           <h2 className="h5 mb-0">
             {hasRole(roles, 3) || hasRole(roles, 2) ? "Liste des Récoltes" : (hasRole(roles, 0) && "Mes Récoltes")}
           </h2>
-        </div>
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          {!address && hasRole(roles, 0) && (
-            <Link to="/mes-parcelles" className="btn btn-primary">
-              Ajouter une récolte
-            </Link>
-          )}
+          <p className="text-muted mb-0">
+            {recoltes.length > 0 && (
+              <>
+                {recoltes.filter(r => r.cid).length} récoltes avec données IPFS, 
+                {recoltes.filter(r => !r.cid).length} récoltes sans données IPFS
+              </>
+            )}
+          </p>
         </div>
 
-        {/* Affichage des erreurs */}
-        {error && (
-          <div className="alert alert-danger d-flex align-items-center" role="alert">
-            <div>{error}</div>
-          </div>
-        )}
-
+        {/* LISTE DES RECOLTES */}
         {isLoading ? (
           <div className="text-center">
             <div className="spinner-border text-primary" role="status">
               <span className="visually-hidden">Chargement...</span>
             </div>
           </div>
-        ) : recoltes.length === 0 ? (
-          <div className="text-center text-muted">
-            {hasRole(roles, 0) ? "Vous n'avez pas encore de récoltes enregistrées." : "Aucune récolte n'est enregistrée pour le moment."}
-          </div>
-        ) : recoltesFiltres.length === 0 ? (
-          <div className="text-center text-muted">Aucune récolte ne correspond à la recherche ou au filtre.</div>
-        ) : (
+        ) : recoltes.length > 0 ? (
           <div className="row g-3">
             {recoltesAffichees.map((recolte) => (
               <div key={recolte.id} className="col-md-4">
-                <div className="card border shadow-sm p-3">
-                  <h5 className="card-title">{recolte.nomProduit}</h5>
-                  <div className="card-text small">
-                    <p><strong>ID recolte:</strong> {recolte.id}</p>
-                    <p><strong>ID parcelle:</strong> {recolte.idParcelle}</p>
-                    <p><strong>Producteur:</strong> {`${recolte.producteur.substring(0, 6)}...${recolte.producteur.substring(recolte.producteur.length - 4)}`}</p>
-                    <p><strong>Quantité:</strong> {recolte.quantite} KG</p>
-                    <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
+                <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h5 className="card-title mb-0">Récolte #{recolte.id}</h5>
+                    <div>
+                      {recolte.cid && recolte.hashMerkle ? (
+                        <span className="badge bg-success me-1">
+                          IPFS + Merkle
+                        </span>
+                      ) : recolte.cid ? (
+                        <span className="badge bg-warning me-1">
+                          IPFS uniquement
+                        </span>
+                      ) : (
+                        <span className="badge bg-secondary me-1">
+                          Données non consolidées
+                        </span>
+                      )}
+                      {recolte.certifie ? (
+                        <span className="badge bg-success">Certifiée</span>
+                      ) : (
+                        <span className="badge bg-warning">Non certifiée</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="card-text">
+                    <p><strong>Produit:</strong> {recolte.nomProduit}</p>
+                    <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
+                    <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ariary</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
-                    <p>
-                      <strong>Statut:</strong>
-                      <span className={`badge ms-2 ${recolte.certifie ? "bg-success" : "bg-warning"}`}>
-                        {recolte.certifie ? "certifié" : "Encore non certifié"}
-                      </span>
-                    </p>
-                    {recolte.certifie && (
-                      <p>
-                        <strong>Certificat:&nbsp;</strong>
+                    <p><strong>Producteur:</strong> {recolte.producteur}</p>
+                    
+                    {/* Informations IPFS et Merkle */}
+                    {recolte.cid && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <p className="mb-1">
+                          <strong>CID IPFS:</strong> 
+                          <a
+                            href={getIPFSURL(recolte.cid)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ms-2 text-decoration-none text-primary"
+                            title="Voir les données consolidées sur IPFS"
+                          >
+                            {recolte.cid.substring(0, 10)}...
+                          </a>
+                        </p>
+                        
+                        {recolte.hashMerkle && (
+                          <p className="mb-1">
+                            <strong>Hash Merkle:</strong> 
+                            <span className="ms-2 text-muted" title={recolte.hashMerkle}>
+                              {recolte.hashMerkle.substring(0, 10)}...
+                            </span>
+                          </p>
+                        )}
+
+                        {recolte.ipfsTimestamp && (
+                          <p className="mb-1 text-muted small">
+                            <strong>Dernière mise à jour IPFS:</strong> {new Date(recolte.ipfsTimestamp).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {recolte.certificatPhytosanitaire && (
+                      <p className="mt-2">
+                        <strong>Certificat phytosanitaire:</strong>
                         <a
-                          href={`https://gateway.pinata.cloud/ipfs/${recolte.certificatPhytosanitaire}`}
+                          href={getIPFSURL(recolte.certificatPhytosanitaire)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="ms-2 text-decoration-none text-success"
@@ -260,155 +354,241 @@ function ListeRecoltes() {
                       </p>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {hasRole(roles, 2) && !recolte.certifie && (
+
+                  <div className="d-flex justify-content-between mt-3">
+                    {/* Actions selon le rôle */}
+                    {hasRole(roles, 3) && !recolte.certifie && (
                       <button
-                        onClick={() => { setShowModalCertification(true); setRecolteSelectionnee(recolte) }}
-                        // onClick={() => handleCertifier(recolte.id)}
-                        className="btn btn-sm btn-primary me-2"
-                      >
-                        Certifier
-                      </button>
-                    )}
-                    {hasRole(roles, 3) && recolte.certifie && (
-                      <button
+                        className="btn btn-primary btn-sm"
                         onClick={() => {
                           setRecolteSelectionnee(recolte);
                           setShowModal(true);
                         }}
-                        className="btn btn-sm btn-success"
                       >
                         Commander
                       </button>
+                    )}
+
+                    {hasRole(roles, 2) && !recolte.certifie && (
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => {
+                          setRecolteSelectionnee(recolte);
+                          setShowModalCertification(true);
+                        }}
+                      >
+                        Certifier
+                      </button>
+                    )}
+
+                    {/* Lien vers les détails complets IPFS */}
+                    {recolte.cid && (
+                      <a
+                        href={getIPFSURL(recolte.cid)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-primary btn-sm"
+                      >
+                        Voir données IPFS
+                      </a>
                     )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+        ) : (
+          <div className="text-center text-muted">Aucune récolte trouvée.</div>
+        )}
+
+        {recoltesAffichees.length < recoltesFiltres.length && (
+          <div className="text-center mt-3">
+            <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+              Charger plus
+            </button>
+          </div>
         )}
       </div>
-      {recoltesAffichees.length < recoltesFiltres.length && (
-        <div className="text-center mt-3">
-          <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
-            Charger plus
-          </button>
-        </div>
-      )}
 
       {/* Modal de commande */}
-      {showModal && recolteSelectionnee && (
-        <>
-          <div className="modal-backdrop fade show"></div>
-
-          <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog">
-              <div className="modal-content bg-light">
-                <div className="modal-header">
-                  <h5 className="modal-title">Commander {recolteSelectionnee.nomProduit}</h5>
-                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-                </div>
-                <div className="modal-body">
-                  <label htmlFor="quantiteCommande">Quantité à commander :</label>
+      {showModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Commander la récolte #{recolteSelectionnee?.id}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Quantité disponible : <strong>{recolteSelectionnee?.quantite} kg</strong></p>
+                <div className="mb-3">
+                  <label htmlFor="quantiteCommande" className="form-label">Quantité à commander (kg)</label>
                   <input
                     type="number"
                     className="form-control"
                     id="quantiteCommande"
                     value={quantiteCommande}
-                    onChange={e => setQuantiteCommande(e.target.value)}
-                    min={1}
-                    max={recolteSelectionnee.quantite}
+                    onChange={(e) => setQuantiteCommande(e.target.value)}
+                    min="1"
+                    max={recolteSelectionnee?.quantite}
+                    required
                   />
                 </div>
-                <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
-                  <button className="btn btn-primary" onClick={() => handleCommander(recolteSelectionnee.id)}>Valider la commande</button>
-                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleCommander(recolteSelectionnee.id)}
+                >
+                  Commander
+                </button>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      {/* MODAL CERTIFICATION */}
+      {/* Modal de certification */}
       {showModalCertification && (
-        <>
-          <div className="modal-backdrop fade show"></div>
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Certifier la récolte #{recolteSelectionnee?.id}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModalCertification(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={handleCertifier}>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label htmlFor="certificat" className="form-label">Certificat phytosanitaire *</label>
+                        <input
+                          type="file"
+                          className="form-control"
+                          id="certificat"
+                          onChange={(e) => setCertificat(e.target.files[0])}
+                          accept=".pdf,.doc,.docx"
+                          required
+                        />
+                      </div>
 
-          <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog">
-              <form action="" onSubmit={(event) => handleCertifier(event)}>
-                <div className="modal-content bg-light">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Ajout certificat du produit &quot;{recolteSelectionnee.nomProduit}&quot;</h5>
-                    <button type="button" className="btn-close" onClick={() => setShowModalCertification(false)}></button>
+                      <div className="mb-3">
+                        <label htmlFor="dateEmission" className="form-label">Date d'émission *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          ref={dateEmission}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label htmlFor="dateExpiration" className="form-label">Date d'expiration *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          ref={dateExpiration}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label htmlFor="dateInspection" className="form-label">Date d'inspection *</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          ref={dateInspection}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label htmlFor="autoriteCertificatrice" className="form-label">Autorité certificatrice *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          ref={autoriteCertificatrice}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label htmlFor="numeroCertificat" className="form-label">Numéro du certificat *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          ref={numeroCertificat}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label htmlFor="region" className="form-label">Région *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          ref={region}
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Corps du modal */}
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <label htmlFor="certificat" className="form-label text-muted">Certificat</label>
-                      <input type="file" id="certificat" className="form-control" placeholder="Username" onChange={e => setCertificat(e.target.files[0])} required />
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="numeroCertificat" className="form-label text-muted">Numéro du certificat</label>
-                      <input type="text" id="numeroCertificat" className="form-control" ref={numeroCertificat} required />
-                    </div>
-                    <div className="row mb-3">
-                      <div className="col">
-                        <label className="form-label text-muted">Date d&apos;emession</label>
-                        <input type="date" className="form-control" required ref={dateEmission} />
-                      </div>
-                      <div className="col">
-                        <label className="form-label text-muted">Date d&apos;expiration</label>
-                        <input type="date" className="form-control" required ref={dateExpiration} />
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label text-muted">Date d&apos;inspection</label>
-                      <input type="date" className="form-control" required ref={dateInspection} />
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="region" className="form-label text-muted">Region</label>
-                      <select className="form-select" id="region" ref={region}>
-                        <option>Antananarivo</option>
-                        <option>Antsiranana</option>
-                        <option>Mahajanga</option>
-                        <option>Toamasina</option>
-                        <option>Fianarantsoa</option>
-                        <option>Toliara</option>
-                      </select>
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="autorite_certificatrice" className="form-label text-muted">Autorité certificatrice</label>
-                      <input type="text" className="form-control" required id="autorite_certificatrice" ref={autoriteCertificatrice} />
-                    </div>
+                  <div className="alert alert-info">
+                    <strong>Information:</strong> Le certificat sera automatiquement uploadé sur IPFS et la récolte sera certifiée avec traçabilité complète.
                   </div>
 
-                  {/* Pied du modal */}
                   <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowModalCertification(false)}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowModalCertification(false)}
+                    >
                       Annuler
                     </button>
-                    {btnLoading ? (
-                      <button type="button" className="btn btn-primary" disabled>
-                        <div className="spinner-border spinner-border-sm text-light" role="status"></div>
-                        &nbsp;Certifier
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                      >
-                        Certifier
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      className="btn btn-success"
+                      disabled={btnLoading}
+                    >
+                      {btnLoading ? "Certification..." : "Certifier la récolte"}
+                    </button>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
-        </>
+        </div>
+      )}
+
+      {/* Overlay pour les modals */}
+      {(showModal || showModalCertification) && (
+        <div className="modal-backdrop fade show"></div>
+      )}
+
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          {error}
+        </div>
       )}
     </div>
   );

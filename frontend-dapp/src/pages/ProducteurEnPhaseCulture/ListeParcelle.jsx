@@ -3,7 +3,7 @@ import { getContract } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
-
+import { getIPFSURL } from "../../utils/ipfsUtils";
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
@@ -24,7 +24,6 @@ function MesParcelles() {
     chargerParcelles();
   }, [account]);
 
-
   const chargerParcelles = async () => {
     try {
       const contract = await getContract();
@@ -38,14 +37,71 @@ function MesParcelles() {
 
       const parcellesPromises = [];
       let parcelle;
+      
       for (let i = 1; i <= compteurParcelles; i++) {
         parcelle = await contract.getParcelle(i);
 
         // Afficher uniquement les parcelles de l'adresse connectée si c'est un producteur
-        if (roles.includes(0))
+        if (roles.includes(0)) {
           // Afficher uniquement les parcelles de l'adresse connectée
-          if (parcelle.producteur.toLowerCase() !== account.toLowerCase())
+          if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
             continue;
+          }
+        }
+
+        // Charger les données IPFS consolidées si la parcelle a un CID
+        if (parcelle.cid) {
+          try {
+            const response = await fetch(getIPFSURL(parcelle.cid));
+            if (response.ok) {
+              const ipfsData = await response.json();
+              
+              // Fusionner les données blockchain avec les données IPFS
+              parcelle = {
+                ...parcelle,
+                // Données de base de la parcelle
+                qualiteSemence: ipfsData.qualiteSemence || "Non spécifiée",
+                methodeCulture: ipfsData.methodeCulture || "Non spécifiée",
+                dateRecolte: ipfsData.dateRecolte || "Non spécifiée",
+                location: ipfsData.location || { lat: 0, lng: 0 },
+                // Photos, intrants et inspections depuis IPFS
+                photos: ipfsData.photos || [],
+                intrants: ipfsData.intrants || [],
+                inspections: ipfsData.inspections || [],
+                // Certificat depuis IPFS
+                certificatPhytosanitaire: ipfsData.certificat || parcelle.certificatPhytosanitaire,
+                // Métadonnées IPFS
+                ipfsTimestamp: ipfsData.timestamp,
+                ipfsVersion: ipfsData.version
+              };
+            }
+          } catch (ipfsError) {
+            console.log(`Erreur lors du chargement IPFS pour la parcelle ${i}:`, ipfsError);
+            // Garder les données blockchain de base si IPFS échoue
+            parcelle = {
+              ...parcelle,
+              qualiteSemence: "Données IPFS non disponibles",
+              methodeCulture: "Données IPFS non disponibles",
+              dateRecolte: "Données IPFS non disponibles",
+              location: { lat: 0, lng: 0 },
+              photos: [],
+              intrants: [],
+              inspections: []
+            };
+          }
+        } else {
+          // Parcelle sans CID IPFS (ancienne structure)
+          parcelle = {
+            ...parcelle,
+            qualiteSemence: "Données non consolidées",
+            methodeCulture: "Données non consolidées",
+            dateRecolte: "Données non consolidées",
+            location: { lat: 0, lng: 0 },
+            photos: [],
+            intrants: [],
+            inspections: []
+          };
+        }
 
         parcellesPromises.push(parcelle);
       }
@@ -64,16 +120,19 @@ function MesParcelles() {
   const parcellesFiltres = parcelles.filter((parcelle) => {
     const searchLower = search.toLowerCase();
     const matchSearch =
-      (parcelle.produit && parcelle.produit.toLowerCase().includes(searchLower)) ||
-      (parcelle.id && parcelle.id.toString().includes(searchLower)) ||
       (parcelle.qualiteSemence && parcelle.qualiteSemence.toLowerCase().includes(searchLower)) ||
-      (parcelle.methodeCulture && parcelle.methodeCulture.toLowerCase().includes(searchLower));
+      (parcelle.id && parcelle.id.toString().includes(searchLower)) ||
+      (parcelle.methodeCulture && parcelle.methodeCulture.toLowerCase().includes(searchLower)) ||
+      (parcelle.dateRecolte && parcelle.dateRecolte.toLowerCase().includes(searchLower));
+    
     const matchCertif =
       certifFiltre === "all" ||
       (certifFiltre === "avec" && parcelle.certificatPhytosanitaire) ||
       (certifFiltre === "sans" && !parcelle.certificatPhytosanitaire);
+    
     return matchSearch && matchCertif;
   });
+  
   const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
 
   // Affichage du debug
@@ -139,9 +198,18 @@ function MesParcelles() {
             </ul>
           </div>
         </div>
+        
         <div className="">
           <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
             <h2 className="h5 mb-0">Liste des Parcelles</h2>
+            <p className="text-muted mb-0">
+              {parcelles.length > 0 && (
+                <>
+                  {parcelles.filter(p => p.cid).length} parcelles avec données IPFS, 
+                  {parcelles.filter(p => !p.cid).length} parcelles sans données IPFS
+                </>
+              )}
+            </p>
           </div>
 
           {/* LISTE DES PARCELLES */}
@@ -187,8 +255,6 @@ function MesParcelles() {
           )}
         </div>
       </div>
-
-
     </div>
   );
 }

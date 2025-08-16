@@ -66,29 +66,24 @@ contract ProducteurEnPhaseCulture {
         parcelles[_idParcelle].hashMerkle = _hash;
     }
 
-    function ajouterPhoto(uint32 _idParcelle, string memory _urlPhoto) public seulementProducteur {
-        parcelles[_idParcelle].photos.push(_urlPhoto);
+    // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des photos individuelles
+    function mettreAJourPhotosParcelle(uint32 _idParcelle, string memory _cidPhotos) public seulementProducteur {
+        require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
+        parcelles[_idParcelle].cid = _cidPhotos; // Met à jour le CID avec les nouvelles photos
     }
 
-    function ajouterIntrant(uint32 _idParcelle, string memory _nom, uint32 _quantite, string memory _categorie, address _fournisseur) public seulementFournisseur {
-        compteurIntrants++;
-        parcelles[_idParcelle].intrants.push(StructLib.Intrant(_nom, _quantite, false, compteurIntrants, _categorie, _fournisseur, ""));
+    // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des intrants individuels
+    function mettreAJourIntrantsParcelle(uint32 _idParcelle, string memory _cidIntrants) public seulementFournisseur {
+        require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
+        parcelles[_idParcelle].cid = _cidIntrants;
     }
 
-    function validerIntrant(uint32 _idParcelle, uint32 _id, bool _valide, string memory _certificatPhytosanitaire) public seulementCertificateur {
-        for (uint32 i = 0; i < parcelles[_idParcelle].intrants.length; i++) {
-            if (parcelles[_idParcelle].intrants[i].id == _id) {
-                parcelles[_idParcelle].intrants[i].valide = _valide;
-                parcelles[_idParcelle].intrants[i].certificatPhytosanitaire = _certificatPhytosanitaire;
-                break;
-            }
-        }
+    // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des inspections individuelles
+    function mettreAJourInspectionsParcelle(uint32 _idParcelle, string memory _cidInspections) public seulementAuditeur {
+        require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
+        parcelles[_idParcelle].cid = _cidInspections;
     }
 
-    function ajouterInspection(uint32 _idParcelle, string memory _rapport) public seulementAuditeur {
-        compteurInspections++;
-        parcelles[_idParcelle].inspections.push(StructLib.Inspection(compteurInspections, msg.sender, _rapport, block.timestamp));
-    }
     // ====================================== getter ==========================================================
 
     // pour les parcelles

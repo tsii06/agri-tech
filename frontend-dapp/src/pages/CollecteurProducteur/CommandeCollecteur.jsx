@@ -2,12 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
+import { getIPFSURL } from "../../utils/ipfsUtils";
 import { ClipboardList, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Circle } from "lucide-react";
-
-
-
-
-
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
@@ -29,12 +25,56 @@ function CommandeCollecteur() {
       const contract = await getCollecteurProducteurContract();
       const compteurCommandes = await contract.compteurCommandes();
       const commandesTemp = [];
+      
       for (let i = 1; i <= compteurCommandes; i++) {
-        const commande = await contract.getCommande(i);
+        let commande = await contract.getCommande(i);
         if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
+          
+          // Charger les données IPFS consolidées si la commande a un CID
+          if (commande.cid) {
+            try {
+              const response = await fetch(getIPFSURL(commande.cid));
+              if (response.ok) {
+                const ipfsData = await response.json();
+                
+                // Fusionner les données blockchain avec les données IPFS
+                commande = {
+                  ...commande,
+                  // Données de base de la commande
+                  nomProduit: ipfsData.nomProduit || "Produit non spécifié",
+                  // Métadonnées IPFS
+                  ipfsTimestamp: ipfsData.timestamp,
+                  ipfsVersion: ipfsData.version,
+                  // Hash Merkle de la récolte associée
+                  recolteHashMerkle: ipfsData.recolteHashMerkle || ""
+                };
+              }
+            } catch (ipfsError) {
+              console.log(`Erreur lors du chargement IPFS pour la commande ${i}:`, ipfsError);
+              // Garder les données blockchain de base si IPFS échoue
+              commande = {
+                ...commande,
+                nomProduit: "Données IPFS non disponibles",
+                ipfsTimestamp: null,
+                ipfsVersion: null,
+                recolteHashMerkle: ""
+              };
+            }
+          } else {
+            // Commande sans CID IPFS (ancienne structure)
+            commande = {
+              ...commande,
+              nomProduit: "Données non consolidées",
+              ipfsTimestamp: null,
+              ipfsVersion: null,
+              recolteHashMerkle: ""
+            };
+          }
+
           commandesTemp.push(commande);
         }
       }
+      
       setActeur(acteur);
       commandesTemp.reverse();
       setCommandes(commandesTemp);
@@ -73,7 +113,6 @@ function CommandeCollecteur() {
         commande.prix,
         modePaiement,
         { value: commande.prix }  // Attention: la valeur doit correspondre au montant envoyé
-
       );
       await tx.wait();
 
@@ -123,6 +162,7 @@ function CommandeCollecteur() {
       case 2: return "Rejeté";
     }
   };
+  
   const getColorStatutRecolte = (status) => {
     switch (status) {
       case 0: return "bg-warning";
@@ -200,151 +240,216 @@ function CommandeCollecteur() {
             </ul>
           </div>
         </div>
-        <div className="card p-4 shadow-sm">
-          <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-            <h2 className="h5 mb-0">Mes Commandes Collecteur</h2>
-          </div>
 
-          {commandes.length === 0 ? (
-            <div className="text-center text-muted">
-              Vous n&apos;avez pas encore passé de commandes.
-            </div>
-          ) : commandesFiltres.length === 0 ? (
-            <div className="text-center text-muted">Aucune commande ne correspond à la recherche ou au filtre.</div>
-          ) : (
-            <div className="row g-3">
-              {commandesAffichees.map((commande) => (
-                <div key={commande.id} className="col-md-4">
-                  <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
-                    <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
-                      <ClipboardList size={36} />
-                    </div>
-                    <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
-                    <div className="card-text small">
-                      <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
-                      <p><Hash size={16} className="me-2 text-success" /><strong>ID Récolte:</strong> {commande.idRecolte}</p>
-                      <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
-                      <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
-                      <p><User size={16} className="me-2 text-success" /><strong>Producteur:</strong> {commande.producteur.slice(0, 6)}...{commande.producteur.slice(-4)}</p>
-                      <p>
-                        <Truck size={16} className="me-2 text-success" />
-                        <strong>Transport:</strong>
-                        <span className={`badge ms-2 ${commande.statutTransport == 1 ? "bg-success" : "bg-warning"}`}>
-                          {getStatutTransport(Number(commande.statutTransport))}
+        <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
+          <h2 className="h5 mb-0">Mes Commandes</h2>
+          <p className="text-muted mb-0">
+            {commandes.length > 0 && (
+              <>
+                {commandes.filter(c => c.cid).length} commandes avec données IPFS, 
+                {commandes.filter(c => !c.cid).length} commandes sans données IPFS
+              </>
+            )}
+          </p>
+        </div>
+
+        {/* LISTE DES COMMANDES */}
+        {commandes.length > 0 ? (
+          <div className="row g-3">
+            {commandesAffichees.map((commande) => (
+              <div key={commande.id} className="col-md-4">
+                <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h5 className="card-title mb-0">Commande #{commande.id}</h5>
+                    <div>
+                      {commande.cid && commande.hashMerkle ? (
+                        <span className="badge bg-success me-1">
+                          IPFS + Merkle
                         </span>
-                      </p>
-                      <p>
-                        <Circle size={16} className="me-2 text-success" />
-                        <strong>Status:</strong>
-                        <span className={`badge ms-2 ${getColorStatutRecolte(Number(commande.statutRecolte))}`}>
-                          {getStatutRecolte(Number(commande.statutRecolte))}
+                      ) : commande.cid ? (
+                        <span className="badge bg-warning me-1">
+                          IPFS uniquement
                         </span>
-                      </p>
-                      <p>
-                        <Wallet size={16} className="me-2 text-success" />
-                        <strong>Paiement:</strong>
-                        <span className={`badge ms-2 ${commande.payer ? "bg-success" : "bg-warning"}`}>
-                          {getStatutPaiement(commande.payer)}
+                      ) : (
+                        <span className="badge bg-secondary me-1">
+                          Données non consolidées
                         </span>
-                      </p>
-                    </div>
-                    <div className="mt-3">
-                      {/* Pour valider la commande */}
-                      {commande.statutTransport == 1 && commande.statutRecolte == 0 && (
-                        <>
-                          <button
-                            onClick={() => validerCommande(commande.id, false)}
-                            className="me-1 btn-agrichain-danger"
-                            disabled={btnLoading}
-                            >
-                            Rejeter
-                          </button>
-                          <button
-                            onClick={() => validerCommande(commande.id, true)}
-                            className="btn-agrichain"
-                            disabled={btnLoading}
-                          >
-                            Valider
-                          </button>
-                        </>
                       )}
-                      {/* Pour payer la commande */}
-                      {!commande.payer && commande.statutRecolte == 1 && (
-                        <button
-                          onClick={() => {
-                            setCommandeSelectionnee(commande);
-                            setShowModal(true);
-                          }}
-                          className="btn-agrichain"
-                        >
-                          Payer
-                        </button>
-                      )}
+                      <span className={`badge ${commande.payer ? 'bg-success' : 'bg-warning'}`}>
+                        {getStatutPaiement(commande.payer)}
+                      </span>
                     </div>
                   </div>
+
+                  <div className="card-text">
+                    <p><strong>Produit:</strong> {commande.nomProduit}</p>
+                    <p><strong>ID Récolte:</strong> {commande.idRecolte}</p>
+                    <p><strong>Quantité:</strong> {commande.quantite} kg</p>
+                    <p><strong>Prix:</strong> {commande.prix} Ariary</p>
+                    <p><strong>Producteur:</strong> {commande.producteur}</p>
+                    
+                    {/* Informations IPFS et Merkle */}
+                    {commande.cid && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <p className="mb-1">
+                          <strong>CID IPFS:</strong> 
+                          <a
+                            href={getIPFSURL(commande.cid)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ms-2 text-decoration-none text-primary"
+                            title="Voir les données consolidées sur IPFS"
+                          >
+                            {commande.cid.substring(0, 10)}...
+                          </a>
+                        </p>
+                        
+                        {commande.hashMerkle && (
+                          <p className="mb-1">
+                            <strong>Hash Merkle:</strong> 
+                            <span className="ms-2 text-muted" title={commande.hashMerkle}>
+                              {commande.hashMerkle.substring(0, 10)}...
+                            </span>
+                          </p>
+                        )}
+
+                        {commande.ipfsTimestamp && (
+                          <p className="mb-1 text-muted small">
+                            <strong>Dernière mise à jour IPFS:</strong> {new Date(commande.ipfsTimestamp).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Statuts */}
+                    <div className="mt-3">
+                      <div className="d-flex gap-2 mb-2">
+                        <span className={`badge ${getColorStatutRecolte(commande.statutRecolte)}`}>
+                          {getStatutRecolte(commande.statutRecolte)}
+                        </span>
+                        <span className="badge bg-info">
+                          {getStatutTransport(commande.statutTransport)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-between mt-3">
+                    {/* Actions selon le statut */}
+                    {!commande.payer && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          setCommandeSelectionnee(commande);
+                          setShowModal(true);
+                        }}
+                      >
+                        Payer
+                      </button>
+                    )}
+
+                    {commande.statutRecolte === 0 && (
+                      <div className="d-flex gap-1">
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => validerCommande(commande.id, true)}
+                          disabled={btnLoading}
+                        >
+                          Valider
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => validerCommande(commande.id, false)}
+                          disabled={btnLoading}
+                        >
+                          Rejeter
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Lien vers les détails complets IPFS */}
+                    {commande.cid && (
+                      <a
+                        href={getIPFSURL(commande.cid)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-secondary btn-sm"
+                      >
+                        Voir données IPFS
+                      </a>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-muted">Aucune commande trouvée.</div>
+        )}
+
+        {commandesAffichees.length < commandesFiltres.length && (
+          <div className="text-center mt-3">
+            <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+              Charger plus
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal de paiement */}
-      {showModal && commandeSelectionnee && (
-        <>
-          <div className="modal-backdrop fade show"></div>
-
-          <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">Payer la commande</h5>
-                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Produit: {commandeSelectionnee.nomProduit}</label>
-                    <p><strong>Quantité:</strong> {commandeSelectionnee.quantite} kg</p>
-                    <p><strong>Prix total:</strong> {commandeSelectionnee.prix} Ar</p>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Mode de paiement</label>
-                    <select
-                      className="form-select"
-                      value={modePaiement}
-                      onChange={(e) => setModePaiement(Number(e.target.value))}
-                    >
-                      <option value={0}>Virement bancaire</option>
-                      <option value={1}>Cash</option>
-                      <option value={2}>Mobile Money</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn-agrichain-outline" onClick={() => setShowModal(false)}>
-                    Annuler
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-agrichain"
-                    onClick={() => handlePayer(commandeSelectionnee.id)}
-                    disabled={btnLoading}
+      {showModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Payer la commande #{commandeSelectionnee?.id}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Montant à payer : <strong>{commandeSelectionnee?.prix} Ariary</strong></p>
+                <div className="mb-3">
+                  <label htmlFor="modePaiement" className="form-label">Mode de paiement</label>
+                  <select
+                    className="form-select"
+                    id="modePaiement"
+                    value={modePaiement}
+                    onChange={(e) => setModePaiement(parseInt(e.target.value))}
                   >
-                    Confirmer le paiement
-                  </button>
+                    <option value={0}>Virement Bancaire</option>
+                    <option value={1}>Chèque</option>
+                    <option value={2}>Espèces</option>
+                  </select>
                 </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handlePayer(commandeSelectionnee.id)}
+                  disabled={btnLoading}
+                >
+                  {btnLoading ? "Paiement..." : "Confirmer le paiement"}
+                </button>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      {commandesAffichees.length < commandesFiltres.length && (
-        <div className="text-center mt-3">
-          <button className="btn-agrichain-outline" onClick={() => setVisibleCount(visibleCount + 9)}>
-            Charger plus
-          </button>
-        </div>
+      {/* Overlay pour les modals */}
+      {showModal && (
+        <div className="modal-backdrop fade show"></div>
       )}
     </div>
   );

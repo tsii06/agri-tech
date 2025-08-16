@@ -4,7 +4,7 @@ import {
   Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, Search, ChevronDown, User
 } from "lucide-react";
 
-import { getReadContract, getWriteContract, getProvider } from "../utils/contratDirect";
+import { getReadContract, getWriteContract, getProvider, testContract } from "../utils/contratDirect";
 import { useUserContext } from "../context/useContextt";
 import { hasRole } from "../utils/roles";
 
@@ -46,6 +46,10 @@ function ListeProduits() {
       setIsLoading(true);
       setError(null);
       try {
+        // Test du contrat d'abord
+        console.log("Test du contrat...");
+        await testContract();
+        
         const read = getReadContract();
         // Vérifs rapides
         const provider = getProvider();

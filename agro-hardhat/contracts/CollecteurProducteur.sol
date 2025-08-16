@@ -45,7 +45,7 @@ contract CollecteurProducteur {
     
     // ================================== evenements =================================================
     event StatutTransportMisAJour(uint32 indexed idCommande, StructLib.StatutTransport statut, address transporteur);
-    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp, address transporteur);
+    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string cid, uint timestamp, address transporteur);
     event ValidationCommandeRecolte(uint32 indexed idCommande, bool status);
 
 
@@ -112,7 +112,7 @@ contract CollecteurProducteur {
 
         compteurCommandes++;
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente);
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, "");
     }
     function validerCommandeRecolte(uint32 _idCommande, bool _valide) public seulementCollecteur {
         require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore arriver");
@@ -140,7 +140,7 @@ contract CollecteurProducteur {
         commandes[_idCommande].payer = true;
 
         compteurPaiements++;
-        paiements[_idCommande] = StructLib.Paiement(compteurPaiements, msg.sender, commande.producteur, _montant, _mode, block.timestamp);
+        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commande.producteur, _montant, _mode, block.timestamp, "");
     }
 
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
@@ -151,13 +151,13 @@ contract CollecteurProducteur {
         emit StatutTransportMisAJour(_idCommande, _statut, msg.sender);
     }
 
-    function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
         // verifie si l'idCommande est valide.
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
 
         compteurConditions++;
-        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
-        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp, msg.sender);
+        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _cid, block.timestamp, "");
+        emit ConditionEnregistree(_idCommande, compteurConditions, _cid, block.timestamp, msg.sender);
     }
 
     // ====================================== getter et setter =============================================

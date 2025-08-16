@@ -1,22 +1,48 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getCollecteurProducteurContract } from "../../utils/contract";
+import { getCollecteurProducteurContract, getContract } from "../../utils/contract";
+import { uploadConsolidatedData } from "../../utils/ipfsUtils";
+import { calculateRecolteMerkleHash } from "../../utils/merkleUtils";
+import { useUserContext } from "../../context/useContextt";
 
 function FaireRecolte() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const quantite = useRef();
-  const prix = useRef();
-  const dateRecolte = useRef();
-  const nomProduit = useRef();
+  const [parcelle, setParcelle] = useState(null);
+  const [recolteData, setRecolteData] = useState({
+    nomProduit: "",
+    quantite: "",
+    prix: "",
+    dateRecolte: ""
+  });
 
   // recupere l'id du parcelle
   const { id } = useParams();
+  const { account } = useUserContext();
 
+  useEffect(() => {
+    chargerParcelle();
+  }, [id]);
 
+  const chargerParcelle = async () => {
+    try {
+      const contract = await getContract();
+      const parcelleData = await contract.getParcelle(id);
+      setParcelle(parcelleData);
+    } catch (error) {
+      console.error("Erreur lors du chargement de la parcelle:", error);
+      setError("Impossible de charger les informations de la parcelle.");
+    }
+  };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setRecolteData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,18 +50,62 @@ function FaireRecolte() {
     setError(null);
 
     try {
-      const contract = await getCollecteurProducteurContract();
+      // 1. Créer l'objet récolte consolidé pour IPFS
+      const recolteConsolidee = {
+        type: 'recolte',
+        parcelleId: parseInt(id),
+        nomProduit: recolteData.nomProduit,
+        quantite: parseInt(recolteData.quantite),
+        prix: parseInt(recolteData.prix),
+        dateRecolte: recolteData.dateRecolte,
+        producteur: account,
+        parcelleHashMerkle: parcelle?.hashMerkle || "",
+        timestamp: Date.now(),
+        version: "1.0"
+      };
 
+      // 2. Upload des données consolidées sur IPFS
+      const recolteUpload = await uploadConsolidatedData(recolteConsolidee, "recolte");
+      
+      if (!recolteUpload.success) {
+        throw new Error("Erreur lors de l'upload des données de récolte sur IPFS");
+      }
+
+      // 3. Créer la récolte avec le CID IPFS
+      const contract = await getCollecteurProducteurContract();
       const tx = await contract.ajoutRecolte(
-        parseInt(id),
-        parseInt(quantite.current.value),
-        parseInt(prix.current.value),
-        dateRecolte.current.value,
-        nomProduit.current.value
+        [parseInt(id)], // Tableau de parcelles
+        parseInt(recolteData.quantite),
+        parseInt(recolteData.prix),
+        recolteUpload.cid // CID IPFS
       );
 
       await tx.wait();
-      alert("Récolte bien enregistrée.");
+
+      // 4. Récupérer l'ID de la récolte créée pour mettre à jour le hash Merkle
+      const compteurRecoltes = await contract.getCompteurRecolte();
+      const idRecolte = compteurRecoltes - 1; // La récolte vient d'être créée
+
+      // 5. Calculer le hash Merkle de la récolte
+      const hashMerkleRecolte = calculateRecolteMerkleHash(
+        {
+          id: idRecolte,
+          idParcelle: parseInt(id),
+          quantite: parseInt(recolteData.quantite),
+          prixUnit: parseInt(recolteData.prix),
+          certifie: false,
+          certificatPhytosanitaire: "",
+          producteur: account,
+          cid: recolteUpload.cid
+        },
+        [parcelle] // Parcelles associées
+      );
+
+      // 6. Mettre à jour le hash Merkle de la récolte
+      const txHashMerkle = await contract.ajoutHashMerkleRecolte(idRecolte, hashMerkleRecolte);
+      await txHashMerkle.wait();
+
+      alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
 
     } catch (error) {
@@ -46,9 +116,48 @@ function FaireRecolte() {
     }
   };
 
+  if (!parcelle) {
+    return (
+      <div className="container py-4">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-4">
       <h2 className="h4 mb-3">Faire récolte sur la parcelle #{id}</h2>
+
+      {/* Informations de la parcelle */}
+      {parcelle && (
+        <div className="card mb-4">
+          <div className="card-header">
+            <h5>Informations de la parcelle</h5>
+          </div>
+          <div className="card-body">
+            <div className="row">
+              <div className="col-md-6">
+                <p><strong>ID:</strong> {parcelle.id}</p>
+                <p><strong>Producteur:</strong> {parcelle.producteur}</p>
+                <p><strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}</p>
+              </div>
+              <div className="col-md-6">
+                <p><strong>Hash Merkle:</strong> {parcelle.hashMerkle || "Non calculé"}</p>
+                <p><strong>Statut:</strong> 
+                  {parcelle.cid ? 
+                    <span className="badge bg-success">Données consolidées</span> : 
+                    <span className="badge bg-warning">Données non consolidées</span>
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-danger d-flex align-items-center" role="alert">
@@ -57,41 +166,72 @@ function FaireRecolte() {
       )}
 
       <form className="card shadow-sm p-4" onSubmit={handleSubmit}>
-
         <div className="mb-3">
-          <label className="form-label text-muted">Nom du produit</label>
-          <select className="form-control" required ref={nomProduit}>
+          <label className="form-label">Nom du produit</label>
+          <select 
+            className="form-control" 
+            required 
+            name="nomProduit"
+            value={recolteData.nomProduit}
+            onChange={handleInputChange}
+          >
             <option value="">Sélectionnez un produit</option>
             <option value="Vanille Bourbon">Vanille Bourbon</option>
             <option value="Girofle">Girofle</option>
             <option value="Poivre noir">Poivre noir</option>
             <option value="Curcuma">Curcuma</option>
-            <option value="Ravintsara ">Huile essentielle de Ravintsara</option>
-
+            <option value="Ravintsara">Huile essentielle de Ravintsara</option>
           </select>
-
         </div>
 
         <div className="mb-3">
-          <label className="form-label text-muted">Quantité de produit</label>
-          <input type="number" className="form-control" required ref={quantite} />
+          <label className="form-label">Quantité de produit (kg)</label>
+          <input 
+            type="number" 
+            className="form-control" 
+            required 
+            name="quantite"
+            value={recolteData.quantite}
+            onChange={handleInputChange}
+            min="1"
+            step="0.1"
+          />
         </div>
 
         <div className="mb-3">
-          <label className="form-label text-muted">Prix</label>
-          <input type="number" className="form-control" required ref={prix} />
+          <label className="form-label">Prix unitaire (Ariary/kg)</label>
+          <input 
+            type="number" 
+            className="form-control" 
+            required 
+            name="prix"
+            value={recolteData.prix}
+            onChange={handleInputChange}
+            min="1"
+          />
         </div>
 
         <div className="mb-3">
-          <label className="form-label text-muted">Date de récolte</label>
-          <input type="date" className="form-control" required ref={dateRecolte} />
+          <label className="form-label">Date de récolte</label>
+          <input 
+            type="date" 
+            className="form-control" 
+            required 
+            name="dateRecolte"
+            value={recolteData.dateRecolte}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="alert alert-info">
+          <strong>Information:</strong> Cette récolte sera automatiquement enregistrée sur IPFS avec un hash Merkle pour assurer la traçabilité complète du produit.
         </div>
 
         <button
           disabled={loading}
           className={`btn w-100 mt-3 ${loading ? "btn-secondary disabled" : "btn-primary"}`}
         >
-          {loading ? "Chargement en cours..." : "Enregistrer"}
+          {loading ? "Enregistrement en cours..." : "Enregistrer la récolte"}
         </button>
       </form>
     </div>

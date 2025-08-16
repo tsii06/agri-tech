@@ -141,7 +141,7 @@ async function main() {
     );
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateurAddress, await collecteurProducteurProxy.getAddress());
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "Certificat de qualité BIO");
 
     // 4. Création de produits à partir des récoltes (par le collecteur)
     console.log("Création de produits à partir des récoltes...");
@@ -149,6 +149,11 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(collecteurAddress, await collecteurExportateurProxy.getAddress());
     await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(1, 500, collecteurAddress);
     await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterProduit(2, 400, collecteurAddress);
+
+    // 4.1. Création de lots de produits (nécessaire pour passer des commandes)
+    console.log("Création de lots de produits...");
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 700);
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([2], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 800);
 
     // 5. Commande du collecteur vers producteur
     console.log("Commande du collecteur vers producteur...");
@@ -182,7 +187,7 @@ async function main() {
     );
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(auditeurAddress, await producteurEnPhaseCultureProxy.getAddress());
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(auditeurAddress)).ajouterInspection(1, "Inspection OK");
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(auditeurAddress)).mettreAJourInspectionsParcelle(1, "bafkreihinspectionscid1");
     // === Fin des données de test ===
 
     // === ENRICHISSEMENT DES DONNÉES DE TEST ===
@@ -222,7 +227,7 @@ async function main() {
     // 4. Certifier une seule récolte
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateur2, await collecteurProducteurProxy.getAddress());
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateur2)).certifieRecolte(3, "Certificat Premium");
     // La récolte 4 reste non certifiée
 
     // 5. Créer des produits (certifiés et non certifiés)
@@ -230,6 +235,10 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(collecteur2, await collecteurExportateurProxy.getAddress());
     await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(3, 600, collecteur2); // certifié
     await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterProduit(4, 500, collecteur2); // non certifié
+
+    // 5.1. Créer des lots de produits pour les commandes
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterLotProduit([3], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 900);
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteur2)).ajouterLotProduit([4], "bafkreib2upt6iwjxef4mxsa424kjeki2zd7wz4mw5jt7lh6td7afrcn5t4", 950);
 
     // 6. Créer des commandes (payées et non payées)
     // Commande payée
@@ -241,18 +250,17 @@ async function main() {
     // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateur2)).passerCommande(3, 50);
     // Pas de paiement pour cette commande
 
-    // 7. Ajouter une inspection sur une nouvelle parcelle
+    // 7. Ajouter une inspection et un intrant via IPFS (CID)
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(auditeur2, await producteurEnPhaseCultureProxy.getAddress());
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(auditeur2)).ajouterInspection(3, "Inspection Premium OK");
-    // 8. Ajouter un intrant par le fournisseur
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(auditeur2)).mettreAJourInspectionsParcelle(3, "bafkreihinspectionscid3");
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(fournisseur1, await producteurEnPhaseCultureProxy.getAddress());
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(fournisseur1)).ajouterIntrant(3, "Engrais Bio", 20, "engrais", fournisseur1);
-    // 9. Transporteur enregistre une condition de transport
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(fournisseur1)).mettreAJourIntrantsParcelle(3, "bafkreiintrantscid3");
+    // 9. Transporteur enregistre une condition de transport (CID)
     // ajouter contrat deleguer
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteur1, await collecteurExportateurProxy.getAddress());
-    // await collecteurExportateurProxy.connect(await ethers.getSigner(transporteur1)).enregistrerCondition(2, "25C", "60%");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(transporteur1)).enregistrerCondition(2, "bafkreiconditioncid2");
 
 
 

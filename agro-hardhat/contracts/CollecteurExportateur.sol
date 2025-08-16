@@ -26,7 +26,7 @@ contract CollecteurExportateur {
     event ProduitAjoute(uint32 indexed idProduit, uint32 quantite, uint32 idRecolte);
     event ProduitValide(uint32 indexed idProduit, bool valide);
     event PaiementEffectue(uint32 indexed idProduit, uint32 idPaiement, address payeur, uint32 montant, StructLib.ModePaiement mode);
-    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string temperature, string humidite, uint timestamp);
+    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string cid, uint timestamp);
     event StatutTransportMisAJour(uint32 indexed idProduit, StructLib.StatutTransport statut);
     // Evenement produit lorsqu une commande est passer
     event CommandePasser(address indexed exportateur, uint32 idProduit);
@@ -56,7 +56,7 @@ contract CollecteurExportateur {
     function ajouterProduit(uint32 _idRecolte, uint32 _quantite, address _collecteur) public {
         compteurProduits++;
 
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur, false);
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur, false, "");
 
         emit ProduitAjoute(compteurProduits, _quantite, _idRecolte);
     }
@@ -97,7 +97,7 @@ contract CollecteurExportateur {
         lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "");
 
         emit CommandePasser(msg.sender, _idLotProduit);
     }
@@ -112,17 +112,17 @@ contract CollecteurExportateur {
         commandes[_idCommande].payer = true;
 
         compteurPaiements++;
-        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp);
+        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp, "");
         emit PaiementEffectue(_lotProduit.id, compteurPaiements, msg.sender, _montant, _mode);
     }
 
-    function enregistrerCondition(uint32 _idCommande, string memory _temperature, string memory _humidite) public seulementTransporteur {
+    function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
         // verifie si l'idCommande est valide.
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
 
         compteurConditions++;
-        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _temperature, _humidite, block.timestamp);
-        emit ConditionEnregistree(_idCommande, compteurConditions, _temperature, _humidite, block.timestamp);
+        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _cid, block.timestamp, "");
+        emit ConditionEnregistree(_idCommande, compteurConditions, _cid, block.timestamp);
     }
 
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {

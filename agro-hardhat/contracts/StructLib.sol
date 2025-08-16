@@ -45,30 +45,31 @@ library StructLib {
         string categorie;
         address fournisseur;
         string certificatPhytosanitaire;
+        string cid; // CID IPFS pour les détails complets
+        string hashMerkle;
     }
 
     struct Inspection {
         uint32 id;
         address auditeur;
-        string rapport;
+        string cid; // CID IPFS pour le rapport complet
         uint timestamp;
+        string hashMerkle;
     }
 
     struct EnregistrementCondition {
         uint32 id;
-        string temperature;
-        string humidite;
+        string cid; // CID IPFS pour les conditions détaillées
         uint timestamp;
+        string hashMerkle;
     }
 
     struct Parcelle {
         uint32 id;
         address producteur;
-        string cid;
+        string cid; // CID IPFS pour les photos et détails complets
         string hashMerkle;
-        string[] photos;
-        Intrant[] intrants;
-        Inspection[] inspections;
+        // Suppression des arrays lourds (photos, intrants, inspections) - maintenant dans IPFS
     }
 
     struct Paiement {
@@ -78,6 +79,7 @@ library StructLib {
         uint32 montant;
         ModePaiement mode;
         uint timestamp;
+        string hashMerkle;
     }
 
     struct Recolte {
@@ -102,6 +104,7 @@ library StructLib {
         address producteur;
         address collecteur;
         StatutProduit statutRecolte;
+        string hashMerkle;
     }
 
     struct Produit {
@@ -110,6 +113,7 @@ library StructLib {
         uint32 quantite;
         address collecteur;
         bool enregistre;
+        string hashMerkle;
     }
 
     struct LotProduit {
@@ -132,6 +136,7 @@ library StructLib {
         address collecteur;
         address exportateur;
         StatutProduit statutProduit;
+        string hashMerkle;
     }
     
 }
