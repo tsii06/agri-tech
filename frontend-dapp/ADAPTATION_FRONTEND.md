@@ -178,6 +178,60 @@ Ce document décrit les adaptations apportées au frontend pour utiliser les nou
 1. Récupération des commandes depuis la blockchain
 2. Chargement des données IPFS consolidées
 3. Fusion des données pour affichage complet
+4. Gestion des commandes avec traçabilité complète
+
+### `LivraisonRecolte.jsx` ✅
+**Modifications principales :**
+- Chargement des données IPFS consolidées pour les commandes
+- Gestion des conditions de transport avec IPFS
+- Affichage des informations IPFS et Merkle
+- Enregistrement des conditions avec CID
+
+**Nouveau workflow :**
+1. Récupération des commandes depuis la blockchain
+2. Chargement des données IPFS consolidées
+3. Gestion des conditions de transport
+4. Enregistrement avec traçabilité IPFS
+
+### `ExpeditionProduits.jsx` ✅ **NOUVEAU**
+**Fonctionnalités :**
+- Gestion complète des expéditions de produits
+- Affichage des informations de commande et produit
+- Intégration avec les données IPFS et Merkle
+- Formulaire d'enregistrement d'expédition
+
+**Workflow :**
+1. Chargement des informations de commande
+2. Affichage des détails du produit avec IPFS
+3. Enregistrement de l'expédition
+4. Traçabilité complète de la chaîne logistique
+
+### `ListeProduits.jsx` ✅
+**Modifications principales :**
+- Chargement des données IPFS consolidées pour chaque produit
+- Fusion des données blockchain avec les données IPFS
+- Affichage des informations IPFS et Merkle
+- Statistiques des produits avec données IPFS
+
+**Nouveau workflow :**
+1. Récupération des produits depuis la blockchain
+2. Chargement des données IPFS consolidées
+3. Fusion des données pour affichage complet
+4. Affichage des statistiques IPFS et Merkle
+
+### `MesCommandesExportateur.jsx` ✅
+**Modifications principales :**
+- Chargement des données IPFS consolidées pour chaque commande
+- Fusion des données blockchain avec les données IPFS
+- Affichage des informations IPFS et Merkle
+- Statistiques des commandes avec données IPFS
+
+**Nouveau workflow :**
+1. Récupération des commandes depuis la blockchain
+2. Chargement des données IPFS consolidées
+3. Fusion des données pour affichage complet
+4. Affichage des statistiques IPFS et Merkle
+3. Fusion des données pour affichage complet
 4. Gestion des actions avec traçabilité IPFS
 
 ### `LivraisonRecolte.jsx` ✅
@@ -632,10 +686,10 @@ await contract.enregistrerExpedition(
 ## 6. Composants Restants à Adapter
 
 ### Composants CollecteurProducteur
-- [ ] `ListeProduits.jsx` - Affichage des produits avec données IPFS
+- [x] ~~`ListeProduits.jsx`~~ ✅ **ADAPTÉ** - Affichage des produits avec données IPFS
 
 ### Composants CollecteurExportateur
-- [ ] `MesCommandesExportateur.jsx` - Suivi des commandes
+- [x] ~~`MesCommandesExportateur.jsx`~~ ✅ **ADAPTÉ** - Suivi des commandes
 
 ### Composants Admin
 - [ ] `AdminRegisterActeur.jsx` - Enregistrement d'acteurs
@@ -643,7 +697,7 @@ await contract.enregistrerExpedition(
 
 ## 7. Prochaines Étapes
 
-1. **Adapter les composants restants** selon la priorité métier
+1. **Adapter les composants Admin restants** selon la priorité métier
 2. **Implémenter la gestion des erreurs** IPFS de manière robuste
 3. **Créer des composants de visualisation** des hash Merkle
 4. **Ajouter des fonctionnalités de vérification** de traçabilité
@@ -651,7 +705,27 @@ await contract.enregistrerExpedition(
 6. **Créer des tests** pour valider l'intégration
 7. **Implémenter la gestion des notifications** pour les mises à jour IPFS
 
-## 8. Notes Importantes
+## 8. Résumé de l'Adaptation
+
+### ✅ **Composants Adaptés (15/17)**
+- **ProducteurEnPhaseCulture (5/5)** : Tous les composants adaptés
+- **CollecteurProducteur (4/4)** : Tous les composants adaptés  
+- **CollecteurExportateur (2/2)** : Tous les composants adaptés
+- **CertificateurAuditeur (1/1)** : Composant adapté
+- **Admin (0/2)** : Composants restants à adapter
+
+### 🔄 **Nouveaux Composants Créés (3)**
+- `InspectionsParcelle.jsx` - Gestion des inspections
+- `ConditionsTransport.jsx` - Gestion des conditions de transport
+- `ExpeditionProduits.jsx` - Gestion des expéditions
+
+### 📊 **Progression Globale**
+- **Composants critiques** : 100% adaptés ✅
+- **Composants haute priorité** : 100% adaptés ✅
+- **Composants moyenne priorité** : 100% adaptés ✅
+- **Composants basse priorité** : 0% adaptés (2 restants)
+
+## 9. Notes Importantes
 
 - **Compatibilité** : Les composants existants ne fonctionnent plus avec les anciens contrats
 - **IPFS** : Assurez-vous que les données sont accessibles et persistantes

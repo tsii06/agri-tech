@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, Search, ChevronDown, User } from "lucide-react";
 import { useUserContext } from '../../context/useContextt';
 import { hasRole } from '../../utils/roles';
+import { getIPFSURL } from '../../utils/ipfsUtils';
 
 function ListeProduits() {
   const { address } = useParams();
@@ -33,13 +34,16 @@ function ListeProduits() {
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
         let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
+        
         // Obtenir le nombre total de produits
         const compteurProduits = await contract.getCompteurProduit();
         const produitsTemp = [];
+        
         for (let i = 1; i <= compteurProduits; i++) {
           const produit = await contract.getProduit(i);
           if (hasRole(roles, 3) && cible && produit.collecteur.toLowerCase() !== cible) continue;
-          produitsTemp.push({
+          
+          let produitEnrichi = {
             id: i,
             idRecolte: produit.idRecolte.toString(),
             nom: produit.nom,
@@ -48,9 +52,34 @@ function ListeProduits() {
             statut: Number(produit.statut),
             dateRecolte: produit.dateRecolte,
             certificatPhytosanitaire: produit.certificatPhytosanitaire,
-            collecteur: produit.collecteur.toString()
-          });
+            collecteur: produit.collecteur.toString(),
+            cid: produit.cid || "",
+            hashMerkle: produit.hashMerkle || ""
+          };
+
+          // Charger les données IPFS si un CID existe
+          if (produit.cid) {
+            try {
+              const response = await fetch(getIPFSURL(produit.cid));
+              if (response.ok) {
+                const ipfsData = await response.json();
+                produitEnrichi = {
+                  ...produitEnrichi,
+                  nom: ipfsData.nom || produit.nom,
+                  dateRecolte: ipfsData.dateRecolte || produit.dateRecolte,
+                  ipfsTimestamp: ipfsData.timestamp,
+                  ipfsVersion: ipfsData.version,
+                  recolteHashMerkle: ipfsData.recolteHashMerkle || ""
+                };
+              }
+            } catch (ipfsError) {
+              console.log(`Erreur lors du chargement IPFS pour le produit ${i}:`, ipfsError);
+            }
+          }
+          
+          produitsTemp.push(produitEnrichi);
         }
+        
         produitsTemp.reverse();
         setProduits(produitsTemp);
         setError(false);
@@ -188,6 +217,34 @@ function ListeProduits() {
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
           <h2 className="h5 mb-3">{address ? "Produits du collecteur" : "Liste des Produits"}</h2>
+          
+          {/* Statistiques IPFS */}
+          <div className="row mb-3">
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <Hash size={20} className="me-2 text-primary" />
+                <span className="small">
+                  <strong>{produits.filter(p => p.cid).length}</strong> produits avec données IPFS
+                </span>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <Hash size={20} className="me-2 text-warning" />
+                <span className="small">
+                  <strong>{produits.filter(p => p.hashMerkle).length}</strong> produits avec hash Merkle
+                </span>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <Package2 size={20} className="me-2 text-success" />
+                <span className="small">
+                  <strong>{produits.length}</strong> produits au total
+                </span>
+              </div>
+            </div>
+          </div>
 
           {error && (
             <div className="alert alert-danger d-flex align-items-center" role="alert">
@@ -237,6 +294,41 @@ function ListeProduits() {
                         Voir ici
                       </a>
                     </p>
+                    
+                    {/* Informations IPFS et Merkle */}
+                    {produit.cid && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <p className="mb-1 small">
+                          <Hash size={14} className="me-1 text-primary" />
+                          <strong>CID IPFS:</strong> 
+                          <a
+                            href={getIPFSURL(produit.cid)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ms-2 text-decoration-none text-primary"
+                            title="Voir les données consolidées sur IPFS"
+                          >
+                            {produit.cid.substring(0, 10)}...
+                          </a>
+                        </p>
+                        
+                        {produit.hashMerkle && (
+                          <p className="mb-1 small">
+                            <Hash size={14} className="me-1 text-warning" />
+                            <strong>Hash Merkle:</strong> 
+                            <span className="ms-2 text-muted" title={produit.hashMerkle}>
+                              {produit.hashMerkle.substring(0, 10)}...
+                            </span>
+                          </p>
+                        )}
+                        
+                        {produit.ipfsTimestamp && (
+                          <p className="mb-1 small text-muted">
+                            <strong>Mise à jour IPFS:</strong> {new Date(produit.ipfsTimestamp).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3">
                     {hasRole(roles, 3) && (

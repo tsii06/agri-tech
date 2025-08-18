@@ -17,59 +17,77 @@ function CommandeCollecteur() {
   const [search, setSearch] = useState("");
   const [paiementFiltre, setPaiementFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
+  const [error, setError] = useState(null);
+  const [warnings, setWarnings] = useState([]);
+  const [commandeErrors, setCommandeErrors] = useState({});
 
   const { account } = useUserContext();
 
   const chargerCommandes = async () => {
     try {
+      setError(null);
+      setWarnings([]);
       const contract = await getCollecteurProducteurContract();
-      const compteurCommandes = await contract.compteurCommandes();
+      const compteurCommandesRaw = await contract.compteurCommandes();
+      const compteurCommandes = Number(compteurCommandesRaw);
       const commandesTemp = [];
       
       for (let i = 1; i <= compteurCommandes; i++) {
-        let commande = await contract.getCommande(i);
-        if (commande.collecteur.toLowerCase() === account.toLowerCase()) {
-          
-          // Charger les données IPFS consolidées si la commande a un CID
-          if (commande.cid) {
-            try {
-              const response = await fetch(getIPFSURL(commande.cid));
-              if (response.ok) {
-                const ipfsData = await response.json();
-                
-                // Fusionner les données blockchain avec les données IPFS
-                commande = {
-                  ...commande,
-                  // Données de base de la commande
-                  nomProduit: ipfsData.nomProduit || "Produit non spécifié",
-                  // Métadonnées IPFS
-                  ipfsTimestamp: ipfsData.timestamp,
-                  ipfsVersion: ipfsData.version,
-                  // Hash Merkle de la récolte associée
-                  recolteHashMerkle: ipfsData.recolteHashMerkle || ""
-                };
+        const commandeRaw = await contract.getCommande(i);
+        // Filtrer par collecteur connecté
+        const collecteurAddr = commandeRaw.collecteur?.toString?.() || commandeRaw.collecteur;
+        if (collecteurAddr && collecteurAddr.toLowerCase() === account.toLowerCase()) {
+          // Normaliser la commande en objet simple (évite BigInt/Result)
+          let commande = {
+            id: Number(commandeRaw.id ?? i),
+            idRecolte: Number(commandeRaw.idRecolte ?? 0),
+            quantite: Number(commandeRaw.quantite ?? 0),
+            prix: Number(commandeRaw.prix ?? 0),
+            payer: Boolean(commandeRaw.payer),
+            statutTransport: Number(commandeRaw.statutTransport ?? 0),
+            producteur: commandeRaw.producteur?.toString?.() || commandeRaw.producteur || "",
+            collecteur: collecteurAddr || "",
+            statutRecolte: Number(commandeRaw.statutRecolte ?? 0),
+            hashMerkle: commandeRaw.hashMerkle || "",
+            // placeholders enrichis après
+            nomProduit: "",
+            ipfsTimestamp: null,
+            ipfsVersion: null,
+            recolteHashMerkle: "",
+            cid: ""
+          };
+
+          // Charger la récolte associée pour enrichir (cid, nom/date via IPFS)
+          try {
+            const recolteRaw = await contract.getRecolte(commande.idRecolte);
+            const recolteCid = recolteRaw.cid || "";
+            commande.cid = recolteCid; // pour compatibilité avec l'UI existante
+            // Si le cid de la récolte pointe vers un JSON, charger nom/date
+            if (recolteCid) {
+              const resp = await fetch(getIPFSURL(recolteCid));
+              if (resp.ok) {
+                const contentType = resp.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                  const ipfsData = await resp.json();
+                  const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                  commande.nomProduit = root.nomProduit || commande.nomProduit || "Produit non spécifié";
+                  commande.dateRecolte = root.dateRecolte || commande.dateRecolte || "Date non spécifiée";
+                  commande.ipfsTimestamp = ipfsData.timestamp || null;
+                  commande.ipfsVersion = ipfsData.version || null;
+                  commande.recolteHashMerkle = root.parcelleHashMerkle || commande.recolteHashMerkle || "";
+                } else {
+                  commande.ipfsWarning = "Le CID de la récolte ne pointe pas vers un JSON (ex: document)";
+                  setWarnings(prev => [...prev, `Commande #${commande.id}: CID non JSON`]);
+                }
               }
-            } catch (ipfsError) {
-              console.log(`Erreur lors du chargement IPFS pour la commande ${i}:`, ipfsError);
-              // Garder les données blockchain de base si IPFS échoue
-              commande = {
-                ...commande,
-                nomProduit: "Données IPFS non disponibles",
-                ipfsTimestamp: null,
-                ipfsVersion: null,
-                recolteHashMerkle: ""
-              };
             }
-          } else {
-            // Commande sans CID IPFS (ancienne structure)
-            commande = {
-              ...commande,
-              nomProduit: "Données non consolidées",
-              ipfsTimestamp: null,
-              ipfsVersion: null,
-              recolteHashMerkle: ""
-            };
+          } catch (e) {
+            commande.ipfsWarning = e?.message || "Erreur lors du chargement des données IPFS de la récolte";
+            setWarnings(prev => [...prev, `Commande #${commande.id}: ${commande.ipfsWarning}`]);
           }
+
+          // Valeurs par défaut si rien trouvé
+          if (!commande.nomProduit) commande.nomProduit = "(Sans nom)";
 
           commandesTemp.push(commande);
         }
@@ -80,6 +98,7 @@ function CommandeCollecteur() {
       setCommandes(commandesTemp);
     } catch (error) {
       console.error(error.message);
+      setError(error.message || "Erreur lors du chargement des commandes");
     } finally {
       setIsLoading(false);
     }
@@ -122,8 +141,14 @@ function CommandeCollecteur() {
       // Rediriger vers la page des produits
       navigate('/liste-produits');
 
+      // Nettoyer l'erreur associée le cas échéant
+      setCommandeErrors(prev => { const next = { ...prev }; delete next[commandeId]; return next; });
+
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
+      const message = error?.reason || error?.data?.message || error?.message || "Erreur lors du paiement";
+      setError(message);
+      setCommandeErrors(prev => ({ ...prev, [commandeId]: message }));
     } finally {
       setBtnLoading(false);
     }
@@ -136,8 +161,13 @@ function CommandeCollecteur() {
       const tx = await contract.validerCommandeRecolte(_idCommande, _valide);
       await tx.wait();
       await chargerCommandes();
+      // Nettoyer l'erreur associée le cas échéant
+      setCommandeErrors(prev => { const next = { ...prev }; delete next[_idCommande]; return next; });
     } catch (e) {
-      console.error("Erreur lors de la vaidation d'une commande :", e.message);
+      const message = e?.reason || e?.data?.message || e?.message || "Erreur lors de la validation de la commande";
+      console.error("Erreur lors de la validation d'une commande :", message);
+      setError(message);
+      setCommandeErrors(prev => ({ ...prev, [_idCommande]: message }));
     } finally {
       setBtnLoading(false);
     }
@@ -214,6 +244,16 @@ function CommandeCollecteur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
+        {error && (
+          <div className="alert alert-danger d-flex align-items-center" role="alert">
+            <div>{error}</div>
+          </div>
+        )}
+        {warnings && warnings.length > 0 && (
+          <div className="alert alert-warning" role="alert">
+            Certaines données IPFS n'ont pas pu être chargées ({warnings.length}). L'affichage utilise les données on-chain.
+          </div>
+        )}
         <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
           <div className="input-group" style={{ maxWidth: 320 }}>
             <span className="input-group-text"><Search size={16} /></span>
@@ -256,8 +296,8 @@ function CommandeCollecteur() {
         {/* LISTE DES COMMANDES */}
         {commandes.length > 0 ? (
           <div className="row g-3">
-            {commandesAffichees.map((commande) => (
-              <div key={commande.id} className="col-md-4">
+            {commandesAffichees.map((commande, index) => (
+              <div key={`commande-${commande?.id ?? 'na'}-${index}`} className="col-md-4">
                 <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h5 className="card-title mb-0">Commande #{commande.id}</h5>
@@ -287,6 +327,9 @@ function CommandeCollecteur() {
                     <p><strong>Quantité:</strong> {commande.quantite} kg</p>
                     <p><strong>Prix:</strong> {commande.prix} Ariary</p>
                     <p><strong>Producteur:</strong> {commande.producteur}</p>
+                    {commande.ipfsWarning && (
+                      <p className="text-warning small mb-1">{commande.ipfsWarning}</p>
+                    )}
                     
                     {/* Informations IPFS et Merkle */}
                     {commande.cid && (
@@ -379,6 +422,11 @@ function CommandeCollecteur() {
                       </a>
                     )}
                   </div>
+                  {commandeErrors[commande.id] && (
+                    <div className="alert alert-danger mt-2 py-2 px-3" role="alert">
+                      {commandeErrors[commande.id]}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

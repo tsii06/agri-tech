@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
 import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { getIPFSURL } from '../../utils/ipfsUtils';
 
 function MesCommandesExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -42,7 +43,7 @@ function MesCommandesExportateur() {
           if (commande.exportateur.toLowerCase() === account.toLowerCase()) {
             const produit = await contract.getProduit(commande.idProduit);
             
-            commandesTemp.push({
+            let commandeEnrichie = {
               id: commande.id.toString(),
               idProduit: commande.idProduit.toString(),
               quantite: commande.quantite.toString(),
@@ -51,8 +52,31 @@ function MesCommandesExportateur() {
               statutTransport: commande.statutTransport,
               collecteur: commande.collecteur.toString(),
               exportateur: commande.exportateur.toString(),
-              nomProduit: produit.nom
-            });
+              nomProduit: produit.nom,
+              cid: commande.cid || "",
+              hashMerkle: commande.hashMerkle || ""
+            };
+
+            // Charger les données IPFS si un CID existe
+            if (commande.cid) {
+              try {
+                const response = await fetch(getIPFSURL(commande.cid));
+                if (response.ok) {
+                  const ipfsData = await response.json();
+                  commandeEnrichie = {
+                    ...commandeEnrichie,
+                    nomProduit: ipfsData.nomProduit || produit.nom,
+                    ipfsTimestamp: ipfsData.timestamp,
+                    ipfsVersion: ipfsData.version,
+                    produitHashMerkle: ipfsData.produitHashMerkle || ""
+                  };
+                }
+              } catch (ipfsError) {
+                console.log(`Erreur lors du chargement IPFS pour la commande ${i}:`, ipfsError);
+              }
+            }
+            
+            commandesTemp.push(commandeEnrichie);
           }
         }
         
@@ -183,7 +207,35 @@ function MesCommandesExportateur() {
           </div>
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-          <h2 className="h5 mb-0">Mes Commandes Exportateur</h2>
+          <h2 className="h5 mb-3">Mes Commandes Exportateur</h2>
+          
+          {/* Statistiques IPFS */}
+          <div className="row">
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <Hash size={20} className="me-2 text-primary" />
+                <span className="small">
+                  <strong>{commandes.filter(c => c.cid).length}</strong> commandes avec données IPFS
+                </span>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <Hash size={20} className="me-2 text-warning" />
+                <span className="small">
+                  <strong>{commandes.filter(c => c.hashMerkle).length}</strong> commandes avec hash Merkle
+                </span>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <ShoppingCart size={20} className="me-2 text-success" />
+                <span className="small">
+                  <strong>{commandes.length}</strong> commandes au total
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
         
         {isLoading ? (
@@ -223,6 +275,41 @@ function MesCommandesExportateur() {
                       <Truck size={16} className="me-1" />
                       <strong>Transport:</strong> {getStatutTransport(commande.statutTransport)}
                     </p>
+                    
+                    {/* Informations IPFS et Merkle */}
+                    {commande.cid && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <p className="mb-1 small">
+                          <Hash size={14} className="me-1 text-primary" />
+                          <strong>CID IPFS:</strong> 
+                          <a
+                            href={getIPFSURL(commande.cid)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ms-2 text-decoration-none text-primary"
+                            title="Voir les données consolidées sur IPFS"
+                          >
+                            {commande.cid.substring(0, 10)}...
+                          </a>
+                        </p>
+                        
+                        {commande.hashMerkle && (
+                          <p className="mb-1 small">
+                            <Hash size={14} className="me-1 text-warning" />
+                            <strong>Hash Merkle:</strong> 
+                            <span className="ms-2 text-muted" title={commande.hashMerkle}>
+                              {commande.hashMerkle.substring(0, 10)}...
+                            </span>
+                          </p>
+                        )}
+                        
+                        {commande.ipfsTimestamp && (
+                          <p className="mb-1 small text-muted">
+                            <strong>Mise à jour IPFS:</strong> {new Date(commande.ipfsTimestamp).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3">
                     {!commande.payer && (

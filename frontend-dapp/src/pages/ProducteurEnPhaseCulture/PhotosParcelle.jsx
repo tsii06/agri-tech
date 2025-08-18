@@ -19,8 +19,11 @@ function PhotosParcelle() {
 
   const chargerParcelle = async () => {
     try {
+      if (!id || isNaN(Number(id))) {
+        throw new Error("Identifiant de parcelle invalide");
+      }
       const contract = await getContract();
-      const parcelleData = await contract.getParcelle(id);
+      const parcelleData = await contract.getParcelle(Number(id));
       setParcelle(parcelleData);
       
       // Si la parcelle a un CID, essayer de récupérer les photos
@@ -29,8 +32,9 @@ function PhotosParcelle() {
           const response = await fetch(getIPFSURL(parcelleData.cid));
           if (response.ok) {
             const data = await response.json();
-            if (data.photos && Array.isArray(data.photos)) {
-              setPhotos(data.photos);
+            const root = data && data.items ? data.items : data;
+            if (root && root.photos && Array.isArray(root.photos)) {
+              setPhotos(root.photos);
             }
           }
         } catch (error) {
@@ -67,41 +71,56 @@ function PhotosParcelle() {
         // 2. Ajouter la nouvelle photo à la liste existante
         const nouvellesPhotos = [...photos, photoData];
         
-        // 3. Créer un objet consolidé avec toutes les photos
-        const photosConsolidees = {
-          type: 'photos-parcelle',
+        // 3. Charger l'état consolidé actuel de la parcelle (master), le mettre à jour avec les nouvelles photos
+        let master = {};
+        try {
+          if (parcelle && parcelle.cid) {
+            const resp = await fetch(getIPFSURL(parcelle.cid));
+            if (resp.ok) {
+              const json = await resp.json();
+              master = json && json.items ? json.items : json;
+            }
+          }
+        } catch {}
+
+        // S'assurer qu'on a bien un objet master
+        if (!master || typeof master !== 'object') {
+          master = {};
+        }
+        const masterMisAJour = {
+          ...master,
+          type: 'parcelle',
           parcelleId: id,
           photos: nouvellesPhotos,
           timestamp: Date.now()
         };
 
-        // 4. Upload des données consolidées sur IPFS
+        // 4. Upload du master consolidé mis à jour (type parcelle)
         const { uploadConsolidatedData } = await import("../../utils/ipfsUtils");
-        const photosUpload = await uploadConsolidatedData(photosConsolidees, "photos-parcelle");
-        
-        if (!photosUpload.success) {
-          throw new Error("Erreur lors de l'upload des photos consolidées");
+        const masterUpload = await uploadConsolidatedData(masterMisAJour, "parcelle");
+        if (!masterUpload.success) {
+          throw new Error("Erreur lors de l'upload des données de parcelle consolidées");
         }
 
-        // 5. Mettre à jour le CID de la parcelle avec les nouvelles photos
+        // 5. Mettre à jour le CID de la parcelle avec le nouveau master
         const contract = await getContract();
-        const tx = await contract.mettreAJourPhotosParcelle(id, photosUpload.cid);
+        const tx = await contract.mettreAJourPhotosParcelle(Number(id), masterUpload.cid);
         await tx.wait();
 
         // 6. Mettre à jour le hash Merkle de la parcelle
         const hashMerkleMisAJour = calculateParcelleMerkleHash(
-          { ...parcelle, cid: photosUpload.cid },
+          { ...parcelle, cid: masterUpload.cid },
           nouvellesPhotos,
           [], // intrants
           []  // inspections
         );
 
-        const txHashMerkle = await contract.ajoutHashMerkleParcelle(id, hashMerkleMisAJour);
+        const txHashMerkle = await contract.ajoutHashMerkleParcelle(Number(id), hashMerkleMisAJour);
         await txHashMerkle.wait();
 
         // 7. Mettre à jour l'état local
         setPhotos(nouvellesPhotos);
-        setParcelle(prev => ({ ...prev, cid: photosUpload.cid, hashMerkle: hashMerkleMisAJour }));
+        setParcelle(prev => ({ ...prev, cid: masterUpload.cid, hashMerkle: hashMerkleMisAJour }));
         
         setIpfsUrl(getIPFSURL(res.cid));
         setMessage("Photo ajoutée et enregistrée sur la blockchain avec succès !");

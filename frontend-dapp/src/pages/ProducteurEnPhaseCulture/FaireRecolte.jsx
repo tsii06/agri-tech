@@ -27,8 +27,9 @@ function FaireRecolte() {
 
   const chargerParcelle = async () => {
     try {
+      if (!id || isNaN(Number(id))) return;
       const contract = await getContract();
-      const parcelleData = await contract.getParcelle(id);
+      const parcelleData = await contract.getParcelle(Number(id));
       setParcelle(parcelleData);
     } catch (error) {
       console.error("Erreur lors du chargement de la parcelle:", error);
@@ -83,8 +84,8 @@ function FaireRecolte() {
       await tx.wait();
 
       // 4. Récupérer l'ID de la récolte créée pour mettre à jour le hash Merkle
-      const compteurRecoltes = await contract.getCompteurRecolte();
-      const idRecolte = compteurRecoltes - 1; // La récolte vient d'être créée
+      const compteurRecoltes = await contract.compteurRecoltes();
+      const idRecolte = Number(compteurRecoltes);
 
       // 5. Calculer le hash Merkle de la récolte
       const hashMerkleRecolte = calculateRecolteMerkleHash(

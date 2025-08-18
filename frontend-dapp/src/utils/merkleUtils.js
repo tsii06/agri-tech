@@ -1,5 +1,13 @@
 import { ethers } from "ethers";
 
+// Convertit proprement les BigInt et autres valeurs non sérialisables
+const jsonReplacer = (_key, value) => {
+  if (typeof value === 'bigint') return value.toString();
+  return value;
+};
+
+const stringifyForHash = (data) => JSON.stringify(data, jsonReplacer);
+
 /**
  * Calcule le hash Merkle d'un ensemble de données
  * @param {Array} data - Tableau de données à hasher
@@ -11,12 +19,12 @@ export const calculateMerkleRoot = (data) => {
   }
 
   if (data.length === 1) {
-    return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(data[0])));
+    return ethers.keccak256(ethers.toUtf8Bytes(stringifyForHash(data[0])));
   }
 
   // Créer les feuilles (hash des données individuelles)
   const leaves = data.map(item => 
-    ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(item)))
+    ethers.keccak256(ethers.toUtf8Bytes(stringifyForHash(item)))
   );
 
   // Construire l'arbre de Merkle

@@ -42,7 +42,20 @@ function ListeRecoltes() {
       const recoltesTemp = [];
       
       for (let i = 1; i <= compteurRecoltes; i++) {
-        const recolte = await contract.getRecolte(i);
+        const recolteRaw = await contract.getRecolte(i);
+        let recolte = {
+          id: Number(recolteRaw.id ?? i),
+          idParcelles: (recolteRaw.idParcelle || []).map((v) => Number(v)),
+          quantite: Number(recolteRaw.quantite ?? 0),
+          prixUnit: Number(recolteRaw.prixUnit ?? recolteRaw.prix ?? 0),
+          certifie: Boolean(recolteRaw.certifie),
+          certificatPhytosanitaire: recolteRaw.certificatPhytosanitaire || "",
+          producteur: recolteRaw.producteur?.toString?.() || recolteRaw.producteur || "",
+          cid: recolteRaw.cid || "",
+          hashMerkle: recolteRaw.hashMerkle || "",
+          nomProduit: recolteRaw.nomProduit || "",
+          dateRecolte: recolteRaw.dateRecolte || ""
+        };
 
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
@@ -55,23 +68,26 @@ function ListeRecoltes() {
           try {
             const response = await fetch(getIPFSURL(recolte.cid));
             if (response.ok) {
-              const ipfsData = await response.json();
-              
-              // Fusionner les données blockchain avec les données IPFS
-              recolte = {
-                ...recolte,
-                // Données de base de la récolte
-                nomProduit: ipfsData.nomProduit || "Produit non spécifié",
-                dateRecolte: ipfsData.dateRecolte || "Date non spécifiée",
-                // Métadonnées IPFS
-                ipfsTimestamp: ipfsData.timestamp,
-                ipfsVersion: ipfsData.version,
-                // Hash Merkle de la parcelle associée
-                parcelleHashMerkle: ipfsData.parcelleHashMerkle || ""
-              };
+              const contentType = response.headers.get('content-type') || '';
+              if (contentType.includes('application/json')) {
+                const ipfsData = await response.json();
+                const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                // Fusionner les données blockchain avec les données IPFS
+                recolte = {
+                  ...recolte,
+                  nomProduit: root.nomProduit || recolte.nomProduit || "Produit non spécifié",
+                  dateRecolte: root.dateRecolte || recolte.dateRecolte || "Date non spécifiée",
+                  ipfsTimestamp: ipfsData.timestamp,
+                  ipfsVersion: ipfsData.version,
+                  parcelleHashMerkle: root.parcelleHashMerkle || ""
+                };
+              } else {
+                // Si ce n'est pas du JSON (ex: PDF), on garde les données blockchain
+                // sans lever d'erreur pour que l'affichage reste correct
+              }
             }
           } catch (ipfsError) {
-            console.log(`Erreur lors du chargement IPFS pour la récolte ${i}:`, ipfsError);
+            console.debug(`IPFS non JSON ou non lisible pour la récolte ${i}:`, ipfsError?.message || ipfsError);
             // Garder les données blockchain de base si IPFS échoue
             recolte = {
               ...recolte,
@@ -357,7 +373,7 @@ function ListeRecoltes() {
 
                   <div className="d-flex justify-content-between mt-3">
                     {/* Actions selon le rôle */}
-                    {hasRole(roles, 3) && !recolte.certifie && (
+                    {hasRole(roles, 3) && recolte.certifie && (
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={() => {

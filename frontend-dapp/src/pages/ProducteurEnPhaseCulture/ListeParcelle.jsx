@@ -27,7 +27,8 @@ function MesParcelles() {
   const chargerParcelles = async () => {
     try {
       const contract = await getContract();
-      const compteurParcelles = await contract.getCompteurParcelle();
+      const compteurParcellesRaw = await contract.getCompteurParcelle();
+      const compteurParcelles = Number(compteurParcellesRaw);
 
       if (compteurParcelles === 0) {
         setParcelles([]);
@@ -39,14 +40,20 @@ function MesParcelles() {
       let parcelle;
       
       for (let i = 1; i <= compteurParcelles; i++) {
-        parcelle = await contract.getParcelle(i);
+        const parcelleRaw = await contract.getParcelle(i);
+        // Normaliser la structure ethers en objet simple pour éviter la perte de champs avec l'opérateur spread
+        const parcelleBase = {
+          id: Number(parcelleRaw.id ?? i),
+          producteur: parcelleRaw.producteur?.toString?.() ?? parcelleRaw.producteur,
+          cid: parcelleRaw.cid ?? "",
+          hashMerkle: parcelleRaw.hashMerkle ?? "",
+          certificatPhytosanitaire: parcelleRaw.certificatPhytosanitaire ?? parcelleRaw.certificat ?? ""
+        };
+        parcelle = parcelleBase;
 
-        // Afficher uniquement les parcelles de l'adresse connectée si c'est un producteur
-        if (roles.includes(0)) {
-          // Afficher uniquement les parcelles de l'adresse connectée
-          if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
-            continue;
-          }
+        // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)
+        if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
+          continue;
         }
 
         // Charger les données IPFS consolidées si la parcelle a un CID
@@ -55,21 +62,22 @@ function MesParcelles() {
             const response = await fetch(getIPFSURL(parcelle.cid));
             if (response.ok) {
               const ipfsData = await response.json();
+              const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
               
               // Fusionner les données blockchain avec les données IPFS
               parcelle = {
                 ...parcelle,
                 // Données de base de la parcelle
-                qualiteSemence: ipfsData.qualiteSemence || "Non spécifiée",
-                methodeCulture: ipfsData.methodeCulture || "Non spécifiée",
-                dateRecolte: ipfsData.dateRecolte || "Non spécifiée",
-                location: ipfsData.location || { lat: 0, lng: 0 },
+                qualiteSemence: root.qualiteSemence || "Non spécifiée",
+                methodeCulture: root.methodeCulture || "Non spécifiée",
+                dateRecolte: root.dateRecolte || "Non spécifiée",
+                location: root.location || { lat: 0, lng: 0 },
                 // Photos, intrants et inspections depuis IPFS
-                photos: ipfsData.photos || [],
-                intrants: ipfsData.intrants || [],
-                inspections: ipfsData.inspections || [],
+                photos: root.photos || [],
+                intrants: root.intrants || [],
+                inspections: root.inspections || [],
                 // Certificat depuis IPFS
-                certificatPhytosanitaire: ipfsData.certificat || parcelle.certificatPhytosanitaire,
+                certificatPhytosanitaire: root.certificat || parcelle.certificatPhytosanitaire,
                 // Métadonnées IPFS
                 ipfsTimestamp: ipfsData.timestamp,
                 ipfsVersion: ipfsData.version
@@ -222,8 +230,8 @@ function MesParcelles() {
             </div>
           ) : parcelles.length > 0 ? (
             <div className="row g-3">
-              {parcellesAffichees.map((parcelle) => (
-                <div key={parcelle.id} className="col-md-4">
+              {parcellesAffichees.map((parcelle, index) => (
+                <div key={`parcelle-${parcelle.id}-${index}`} className="col-md-4">
                   <ParcelleCard
                     parcelle={parcelle}
                     userRole={roles}
@@ -235,8 +243,8 @@ function MesParcelles() {
             <div className="text-center text-muted">Aucune parcelle ne correspond à la recherche ou au filtre.</div>
           ) : (
             <div className="row g-3">
-              {parcellesAffichees.map((parcelle) => (
-                <div key={parcelle.id} className="col-md-4">
+              {parcellesAffichees.map((parcelle, index) => (
+                <div key={`parcelle-${parcelle.id}-${index}-filtered`} className="col-md-4">
                   <ParcelleCard
                     parcelle={parcelle}
                     userRole={roles}
