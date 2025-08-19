@@ -1,3 +1,5 @@
+import { getContract } from "./contract";
+import { calculateParcelleMerkleHash } from "./merkleUtils";
 import myPinataSDK from "./pinata";
 
 /**
@@ -181,7 +183,7 @@ export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
     const metadata = {
       type: `consolidated-${type}`,
       timestamp: Date.now().toString(),
-      ..._metadata
+      ..._metadata,
     };
 
     return await uploadToIPFS(file, metadata);
@@ -195,6 +197,91 @@ export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
 };
 
 /**
+ *
+ * @param {object} parcelle
+ * @param {Array} newData
+ * @param {string} _type photos/intrants/inspections
+ */
+export const updateCidParcelle = async (parcelle, newData, _type) => {
+  // 3. Charger l'état consolidé actuel de la parcelle (master), le mettre à jour avec les nouvelles data
+  let master = {};
+  try {
+    if (parcelle && parcelle.cid) {
+      const resp = await fetch(getIPFSURL(parcelle.cid));
+      if (resp.ok) {
+        const json = await resp.json();
+        master = json && json.items ? json.items : json;
+      }
+    }
+  } catch {}
+
+  // S'assurer qu'on a bien un objet master
+  if (!master || typeof master !== "object") {
+    master = {};
+  }
+  const masterMisAJour = {
+    ...master,
+    type: "parcelle",
+    parcelleId: Number(parcelle.id),
+    [_type]: newData,
+    timestamp: Date.now(),
+  };
+
+  // 4. Upload du master consolidé mis à jour (type parcelle)
+  const masterUpload = await uploadConsolidatedData(masterMisAJour, "parcelle");
+  if (!masterUpload.success) {
+    throw new Error(
+      "Erreur lors de l'upload des données de parcelle consolidées"
+    );
+  }
+
+  // 5. Mettre à jour le CID de la parcelle avec le nouveau master
+  const contract = await getContract();
+  let tx;
+  // pour producteur
+  if (_type == "photos") {
+    tx = await contract.mettreAJourPhotosParcelle(
+      Number(parcelle.id),
+      masterUpload.cid
+    );
+  // pour fournisseur
+  } else if (_type === "intrants") {
+    tx = await contract.mettreAJourIntrantsParcelle(
+      Number(parcelle.id),
+      masterUpload.cid
+    );
+  // pour auditeur
+  } else if (_type === "inspections") {
+    tx = await contract.mettreAJourInspectionsParcelle(
+      Number(parcelle.id),
+      masterUpload.cid
+    );
+  }
+  await tx.wait();
+
+  // supprimer l'ancien fichier associé à la parcelle
+  if (parcelle && parcelle.cid) {
+    // recuperer l'id de l'ancien fichier
+  }
+
+  // 6. Mettre à jour le hash Merkle de la parcelle
+  const hashMerkleMisAJour = calculateParcelleMerkleHash(
+    { ...parcelle, cid: masterUpload.cid },
+    newData,
+    [], // intrants
+    [] // inspections
+  );
+
+  const txHashMerkle = await contract.ajoutHashMerkleParcelle(
+    Number(parcelle.id),
+    hashMerkleMisAJour
+  );
+  await txHashMerkle.wait();
+
+  return { masterUpload, hashMerkleMisAJour };
+};
+
+/**
  * RECUPERATION DES DONNEES DEPUIS PINATA
  */
 
@@ -203,7 +290,10 @@ export const getFileFromPinata = async (_cid) => {
     const res = await myPinataSDK.gateways.public.get(_cid);
     return res;
   } catch (error) {
-    console.error("Erreur lors de la recuperation de fichier depuis pinata : ", error);
+    console.error(
+      "Erreur lors de la recuperation de fichier depuis pinata : ",
+      error
+    );
     return;
   }
 };

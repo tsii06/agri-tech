@@ -8,6 +8,7 @@ import {
   getIPFSURL,
   uploadConsolidatedData,
   getFileFromPinata,
+  updateCidParcelle,
 } from "../../utils/ipfsUtils";
 import {
   calculateParcelleMerkleHash,
@@ -125,70 +126,17 @@ function IntrantsParcelle() {
         // 2. Ajouter la nouvelle intrant à la liste existante
         const nouvellesIntrants = [...intrants, intrantData];
 
-        // 3. Charger l'état consolidé actuel de la parcelle (master), le mettre à jour avec les nouvelles intrants
-        let master = {};
-        try {
-          if (parcelle && parcelle.cid) {
-            const resp = await fetch(getIPFSURL(parcelle.cid));
-            if (resp.ok) {
-              const json = await resp.json();
-              master = json && json.items ? json.items : json;
-            }
-          }
-        } catch {}
-
-        // S'assurer qu'on a bien un objet master
-        if (!master || typeof master !== "object") {
-          master = {};
-        }
-        const masterMisAJour = {
-          ...master,
-          type: "parcelle",
-          parcelleId: id,
-          intrants: nouvellesIntrants,
-          timestamp: Date.now(),
-        };
-
-        // 4. Upload du master consolidé mis à jour (type parcelle)
-        const masterUpload = await uploadConsolidatedData(
-          masterMisAJour,
-          "parcelle"
-        );
-        if (!masterUpload.success) {
-          throw new Error(
-            "Erreur lors de l'upload des données de parcelle consolidées"
-          );
-        }
-
-        // 5. Mettre à jour le CID de la parcelle avec le nouveau master
-        const contract = await getContract();
-        const tx = await contract.mettreAJourIntrantsParcelle(
-          Number(id),
-          masterUpload.cid
-        );
-        await tx.wait();
-
-        // 6. Mettre à jour le hash Merkle de la parcelle
-        const hashMerkleMisAJour = calculateParcelleMerkleHash(
-          { ...parcelle, cid: masterUpload.cid },
-          nouvellesIntrants,
-          [], // photos
-          [] // inspections
-        );
-
-        const txHashMerkle = await contract.ajoutHashMerkleParcelle(
-          Number(id),
-          hashMerkleMisAJour
-        );
-        await txHashMerkle.wait();
+        // mettre a jour la nouvelle cid relier au parcelle
+        const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(parcelle, nouvellesIntrants, "intrants");
 
         // 7. Mettre à jour l'état local
         setIntrants(nouvellesIntrants);
-        setParcelle((prev) => ({
-          ...prev,
+        setParcelle({
+          id: parcelle.id,
+          producteur: parcelle.producteur,
           cid: masterUpload.cid,
           hashMerkle: hashMerkleMisAJour,
-        }));
+        });
 
         setMessage(
           "Intrant ajouté et enregistré sur la blockchain avec succès !"
