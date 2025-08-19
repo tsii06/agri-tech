@@ -342,7 +342,7 @@ function IntrantsParcelle() {
               {new Date(intrant.timestamp).toLocaleDateString()}
             </p>
 
-            {hasRole(roles, "Certificateur") && !intrant.valide && (
+            {hasRole(roles, 2) && !intrant.valide && (
               <button
                 className="btn btn-sm btn-outline-primary me-2"
                 onClick={() => {
