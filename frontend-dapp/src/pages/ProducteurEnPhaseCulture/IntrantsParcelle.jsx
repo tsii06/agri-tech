@@ -7,6 +7,7 @@ import {
   uploadIntrant,
   getIPFSURL,
   uploadConsolidatedData,
+  getFileFromPinata,
 } from "../../utils/ipfsUtils";
 import {
   calculateParcelleMerkleHash,
@@ -55,7 +56,8 @@ function IntrantsParcelle() {
             const data = await response.json();
             const root = data && data.items ? data.items : data;
             if (root && root.intrants && Array.isArray(root.intrants)) {
-              setIntrants(root.intrants);
+              const intrantsDetails = await getIntrantsDetails(root.intrants);
+              setIntrants(intrantsDetails);
             }
           }
         } catch (error) {
@@ -69,6 +71,19 @@ function IntrantsParcelle() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getIntrantsDetails = async (intrants) => {
+    let intrantsDetails = [];
+    for(let intrant of intrants) {
+      const detail = await getFileFromPinata(intrant.cid);
+      intrantsDetails.push({
+        ...intrant,
+        ...detail.data.items
+      });
+    }
+    console.log("detail : ", intrantsDetails);
+    return intrantsDetails;
   };
 
   const handleChange = (e) => {
@@ -283,7 +298,7 @@ function IntrantsParcelle() {
 
   const afficherIntrant = (intrant) => {
     return (
-      <div key={intrant.id} className="col-md-6 mb-3">
+      <div key={intrant.cid} className="col-md-6 mb-3">
         <div
           className={`card ${
             intrant.valide ? "border-success" : "border-warning"

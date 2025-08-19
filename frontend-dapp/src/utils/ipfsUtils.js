@@ -9,22 +9,22 @@ import myPinataSDK from "./pinata";
 export const uploadToIPFS = async (file, metadata = {}) => {
   try {
     const res = await myPinataSDK.upload.public.file(file).keyvalues(metadata);
-    
+
     if (res.is_duplicate) {
       throw new Error("Ce fichier a déjà été uploadé sur IPFS.");
     }
-    
+
     return {
       success: true,
       cid: res.cid,
       ipfsHash: res.IpfsHash,
-      id: res.id
+      id: res.id,
     };
   } catch (error) {
     console.error("Erreur lors de l'upload IPFS:", error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 };
@@ -37,9 +37,9 @@ export const uploadToIPFS = async (file, metadata = {}) => {
  */
 export const uploadPhotoParcelle = async (file, parcelleId) => {
   const metadata = {
-    type: 'photo-parcelle',
+    type: "photo-parcelle",
     parcelleId: parcelleId,
-    timestamp: Date.now().toString()
+    timestamp: Date.now().toString(),
   };
   return await uploadToIPFS(file, metadata);
 };
@@ -52,12 +52,12 @@ export const uploadPhotoParcelle = async (file, parcelleId) => {
  */
 export const uploadIntrant = async (file, intrantData) => {
   const metadata = {
-    type: 'intrant',
+    type: "intrant",
     nom: intrantData.nom,
     categorie: intrantData.categorie,
     quantite: intrantData.quantite,
     fournisseur: intrantData.fournisseur,
-    timestamp: Date.now().toString()
+    timestamp: Date.now().toString(),
   };
   return await uploadToIPFS(file, metadata);
 };
@@ -70,11 +70,11 @@ export const uploadIntrant = async (file, intrantData) => {
  */
 export const uploadInspection = async (file, inspectionData) => {
   const metadata = {
-    type: 'inspection',
+    type: "inspection",
     parcelleId: inspectionData.parcelleId,
     auditeur: inspectionData.auditeur,
     rapport: inspectionData.rapport,
-    timestamp: Date.now().toString()
+    timestamp: Date.now().toString(),
   };
   return await uploadToIPFS(file, metadata);
 };
@@ -87,12 +87,12 @@ export const uploadInspection = async (file, inspectionData) => {
  */
 export const uploadConditionTransport = async (file, conditionData) => {
   const metadata = {
-    type: 'condition-transport',
+    type: "condition-transport",
     commandeId: conditionData.commandeId,
     transporteur: conditionData.transporteur,
     temperature: conditionData.temperature,
     humidite: conditionData.humidite,
-    timestamp: Date.now().toString()
+    timestamp: Date.now().toString(),
   };
   return await uploadToIPFS(file, metadata);
 };
@@ -105,7 +105,7 @@ export const uploadConditionTransport = async (file, conditionData) => {
  */
 export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
   const metadata = {
-    type: 'certificat-phytosanitaire',
+    type: "certificat-phytosanitaire",
     dateEmission: certificatData.dateEmission,
     dateExpiration: certificatData.dateExpiration,
     region: certificatData.region,
@@ -113,7 +113,7 @@ export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
     adresseProducteur: certificatData.adresseProducteur,
     idParcelle: certificatData.idParcelle,
     numeroCertificat: certificatData.numeroCertificat,
-    timestamp: Date.now().toString()
+    timestamp: Date.now().toString(),
   };
   return await uploadToIPFS(file, metadata);
 };
@@ -124,7 +124,10 @@ export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
  * @param {string} gateway - Le gateway IPFS (optionnel)
  * @returns {string} L'URL complète
  */
-export const getIPFSURL = (cid, gateway = "https://bronze-kind-spider-769.mypinata.cloud") => {
+export const getIPFSURL = (
+  cid,
+  gateway = "https://bronze-kind-spider-769.mypinata.cloud"
+) => {
   if (!cid) return "";
   return `${gateway}/ipfs/${cid}`;
 };
@@ -155,7 +158,7 @@ export const createConsolidatedIPFSData = (items, type) => {
     type: type,
     items: items,
     timestamp: Date.now(),
-    version: "1.0"
+    version: "1.0",
   };
 };
 
@@ -168,20 +171,38 @@ export const createConsolidatedIPFSData = (items, type) => {
 export const uploadConsolidatedData = async (data, type) => {
   try {
     const consolidatedData = createConsolidatedIPFSData(data, type);
-    const blob = new Blob([JSON.stringify(consolidatedData)], { type: 'application/json' });
-    const file = new File([blob], `${type}-${Date.now()}.json`, { type: 'application/json' });
-    
+    const blob = new Blob([JSON.stringify(consolidatedData)], {
+      type: "application/json",
+    });
+    const file = new File([blob], `${type}-${Date.now()}.json`, {
+      type: "application/json",
+    });
+
     const metadata = {
       type: `consolidated-${type}`,
-      timestamp: Date.now().toString()
+      timestamp: Date.now().toString(),
     };
-    
+
     return await uploadToIPFS(file, metadata);
   } catch (error) {
     console.error("Erreur lors de l'upload des données consolidées:", error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
+  }
+};
+
+/**
+ * RECUPERATION DES DONNEES DEPUIS PINATA
+ */
+
+export const getFileFromPinata = async (_cid) => {
+  try {
+    const res = await myPinataSDK.gateways.public.get(_cid);
+    return res;
+  } catch (error) {
+    console.error("Erreur lors de la recuperation de fichier depuis pinata : ", error);
+    return;
   }
 };
