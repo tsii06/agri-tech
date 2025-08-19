@@ -82,7 +82,6 @@ function IntrantsParcelle() {
         ...detail.data.items
       });
     }
-    console.log("detail : ", intrantsDetails);
     return intrantsDetails;
   };
 
@@ -115,10 +114,12 @@ function IntrantsParcelle() {
           certificat: ''
         }
       );
+      const intrantDataDetail = await getFileFromPinata(resIntrant.cid);
       if (resIntrant && resIntrant.success) {
         const intrantData = {
           cid: resIntrant.cid,
           timestamp: Date.now(),
+          ...intrantDataDetail.data.items
         };
 
         // 2. Ajouter la nouvelle intrant à la liste existante
