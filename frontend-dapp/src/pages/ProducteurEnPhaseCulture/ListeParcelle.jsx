@@ -4,6 +4,7 @@ import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { getIPFSURL } from "../../utils/ipfsUtils";
+import { hasRole } from "../../utils/roles";
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
@@ -52,8 +53,10 @@ function MesParcelles() {
         parcelle = parcelleBase;
 
         // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)
-        if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
-          continue;
+        if(hasRole(roles, 0)) {
+          if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
+            continue;
+          }
         }
 
         // Charger les données IPFS consolidées si la parcelle a un CID

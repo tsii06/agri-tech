@@ -309,7 +309,7 @@ function IntrantsParcelle() {
       )}
 
       {/* Formulaire d'ajout d'intrant */}
-      {hasRole(roles, "Fournisseur") && (
+      {hasRole(roles, 1) && (
         <div className="card mb-4">
           <div className="card-header">
             <h5>Ajouter un intrant</h5>
