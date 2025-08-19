@@ -109,7 +109,11 @@ function IntrantsParcelle() {
       // 1. Upload sur IPFS
       const resIntrant = await uploadConsolidatedData(
         intrantDataIpfs,
-        "intrant"
+        "intrant",
+        {
+          valider: "false",
+          certificat: ''
+        }
       );
       if (resIntrant && resIntrant.success) {
         const intrantData = {

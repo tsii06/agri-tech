@@ -168,7 +168,7 @@ export const createConsolidatedIPFSData = (items, type) => {
  * @param {string} type - Le type de données
  * @returns {Promise<Object>} L'objet de réponse IPFS
  */
-export const uploadConsolidatedData = async (data, type) => {
+export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
   try {
     const consolidatedData = createConsolidatedIPFSData(data, type);
     const blob = new Blob([JSON.stringify(consolidatedData)], {
@@ -181,6 +181,7 @@ export const uploadConsolidatedData = async (data, type) => {
     const metadata = {
       type: `consolidated-${type}`,
       timestamp: Date.now().toString(),
+      ..._metadata
     };
 
     return await uploadToIPFS(file, metadata);
