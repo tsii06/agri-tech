@@ -27,9 +27,9 @@ import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
 import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
 import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
 import ListeActeursRole from "./pages/ListeActeursRole";
-import ActiverDesactiverActeur from "./pages/Admin/ActiverDesactiverActeur";
+import ActiverDesactiverActeur from "./pages/admin/ActiverDesactiverActeur";
 import RetirerContratDelegue from "./pages/RetirerContratDelegue";
-import AjouterRoleActeur from "./pages/Admin/AjouterRoleActeur";
+import AjouterRoleActeur from "./pages/admin/AjouterRoleActeur";
 import Dashboard from "./pages/Dashboard";
 import EspaceClient from "./pages/EspaceClient";
 
