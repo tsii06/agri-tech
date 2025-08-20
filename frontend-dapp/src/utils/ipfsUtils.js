@@ -154,7 +154,10 @@ export const deleteFromIPFSByCid = async (_cid) => {
     await deleteFromIPFS(id);
     return true;
   } catch (error) {
-    console.error("Erreur lors de la supression de fichier sur pinata par cid : ", error);
+    console.error(
+      "Erreur lors de la supression de fichier sur pinata par cid : ",
+      error
+    );
     return false;
   }
 };
@@ -302,6 +305,19 @@ export const getFileFromPinata = async (_cid) => {
   } catch (error) {
     console.error(
       "Erreur lors de la recuperation de fichier depuis pinata : ",
+      error
+    );
+    return;
+  }
+};
+
+export const getMetadataFromPinata = async (_cid) => {
+  try {
+    const res = await myPinataSDK.files.public.list().cid(_cid);
+    return res.files[0];
+  } catch (error) {
+    console.error(
+      "Erreur lors de la recuperation de metadata depuis pinata : ",
       error
     );
     return;

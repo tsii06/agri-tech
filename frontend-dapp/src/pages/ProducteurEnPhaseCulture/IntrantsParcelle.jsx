@@ -9,6 +9,7 @@ import {
   uploadConsolidatedData,
   getFileFromPinata,
   updateCidParcelle,
+  getMetadataFromPinata,
 } from "../../utils/ipfsUtils";
 import {
   calculateParcelleMerkleHash,
@@ -78,9 +79,11 @@ function IntrantsParcelle() {
     let intrantsDetails = [];
     for(let intrant of intrants) {
       const detail = await getFileFromPinata(intrant.cid);
+      const metadata = await getMetadataFromPinata(intrant.cid);
       intrantsDetails.push({
         ...intrant,
-        ...detail.data.items
+        ...detail.data.items,
+        ...metadata.keyvalues
       });
     }
     return intrantsDetails;
@@ -108,7 +111,7 @@ function IntrantsParcelle() {
 
       // 1. Upload sur IPFS
       const resIntrant = await uploadIntrant(intrantDataIpfs);
-      
+
       const intrantDataDetail = await getFileFromPinata(resIntrant.cid);
       if (resIntrant && resIntrant.success) {
         const intrantData = {
@@ -281,7 +284,7 @@ function IntrantsParcelle() {
             )}
             <p>
               <strong>Ajouté le:</strong>{" "}
-              {new Date(intrant.timestamp).toLocaleDateString()}
+              {new Date(intrant.timestamp * 1).toLocaleDateString()}
             </p>
 
             {hasRole(roles, 2) && !intrant.valide && (
