@@ -107,14 +107,8 @@ function IntrantsParcelle() {
       };
 
       // 1. Upload sur IPFS
-      const resIntrant = await uploadConsolidatedData(
-        intrantDataIpfs,
-        "intrant",
-        {
-          valider: "false",
-          certificat: ''
-        }
-      );
+      const resIntrant = await uploadIntrant(intrantDataIpfs);
+      
       const intrantDataDetail = await getFileFromPinata(resIntrant.cid);
       if (resIntrant && resIntrant.success) {
         const intrantData = {

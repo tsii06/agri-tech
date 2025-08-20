@@ -52,16 +52,13 @@ export const uploadPhotoParcelle = async (file, parcelleId) => {
  * @param {Object} intrantData - Les données de l'intrant
  * @returns {Promise<Object>} L'objet de réponse IPFS
  */
-export const uploadIntrant = async (file, intrantData) => {
-  const metadata = {
-    type: "intrant",
-    nom: intrantData.nom,
-    categorie: intrantData.categorie,
-    quantite: intrantData.quantite,
-    fournisseur: intrantData.fournisseur,
-    timestamp: Date.now().toString(),
-  };
-  return await uploadToIPFS(file, metadata);
+export const uploadIntrant = async (intrantData) => {
+  const resIntrant = await uploadConsolidatedData(intrantData, "intrant", {
+    valider: "false",
+    certificat: "",
+  });
+
+  return resIntrant;
 };
 
 /**
@@ -145,6 +142,19 @@ export const deleteFromIPFS = async (fileId) => {
     return true;
   } catch (error) {
     console.error("Erreur lors de la suppression IPFS:", error);
+    return false;
+  }
+};
+
+export const deleteFromIPFSByCid = async (_cid) => {
+  try {
+    // recuperer l'id du fichier a supprimer
+    const resId = await myPinataSDK.files.public.list().cid(_cid);
+    const id = resId.files[0].id;
+    await deleteFromIPFS(id);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la supression de fichier sur pinata par cid : ", error);
     return false;
   }
 };
@@ -244,13 +254,13 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
       Number(parcelle.id),
       masterUpload.cid
     );
-  // pour fournisseur
+    // pour fournisseur
   } else if (_type === "intrants") {
     tx = await contract.mettreAJourIntrantsParcelle(
       Number(parcelle.id),
       masterUpload.cid
     );
-  // pour auditeur
+    // pour auditeur
   } else if (_type === "inspections") {
     tx = await contract.mettreAJourInspectionsParcelle(
       Number(parcelle.id),
@@ -261,7 +271,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
 
   // supprimer l'ancien fichier associé à la parcelle
   if (parcelle && parcelle.cid) {
-    // recuperer l'id de l'ancien fichier
+    await deleteFromIPFSByCid(parcelle.cid);
   }
 
   // 6. Mettre à jour le hash Merkle de la parcelle
