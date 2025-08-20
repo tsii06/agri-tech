@@ -6,14 +6,12 @@ import { hasRole } from "../../utils/roles";
 import {
   uploadIntrant,
   getIPFSURL,
-  uploadConsolidatedData,
   getFileFromPinata,
   updateCidParcelle,
   getMetadataFromPinata,
+  uploadToIPFS,
 } from "../../utils/ipfsUtils";
-import {
-  calculateParcelleMerkleHash,
-} from "../../utils/merkleUtils";
+import myPinataSDK from "../../utils/pinata";
 
 function IntrantsParcelle() {
   const { id } = useParams();
@@ -57,8 +55,11 @@ function IntrantsParcelle() {
           if (response.ok) {
             const data = await response.json();
             const root = data && data.items ? data.items : data;
+
+            // recuperer tous les data necessaire a un intrant
             if (root && root.intrants && Array.isArray(root.intrants)) {
               const intrantsDetails = await getIntrantsDetails(root.intrants);
+              console.log("intrants : ", intrantsDetails);
               setIntrants(intrantsDetails);
             }
           }
@@ -77,13 +78,14 @@ function IntrantsParcelle() {
 
   const getIntrantsDetails = async (intrants) => {
     let intrantsDetails = [];
-    for(let intrant of intrants) {
+    for (let intrant of intrants) {
       const detail = await getFileFromPinata(intrant.cid);
       const metadata = await getMetadataFromPinata(intrant.cid);
       intrantsDetails.push({
         ...intrant,
         ...detail.data.items,
-        ...metadata.keyvalues
+        ...metadata.keyvalues,
+        id: metadata.id,
       });
     }
     return intrantsDetails;
@@ -117,14 +119,18 @@ function IntrantsParcelle() {
         const intrantData = {
           cid: resIntrant.cid,
           timestamp: Date.now(),
-          ...intrantDataDetail.data.items
+          ...intrantDataDetail.data.items,
         };
 
         // 2. Ajouter la nouvelle intrant à la liste existante
         const nouvellesIntrants = [...intrants, intrantData];
 
         // mettre a jour la nouvelle cid relier au parcelle
-        const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(parcelle, nouvellesIntrants, "intrants");
+        const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(
+          parcelle,
+          nouvellesIntrants,
+          "intrants"
+        );
 
         // 7. Mettre à jour l'état local
         setIntrants(nouvellesIntrants);
@@ -161,80 +167,38 @@ function IntrantsParcelle() {
         dateInspection: dateInspection.current.value,
         autoriteCertificatrice: autoriteCertificatrice.current.value,
         idParcelle: id,
-        categorie: selectedIntrant.categorie,
-        adresseFournisseur: selectedIntrant.fournisseur,
         adresseCertificateur: account,
         numeroCertificat: numeroCertificat.current.value,
-        timestamp: Date.now(),
+        timestamp: Date.now().toString(),
       };
 
       // Upload du certificat sur IPFS
-      const certificatUpload = await uploadIntrant(certificat, certificatData);
+      const certificatUpload = await uploadToIPFS(certificat, certificatData);
 
-      if (!certificatUpload.success) {
-        throw new Error("Erreur lors de l'upload du certificat");
-      }
+      // mettre a jour les metadata de l'intrant conscerner
+      const oldMetada = await getMetadataFromPinata(selectedIntrant.cid);
+      await myPinataSDK.files.public.update({
+        id: selectedIntrant.id,
+        keyvalues: {
+          valider: valide ? "true" : "false",
+          certificat: certificatUpload.cid,
+        },
+      });
 
       // Mettre à jour l'intrant avec le certificat
       const intrantsMisAJour = intrants.map((intrant) => {
         if (intrant.id === selectedIntrant.id) {
           return {
             ...intrant,
-            valide: valide,
-            certificatPhytosanitaire: certificatUpload.cid,
-            cid: certificatUpload.cid,
+            valider: valide ? "true" : "false",
+            certificat: certificatUpload.cid,
           };
         }
         return intrant;
       });
 
-      // Créer un objet consolidé avec tous les intrants mis à jour
-      const intrantsConsolides = {
-        type: "intrants-parcelle",
-        parcelleId: id,
-        intrants: intrantsMisAJour,
-        timestamp: Date.now(),
-      };
-
-      // Upload des données consolidées mises à jour sur IPFS
-      const intrantsUpload = await uploadConsolidatedData(
-        intrantsConsolides,
-        "intrants-parcelle"
-      );
-
-      if (!intrantsUpload.success) {
-        throw new Error("Erreur lors de l'upload des intrants consolidés");
-      }
-
-      // Mettre à jour le CID de la parcelle
-      const contract = await getContract();
-      const tx = await contract.mettreAJourIntrantsParcelle(
-        id,
-        intrantsUpload.cid
-      );
-      await tx.wait();
-
-      // Mettre à jour le hash Merkle de la parcelle
-      const hashMerkleMisAJour = calculateParcelleMerkleHash(
-        { ...parcelle, cid: intrantsUpload.cid },
-        [], // photos
-        intrantsMisAJour,
-        [] // inspections
-      );
-
-      const txHashMerkle = await contract.ajoutHashMerkleParcelle(
-        id,
-        hashMerkleMisAJour
-      );
-      await txHashMerkle.wait();
-
       // Mettre à jour l'état local
       setIntrants(intrantsMisAJour);
-      setParcelle((prev) => ({
-        ...prev,
-        cid: intrantsUpload.cid,
-        hashMerkle: hashMerkleMisAJour,
-      }));
 
       setShowModal(false);
       alert(`Intrant ${valide ? "validé" : "rejeté"} avec succès !`);
@@ -251,17 +215,17 @@ function IntrantsParcelle() {
       <div key={intrant.cid} className="col-md-6 mb-3">
         <div
           className={`card ${
-            intrant.valide ? "border-success" : "border-warning"
+            intrant.valider === "true" ? "border-success" : "border-warning"
           }`}
         >
           <div className="card-header d-flex justify-content-between align-items-center">
             <h6 className="mb-0">{intrant.nom}</h6>
             <span
               className={`badge ${
-                intrant.valide ? "bg-success" : "bg-warning"
+                intrant.valider === "true" ? "bg-success" : "bg-warning"
               }`}
             >
-              {intrant.valide ? "Validé" : "En attente"}
+              {intrant.valider === "true" ? "Validé" : "En attente"}
             </span>
           </div>
           <div className="card-body">
@@ -277,9 +241,17 @@ function IntrantsParcelle() {
             <p>
               <strong>CID IPFS:</strong> {intrant.cid || "Non disponible"}
             </p>
-            {intrant.certificatPhytosanitaire && (
+            {intrant.certificat && (
               <p>
-                <strong>Certificat:</strong> {intrant.certificatPhytosanitaire}
+                <strong>Certificat:</strong>
+                <a
+                  href={getIPFSURL(intrant.certificat)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ms-2 text-decoration-none text-success"
+                >
+                  Voir ici
+                </a>
               </p>
             )}
             <p>
@@ -287,7 +259,7 @@ function IntrantsParcelle() {
               {new Date(intrant.timestamp * 1).toLocaleDateString()}
             </p>
 
-            {hasRole(roles, 2) && !intrant.valide && (
+            {hasRole(roles, 2) && intrant.valider === "false" && (
               <button
                 className="btn btn-sm btn-outline-primary me-2"
                 onClick={() => {
@@ -579,14 +551,6 @@ function IntrantsParcelle() {
                   disabled={btnLoading}
                 >
                   {btnLoading ? "Validation..." : "Valider"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={(e) => validerIntrant(e, false)}
-                  disabled={btnLoading}
-                >
-                  {btnLoading ? "Rejet..." : "Rejeter"}
                 </button>
               </div>
             </div>
