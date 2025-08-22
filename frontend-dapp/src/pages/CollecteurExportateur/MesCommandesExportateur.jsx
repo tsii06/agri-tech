@@ -31,41 +31,50 @@ function MesCommandesExportateur() {
         console.log("Adresse connectée:", account);
         
         // Obtenir le nombre total de commandes
-        const compteurCommandes = await contract.getCompteurCommande();
-        console.log("Nombre total de commandes:", compteurCommandes.toString());
+        const compteurCommandesRaw = await contract.getCompteurCommande();
+        const compteurCommandes = Number(compteurCommandesRaw);
+        console.log("Nombre total de commandes:", compteurCommandes);
         
         // Charger toutes les commandes
         const commandesTemp = [];
         for (let i = 1; i <= compteurCommandes; i++) {
-          const commande = await contract.getCommande(i);
+          const commandeRaw = await contract.getCommande(i);
+
+          // Normaliser adresses
+          const exportateurAddr = commandeRaw.exportateur?.toString?.() || commandeRaw.exportateur || "";
+          const collecteurAddr = commandeRaw.collecteur?.toString?.() || commandeRaw.collecteur || "";
+          if (!exportateurAddr) continue;
           
           // Vérifier si la commande appartient à l'exportateur connecté
-          if (commande.exportateur.toLowerCase() === account.toLowerCase()) {
-            const produit = await contract.getProduit(commande.idProduit);
+          if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
+            // Normaliser types primitifs
+            const idProduitNum = Number(commandeRaw.idProduit ?? 0);
+            const produit = idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
             
             let commandeEnrichie = {
-              id: commande.id.toString(),
-              idProduit: commande.idProduit.toString(),
-              quantite: commande.quantite.toString(),
-              prix: commande.prix.toString(),
-              payer: commande.payer,
-              statutTransport: commande.statutTransport,
-              collecteur: commande.collecteur.toString(),
-              exportateur: commande.exportateur.toString(),
-              nomProduit: produit.nom,
-              cid: commande.cid || "",
-              hashMerkle: commande.hashMerkle || ""
+              id: Number(commandeRaw.id ?? i),
+              idProduit: idProduitNum,
+              quantite: Number(commandeRaw.quantite ?? 0),
+              prix: Number(commandeRaw.prix ?? 0),
+              payer: Boolean(commandeRaw.payer),
+              statutTransport: Number(commandeRaw.statutTransport ?? 0),
+              statutProduit: Number(commandeRaw.statutProduit ?? 0),
+              collecteur: collecteurAddr,
+              exportateur: exportateurAddr,
+              nomProduit: produit?.nom || "",
+              cid: commandeRaw.cid || "",
+              hashMerkle: commandeRaw.hashMerkle || ""
             };
 
             // Charger les données IPFS si un CID existe
-            if (commande.cid) {
+            if (commandeEnrichie.cid) {
               try {
-                const response = await fetch(getIPFSURL(commande.cid));
+                const response = await fetch(getIPFSURL(commandeEnrichie.cid));
                 if (response.ok) {
                   const ipfsData = await response.json();
                   commandeEnrichie = {
                     ...commandeEnrichie,
-                    nomProduit: ipfsData.nomProduit || produit.nom,
+                    nomProduit: ipfsData.nomProduit || produit?.nom || commandeEnrichie.nomProduit,
                     ipfsTimestamp: ipfsData.timestamp,
                     ipfsVersion: ipfsData.version,
                     produitHashMerkle: ipfsData.produitHashMerkle || ""
@@ -122,6 +131,20 @@ function MesCommandesExportateur() {
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
       setError(error.message);
+    }
+  };
+
+  const handleValiderCommande = async (commandeId) => {
+    try {
+      const contract = await getCollecteurExportateurContract();
+      const tx = await contract.mettreAJourStatutCommande(Number(commandeId), 1);
+      await tx.wait();
+      // Mettre à jour localement le statutProduit
+      const next = commandes.map(c => c.id === commandeId ? { ...c, statutProduit: 1 } : c);
+      setCommandes(next);
+    } catch (e) {
+      console.error("Erreur lors de la validation de la commande:", e);
+      setError(e?.reason || e?.data?.message || e?.message || "Erreur lors de la validation de la commande");
     }
   };
 
@@ -311,8 +334,8 @@ function MesCommandesExportateur() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3">
-                    {!commande.payer && (
+                  <div className="mt-3 d-flex gap-2">
+                    {!commande.payer && commande.statutProduit === 1 && (
                       <button
                         onClick={() => {
                           setCommandeSelectionnee(commande);
@@ -321,6 +344,14 @@ function MesCommandesExportateur() {
                         className="btn-agrichain"
                       >
                         Payer
+                      </button>
+                    )}
+                    {Number(commande.statutTransport) === 1 && Number(commande.statutProduit) !== 1 && (
+                      <button
+                        onClick={() => handleValiderCommande(commande.id)}
+                        className="btn btn-success btn-sm"
+                      >
+                        Valider la commande
                       </button>
                     )}
                   </div>

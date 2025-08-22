@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCollecteurExportateurContract } from "../../utils/contract";
+import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { useParams } from "react-router-dom";
 import { Box, Hash, Package2, BadgeEuro, Calendar, FileCheck2, Search, ChevronDown, User } from "lucide-react";
 import { useUserContext } from '../../context/useContextt';
@@ -30,51 +30,59 @@ function ListeProduits() {
     const chargerProduits = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
-        const provider = contract.runner.provider;
-        const signer = await provider.getSigner();
-        const account = await signer.getAddress();
-        let cible = address ? address.toLowerCase() : (account ? account.toLowerCase() : null);
+        const cp = await getCollecteurProducteurContract();
+        // Filtrage STABLE: on filtre uniquement si un address est fourni dans l'URL
+        const cible = address ? address.toLowerCase() : null;
         
         // Obtenir le nombre total de produits
-        const compteurProduits = await contract.getCompteurProduit();
+        const compteurProduitsRaw = await contract.getCompteurProduit();
+        const compteurProduits = Number(compteurProduitsRaw);
         const produitsTemp = [];
         
         for (let i = 1; i <= compteurProduits; i++) {
-          const produit = await contract.getProduit(i);
-          if (hasRole(roles, 3) && cible && produit.collecteur.toLowerCase() !== cible) continue;
-          
+          const produitRaw = await contract.getProduit(i);
+          const collecteurAddr = produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
+          // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
+          if (cible && collecteurAddr.toLowerCase() !== cible) continue;
+
           let produitEnrichi = {
             id: i,
-            idRecolte: produit.idRecolte.toString(),
-            nom: produit.nom,
-            quantite: produit.quantite.toString(),
-            prixUnit: produit.prixUnit.toString(),
-            statut: Number(produit.statut),
-            dateRecolte: produit.dateRecolte,
-            certificatPhytosanitaire: produit.certificatPhytosanitaire,
-            collecteur: produit.collecteur.toString(),
-            cid: produit.cid || "",
-            hashMerkle: produit.hashMerkle || ""
+            idRecolte: Number(produitRaw.idRecolte ?? 0),
+            nom: "",
+            quantite: Number(produitRaw.quantite ?? 0),
+            prixUnit: null,
+            statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
+            dateRecolte: "",
+            certificatPhytosanitaire: "",
+            collecteur: collecteurAddr,
+            cid: "",
+            hashMerkle: produitRaw.hashMerkle || ""
           };
 
-          // Charger les données IPFS si un CID existe
-          if (produit.cid) {
-            try {
-              const response = await fetch(getIPFSURL(produit.cid));
-              if (response.ok) {
-                const ipfsData = await response.json();
-                produitEnrichi = {
-                  ...produitEnrichi,
-                  nom: ipfsData.nom || produit.nom,
-                  dateRecolte: ipfsData.dateRecolte || produit.dateRecolte,
-                  ipfsTimestamp: ipfsData.timestamp,
-                  ipfsVersion: ipfsData.version,
-                  recolteHashMerkle: ipfsData.recolteHashMerkle || ""
-                };
+          // Enrichir depuis la récolte associée (prixUnit et CID JSON)
+          try {
+            if (produitEnrichi.idRecolte > 0) {
+              const recolteRaw = await cp.getRecolte(produitEnrichi.idRecolte);
+              produitEnrichi.prixUnit = Number(recolteRaw.prixUnit ?? 0);
+              const recolteCid = recolteRaw.cid || "";
+              if (recolteCid) {
+                const response = await fetch(getIPFSURL(recolteCid));
+                if (response.ok) {
+                  const contentType = response.headers.get('content-type') || '';
+                  if (contentType.includes('application/json')) {
+                    const ipfsData = await response.json();
+                    const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                    produitEnrichi.nom = root.nomProduit || produitEnrichi.nom || "Produit";
+                    produitEnrichi.dateRecolte = root.dateRecolte || produitEnrichi.dateRecolte || "";
+                    produitEnrichi.ipfsTimestamp = ipfsData.timestamp || null;
+                    produitEnrichi.ipfsVersion = ipfsData.version || null;
+                    produitEnrichi.recolteHashMerkle = root.parcelleHashMerkle || "";
+                  }
+                }
               }
-            } catch (ipfsError) {
-              console.log(`Erreur lors du chargement IPFS pour le produit ${i}:`, ipfsError);
             }
+          } catch (e) {
+            // laisser valeurs par défaut
           }
           
           produitsTemp.push(produitEnrichi);

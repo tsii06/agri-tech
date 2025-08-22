@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
-import { getIPFSURL } from "../../utils/ipfsUtils";
+import { getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
 import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
 
 function LivraisonRecolte() {
@@ -18,26 +18,28 @@ function LivraisonRecolte() {
     try {
       const contract = await getCollecteurExportateurContract();
       // Charger toutes les commandes (CommandeProduit)
-      const compteurCommandes = await contract.getCompteurCommande();
+      const compteurCommandesRaw = await contract.getCompteurCommande();
+      const compteurCommandes = Number(compteurCommandesRaw);
       const commandesTemp = [];
       
       for (let i = 1; i <= compteurCommandes; i++) {
         const c = await contract.getCommande(i);
-        const p = await contract.getProduit(c.idProduit); // pour avoir le nom du produit commander
+        const idProduitNum = Number(c.idProduit ?? 0);
+        const p = idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
         
         // Charger les données IPFS consolidées si la commande a un CID
         let commandeEnrichie = {
-          id: c.id.toString(),
-          idProduit: c.idProduit.toString(),
-          quantite: c.quantite.toString(),
-          statutTransport: Number(c.statutTransport),
-          prix: c.prix.toString(),
-          payer: c.payer,
-          collecteur: c.collecteur,
-          exportateur: c.exportateur,
-          nomProduit: p.nom,
-          cid: c.cid,
-          hashMerkle: c.hashMerkle
+          id: Number(c.id ?? i),
+          idProduit: idProduitNum,
+          quantite: Number(c.quantite ?? 0),
+          statutTransport: Number(c.statutTransport ?? 0),
+          prix: Number(c.prix ?? 0),
+          payer: Boolean(c.payer),
+          collecteur: (c.collecteur?.toString?.() || c.collecteur || ""),
+          exportateur: (c.exportateur?.toString?.() || c.exportateur || ""),
+          nomProduit: p?.nom || "",
+          cid: c.cid || "",
+          hashMerkle: c.hashMerkle || ""
         };
 
         if (c.cid) {
@@ -150,8 +152,22 @@ function LivraisonRecolte() {
   const handleEnregistrerCondition = async (commandeId) => {
     setIsProcessing(true);
     try {
+      // 1) Créer les données de condition et uploader sur IPFS (JSON)
+      const conditionData = {
+        type: 'condition-transport-produit',
+        commandeId: Number(commandeId),
+        temperature: temperature || null,
+        humidite: humidite || null,
+        timestamp: Date.now(),
+        version: '1.0'
+      };
+      const uploaded = await uploadConsolidatedData(conditionData, 'conditions-transport');
+      if (!uploaded.success) {
+        throw new Error('Echec upload IPFS des conditions');
+      }
+      // 2) Enregistrer côté contrat (signature: (id, cid))
       const contract = await getCollecteurExportateurContract();
-      const tx = await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      const tx = await contract.enregistrerCondition(Number(commandeId), uploaded.cid);
       await tx.wait();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
@@ -190,8 +206,22 @@ function LivraisonRecolte() {
   const handleEnregistrerConditionRecolte = async (commandeId) => {
     setIsProcessing(true);
     try {
+      // 1) Créer les données et uploader sur IPFS (JSON)
+      const conditionData = {
+        type: 'condition-transport-recolte',
+        commandeId: Number(commandeId),
+        temperature: temperature || null,
+        humidite: humidite || null,
+        timestamp: Date.now(),
+        version: '1.0'
+      };
+      const uploaded = await uploadConsolidatedData(conditionData, 'conditions-transport');
+      if (!uploaded.success) {
+        throw new Error('Echec upload IPFS des conditions');
+      }
+      // 2) Enregistrer côté contrat CP (signature: (id, cid))
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.enregistrerCondition(Number(commandeId), temperature, humidite);
+      const tx = await contract.enregistrerCondition(Number(commandeId), uploaded.cid);
       await tx.wait();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
