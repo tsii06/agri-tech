@@ -5,9 +5,68 @@ import { useUserContext } from '../../context/useContextt';
 import { 
   ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, 
   TreePine, MapPin, Calendar, Thermometer, Droplets, Eye, ArrowLeft,
-  FileText, Shield, Database
+  FileText, Shield, Database, Download, GitBranch
 } from "lucide-react";
 import { getIPFSURL } from '../../utils/ipfsUtils';
+import { keccak256 } from "ethers";
+
+// Fonction pour hasher une transaction
+function hashTx(tx) {
+  return keccak256(Buffer.from(JSON.stringify(tx)));
+}
+
+// Fonction pour construire l'arbre de Merkle
+function buildMerkleTree(transactions) {
+  let leaves = transactions.map(hashTx);
+  let level = leaves;
+  let tree = [leaves];
+  
+  while (level.length > 1) {
+    const nextLevel = [];
+    for (let i = 0; i < level.length; i += 2) {
+      if (i + 1 < level.length) {
+        nextLevel.push(keccak256(Buffer.concat([
+          Buffer.from(level[i].slice(2), 'hex'),
+          Buffer.from(level[i+1].slice(2), 'hex')
+        ])));
+      } else {
+        nextLevel.push(level[i]);
+      }
+    }
+    level = nextLevel;
+    tree.push(level);
+  }
+  
+  return { 
+    root: level[0], 
+    leaves,
+    tree,
+    proof: generateProof(tree, 0) // Preuve pour la première transaction
+  };
+}
+
+// Fonction pour générer une preuve Merkle
+function generateProof(tree, leafIndex) {
+  const proof = [];
+  let index = leafIndex;
+  
+  for (let i = 0; i < tree.length - 1; i++) {
+    const level = tree[i];
+    const isRightNode = index % 2 === 1;
+    const siblingIndex = isRightNode ? index - 1 : index + 1;
+    
+    if (siblingIndex < level.length) {
+      proof.push({
+        hash: level[siblingIndex],
+        isRight: !isRightNode
+      });
+    }
+    
+    index = Math.floor(index / 2);
+  }
+  
+  return proof;
+}
 
 function StockDetails() {
   const { id } = useParams();
@@ -20,6 +79,9 @@ function StockDetails() {
   const [paiements, setPaiements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [merkleTree, setMerkleTree] = useState(null);
+  const [isGeneratingMerkle, setIsGeneratingMerkle] = useState(false);
+  const [showMerkleDetails, setShowMerkleDetails] = useState(false);
   const { account } = useUserContext();
 
   useEffect(() => {
@@ -311,6 +373,190 @@ function StockDetails() {
     chargerDetails();
   }, [account, id]);
 
+  // Fonction pour générer l'arbre de Merkle
+  const generateMerkleTree = async () => {
+    setIsGeneratingMerkle(true);
+    try {
+      const allTransactions = [];
+
+      // 1. Ajouter la commande
+      if (commande) {
+        allTransactions.push({
+          type: "commande",
+          id: commande.id,
+          data: {
+            idLotProduit: commande.idLotProduit,
+            quantite: commande.quantite,
+            prix: commande.prix,
+            payer: commande.payer,
+            statutTransport: commande.statutTransport,
+            statutProduit: commande.statutProduit,
+            collecteur: commande.collecteur,
+            exportateur: commande.exportateur,
+            nomProduit: commande.nomProduit,
+            cid: commande.cid,
+            hashMerkle: commande.hashMerkle,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      // 2. Ajouter le lot de produit
+      if (lotProduit) {
+        allTransactions.push({
+          type: "lotProduit",
+          id: lotProduit.id,
+          data: {
+            idRecoltes: lotProduit.idRecoltes,
+            quantite: lotProduit.quantite,
+            prix: lotProduit.prix,
+            collecteur: lotProduit.collecteur,
+            cid: lotProduit.cid,
+            hashMerkle: lotProduit.hashMerkle,
+            ipfsData: lotProduit.ipfsRoot,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      // 3. Ajouter tous les produits
+      produits.forEach(produit => {
+        allTransactions.push({
+          type: "produit",
+          id: produit.id,
+          data: {
+            idRecolte: produit.idRecolte,
+            quantite: produit.quantite,
+            collecteur: produit.collecteur,
+            enregistre: produit.enregistre,
+            hashMerkle: produit.hashMerkle,
+            timestamp: new Date().toISOString()
+          }
+        });
+      });
+
+      // 4. Ajouter toutes les récoltes
+      recoltes.forEach(recolte => {
+        allTransactions.push({
+          type: "recolte",
+          id: recolte.id,
+          data: {
+            idParcelles: recolte.idParcelles,
+            quantite: recolte.quantite,
+            prixUnit: recolte.prixUnit,
+            certifie: recolte.certifie,
+            certificatPhytosanitaire: recolte.certificatPhytosanitaire,
+            producteur: recolte.producteur,
+            nomProduit: recolte.nomProduit,
+            dateRecolte: recolte.dateRecolte,
+            cid: recolte.cid,
+            hashMerkle: recolte.hashMerkle,
+            ipfsData: recolte.ipfsRoot,
+            timestamp: new Date().toISOString()
+          }
+        });
+      });
+
+      // 5. Ajouter toutes les parcelles
+      parcelles.forEach(parcelle => {
+        allTransactions.push({
+          type: "parcelle",
+          id: parcelle.id,
+          data: {
+            producteur: parcelle.producteur,
+            nom: parcelle.nom,
+            superficie: parcelle.superficie,
+            photos: parcelle.photos,
+            intrants: parcelle.intrants,
+            inspections: parcelle.inspections,
+            cid: parcelle.cid,
+            hashMerkle: parcelle.hashMerkle,
+            ipfsData: parcelle.ipfsRoot,
+            timestamp: new Date().toISOString()
+          }
+        });
+      });
+
+      // 6. Ajouter les conditions de transport
+      if (conditionsTransport) {
+        allTransactions.push({
+          type: "conditionTransport",
+          id: conditionsTransport.id,
+          data: {
+            temperature: conditionsTransport.temperature,
+            humidite: conditionsTransport.humidite,
+            ipfsData: conditionsTransport.ipfsRoot,
+            hashMerkle: conditionsTransport.hashMerkle,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      // 7. Ajouter les paiements
+      paiements.forEach(paiement => {
+        allTransactions.push({
+          type: "paiement",
+          id: paiement.id,
+          data: {
+            montant: paiement.montant,
+            payeur: paiement.payeur,
+            destinataire: paiement.destinataire,
+            hashMerkle: paiement.hashMerkle,
+            timestamp: new Date().toISOString()
+          }
+        });
+      });
+
+      console.log("Transactions collectées pour l'arbre Merkle:", allTransactions);
+
+      // Construire l'arbre de Merkle
+      const merkleResult = buildMerkleTree(allTransactions);
+      setMerkleTree(merkleResult);
+      setShowMerkleDetails(true);
+
+      console.log("Arbre de Merkle généré:", merkleResult);
+    } catch (error) {
+      console.error("Erreur lors de la génération de l'arbre Merkle:", error);
+      alert("Erreur lors de la génération de l'arbre Merkle: " + error.message);
+    } finally {
+      setIsGeneratingMerkle(false);
+    }
+  };
+
+  // Fonction pour exporter les données
+  const exportMerkleData = () => {
+    if (!merkleTree) return;
+
+    const exportData = {
+      commandeId: id,
+      timestamp: new Date().toISOString(),
+      merkleRoot: merkleTree.root,
+      merkleTree: merkleTree.tree,
+      proof: merkleTree.proof,
+      leaves: merkleTree.leaves,
+      traceabilityData: {
+        commande,
+        lotProduit,
+        produits,
+        recoltes,
+        parcelles,
+        conditionsTransport,
+        paiements
+      }
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `traceability-commande-${id}-merkle-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="container py-4">
@@ -540,7 +786,7 @@ function StockDetails() {
               )}
               {parcelles.length > 0 && parcelles[0]?.inspections && parcelles[0].inspections.length > 0 && (
                 <div className="mb-3">
-                  <strong>Inspections:</strong> {parcelles[0].inspections.length} inspection(s)
+                  <strong>Inspections:</strong> {parcelle.inspections ? parcelle.inspections.length : 0} inspection(s)
                 </div>
               )}
               {parcelles.length > 0 && parcelles[0]?.cid && (
@@ -719,6 +965,184 @@ function StockDetails() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Section Arbre de Merkle */}
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">
+                <GitBranch size={20} className="me-2" />
+                Arbre de Merkle - Traçabilité Complète
+              </h5>
+              <div>
+                <button 
+                  className="btn btn-primary me-2" 
+                  onClick={generateMerkleTree}
+                  disabled={isGeneratingMerkle || !commande}
+                >
+                  {isGeneratingMerkle ? (
+                    <>
+                      <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Shield size={16} className="me-2" />
+                      Générer l'Arbre Merkle
+                    </>
+                  )}
+                </button>
+                {merkleTree && (
+                  <button 
+                    className="btn btn-success" 
+                    onClick={exportMerkleData}
+                  >
+                    <Download size={16} className="me-2" />
+                    Exporter
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="card-body">
+              {!merkleTree ? (
+                <div className="text-center text-muted py-4">
+                  <GitBranch size={48} className="mb-3" />
+                  <p>Cliquez sur "Générer l'Arbre Merkle" pour créer l'arbre de traçabilité complet</p>
+                  <p className="small">L'arbre Merkle garantit l'intégrité et l'authenticité de toute la chaîne de traçabilité</p>
+                </div>
+              ) : (
+                <div>
+                  {/* Racine de Merkle */}
+                  <div className="alert alert-success">
+                    <h6 className="mb-2">
+                      <Shield size={16} className="me-2" />
+                      Racine de Merkle (Root Hash)
+                    </h6>
+                    <code className="d-block bg-light p-2 rounded">
+                      {merkleTree.root}
+                    </code>
+                    <small className="text-muted">
+                      Cette racine unique représente l'intégrité de toute la chaîne de traçabilité
+                    </small>
+                  </div>
+
+                  {/* Statistiques */}
+                  <div className="row mb-4">
+                    <div className="col-md-3">
+                      <div className="text-center">
+                        <h4 className="text-primary">{merkleTree.leaves.length}</h4>
+                        <small className="text-muted">Feuilles (Transactions)</small>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="text-center">
+                        <h4 className="text-success">{merkleTree.tree.length}</h4>
+                        <small className="text-muted">Niveaux</small>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="text-center">
+                        <h4 className="text-info">{merkleTree.proof.length}</h4>
+                        <small className="text-muted">Preuves</small>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="text-center">
+                        <h4 className="text-warning">{new Date().toLocaleDateString()}</h4>
+                        <small className="text-muted">Généré le</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Détails de l'arbre */}
+                  {showMerkleDetails && (
+                    <div>
+                      <h6 className="mb-3">
+                        <Eye size={16} className="me-2" />
+                        Détails de l'Arbre
+                      </h6>
+                      
+                      {/* Feuilles (Transactions) */}
+                      <div className="mb-4">
+                        <h6>Feuilles (Transactions) :</h6>
+                        <div className="row">
+                          {merkleTree.leaves.map((leaf, index) => (
+                            <div key={index} className="col-md-6 mb-2">
+                              <div className="border rounded p-2 bg-light">
+                                <small className="text-muted">Hash #{index + 1}:</small>
+                                <div className="small text-truncate" title={leaf}>
+                                  {leaf.substring(0, 20)}...
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Preuves Merkle */}
+                      <div className="mb-4">
+                        <h6>Preuves Merkle (pour la première transaction) :</h6>
+                        <div className="row">
+                          {merkleTree.proof.map((proof, index) => (
+                            <div key={index} className="col-md-6 mb-2">
+                              <div className="border rounded p-2">
+                                <small className="text-muted">
+                                  Niveau {index + 1} - {proof.isRight ? 'Droite' : 'Gauche'}:
+                                </small>
+                                <div className="small text-truncate" title={proof.hash}>
+                                  {proof.hash.substring(0, 20)}...
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Arbre complet (optionnel) */}
+                      <div className="mb-4">
+                        <h6>Structure de l'Arbre :</h6>
+                        <div className="bg-light p-3 rounded">
+                          {merkleTree.tree.map((level, levelIndex) => (
+                            <div key={levelIndex} className="mb-2">
+                              <small className="text-muted">Niveau {levelIndex + 1}:</small>
+                              <div className="d-flex flex-wrap">
+                                {level.map((hash, hashIndex) => (
+                                  <span 
+                                    key={hashIndex} 
+                                    className="badge bg-secondary me-1 mb-1"
+                                    title={hash}
+                                  >
+                                    {hash.substring(0, 8)}...
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Informations de sécurité */}
+                      <div className="alert alert-info">
+                        <h6>
+                          <Shield size={16} className="me-2" />
+                          Sécurité et Intégrité
+                        </h6>
+                        <ul className="mb-0 small">
+                          <li>Chaque modification des données change la racine de Merkle</li>
+                          <li>Les preuves permettent de vérifier l'appartenance sans révéler l'arbre complet</li>
+                          <li>L'arbre garantit l'intégrité de toute la chaîne de traçabilité</li>
+                          <li>Impossible de modifier une transaction sans détecter la fraude</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
