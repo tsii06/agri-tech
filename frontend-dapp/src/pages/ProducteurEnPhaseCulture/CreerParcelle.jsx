@@ -151,7 +151,7 @@ function CreerParcelle() {
   return (
     <div className="container mt-4">
       <h2>Créer une nouvelle parcelle</h2>
-      
+
       {error && (
         <div className="alert alert-danger" role="alert">
           {error}
@@ -161,7 +161,7 @@ function CreerParcelle() {
       <form onSubmit={handleSubmit}>
         <div className="row">
           <div className="col-md-6">
-            <div className="mb-3">
+        <div className="mb-3">
               <label htmlFor="qualiteSemence" className="form-label">
                 Qualité de la semence
               </label>
@@ -174,9 +174,9 @@ function CreerParcelle() {
                 onChange={handleInputChange}
                 required
               />
-            </div>
+        </div>
 
-            <div className="mb-3">
+        <div className="mb-3">
               <label htmlFor="methodeCulture" className="form-label">
                 Méthode de culture
               </label>
@@ -189,9 +189,9 @@ function CreerParcelle() {
                 onChange={handleInputChange}
                 required
               />
-            </div>
+        </div>
 
-            <div className="mb-3">
+        <div className="mb-3">
               <label htmlFor="dateRecolte" className="form-label">
                 Date de récolte prévue
               </label>
@@ -205,7 +205,7 @@ function CreerParcelle() {
                 required
               />
             </div>
-          </div>
+        </div>
 
           <div className="col-md-6">
             <div className="mb-3">
@@ -216,15 +216,15 @@ function CreerParcelle() {
                   zoom={13}
                   style={{ height: "100%", width: "100%" }}
                 >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  <LocationMarker setLocation={setLocation} />
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          <LocationMarker setLocation={setLocation} />
                   {location && (
                     <Marker position={[location.lat, location.lng]} />
                   )}
-                </MapContainer>
+        </MapContainer>
               </div>
               <small className="form-text text-muted">
                 Cliquez sur la carte pour définir l'emplacement de la parcelle
@@ -241,7 +241,7 @@ function CreerParcelle() {
           <div className="card-body">
             <div className="row">
               <div className="col-md-6">
-                <div className="mb-3">
+          <div className="mb-3">
                   <label htmlFor="certificat" className="form-label">
                     Fichier du certificat
                   </label>
@@ -253,9 +253,9 @@ function CreerParcelle() {
                     accept=".pdf,.doc,.docx"
                     required
                   />
-                </div>
+          </div>
 
-                <div className="mb-3">
+          <div className="mb-3">
                   <label htmlFor="dateEmission" className="form-label">
                     Date d'émission
                   </label>
@@ -265,7 +265,7 @@ function CreerParcelle() {
                     ref={dateEmission}
                     required
                   />
-                </div>
+          </div>
 
                 <div className="mb-3">
                   <label htmlFor="dateExpiration" className="form-label">
@@ -277,7 +277,7 @@ function CreerParcelle() {
                     ref={dateExpiration}
                     required
                   />
-                </div>
+            </div>
               </div>
 
               <div className="col-md-6">
@@ -291,9 +291,9 @@ function CreerParcelle() {
                     ref={region}
                     required
                   />
-                </div>
+          </div>
 
-                <div className="mb-3">
+          <div className="mb-3">
                   <label htmlFor="autoriteCertificatrice" className="form-label">
                     Autorité certificatrice
                   </label>
@@ -303,9 +303,9 @@ function CreerParcelle() {
                     ref={autoriteCertificatrice}
                     required
                   />
-                </div>
+          </div>
 
-                <div className="mb-3">
+          <div className="mb-3">
                   <label htmlFor="numero_certificat" className="form-label">
                     Numéro du certificat
                   </label>
@@ -319,16 +319,16 @@ function CreerParcelle() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
         <div className="mt-4">
-          <button
+        <button
             type="submit"
             className="btn btn-primary"
-            disabled={loading}
-          >
-            {loading ? "Création en cours..." : "Créer la parcelle"}
-          </button>
+          disabled={loading}
+        >
+          {loading ? "Création en cours..." : "Créer la parcelle"}
+        </button>
         </div>
       </form>
     </div>

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
-import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown } from "lucide-react";
+import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Eye } from "lucide-react";
 import { getIPFSURL } from '../../utils/ipfsUtils';
+import { useLocation, Link } from 'react-router-dom';
 
-function MesCommandesExportateur() {
+function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,6 +17,11 @@ function MesCommandesExportateur() {
   const [search, setSearch] = useState("");
   const [paiementFiltre, setPaiementFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
+  const [expandedId, setExpandedId] = useState(null);
+  const location = useLocation();
+
+  // Déterminer si on est sur la page stock
+  const isStockPage = location.pathname === '/stock';
 
   useEffect(() => {
     if (!account) return;
@@ -72,12 +78,15 @@ function MesCommandesExportateur() {
                 const response = await fetch(getIPFSURL(commandeEnrichie.cid));
                 if (response.ok) {
                   const ipfsData = await response.json();
+                  const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
                   commandeEnrichie = {
                     ...commandeEnrichie,
-                    nomProduit: ipfsData.nomProduit || produit?.nom || commandeEnrichie.nomProduit,
+                    nomProduit: root.nomProduit || produit?.nom || commandeEnrichie.nomProduit,
                     ipfsTimestamp: ipfsData.timestamp,
                     ipfsVersion: ipfsData.version,
-                    produitHashMerkle: ipfsData.produitHashMerkle || ""
+                    produitHashMerkle: root.produitHashMerkle || ipfsData.produitHashMerkle || "",
+                    ipfsRoot: root,
+                    ipfsType: root.type || ipfsData.type || null
                   };
                 }
               } catch (ipfsError) {
@@ -180,6 +189,12 @@ function MesCommandesExportateur() {
       (commande.id && commande.id.toString().includes(searchLower)) ||
       (commande.idProduit && commande.idProduit.toString().includes(searchLower)) ||
       (commande.prix && commande.prix.toString().includes(searchLower));
+    
+    // Si on est sur la page stock, filtrer seulement les commandes payées
+    if (isStockPage) {
+      return matchSearch && commande.payer;
+    }
+    
     const matchPaiement =
       paiementFiltre === "all" ||
       (paiementFiltre === "paye" && commande.payer) ||
@@ -230,7 +245,9 @@ function MesCommandesExportateur() {
           </div>
         </div>
         <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
-          <h2 className="h5 mb-3">Mes Commandes Exportateur</h2>
+          <h2 className="h5 mb-3">
+            {isStockPage ? "Stock - Commandes Payées" : "Mes Commandes Exportateur"}
+          </h2>
           
           {/* Statistiques IPFS */}
           <div className="row">
@@ -254,7 +271,7 @@ function MesCommandesExportateur() {
               <div className="d-flex align-items-center">
                 <ShoppingCart size={20} className="me-2 text-success" />
                 <span className="small">
-                  <strong>{commandes.length}</strong> commandes au total
+                  <strong>{isStockPage ? commandes.filter(c => c.payer).length : commandes.length}</strong> {isStockPage ? "commandes payées" : "commandes au total"}
                 </span>
               </div>
             </div>
@@ -335,7 +352,7 @@ function MesCommandesExportateur() {
                     )}
                   </div>
                   <div className="mt-3 d-flex gap-2">
-                    {!commande.payer && commande.statutProduit === 1 && (
+                    {!isStockPage && !commande.payer && commande.statutProduit === 1 && (
                       <button
                         onClick={() => {
                           setCommandeSelectionnee(commande);
@@ -346,7 +363,7 @@ function MesCommandesExportateur() {
                         Payer
                       </button>
                     )}
-                    {Number(commande.statutTransport) === 1 && Number(commande.statutProduit) !== 1 && (
+                    {!isStockPage && Number(commande.statutTransport) === 1 && Number(commande.statutProduit) !== 1 && (
                       <button
                         onClick={() => handleValiderCommande(commande.id)}
                         className="btn btn-success btn-sm"
@@ -354,7 +371,32 @@ function MesCommandesExportateur() {
                         Valider la commande
                       </button>
                     )}
+                    {isStockPage && commande.payer && (
+                      <Link
+                        to={`/stock/${commande.id}`}
+                        className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                      >
+                        <Eye size={16} />
+                        Voir détails
+                      </Link>
+                    )}
+                    {commande.cid && (
+                      <button
+                        onClick={() => setExpandedId(expandedId === commande.id ? null : commande.id)}
+                        className="btn btn-outline-primary btn-sm"
+                      >
+                        {expandedId === commande.id ? 'Masquer détails IPFS' : 'Voir détails IPFS'}
+                      </button>
+                    )}
                   </div>
+                  {expandedId === commande.id && commande.ipfsRoot && (
+                    <div className="mt-3">
+                      <div className="alert alert-secondary" role="alert" style={{ whiteSpace: 'pre-wrap' }}>
+                        <div className="mb-2"><strong>Type:</strong> {commande.ipfsType || 'inconnu'}</div>
+                        <pre className="mb-0" style={{ maxHeight: 240, overflow: 'auto' }}>{JSON.stringify(commande.ipfsRoot, null, 2)}</pre>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

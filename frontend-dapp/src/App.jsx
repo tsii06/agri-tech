@@ -23,6 +23,7 @@ import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
 import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
 import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
+import StockDetails from "./pages/CollecteurExportateur/StockDetails";
 import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
 import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
 import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
@@ -175,6 +176,8 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
                 <Route path="mes-parcelles" element={<MesParcelles />} />
                 <Route path="mes-commandes-exportateur" element={<MesCommandesExportateur />} />
+                <Route path="stock" element={<MesCommandesExportateur />} />
+                <Route path="stock/:id" element={<StockDetails />} />
                 <Route path="passer-commande-collecteur/:id" element={<PasserCommande />} />
                 <Route path="parcelle/:id/photos" element={<PhotosParcelle />} />
                 <Route path="parcelle/:id/intrants" element={<IntrantsParcelle />} />
