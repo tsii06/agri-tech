@@ -43,7 +43,8 @@ function ListeProduits() {
           const produitRaw = await contract.getProduit(i);
           const collecteurAddr = produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
           // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
-          if (cible && collecteurAddr.toLowerCase() !== cible) continue;
+          // if (cible && collecteurAddr.toLowerCase() !== cible) continue;
+          if (hasRole(roles, 3) && produitRaw.collecteur.toLowerCase() !== account.toLowerCase()) continue;
 
           let produitEnrichi = {
             id: i,
