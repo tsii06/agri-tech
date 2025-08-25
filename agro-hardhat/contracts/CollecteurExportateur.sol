@@ -82,6 +82,7 @@ contract CollecteurExportateur {
     }
     
     function setPriceProduit(uint32 _idLotProduit, uint32 _prix) public seulementCollecteur {
+        require(_idLotProduit <= compteurLotProduits, "Id incorect");
         require(lotProduits[_idLotProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
         lotProduits[_idLotProduit].prix = _prix;
     }

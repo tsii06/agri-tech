@@ -3,7 +3,6 @@ import { getRoleName } from '../components/Layout/Header';
 
 function Dashboard() {
   const { roles, account } = useUserContext();
-  console.log('Dashboard - account:', account, 'roles:', roles);
 
   return (
     <div className="d-flex flex-column">

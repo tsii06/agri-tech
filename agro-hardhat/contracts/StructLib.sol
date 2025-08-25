@@ -6,14 +6,14 @@ pragma solidity ^0.8.0;
 library StructLib {
 
 	enum Role { 
-        Producteur, 
-        Fournisseur, 
-        Certificateur, 
-        Collecteur, 
-        Auditeur, 
-        Transporteur, 
-        Exportateur, 
-        Administration 
+        Producteur, // 0
+        Fournisseur, // 1
+        Certificateur, // 2
+        Collecteur, // 3
+        Auditeur, // 4
+        Transporteur, // 5
+        Exportateur, // 6
+        Administration //7
     }
     enum Etape { PreCulture, 
         Culture, 
