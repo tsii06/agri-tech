@@ -3,8 +3,11 @@ import { useParams } from "react-router-dom";
 import { getContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import { uploadInspection, getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
-import { calculateParcelleMerkleHash } from "../../utils/merkleUtils";
+import {
+  uploadInspection,
+  getIPFSURL,
+  updateCidParcelle,
+} from "../../utils/ipfsUtils";
 
 function InspectionsParcelle() {
   const { id } = useParams(); // id de la parcelle
@@ -15,7 +18,7 @@ function InspectionsParcelle() {
   const [formData, setFormData] = useState({
     rapport: "",
     observations: "",
-    recommandations: ""
+    recommandations: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const { account, roles } = useUserContext();
@@ -29,7 +32,7 @@ function InspectionsParcelle() {
       const contract = await getContract();
       const parcelleData = await contract.getParcelle(id);
       setParcelle(parcelleData);
-      
+
       // Si la parcelle a un CID, essayer de récupérer les inspections
       if (parcelleData.cid) {
         try {
@@ -41,7 +44,9 @@ function InspectionsParcelle() {
             }
           }
         } catch (error) {
-          console.log("Pas d'inspections existantes ou erreur de récupération IPFS");
+          console.log(
+            "Pas d'inspections existantes ou erreur de récupération IPFS"
+          );
         }
       }
     } catch (error) {
@@ -51,9 +56,9 @@ function InspectionsParcelle() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -74,12 +79,15 @@ function InspectionsParcelle() {
         rapport: formData.rapport,
         observations: formData.observations,
         recommandations: formData.recommandations,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // 2. Upload de l'inspection sur IPFS
-      const inspectionUpload = await uploadInspection(selectedFile, inspectionData);
-      
+      const inspectionUpload = await uploadInspection(
+        selectedFile,
+        inspectionData
+      );
+
       if (!inspectionUpload.success) {
         throw new Error("Erreur lors de l'upload de l'inspection sur IPFS");
       }
@@ -88,52 +96,37 @@ function InspectionsParcelle() {
       const nouvelleInspection = {
         ...inspectionData,
         cid: inspectionUpload.cid,
-        id: inspections.length + 1
+        id: inspections.length + 1,
       };
 
       // 4. Ajouter la nouvelle inspection à la liste
       const nouvellesInspections = [...inspections, nouvelleInspection];
 
-      // 5. Créer un objet consolidé avec toutes les inspections
-      const inspectionsConsolidees = {
-        type: 'inspections-parcelle',
-        parcelleId: id,
-        inspections: nouvellesInspections,
-        timestamp: Date.now()
-      };
-
-      // 6. Upload des données consolidées sur IPFS
-      const inspectionsUpload = await uploadConsolidatedData(inspectionsConsolidees, "inspections-parcelle");
-      
-      if (!inspectionsUpload.success) {
-        throw new Error("Erreur lors de l'upload des inspections consolidées");
-      }
-
-      // 7. Mettre à jour le CID de la parcelle avec les nouvelles inspections
-      const contract = await getContract();
-      const tx = await contract.mettreAJourInspectionsParcelle(id, inspectionsUpload.cid);
-      await tx.wait();
-
-      // 8. Mettre à jour le hash Merkle de la parcelle
-      const hashMerkleMisAJour = calculateParcelleMerkleHash(
-        { ...parcelle, cid: inspectionsUpload.cid },
-        [], // photos
-        [], // intrants
-        nouvellesInspections
+      // mettre a jour la nouvelle cid relier au parcelle
+      const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(
+        parcelle,
+        nouvellesInspections,
+        "inspections"
       );
-
-      const txHashMerkle = await contract.ajoutHashMerkleParcelle(id, hashMerkleMisAJour);
-      await txHashMerkle.wait();
 
       // 9. Mettre à jour l'état local
       setInspections(nouvellesInspections);
-      setParcelle(prev => ({ ...prev, cid: inspectionsUpload.cid, hashMerkle: hashMerkleMisAJour }));
-      
+      setParcelle({
+        id: parcelle.id,
+        producteur: parcelle.producteur,
+        cid: masterUpload.cid,
+        hashMerkle: hashMerkleMisAJour,
+      });
+
       setFormData({ rapport: "", observations: "", recommandations: "" });
       setSelectedFile(null);
-      setMessage("Inspection ajoutée et enregistrée sur la blockchain avec succès !");
+      setMessage(
+        "Inspection ajoutée et enregistrée sur la blockchain avec succès !"
+      );
     } catch (e) {
-      setMessage("Erreur lors de l'ajout de l'inspection : " + (e?.message || e));
+      setMessage(
+        "Erreur lors de l'ajout de l'inspection : " + (e?.message || e)
+      );
     } finally {
       setLoading(false);
     }
@@ -147,21 +140,34 @@ function InspectionsParcelle() {
             <h6 className="mb-0">Inspection #{inspection.id}</h6>
           </div>
           <div className="card-body">
-            <p><strong>Auditeur:</strong> {inspection.auditeur}</p>
-            <p><strong>Rapport:</strong> {inspection.rapport}</p>
+            <p>
+              <strong>Auditeur:</strong> {inspection.auditeur}
+            </p>
+            <p>
+              <strong>Rapport:</strong> {inspection.rapport}
+            </p>
             {inspection.observations && (
-              <p><strong>Observations:</strong> {inspection.observations}</p>
+              <p>
+                <strong>Observations:</strong> {inspection.observations}
+              </p>
             )}
             {inspection.recommandations && (
-              <p><strong>Recommandations:</strong> {inspection.recommandations}</p>
+              <p>
+                <strong>Recommandations:</strong> {inspection.recommandations}
+              </p>
             )}
-            <p><strong>Date:</strong> {new Date(inspection.timestamp).toLocaleDateString()}</p>
-            <p><strong>CID IPFS:</strong> {inspection.cid || "Non disponible"}</p>
-            
+            <p>
+              <strong>Date:</strong>{" "}
+              {new Date(inspection.timestamp).toLocaleDateString()}
+            </p>
+            <p>
+              <strong>CID IPFS:</strong> {inspection.cid || "Non disponible"}
+            </p>
+
             {inspection.cid && (
-              <a 
-                href={getIPFSURL(inspection.cid)} 
-                target="_blank" 
+              <a
+                href={getIPFSURL(inspection.cid)}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-sm btn-outline-secondary"
               >
@@ -177,7 +183,7 @@ function InspectionsParcelle() {
   return (
     <div className="container mt-4">
       <h2>Gestion des inspections de la parcelle #{id}</h2>
-      
+
       {/* Informations de la parcelle */}
       {parcelle && (
         <div className="card mb-4">
@@ -187,13 +193,24 @@ function InspectionsParcelle() {
           <div className="card-body">
             <div className="row">
               <div className="col-md-6">
-                <p><strong>ID:</strong> {parcelle.id}</p>
-                <p><strong>Producteur:</strong> {parcelle.producteur}</p>
-                <p><strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}</p>
+                <p>
+                  <strong>ID:</strong> {parcelle.id}
+                </p>
+                <p>
+                  <strong>Producteur:</strong> {parcelle.producteur}
+                </p>
+                <p>
+                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                </p>
               </div>
               <div className="col-md-6">
-                <p><strong>Hash Merkle:</strong> {parcelle.hashMerkle || "Non calculé"}</p>
-                <p><strong>Nombre d'inspections:</strong> {inspections.length}</p>
+                <p>
+                  <strong>Hash Merkle:</strong>{" "}
+                  {parcelle.hashMerkle || "Non calculé"}
+                </p>
+                <p>
+                  <strong>Nombre d'inspections:</strong> {inspections.length}
+                </p>
               </div>
             </div>
           </div>
@@ -201,7 +218,7 @@ function InspectionsParcelle() {
       )}
 
       {/* Formulaire d'ajout d'inspection */}
-      {hasRole(roles, "Certificateur") && (
+      {hasRole(roles, 4) && (
         <div className="card mb-4">
           <div className="card-header">
             <h5>Ajouter une nouvelle inspection</h5>
@@ -211,7 +228,9 @@ function InspectionsParcelle() {
               <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label htmlFor="rapport" className="form-label">Rapport d'inspection *</label>
+                    <label htmlFor="rapport" className="form-label">
+                      Rapport d'inspection *
+                    </label>
                     <textarea
                       className="form-control"
                       id="rapport"
@@ -226,7 +245,9 @@ function InspectionsParcelle() {
                 </div>
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label htmlFor="observations" className="form-label">Observations</label>
+                    <label htmlFor="observations" className="form-label">
+                      Observations
+                    </label>
                     <textarea
                       className="form-control"
                       id="observations"
@@ -241,7 +262,9 @@ function InspectionsParcelle() {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="recommandations" className="form-label">Recommandations</label>
+                <label htmlFor="recommandations" className="form-label">
+                  Recommandations
+                </label>
                 <textarea
                   className="form-control"
                   id="recommandations"
@@ -254,7 +277,9 @@ function InspectionsParcelle() {
               </div>
 
               <div className="mb-3">
-                <label htmlFor="file" className="form-label">Fichier d'inspection (optionnel)</label>
+                <label htmlFor="file" className="form-label">
+                  Fichier d'inspection (optionnel)
+                </label>
                 <input
                   type="file"
                   className="form-control"
@@ -263,7 +288,8 @@ function InspectionsParcelle() {
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 />
                 <small className="form-text text-muted">
-                  Vous pouvez joindre un fichier PDF, document ou image pour compléter l'inspection.
+                  Vous pouvez joindre un fichier PDF, document ou image pour
+                  compléter l'inspection.
                 </small>
               </div>
 
@@ -275,9 +301,13 @@ function InspectionsParcelle() {
                 {loading ? "Ajout en cours..." : "Ajouter l'inspection"}
               </button>
             </form>
-            
+
             {message && (
-              <div className={`alert mt-3 ${message.includes('succès') ? 'alert-success' : 'alert-info'}`}>
+              <div
+                className={`alert mt-3 ${
+                  message.includes("succès") ? "alert-success" : "alert-info"
+                }`}
+              >
                 {message}
               </div>
             )}
@@ -292,11 +322,11 @@ function InspectionsParcelle() {
         </div>
         <div className="card-body">
           {inspections.length > 0 ? (
-            <div className="row">
-              {inspections.map(afficherInspection)}
-            </div>
+            <div className="row">{inspections.map(afficherInspection)}</div>
           ) : (
-            <p className="text-muted">Aucune inspection effectuée pour cette parcelle.</p>
+            <p className="text-muted">
+              Aucune inspection effectuée pour cette parcelle.
+            </p>
           )}
         </div>
       </div>

@@ -146,10 +146,6 @@ function MesParcelles() {
   
   const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
 
-  // Affichage du debug
-  console.log("roles reçus:", roles);
-  console.log("type de roles:", Array.isArray(roles) ? 'array' : typeof roles);
-
   if (!account) {
     return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir vos parcelles.</div>;
   }

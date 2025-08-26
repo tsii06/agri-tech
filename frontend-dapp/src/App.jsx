@@ -18,7 +18,7 @@ import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
 import MesParcelles from "./pages/ProducteurEnPhaseCulture/ListeParcelle";
 import PhotosParcelle from "./pages/ProducteurEnPhaseCulture/PhotosParcelle";
 import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle";
-import InspectionsParcelle from "./pages/CertificateurAuditeur/InspectionsParcelle";
+import InspectionsParcelle from "./pages/ProducteurEnPhaseCulture/InspectionsParcelle";
 import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
 import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";

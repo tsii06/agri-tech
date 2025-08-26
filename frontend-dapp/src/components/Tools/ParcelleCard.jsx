@@ -57,6 +57,15 @@ const ParcelleCard = ({
       );
     }
 
+    // Liens pour le auditeur
+    if (hasRole(userRole, 4)) {
+      links.push(
+        <Link key="inspections-auditeur" to={`/parcelle/${id}/inspections`} className="btn btn-link">
+          Inspections ({inspections.length})
+        </Link>
+      );
+    }
+
     return links;
   };
 
