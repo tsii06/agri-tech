@@ -209,6 +209,32 @@ export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
   }
 };
 
+export const uploadLotProduit = async (_data, _account) => {
+  try {
+    const lotProduitConsolidee = {
+      type: "lot-produit",
+      lotRecolteId: _data.id,
+      nom: _data.nom,
+      quantite: _data.quantite,
+      prix: _data.prix,
+      collecteur: _account,
+      timestamp: Date.now(),
+      version: "1.0",
+    };
+
+    // 2. Upload des données consolidées sur IPFS
+    const lotProduitUpload = await uploadConsolidatedData(
+      lotProduitConsolidee,
+      "lot-produit"
+    );
+
+    return lotProduitUpload;
+  } catch (error) {
+    console.error("Erreur lors de l'upload du lot de produit : ", error);
+    return;
+  }
+};
+
 /**
  *
  * @param {object} parcelle
