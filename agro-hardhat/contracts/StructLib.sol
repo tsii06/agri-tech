@@ -26,13 +26,13 @@ library StructLib {
         MobileMoney
     }
     enum StatutTransport { 
-        EnCours, 
-        Livre 
+        EnCours, // 0
+        Livre // 1
     }
     enum StatutProduit { 
-        EnAttente, 
-        Valide, 
-        Rejete 
+        EnAttente, // 0
+        Valide, // 1
+        Rejete // 2
     }
 
 

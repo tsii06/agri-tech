@@ -169,6 +169,35 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteurAddress, await collecteurProducteurProxy.getAddress());
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteurAddress, await collecteurExportateurProxy.getAddress());
 
+
+    // Creation d'une parcelle de test pour le producteur
+    console.log("Création d'une parcelle de test pour le producteur...");
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiafmozmclolxpzbevdltres3qyjquld7ig74ak6ad2vfv2oow45pm");
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleParcelle(1, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
+
+    // Ajout recolte
+    console.log("Ajout d'un recolte de test pour le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 500, 20000, "bafkreigy4yddpp3raziqi375qzhrwekejey3ri5wk63ukqvxyk5gkeotym");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreihnku4eiwp4v6jckstjzlyobq2m5dus4gdv2rojk3ecc4acvkvmqy");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(1, "0x9aaf742a69ab6b71bb25abbba69277a03933f88bac11f735f7a60bdf47d699d4");
+
+    // Passer commande recolte
+    console.log("Passage d'une commande de recolte pour le collecteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 150);
+
+    // effectuer livraison recolte
+    console.log("Effectuer la livraison de la recolte par le transporteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
+
+    // valider commande recolte
+    console.log("Validation de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
+    
+    // payer recolte
+    console.log("Paiement de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
+
+
     console.log("Déploiement terminé avec succès!");
 }
 

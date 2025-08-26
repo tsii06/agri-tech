@@ -59,7 +59,6 @@ function IntrantsParcelle() {
             // recuperer tous les data necessaire a un intrant
             if (root && root.intrants && Array.isArray(root.intrants)) {
               const intrantsDetails = await getIntrantsDetails(root.intrants);
-              console.log("intrants : ", intrantsDetails);
               setIntrants(intrantsDetails);
             }
           }
