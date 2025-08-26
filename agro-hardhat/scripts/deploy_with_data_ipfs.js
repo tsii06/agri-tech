@@ -178,24 +178,37 @@ async function main() {
     // Ajout recolte
     console.log("Ajout d'un recolte de test pour le producteur...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 500, 20000, "bafkreigy4yddpp3raziqi375qzhrwekejey3ri5wk63ukqvxyk5gkeotym");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 750, 45000, "bafkreibhuvbcce4cuwwp2immw5v7byhr2fsburg7lt52qcrjsywa2bkjpm");
+
     await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreihnku4eiwp4v6jckstjzlyobq2m5dus4gdv2rojk3ecc4acvkvmqy");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(2, "bafkreigmn6cm7j6ecodtwvatuc34rjutkuvn32ujvzvmz3qyzc3ss3w5du");
+
     await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(1, "0x9aaf742a69ab6b71bb25abbba69277a03933f88bac11f735f7a60bdf47d699d4");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(2, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
 
     // Passer commande recolte
     console.log("Passage d'une commande de recolte pour le collecteur...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 150);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 20);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(2, 200);
 
     // effectuer livraison recolte
     console.log("Effectuer la livraison de la recolte par le transporteur...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(2, 1);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(3, 1);
 
     // valider commande recolte
     console.log("Validation de la commande de recolte par le producteur...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
-    
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(3, true);
+
     // payer recolte
     console.log("Paiement de la commande de recolte par le producteur...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
 
 
     console.log("Déploiement terminé avec succès!");

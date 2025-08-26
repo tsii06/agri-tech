@@ -20,6 +20,8 @@ function ListeProduits() {
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
   const [quantiteCommande, setQuantiteCommande] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [produitFiltreNom, setProduitFiltreNom] = useState(null);
   const { roles, account } = useUserContext();
 
   useEffect(() => {
@@ -43,7 +45,6 @@ function ListeProduits() {
           const produitRaw = await contract.getProduit(i);
           const collecteurAddr = produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
           // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
-          // if (cible && collecteurAddr.toLowerCase() !== cible) continue;
           if (hasRole(roles, 3) && produitRaw.collecteur.toLowerCase() !== account.toLowerCase()) continue;
 
           let produitEnrichi = {
@@ -65,6 +66,7 @@ function ListeProduits() {
             if (produitEnrichi.idRecolte > 0) {
               const recolteRaw = await cp.getRecolte(produitEnrichi.idRecolte);
               produitEnrichi.prixUnit = Number(recolteRaw.prixUnit ?? 0);
+              produitEnrichi.certificatPhytosanitaire = recolteRaw.certificatPhytosanitaire?.toString?.() || recolteRaw.certificatPhytosanitaire || "";
               const recolteCid = recolteRaw.cid || "";
               if (recolteCid) {
                 const response = await fetch(getIPFSURL(recolteCid));
@@ -142,22 +144,6 @@ function ListeProduits() {
     }
   };
 
-  // Filtrage produits selon recherche et statut
-  const produitsFiltres = produits.filter((produit) => {
-    const searchLower = search.toLowerCase();
-    const matchSearch =
-      (produit.nom && produit.nom.toLowerCase().includes(searchLower)) ||
-      (produit.id && produit.id.toString().includes(searchLower));
-    const matchStatut =
-      statutFiltre === "all" ||
-      (statutFiltre === "valide" && produit.statut === 1) ||
-      (statutFiltre === "attente" && produit.statut === 0) ||
-      (statutFiltre === "rejete" && produit.statut === 2);
-    return matchSearch && matchStatut;
-  });
-  const produitsAffiches = produitsFiltres.slice(0, visibleCount);
-
-  // Fonction pour commander un produit (exportateur)
   const handleCommanderProduit = async (produitId) => {
     setBtnLoading(true);
     try {
@@ -188,6 +174,34 @@ function ListeProduits() {
       setBtnLoading(false);
     }
   };
+
+  const handleCheckboxChange = (produitId, produitNom) => {
+    setSelectedProducts((prevSelected) => {
+      if (prevSelected.includes(produitId)) {
+        setProduitFiltreNom(null); // Reset filter if unselected
+        return prevSelected.filter((id) => id !== produitId);
+      } else {
+        setProduitFiltreNom(produitNom); // Set filter to selected product name
+        return [...prevSelected, produitId];
+      }
+    });
+  };
+
+  // Filtrage produits selon recherche et statut
+  const produitsFiltres = produits.filter((produit) => {
+    const searchLower = search.toLowerCase();
+    const matchSearch =
+      (produit.nom && produit.nom.toLowerCase().includes(searchLower)) ||
+      (produit.id && produit.id.toString().includes(searchLower));
+    const matchStatut =
+      statutFiltre === "all" ||
+      (statutFiltre === "valide" && produit.statut === 1) ||
+      (statutFiltre === "attente" && produit.statut === 0) ||
+      (statutFiltre === "rejete" && produit.statut === 2);
+    const matchNom = produitFiltreNom ? produit.nom === produitFiltreNom : true;
+    return matchSearch && matchStatut && matchNom;
+  });
+  const produitsAffiches = produitsFiltres.slice(0, visibleCount);
 
   if (!account && !address) {
     return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir les produits.</div>;
@@ -278,7 +292,22 @@ function ListeProduits() {
           <div className="row g-3">
             {produitsAffiches.map((produit) => (
               <div key={produit.id} className="col-md-4">
-                <div className="card border shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                <div
+                  className="card border shadow-sm p-3"
+                  style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}
+                >
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`checkbox-${produit.id}`}
+                      checked={selectedProducts.includes(produit.id)}
+                      onChange={() => handleCheckboxChange(produit.id, produit.nom)}
+                    />
+                    <label className="form-check-label" htmlFor={`checkbox-${produit.id}`}>
+                      Sélectionner
+                    </label>
+                  </div>
                   <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
                     <Box size={36} />
                   </div>
@@ -339,7 +368,7 @@ function ListeProduits() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3">
+                  {/* <div className="mt-3">
                     {hasRole(roles, 3) && (
                       <button
                         onClick={() => {
@@ -363,7 +392,7 @@ function ListeProduits() {
                         Commander
                       </button>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}
@@ -471,4 +500,4 @@ function ListeProduits() {
   );
 }
 
-export default ListeProduits; 
+export default ListeProduits;
