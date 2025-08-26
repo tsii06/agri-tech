@@ -49,6 +49,9 @@ function ListeProduits() {
           // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
           if (hasRole(roles, 3) && produitRaw.collecteur.toLowerCase() !== account.toLowerCase()) continue;
 
+          // ne plus afficher les produits enregistrer
+          if (produitRaw.enregistre) continue;
+
           let produitEnrichi = {
             id: i,
             idRecolte: Number(produitRaw.idRecolte ?? 0),
@@ -59,8 +62,8 @@ function ListeProduits() {
             dateRecolte: "",
             certificatPhytosanitaire: "",
             collecteur: collecteurAddr,
-            cid: "",
-            hashMerkle: produitRaw.hashMerkle || ""
+            hashMerkle: produitRaw.hashMerkle || "",
+            enregistre: produitRaw.enregistre || 0,
           };
 
           // Enrichir depuis la récolte associée (prixUnit et CID JSON)
