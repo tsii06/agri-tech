@@ -3,7 +3,7 @@ import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
 } from "../../utils/contract";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Hash,
@@ -25,19 +25,15 @@ function ListeProduits() {
   const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [_, setState] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [produitSelectionne, setProduitSelectionne] = useState(null);
-  const [nouveauPrix, setNouveauPrix] = useState("");
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
-  const [quantiteCommande, setQuantiteCommande] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [produitFiltreNom, setProduitFiltreNom] = useState(null);
   const [showLotModal, setShowLotModal] = useState(false);
   const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
+  const nav = useNavigate();
 
   useEffect(() => {
     if (!account && !address) {
@@ -133,80 +129,7 @@ function ListeProduits() {
       }
     };
     chargerProduits();
-  }, [address, account, _, roles]);
-
-  const handleModifierPrix = async (produitId) => {
-    setBtnLoading(true);
-    try {
-      const contract = await getCollecteurExportateurContract();
-
-      // Vérifier que le nouveau prix est valide
-      const prix = Number(nouveauPrix);
-      if (isNaN(prix) || prix <= 0) {
-        alert("Veuillez entrer un prix valide");
-        return;
-      }
-
-      // Modifier le prix
-      const tx = await contract.setPriceProduit(produitId, prix);
-      await tx.wait();
-
-      // Mettre à jour l'état local
-      const produitsTemp = [...produits];
-      const index = produitsTemp.findIndex((p) => p.id === produitId);
-      if (index !== -1) {
-        produitsTemp[index].prixUnit = prix.toString();
-        setProduits(produitsTemp);
-      }
-
-      // Fermer le modal
-      setShowModal(false);
-      setProduitSelectionne(null);
-      setNouveauPrix("");
-      setError(false);
-    } catch (error) {
-      console.error("Erreur lors de la modification du prix:", error);
-      setError(
-        "Erreur lors de la modification du prix. Veuillez réessayer plus tard."
-      );
-    } finally {
-      setBtnLoading(false);
-    }
-  };
-
-  const handleCommanderProduit = async (produitId) => {
-    setBtnLoading(true);
-    try {
-      const contract = await getCollecteurExportateurContract();
-      // Vérifier la quantité
-      const quantite = Number(quantiteCommande);
-      if (
-        isNaN(quantite) ||
-        quantite <= 0 ||
-        quantite > Number(produitSelectionne.quantite)
-      ) {
-        setError("Veuillez entrer une quantité valide");
-        return;
-      }
-      // Appel du smart contract pour commander
-      const tx = await contract.passerCommande(produitId, quantite);
-      await tx.wait();
-      alert("Commande passée avec succès !");
-      setShowModal(false);
-      setProduitSelectionne(null);
-      setQuantiteCommande("");
-      // Optionnel : rafraîchir la liste
-      setState({});
-      setError(false);
-    } catch (error) {
-      console.error("Erreur lors de la commande d'un produit :", error.message);
-      setError(
-        "Erreur lors de la commande d'un produit. Veuillez réessayer plus tard."
-      );
-    } finally {
-      setBtnLoading(false);
-    }
-  };
+  }, [address, account, roles]);
 
   const handleCheckboxChange = (produitId, produitNom) => {
     setSelectedProducts((prevSelected) => {
@@ -238,12 +161,6 @@ function ListeProduits() {
       const contract = await getCollecteurExportateurContract();
       const idLastLot = Number(await contract.compteurLotProduits());
 
-      // Somme des quantiter des produits selectionners
-      let sommeQuantite = 0;
-      for (let p of produits) {
-        if (selectedProducts.includes(p.id)) sommeQuantite += p.quantite;
-      }
-
       // Nom du lot a creer
       let nomLot = "";
       for (let p of produits) {
@@ -256,9 +173,10 @@ function ListeProduits() {
       // Uploader les data du lotProduit
       const dataLot = {
         id: idLastLot + 1,
-        quantite: sommeQuantite,
         nom: nomLot,
-        prix: lotPrix,
+        certificatsPhytosanitaires: produits
+          .filter((p) => selectedProducts.includes(p.id))
+          .map((p) => p.certificatPhytosanitaire),
       };
       const resUploadLot = await uploadLotProduit(dataLot, account);
 
@@ -270,9 +188,7 @@ function ListeProduits() {
       await tx.wait();
 
       alert("Lot créé avec succès !");
-      setSelectedProducts([]); // Reset selected products
-      setShowLotModal(false);
-      setLotPrix("");
+      nav('/liste-lot-produits');
     } catch (error) {
       console.error("Erreur lors de la création du lot:", error);
       alert(

@@ -213,11 +213,10 @@ export const uploadLotProduit = async (_data, _account) => {
   try {
     const lotProduitConsolidee = {
       type: "lot-produit",
-      lotRecolteId: _data.id,
+      id: _data.id,
       nom: _data.nom,
-      quantite: _data.quantite,
-      prix: _data.prix,
       collecteur: _account,
+      certificatsPhytosanitaires: _data.certificatsPhytosanitaires,
       timestamp: Date.now(),
       version: "1.0",
     };
