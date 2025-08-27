@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract, getRoleOfAddress } from "../../utils/contract";
 import { useUserContext } from '../../context/useContextt';
-import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Eye } from "lucide-react";
+import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Eye, Box } from "lucide-react";
 import { getIPFSURL } from '../../utils/ipfsUtils';
 import { useLocation, Link } from 'react-router-dom';
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
@@ -174,11 +174,29 @@ function MesCommandesExportateur({ onlyPaid = false }) {
     }
   };
 
+  const getStatutProduit = (statut) => {
+    switch(Number(statut)) {
+      case 0: return "En attente";
+      case 1: return "Valider";
+      case 2: return "Rejeter";
+      default: return "Inconnu";
+    }
+  };
+
   const getStatutTransportColor = (statut) => {
     switch(Number(statut)) {
-      case 0: return "text-info";
+      case 0: return "text-secondary";
       case 1: return "text-success";
-      default: return "text-secondary";
+      default: return "text-info";
+    }
+  };
+
+  const getStatutProduitColor = (statut) => {
+    switch(Number(statut)) {
+      case 0: return "text-secondary";
+      case 1: return "text-success";
+      case 2: return "text-danger";
+      default: return "text-info";
     }
   };
 
@@ -302,7 +320,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                   <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
                   <div className="card-text small">
                     <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
-                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idLotProduit}</p>
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Lot Produit:</strong> {commande.idLotProduit}</p>
                     <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
                     <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
                     <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>
@@ -315,6 +333,11 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       style={{gap: 6}}>
                       <Truck size={16} className="me-1" />
                       <strong>Transport:</strong> {getStatutTransport(commande.statutTransport)}
+                    </p>
+                    <p className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(commande.statutProduit)}`}
+                      style={{gap: 6}}>
+                      <Box size={16} className="me-1" />
+                      <strong>Status:</strong> {getStatutProduit(commande.statutProduit)}
                     </p>
                     
                     {/* Informations IPFS et Merkle */}
