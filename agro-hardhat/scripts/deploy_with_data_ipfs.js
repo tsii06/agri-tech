@@ -209,6 +209,10 @@ async function main() {
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
     await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
+    
+    // ajouter lot produit.
+    console.log("Creation d'un lot produit...");
+    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1, 2], "bafkreib3fbloqpwwh3qjxnxkc4t7zjczko63i2ix7kwcngx43biqn6r7ou", 35000);
 
 
     console.log("Déploiement terminé avec succès!");
