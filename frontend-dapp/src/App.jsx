@@ -9,34 +9,36 @@ import Sidebar from "./components/Layout/Sidebar";
 import Footer from "./components/Layout/Footer";
 import HomePage from "./pages/HomePage";
 
-import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
-import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
-import EffectuerPaiement from "./pages/CollecteurExportateur/EffectuerPaiementCollecteur";
-import LivraisonRecolte from "./pages/CollecteurProducteur/LivraisonRecolte";
-import CommandeCollecteur from "./pages/CollecteurProducteur/CommandeCollecteur";
-import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
-import MesParcelles from "./pages/ProducteurEnPhaseCulture/ListeParcelle";
-import PhotosParcelle from "./pages/ProducteurEnPhaseCulture/PhotosParcelle";
-import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle";
-import InspectionsParcelle from "./pages/ProducteurEnPhaseCulture/InspectionsParcelle";
-import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
-import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
 import AcheterRecolte from "./pages/CollecteurProducteur/AcheterRecolte";
-import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
-import StockDetails from "./pages/CollecteurExportateur/StockDetails";
 import AdminRegisterActeur from "./pages/admin/AdminRegisterActeur";
+import AjouterRoleActeur from "./pages/admin/AjouterRoleActeur";
 import AdminAjoutContratDelegue from "./pages/admin/AdminAjoutContratDelegue";
 import AdminListeActeurs from "./pages/admin/AdminListeActeurs";
-import ListeActeursRole from "./pages/ListeActeursRole";
 import ActiverDesactiverActeur from "./pages/admin/ActiverDesactiverActeur";
-import RetirerContratDelegue from "./pages/RetirerContratDelegue";
-import AjouterRoleActeur from "./pages/admin/AjouterRoleActeur";
+import CommandeCollecteur from "./pages/CollecteurProducteur/CommandeCollecteur";
+import CreerParcelle from "./pages/ProducteurEnPhaseCulture/CreerParcelle";
 import Dashboard from "./pages/Dashboard";
+import EffectuerPaiement from "./pages/CollecteurExportateur/EffectuerPaiementCollecteur";
 import EspaceClient from "./pages/EspaceClient";
+import FaireRecolte from "./pages/ProducteurEnPhaseCulture/FaireRecolte";
+import IntrantsParcelle from "./pages/ProducteurEnPhaseCulture/IntrantsParcelle";
+import InspectionsParcelle from "./pages/ProducteurEnPhaseCulture/InspectionsParcelle";
+import ListeProduits from "./pages/CollecteurProducteur/ListeProduits";
+import ListeLotProduits from "./pages/CollecteurExportateur/ListeLotProduit";
+import LivraisonRecolte from "./pages/CollecteurProducteur/LivraisonRecolte";
+import ListeActeursRole from "./pages/ListeActeursRole";
+import ListeRecoltes from "./pages/ProducteurEnPhaseCulture/ListeRecolte";
+import MesParcelles from "./pages/ProducteurEnPhaseCulture/ListeParcelle";
+import MesCommandesExportateur from "./pages/CollecteurExportateur/MesCommandesExportateur";
+import PasserCommande from "./pages/CollecteurExportateur/PasserCommandeVersCollecteur";
+import PhotosParcelle from "./pages/ProducteurEnPhaseCulture/PhotosParcelle";
+import RetirerContratDelegue from "./pages/RetirerContratDelegue";
+import StockDetails from "./pages/CollecteurExportateur/StockDetails";
 
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
-  ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight
+  ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight,
+  Group
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
 
@@ -102,6 +104,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
     if (t.includes("admin")) return <ShieldCheck size={18} />;
     if (t.includes("parcelle")) return <TreePine size={18} />;
     if (t.includes("récolte") || t.includes("recolte")) return <ShoppingBasket size={18} />;
+    if (t.includes("lots")) return <Group size={18} />;
     if (t.includes("produit")) return <Package size={18} />;
     if (t.includes("commande")) return <ShoppingCart size={18} />;
     if (t.includes("inspection")) return <Search size={18} />;
@@ -168,6 +171,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="effectuer-paiement/:id" element={<EffectuerPaiement />} />
                 <Route path="liste-produits" element={<ListeProduits />} />
+                <Route path="liste-lot-produits" element={<ListeLotProduits />} />
                 <Route path="liste-collecteur-commande" element={<CommandeCollecteur />} />
                 <Route path="listerecolte/:address" element={<ListeRecoltes />} />
                 <Route path="listeproduit/:address" element={<ListeProduits />} />
