@@ -4,6 +4,7 @@ import { useUserContext } from '../../context/useContextt';
 import { ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, Search, ChevronDown, Eye } from "lucide-react";
 import { getIPFSURL } from '../../utils/ipfsUtils';
 import { useLocation, Link } from 'react-router-dom';
+import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 
 function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
@@ -54,12 +55,12 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           // Vérifier si la commande appartient à l'exportateur connecté
           if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
             // Normaliser types primitifs
-            const idProduitNum = Number(commandeRaw.idLotProduit ?? 0);
-            const produit = idProduitNum > 0 ? await contract.getLotProduit(idProduitNum) : {};
-            
+            const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+            const produit = idLotProduitNum > 0 ? await getLotProduitEnrichi(idLotProduitNum) : {};
+
             let commandeEnrichie = {
               id: Number(commandeRaw.id ?? i),
-              idProduit: idProduitNum,
+              idLotProduit: idLotProduitNum,
               quantite: Number(commandeRaw.quantite ?? 0),
               prix: Number(commandeRaw.prix ?? 0),
               payer: Boolean(commandeRaw.payer),
@@ -68,8 +69,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
               collecteur: collecteurAddr,
               exportateur: exportateurAddr,
               nomProduit: produit?.nom || "",
-              cid: commandeRaw.cid || "",
-              hashMerkle: commandeRaw.hashMerkle || ""
+              cid: produit.cid || "",
+              hashMerkle: produit.hashMerkle || ""
             };
 
             // Charger les données IPFS si un CID existe
@@ -187,7 +188,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
     const matchSearch =
       (commande.nomProduit && commande.nomProduit.toLowerCase().includes(searchLower)) ||
       (commande.id && commande.id.toString().includes(searchLower)) ||
-      (commande.idProduit && commande.idProduit.toString().includes(searchLower)) ||
+      (commande.idLotProduit && commande.idLotProduit.toString().includes(searchLower)) ||
       (commande.prix && commande.prix.toString().includes(searchLower));
     
     // Si on est sur la page stock, filtrer seulement les commandes payées
@@ -301,7 +302,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                   <h5 className="card-title text-center mb-3">{commande.nomProduit}</h5>
                   <div className="card-text small">
                     <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
-                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
+                    <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idLotProduit}</p>
                     <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} kg</p>
                     <p><BadgeEuro size={16} className="me-2 text-success" /><strong>Prix:</strong> {commande.prix} Ar</p>
                     <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.slice(0, 6)}...{commande.collecteur.slice(-4)}</p>

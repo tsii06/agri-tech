@@ -5,8 +5,8 @@ import { hasRole } from "./roles";
 /**
  *
  * @param {number} _id id du lot produit
- * @param {Array} roles les roles de l'user
- * @param {string} account adresse de l'user
+ * @param {Array} roles a passer si l'user est un collecteur
+ * @param {string} account a passer si l'user est un collecteur
  * @returns un lotproduit enrichi
  */
 export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
@@ -50,6 +50,7 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     }
     return produitEnrichi;
   } catch (e) {
-    // laisser valeurs par défaut
+    console.error("Erreur lors de la recuperation d'infos sur  un lot de produit : ", e);
+    return null;
   }
 };

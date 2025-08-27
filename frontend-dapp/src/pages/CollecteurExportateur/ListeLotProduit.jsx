@@ -53,7 +53,8 @@ function ListeLotProduits() {
 
         for (let i = 1; i <= compteurProduits; i++) {
           const lotProduit = await getLotProduitEnrichi(i, roles, account);
-          produitsTemp.push(lotProduit);
+          if (lotProduit)
+            produitsTemp.push(lotProduit);
         }
 
         produitsTemp.reverse();
