@@ -71,7 +71,6 @@ function ListeProduits() {
             idRecolte: Number(produitRaw.idRecolte ?? 0),
             nom: "",
             quantite: Number(produitRaw.quantite ?? 0),
-            prixUnit: null,
             statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
             dateRecolte: "",
             certificatPhytosanitaire: "",
@@ -84,7 +83,6 @@ function ListeProduits() {
           try {
             if (produitEnrichi.idRecolte > 0) {
               const recolteRaw = await cp.getRecolte(produitEnrichi.idRecolte);
-              produitEnrichi.prixUnit = Number(recolteRaw.prixUnit ?? 0);
               produitEnrichi.certificatPhytosanitaire =
                 recolteRaw.certificatPhytosanitaire?.toString?.() ||
                 recolteRaw.certificatPhytosanitaire ||
@@ -407,10 +405,6 @@ function ListeProduits() {
                     <p>
                       <Package2 size={16} className="me-2 text-success" />
                       <strong>Quantité:</strong> {produit.quantite} kg
-                    </p>
-                    <p>
-                      <BadgeEuro size={16} className="me-2 text-success" />
-                      <strong>Prix unitaire:</strong> {produit.prixUnit} Ar
                     </p>
                     <p>
                       <Calendar size={16} className="me-2 text-success" />
