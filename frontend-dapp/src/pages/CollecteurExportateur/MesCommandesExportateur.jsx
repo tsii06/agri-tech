@@ -54,8 +54,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           // Vérifier si la commande appartient à l'exportateur connecté
           if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
             // Normaliser types primitifs
-            const idProduitNum = Number(commandeRaw.idProduit ?? 0);
-            const produit = idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
+            const idProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+            const produit = idProduitNum > 0 ? await contract.getLotProduit(idProduitNum) : {};
             
             let commandeEnrichie = {
               id: Number(commandeRaw.id ?? i),

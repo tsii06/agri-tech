@@ -16,6 +16,7 @@ import {
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
 import { getIPFSURL, uploadLotProduit } from "../../utils/ipfsUtils";
+import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 
 function ListeLotProduits() {
   const { address } = useParams();
@@ -44,8 +45,6 @@ function ListeLotProduits() {
     const chargerProduits = async () => {
       try {
         const contract = await getCollecteurExportateurContract();
-        // Filtrage STABLE: on filtre uniquement si un address est fourni dans l'URL
-        const cible = address ? address.toLowerCase() : null;
 
         // Obtenir le nombre total de produits
         const compteurProduitsRaw = await contract.compteurLotProduits();
@@ -53,47 +52,8 @@ function ListeLotProduits() {
         const produitsTemp = [];
 
         for (let i = 1; i <= compteurProduits; i++) {
-          const produitRaw = await contract.getLotProduit(i);
-          const collecteurAddr =
-            produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
-          // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
-          if (
-            hasRole(roles, 3) &&
-            produitRaw.collecteur.toLowerCase() !== account.toLowerCase()
-          )
-            continue;
-
-          let produitEnrichi = {
-            id: i,
-            idRecolte: [...new Set(produitRaw.idRecolte)], // supprime les doublants s'il existe
-            nom: "",
-            quantite: Number(produitRaw.quantite ?? 0),
-            prixUnit: produitRaw.prix ?? 0,
-            collecteur: collecteurAddr,
-            cid: produitRaw.cid,
-            hashMerkle: produitRaw.hashMerkle || "",
-          };
-
-          // Enrichir depuis le fichier ipfs
-          try {
-            const res = await fetch(getIPFSURL(produitRaw.cid));
-            if (res.ok) {
-              const contentType = res.headers.get("content-type") || "";
-              if (contentType.includes("application/json")) {
-                const ipfsData = await res.json();
-                const root =
-                  ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                produitEnrichi.nom =
-                  root.nom || produitEnrichi.nom || "Produit";
-                produitEnrichi.ipfsTimestamp = ipfsData.timestamp || null;
-                produitEnrichi.ipfsVersion = ipfsData.version || null;
-              }
-            }
-          } catch (e) {
-            // laisser valeurs par défaut
-          }
-
-          produitsTemp.push(produitEnrichi);
+          const lotProduit = await getLotProduitEnrichi(i, roles, account);
+          produitsTemp.push(lotProduit);
         }
 
         produitsTemp.reverse();
