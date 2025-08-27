@@ -39,7 +39,7 @@ const ROLE_LINKS = {
     { to: "/transport", text: "Gestion des transports" }
   ],
   6: [
-    { to: "/mes-parcelles", text: "Parcelles" },
+    { to: "/liste-recolte", text: "Recoltes" },
     { to: "/liste-lot-produits", text: "Passer commande" },
     { to: "/mes-commandes-exportateur", text: "Mes commandes" },
     { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
