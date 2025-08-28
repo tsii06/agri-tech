@@ -137,6 +137,7 @@ library StructLib {
         address exportateur;
         StatutProduit statutProduit;
         string hashMerkle;
+        bool enregistre;
     }
 
     struct Article {

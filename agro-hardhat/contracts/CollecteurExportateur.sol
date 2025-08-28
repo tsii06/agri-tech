@@ -98,7 +98,7 @@ contract CollecteurExportateur {
         lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "");
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "", false);
 
         emit CommandePasser(msg.sender, _idLotProduit);
     }
@@ -138,6 +138,11 @@ contract CollecteurExportateur {
         require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore livre.");
         commandes[_idCommande].statutProduit = _status;
         emit StatusCommandeMisAJour(_idCommande, _status);
+    }
+
+    function enregistrerCommande(uint32 _idCommande, bool _enregistre) public seulementExportateur {
+        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        commandes[_idCommande].enregistre = _enregistre;
     }
 
     // Pour enlever les erreurs eth_call
