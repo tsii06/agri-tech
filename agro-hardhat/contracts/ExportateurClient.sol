@@ -146,4 +146,20 @@ contract ExportateurClient {
     // Pour enlever les erreurs eth_call
     fallback() external payable {}
     receive() external payable {}
+
+
+    // ------------------------------------- Setter ----------------------------------------------------
+    function setGestionnaireActeurs(address _addr) public {
+        gestionnaireActeurs = GestionnaireActeurs(_addr);
+    }
+    function setCollecteurExportateur(address payable _addr) public {
+        collecteurExportateur = CollecteurExportateur(_addr);
+    }
+    // -------------------------------------- Getter ----------------------------------------------------
+    function getArticle(uint32 id) public view returns(StructLib.Article memory) {
+        return articles[id];
+    }
+    function getCompteurArticles() public view returns(uint32) {
+        return compteurArticles;
+    }
 }
