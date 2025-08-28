@@ -339,7 +339,10 @@ function StockDetails() {
                               ? ipfsData.items
                               : ipfsData;
                           parcelleEnrichie.nom = root.nom || "";
-                          parcelleEnrichie.superficie = root.superficie || 0;
+                          parcelleEnrichie.location = root.location || {
+                            lat: 0,
+                            lng: 0,
+                          };
                           parcelleEnrichie.photos = root.photos || [];
                           parcelleEnrichie.intrants = root.intrants || [];
                           parcelleEnrichie.inspections = root.inspections || [];
@@ -926,7 +929,7 @@ function StockDetails() {
         </div>
 
         {/* Détails de la parcelle */}
-        <div className="col-md-6">
+        {/* <div className="col-md-6">
           <div className="card h-100">
             <div className="card-header">
               <h5 className="mb-0">
@@ -997,7 +1000,7 @@ function StockDetails() {
               )}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Conditions de transport */}
         {conditionsTransport && (
@@ -1173,13 +1176,13 @@ function StockDetails() {
           </div>
         )}
 
-        {parcelles.length > 1 && (
+        {parcelles.length > 0 && (
           <div className="col-12">
             <div className="card">
               <div className="card-header">
                 <h5 className="mb-0">
                   <TreePine size={20} className="me-2" />
-                  Toutes les Parcelles ({parcelles.length})
+                  Toutes les Parcelles conscerner ({parcelles.length})
                 </h5>
               </div>
               <div className="card-body">
@@ -1188,26 +1191,53 @@ function StockDetails() {
                     <div key={parcelle.id} className="col-md-4 mb-3">
                       <div className="border rounded p-3">
                         <h6>Parcelle #{parcelle.id}</h6>
-                        <p>
-                          <strong>Nom:</strong> {parcelle.nom || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Superficie:</strong> {parcelle.superficie} ha
-                        </p>
-                        <p>
-                          <strong>Photos:</strong>{" "}
-                          {parcelle.photos ? parcelle.photos.length : 0}
-                        </p>
-                        <p>
-                          <strong>Intrants:</strong>{" "}
-                          {parcelle.intrants ? parcelle.intrants.length : 0}
-                        </p>
-                        <p>
-                          <strong>Inspections:</strong>{" "}
-                          {parcelle.inspections
-                            ? parcelle.inspections.length
-                            : 0}
-                        </p>
+                        <div className="card-body">
+                          <div className="mb-3">
+                            <strong>Coordonnees :</strong> &nbsp;
+                            {parcelle.location && parcelle.location.lat && parcelle.location.lng
+                              ? `${parcelle.location.lat.toFixed(
+                                  4
+                                )}, ${parcelle.location.lng.toFixed(4)}`
+                              : "Non spécifiée"}
+                          </div>
+                          <div className="mb-3">
+                            <strong>Producteur:</strong>{" "}
+                            {parcelles.length > 0
+                              ? parcelle.producteur
+                                ? `${parcelle.producteur.slice(
+                                    0,
+                                    6
+                                  )}...${parcelle.producteur.slice(-4)}`
+                                : "N/A"
+                              : "N/A"}
+                          </div>
+                          <div className="mb-3">
+                            <strong>Photos:</strong> {parcelle.photos.length}{" "}
+                            photo(s)
+                          </div>
+                          <div className="mb-3">
+                            <strong>Intrants:</strong>{" "}
+                            {parcelle.intrants.length} intrant(s)
+                          </div>
+                          <div className="mb-3">
+                            <strong>Inspections:</strong>{" "}
+                            {parcelle.inspections
+                              ? parcelle.inspections.length
+                              : 0}{" "}
+                            inspection(s)
+                          </div>
+                          <div className="mb-3">
+                            <strong>CID IPFS:</strong>
+                            <a
+                              href={getIPFSURL(parcelles[0].cid)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ms-2 text-decoration-none"
+                            >
+                              {parcelle.cid.substring(0, 10)}...
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
