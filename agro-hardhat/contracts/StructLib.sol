@@ -138,5 +138,16 @@ library StructLib {
         StatutProduit statutProduit;
         string hashMerkle;
     }
+
+    struct Article {
+        uint32 id;
+        string ref;
+        uint32[] idLotProduit;
+        uint32 quantite;
+        uint32 prix;
+        address exportateur;
+        string cid;
+        string hashMerkle;
+    }
     
 }
