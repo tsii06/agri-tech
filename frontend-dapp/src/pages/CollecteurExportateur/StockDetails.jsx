@@ -683,7 +683,7 @@ function StockDetails() {
                   </div>
                   <div className="small">Parcelle</div>
                   <div className="fw-bold">
-                    {parcelles.length > 0 ? parcelles[0]?.id || "N/A" : "N/A"}
+                    {parcelles.length > 0 ? parcelles.map(p => p.id).join(", " ) || "N/A" : "N/A"}
                   </div>
                 </div>
                 <div className="text-center flex-fill">
@@ -695,7 +695,7 @@ function StockDetails() {
                   </div>
                   <div className="small">Récolte</div>
                   <div className="fw-bold">
-                    {recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}
+                    {recoltes.length > 0 ? lotProduit.idRecoltes.join(", ") || "N/A" : "N/A"}
                   </div>
                 </div>
                 <div className="text-center flex-fill">
