@@ -28,7 +28,7 @@ const ROLE_LINKS = {
   3: [
     { to: "/liste-recolte", text: "Passer commande" },
     { to: "/liste-collecteur-commande", text: "Mes commandes" },
-    { to: "/liste-produits", text: "Liste des produits" },
+    { to: "/liste-produits", text: "Stock" },
     { to: "/liste-lot-produits", text: "Lots de produits" },
     { to: "/liste-acteurs-role", text: "Liste des Producteurs" }
   ],

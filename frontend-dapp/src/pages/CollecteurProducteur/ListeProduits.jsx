@@ -301,7 +301,7 @@ function ListeProduits() {
           }}
         >
           <h2 className="h5 mb-3">
-            {address ? "Produits du collecteur" : "Liste des Produits"}
+            {hasRole(roles, 3) ? "Stock du collecteur" : "Liste des stocks des collecteurs"}
           </h2>
 
           {/* Statistiques IPFS */}
