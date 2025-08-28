@@ -107,6 +107,15 @@ contract ExportateurClient {
         emit AjoutArticle(msg.sender, compteurArticles, _quantite, _prix);
     }
 
+    /**
+     * Met à jour le prix d'un article
+     */
+    function setPriceArticle(uint32 _idArticle, uint32 _prix) public seulementExportateur {
+        require(_idArticle <= compteurArticles, "Id incorrect");
+        require(articles[_idArticle].exportateur == msg.sender, "Vous n'etes pas proprietaire de cette article");
+        articles[_idArticle].prix = _prix;
+    }
+
     // Fonction pour générer un numéro de référence alphanumérique unique pour les articles
     function genererNumeroReference() internal returns (string memory) {
         compteurArticles += 1;
