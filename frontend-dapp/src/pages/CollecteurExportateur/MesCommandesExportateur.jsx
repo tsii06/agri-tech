@@ -35,12 +35,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           setUserRole(role);
         }
 
-        console.log("Adresse connectée:", account);
-        
         // Obtenir le nombre total de commandes
         const compteurCommandesRaw = await contract.getCompteurCommande();
         const compteurCommandes = Number(compteurCommandesRaw);
-        console.log("Nombre total de commandes:", compteurCommandes);
         
         // Charger toutes les commandes
         const commandesTemp = [];
@@ -99,7 +96,6 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           }
         }
         
-        console.log("Commandes trouvées:", commandesTemp);
         // Inverser le tri des commandes pour que les plus récentes soient en premier
         commandesTemp.reverse();
         setCommandes(commandesTemp);

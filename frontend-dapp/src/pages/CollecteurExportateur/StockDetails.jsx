@@ -1,13 +1,33 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getCollecteurExportateurContract, getCollecteurProducteurContract, getProducteurContract } from "../../utils/contract";
-import { useUserContext } from '../../context/useContextt';
-import { 
-  ShoppingCart, Hash, Package2, BadgeEuro, User, Truck, Wallet, 
-  TreePine, MapPin, Calendar, Thermometer, Droplets, Eye, ArrowLeft,
-  FileText, Shield, Database, Download, GitBranch
+import {
+  getCollecteurExportateurContract,
+  getCollecteurProducteurContract,
+  getProducteurContract,
+} from "../../utils/contract";
+import { useUserContext } from "../../context/useContextt";
+import {
+  ShoppingCart,
+  Hash,
+  Package2,
+  BadgeEuro,
+  User,
+  Truck,
+  Wallet,
+  TreePine,
+  MapPin,
+  Calendar,
+  Thermometer,
+  Droplets,
+  Eye,
+  ArrowLeft,
+  FileText,
+  Shield,
+  Database,
+  Download,
+  GitBranch,
 } from "lucide-react";
-import { getIPFSURL } from '../../utils/ipfsUtils';
+import { getIPFSURL } from "../../utils/ipfsUtils";
 import { keccak256 } from "ethers";
 
 // Fonction pour hasher une transaction
@@ -20,15 +40,19 @@ function buildMerkleTree(transactions) {
   let leaves = transactions.map(hashTx);
   let level = leaves;
   let tree = [leaves];
-  
+
   while (level.length > 1) {
     const nextLevel = [];
     for (let i = 0; i < level.length; i += 2) {
       if (i + 1 < level.length) {
-        nextLevel.push(keccak256(Buffer.concat([
-          Buffer.from(level[i].slice(2), 'hex'),
-          Buffer.from(level[i+1].slice(2), 'hex')
-        ])));
+        nextLevel.push(
+          keccak256(
+            Buffer.concat([
+              Buffer.from(level[i].slice(2), "hex"),
+              Buffer.from(level[i + 1].slice(2), "hex"),
+            ])
+          )
+        );
       } else {
         nextLevel.push(level[i]);
       }
@@ -36,12 +60,12 @@ function buildMerkleTree(transactions) {
     level = nextLevel;
     tree.push(level);
   }
-  
-  return { 
-    root: level[0], 
+
+  return {
+    root: level[0],
     leaves,
     tree,
-    proof: generateProof(tree, 0) // Preuve pour la première transaction
+    proof: generateProof(tree, 0), // Preuve pour la première transaction
   };
 }
 
@@ -49,22 +73,22 @@ function buildMerkleTree(transactions) {
 function generateProof(tree, leafIndex) {
   const proof = [];
   let index = leafIndex;
-  
+
   for (let i = 0; i < tree.length - 1; i++) {
     const level = tree[i];
     const isRightNode = index % 2 === 1;
     const siblingIndex = isRightNode ? index - 1 : index + 1;
-    
+
     if (siblingIndex < level.length) {
       proof.push({
         hash: level[siblingIndex],
-        isRight: !isRightNode
+        isRight: !isRightNode,
       });
     }
-    
+
     index = Math.floor(index / 2);
   }
-  
+
   return proof;
 }
 
@@ -86,7 +110,7 @@ function StockDetails() {
 
   useEffect(() => {
     if (!account || !id) return;
-    
+
     const chargerDetails = async () => {
       try {
         setIsLoading(true);
@@ -96,8 +120,7 @@ function StockDetails() {
 
         // 1. Charger la commande
         const commandeRaw = await contractCE.getCommande(Number(id));
-        console.log("Commande brute récupérée:", commandeRaw);
-        
+
         const commandeEnrichie = {
           id: Number(commandeRaw.id),
           idLotProduit: Number(commandeRaw.idLotProduit),
@@ -109,9 +132,8 @@ function StockDetails() {
           collecteur: commandeRaw.collecteur?.toString?.() || "",
           exportateur: commandeRaw.exportateur?.toString?.() || "",
           cid: commandeRaw.cid || "",
-          hashMerkle: commandeRaw.hashMerkle || ""
+          hashMerkle: commandeRaw.hashMerkle || "",
         };
-        console.log("Commande enrichie:", commandeEnrichie);
 
         // Charger les données IPFS de la commande
         if (commandeEnrichie.cid) {
@@ -119,24 +141,28 @@ function StockDetails() {
             const response = await fetch(getIPFSURL(commandeEnrichie.cid));
             if (response.ok) {
               const ipfsData = await response.json();
-              const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+              const root =
+                ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
               commandeEnrichie.nomProduit = root.nomProduit || "";
               commandeEnrichie.ipfsRoot = root;
               commandeEnrichie.ipfsTimestamp = ipfsData.timestamp;
             }
           } catch (ipfsError) {
-            console.log("Erreur lors du chargement IPFS de la commande:", ipfsError);
+            console.error(
+              "Erreur lors du chargement IPFS de la commande:",
+              ipfsError
+            );
           }
         }
         setCommande(commandeEnrichie);
 
         // 2. Charger le lot de produit associé
         if (commandeEnrichie.idLotProduit > 0) {
-          console.log("Chargement du lot de produit ID:", commandeEnrichie.idLotProduit);
           try {
-            const lotProduitRaw = await contractCE.getLotProduit(commandeEnrichie.idLotProduit);
-            console.log("Lot de produit brut récupéré:", lotProduitRaw);
-            
+            const lotProduitRaw = await contractCE.getLotProduit(
+              commandeEnrichie.idLotProduit
+            );
+
             const lotProduitEnrichi = {
               id: Number(lotProduitRaw.id),
               idRecoltes: lotProduitRaw.idRecolte || [],
@@ -144,9 +170,8 @@ function StockDetails() {
               prix: Number(lotProduitRaw.prix),
               collecteur: lotProduitRaw.collecteur?.toString?.() || "",
               cid: lotProduitRaw.cid || "",
-              hashMerkle: lotProduitRaw.hashMerkle || ""
+              hashMerkle: lotProduitRaw.hashMerkle || "",
             };
-            console.log("Lot de produit enrichi:", lotProduitEnrichi);
 
             // Charger les données IPFS du lot de produit
             if (lotProduitEnrichi.cid) {
@@ -154,26 +179,31 @@ function StockDetails() {
                 const response = await fetch(getIPFSURL(lotProduitEnrichi.cid));
                 if (response.ok) {
                   const ipfsData = await response.json();
-                  const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                  const root =
+                    ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
                   lotProduitEnrichi.ipfsRoot = root;
                   lotProduitEnrichi.ipfsTimestamp = ipfsData.timestamp;
-                  console.log("Données IPFS du lot de produit chargées:", root);
                 }
               } catch (ipfsError) {
-                console.log("Erreur lors du chargement IPFS du lot de produit:", ipfsError);
+                console.error(
+                  "Erreur lors du chargement IPFS du lot de produit:",
+                  ipfsError
+                );
               }
             }
 
             // 3. Charger les produits du lot
             const produitsDuLot = [];
-            if (lotProduitEnrichi.idRecoltes && lotProduitEnrichi.idRecoltes.length > 0) {
-              console.log("Chargement des produits du lot, récoltes:", lotProduitEnrichi.idRecoltes);
-              
+            if (
+              lotProduitEnrichi.idRecoltes &&
+              lotProduitEnrichi.idRecoltes.length > 0
+            ) {
               for (let i = 0; i < lotProduitEnrichi.idRecoltes.length; i++) {
                 const idRecolte = Number(lotProduitEnrichi.idRecoltes[i]);
-                console.log("Chargement des produits pour la récolte ID:", idRecolte);
-                
-                const compteurProduits = Number(await contractCE.getCompteurProduit());
+
+                const compteurProduits = Number(
+                  await contractCE.getCompteurProduit()
+                );
                 for (let j = 1; j <= compteurProduits; j++) {
                   try {
                     const produitRaw = await contractCE.getProduit(j);
@@ -184,66 +214,81 @@ function StockDetails() {
                         quantite: Number(produitRaw.quantite),
                         collecteur: produitRaw.collecteur?.toString?.() || "",
                         enregistre: Boolean(produitRaw.enregistre),
-                        hashMerkle: produitRaw.hashMerkle || ""
+                        hashMerkle: produitRaw.hashMerkle || "",
                       };
                       produitsDuLot.push(produitEnrichi);
-                      console.log("Produit trouvé pour la récolte:", produitEnrichi);
                     }
                   } catch (error) {
-                    console.log("Erreur lors du chargement du produit", j, ":", error);
+                    console.error(
+                      "Erreur lors du chargement du produit",
+                      j,
+                      ":",
+                      error
+                    );
                   }
                 }
               }
             }
-            console.log("Produits du lot trouvés:", produitsDuLot);
 
             // 4. Charger les récoltes associées
             const recoltesDuLot = [];
-            if (lotProduitEnrichi.idRecoltes && lotProduitEnrichi.idRecoltes.length > 0) {
+            if (
+              lotProduitEnrichi.idRecoltes &&
+              lotProduitEnrichi.idRecoltes.length > 0
+            ) {
               for (let i = 0; i < lotProduitEnrichi.idRecoltes.length; i++) {
                 const idRecolte = Number(lotProduitEnrichi.idRecoltes[i]);
-                console.log("Chargement de la récolte ID:", idRecolte);
                 try {
                   const recolteRaw = await contractCP.getRecolte(idRecolte);
-                  console.log("Récolte brute récupérée:", recolteRaw);
-                  
+
                   const recolteEnrichie = {
                     id: Number(recolteRaw.id),
                     idParcelles: recolteRaw.idParcelle || [],
                     quantite: Number(recolteRaw.quantite),
                     prixUnit: Number(recolteRaw.prixUnit),
                     certifie: Boolean(recolteRaw.certifie),
-                    certificatPhytosanitaire: recolteRaw.certificatPhytosanitaire || "",
+                    certificatPhytosanitaire:
+                      recolteRaw.certificatPhytosanitaire || "",
                     producteur: recolteRaw.producteur?.toString?.() || "",
                     hashMerkle: recolteRaw.hashMerkle || "",
-                    cid: recolteRaw.cid || ""
+                    cid: recolteRaw.cid || "",
                   };
-                  console.log("Récolte enrichie:", recolteEnrichie);
 
                   // Charger les données IPFS de la récolte
                   if (recolteEnrichie.cid) {
                     try {
-                      const response = await fetch(getIPFSURL(recolteEnrichie.cid));
+                      const response = await fetch(
+                        getIPFSURL(recolteEnrichie.cid)
+                      );
                       if (response.ok) {
                         const ipfsData = await response.json();
-                        const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                        const root =
+                          ipfsData && ipfsData.items
+                            ? ipfsData.items
+                            : ipfsData;
                         recolteEnrichie.nomProduit = root.nomProduit || "";
                         recolteEnrichie.dateRecolte = root.dateRecolte || "";
                         recolteEnrichie.ipfsRoot = root;
                         recolteEnrichie.ipfsTimestamp = ipfsData.timestamp;
-                        console.log("Données IPFS de la récolte chargées:", root);
                       }
                     } catch (ipfsError) {
-                      console.log("Erreur lors du chargement IPFS de la récolte:", ipfsError);
+                      console.error(
+                        "Erreur lors du chargement IPFS de la récolte:",
+                        ipfsError
+                      );
                     }
                   }
                   recoltesDuLot.push(recolteEnrichie);
                 } catch (recolteError) {
-                  console.error("Erreur lors du chargement de la récolte", idRecolte, ":", recolteError);
+                  console.error(
+                    "Erreur lors du chargement de la récolte",
+                    idRecolte,
+                    ":",
+                    recolteError
+                  );
                 }
               }
             }
-            console.log("Récoltes du lot trouvées:", recoltesDuLot);
 
             // 5. Charger les parcelles associées
             const parcellesDuLot = [];
@@ -251,26 +296,30 @@ function StockDetails() {
               if (recolte.idParcelles && recolte.idParcelles.length > 0) {
                 for (let i = 0; i < recolte.idParcelles.length; i++) {
                   const idParcelle = Number(recolte.idParcelles[i]);
-                  console.log("Chargement de la parcelle ID:", idParcelle);
                   try {
-                    const parcelleRaw = await contractPP.getParcelle(idParcelle);
-                    console.log("Parcelle brute récupérée:", parcelleRaw);
-                    
+                    const parcelleRaw = await contractPP.getParcelle(
+                      idParcelle
+                    );
+
                     const parcelleEnrichie = {
                       id: Number(parcelleRaw.id),
                       producteur: parcelleRaw.producteur?.toString?.() || "",
                       cid: parcelleRaw.cid || "",
-                      hashMerkle: parcelleRaw.hashMerkle || ""
+                      hashMerkle: parcelleRaw.hashMerkle || "",
                     };
-                    console.log("Parcelle enrichie:", parcelleEnrichie);
 
                     // Charger les données IPFS de la parcelle
                     if (parcelleEnrichie.cid) {
                       try {
-                        const response = await fetch(getIPFSURL(parcelleEnrichie.cid));
+                        const response = await fetch(
+                          getIPFSURL(parcelleEnrichie.cid)
+                        );
                         if (response.ok) {
                           const ipfsData = await response.json();
-                          const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                          const root =
+                            ipfsData && ipfsData.items
+                              ? ipfsData.items
+                              : ipfsData;
                           parcelleEnrichie.nom = root.nom || "";
                           parcelleEnrichie.superficie = root.superficie || 0;
                           parcelleEnrichie.photos = root.photos || [];
@@ -278,90 +327,119 @@ function StockDetails() {
                           parcelleEnrichie.inspections = root.inspections || [];
                           parcelleEnrichie.ipfsRoot = root;
                           parcelleEnrichie.ipfsTimestamp = ipfsData.timestamp;
-                          console.log("Données IPFS de la parcelle chargées:", root);
                         }
                       } catch (ipfsError) {
-                        console.log("Erreur lors du chargement IPFS de la parcelle:", ipfsError);
+                        console.error(
+                          "Erreur lors du chargement IPFS de la parcelle:",
+                          ipfsError
+                        );
                       }
                     }
                     parcellesDuLot.push(parcelleEnrichie);
                   } catch (parcelleError) {
-                    console.error("Erreur lors du chargement de la parcelle", idParcelle, ":", parcelleError);
+                    console.error(
+                      "Erreur lors du chargement de la parcelle",
+                      idParcelle,
+                      ":",
+                      parcelleError
+                    );
                   }
                 }
               }
             }
-            console.log("Parcelles du lot trouvées:", parcellesDuLot);
+
+            // enleve les doublants
+            const parcellesDuLotClean = [
+              ...new Map(
+                parcellesDuLot.map((item) => [item.id, item])
+              ).values(),
+            ];
 
             // Stocker les données dans l'état
             setLotProduit(lotProduitEnrichi);
             setProduits(produitsDuLot);
             setRecoltes(recoltesDuLot);
-            setParcelles(parcellesDuLot);
-
+            setParcelles(parcellesDuLotClean);
           } catch (lotProduitError) {
-            console.error("Erreur lors du chargement du lot de produit:", lotProduitError);
+            console.error(
+              "Erreur lors du chargement du lot de produit:",
+              lotProduitError
+            );
           }
         } else {
-          console.log("ID de lot de produit invalide:", commandeEnrichie.idLotProduit);
+          console.error(
+            "ID de lot de produit invalide:",
+            commandeEnrichie.idLotProduit
+          );
         }
 
         // 5. Charger les conditions de transport (si disponibles)
         try {
-          const compteurConditions = Number(await contractCE.getCompteurConditions());
-          console.log("Compteur conditions:", compteurConditions);
-          
+          const compteurConditions = Number(
+            await contractCE.getCompteurCondition()
+          );
+
           for (let i = 1; i <= compteurConditions; i++) {
             try {
               const conditionRaw = await contractCE.getCondition(i);
-              console.log("Condition brute récupérée:", conditionRaw);
-              
+
               if (conditionRaw && conditionRaw.cid) {
                 const response = await fetch(getIPFSURL(conditionRaw.cid));
                 if (response.ok) {
                   const ipfsData = await response.json();
-                  const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                  const root =
+                    ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
                   setConditionsTransport({
                     id: Number(conditionRaw.id),
                     temperature: root.temperature || "",
                     humidite: root.humidite || "",
                     ipfsRoot: root,
                     ipfsTimestamp: ipfsData.timestamp,
-                    hashMerkle: conditionRaw.hashMerkle || ""
+                    hashMerkle: conditionRaw.hashMerkle || "",
                   });
-                  console.log("Condition de transport trouvée:", root);
                   break;
                 }
               }
             } catch (conditionError) {
-              console.log("Erreur lors du chargement de la condition", i, ":", conditionError);
+              console.error(
+                "Erreur lors du chargement de la condition",
+                i,
+                ":",
+                conditionError
+              );
             }
           }
         } catch (error) {
-          console.log("Aucune condition de transport trouvée:", error);
+          console.error("Aucune condition de transport trouvée:", error);
         }
 
         // 6. Charger les paiements associés à cette commande
         try {
-          const compteurPaiements = Number(await contractCE.getCompteurPaiement());
-          console.log("Compteur paiements:", compteurPaiements);
-          
+          const compteurPaiements = Number(
+            await contractCE.getCompteurPaiement()
+          );
+
           for (let i = 1; i <= compteurPaiements; i++) {
             try {
               const paiementRaw = await contractCE.getPaiement(i);
-              console.log("Paiement brut récupéré:", paiementRaw);
-              
-              if (paiementRaw && paiementRaw.montant === commandeEnrichie.prix) {
-                console.log("Paiement trouvé pour la commande:", paiementRaw);
+
+              if (
+                paiementRaw &&
+                paiementRaw.montant === commandeEnrichie.prix
+              ) {
               }
             } catch (paiementError) {
-              console.log("Erreur lors du chargement du paiement", i, ":", paiementError);
+              console.error(
+                "Erreur lors du chargement du paiement",
+                i,
+                ":",
+                paiementError
+              );
             }
           }
         } catch (error) {
-          console.log("Aucun paiement trouvé:", error);
+          console.error("Aucun paiement trouvé:", error);
         }
-
       } catch (error) {
         console.error("Erreur lors du chargement des détails:", error);
         setError(error.message);
@@ -396,8 +474,8 @@ function StockDetails() {
             nomProduit: commande.nomProduit,
             cid: commande.cid,
             hashMerkle: commande.hashMerkle,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
@@ -414,13 +492,13 @@ function StockDetails() {
             cid: lotProduit.cid,
             hashMerkle: lotProduit.hashMerkle,
             ipfsData: lotProduit.ipfsRoot,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
       // 3. Ajouter tous les produits
-      produits.forEach(produit => {
+      produits.forEach((produit) => {
         allTransactions.push({
           type: "produit",
           id: produit.id,
@@ -430,13 +508,13 @@ function StockDetails() {
             collecteur: produit.collecteur,
             enregistre: produit.enregistre,
             hashMerkle: produit.hashMerkle,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       });
 
       // 4. Ajouter toutes les récoltes
-      recoltes.forEach(recolte => {
+      recoltes.forEach((recolte) => {
         allTransactions.push({
           type: "recolte",
           id: recolte.id,
@@ -452,13 +530,13 @@ function StockDetails() {
             cid: recolte.cid,
             hashMerkle: recolte.hashMerkle,
             ipfsData: recolte.ipfsRoot,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       });
 
       // 5. Ajouter toutes les parcelles
-      parcelles.forEach(parcelle => {
+      parcelles.forEach((parcelle) => {
         allTransactions.push({
           type: "parcelle",
           id: parcelle.id,
@@ -472,8 +550,8 @@ function StockDetails() {
             cid: parcelle.cid,
             hashMerkle: parcelle.hashMerkle,
             ipfsData: parcelle.ipfsRoot,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       });
 
@@ -487,13 +565,13 @@ function StockDetails() {
             humidite: conditionsTransport.humidite,
             ipfsData: conditionsTransport.ipfsRoot,
             hashMerkle: conditionsTransport.hashMerkle,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       }
 
       // 7. Ajouter les paiements
-      paiements.forEach(paiement => {
+      paiements.forEach((paiement) => {
         allTransactions.push({
           type: "paiement",
           id: paiement.id,
@@ -502,19 +580,15 @@ function StockDetails() {
             payeur: paiement.payeur,
             destinataire: paiement.destinataire,
             hashMerkle: paiement.hashMerkle,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       });
-
-      console.log("Transactions collectées pour l'arbre Merkle:", allTransactions);
 
       // Construire l'arbre de Merkle
       const merkleResult = buildMerkleTree(allTransactions);
       setMerkleTree(merkleResult);
       setShowMerkleDetails(true);
-
-      console.log("Arbre de Merkle généré:", merkleResult);
     } catch (error) {
       console.error("Erreur lors de la génération de l'arbre Merkle:", error);
       alert("Erreur lors de la génération de l'arbre Merkle: " + error.message);
@@ -541,14 +615,14 @@ function StockDetails() {
         recoltes,
         parcelles,
         conditionsTransport,
-        paiements
-      }
+        paiements,
+      },
     };
 
     const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `traceability-commande-${id}-merkle-${Date.now()}.json`;
     document.body.appendChild(link);
@@ -601,28 +675,44 @@ function StockDetails() {
             <div className="card-body">
               <div className="d-flex align-items-center justify-content-between flex-wrap">
                 <div className="text-center flex-fill">
-                  <div className="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style={{width: 50, height: 50}}>
+                  <div
+                    className="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                    style={{ width: 50, height: 50 }}
+                  >
                     <TreePine size={24} />
                   </div>
                   <div className="small">Parcelle</div>
-                  <div className="fw-bold">{parcelles.length > 0 ? parcelles[0]?.id || "N/A" : "N/A"}</div>
+                  <div className="fw-bold">
+                    {parcelles.length > 0 ? parcelles[0]?.id || "N/A" : "N/A"}
+                  </div>
                 </div>
                 <div className="text-center flex-fill">
-                  <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style={{width: 50, height: 50}}>
+                  <div
+                    className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                    style={{ width: 50, height: 50 }}
+                  >
                     <Package2 size={24} />
                   </div>
                   <div className="small">Récolte</div>
-                  <div className="fw-bold">{recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}</div>
+                  <div className="fw-bold">
+                    {recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}
+                  </div>
                 </div>
                 <div className="text-center flex-fill">
-                  <div className="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style={{width: 50, height: 50}}>
+                  <div
+                    className="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                    style={{ width: 50, height: 50 }}
+                  >
                     <Package2 size={24} />
                   </div>
                   <div className="small">Lot de Produit</div>
                   <div className="fw-bold">{lotProduit?.id || "N/A"}</div>
                 </div>
                 <div className="text-center flex-fill">
-                  <div className="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style={{width: 50, height: 50}}>
+                  <div
+                    className="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                    style={{ width: 50, height: 50 }}
+                  >
                     <Truck size={24} />
                   </div>
                   <div className="small">Commande</div>
@@ -655,21 +745,34 @@ function StockDetails() {
                 <strong>Prix:</strong> {commande?.prix} Ar
               </div>
               <div className="mb-3">
-                <strong>Statut:</strong> 
-                <span className={`badge ms-2 ${commande?.payer ? 'bg-success' : 'bg-warning'}`}>
-                  {commande?.payer ? 'Payé' : 'Non payé'}
+                <strong>Statut:</strong>
+                <span
+                  className={`badge ms-2 ${
+                    commande?.payer ? "bg-success" : "bg-warning"
+                  }`}
+                >
+                  {commande?.payer ? "Payé" : "Non payé"}
                 </span>
               </div>
               <div className="mb-3">
-                <strong>Transport:</strong> 
-                <span className={`badge ms-2 ${commande?.statutTransport === 1 ? 'bg-success' : 'bg-info'}`}>
-                  {commande?.statutTransport === 1 ? 'Livré' : 'En cours'}
+                <strong>Transport:</strong>
+                <span
+                  className={`badge ms-2 ${
+                    commande?.statutTransport === 1 ? "bg-success" : "bg-info"
+                  }`}
+                >
+                  {commande?.statutTransport === 1 ? "Livré" : "En cours"}
                 </span>
               </div>
               {commande?.cid && (
                 <div className="mb-3">
                   <strong>CID IPFS:</strong>
-                  <a href={getIPFSURL(commande.cid)} target="_blank" rel="noopener noreferrer" className="ms-2 text-decoration-none">
+                  <a
+                    href={getIPFSURL(commande.cid)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ms-2 text-decoration-none"
+                  >
                     {commande.cid.substring(0, 10)}...
                   </a>
                 </div>
@@ -695,15 +798,28 @@ function StockDetails() {
                 <strong>Prix unitaire:</strong> {lotProduit?.prix} Ar
               </div>
               <div className="mb-3">
-                <strong>Collecteur:</strong> {lotProduit?.collecteur ? `${lotProduit.collecteur.slice(0, 6)}...${lotProduit.collecteur.slice(-4)}` : "N/A"}
+                <strong>Collecteur:</strong>{" "}
+                {lotProduit?.collecteur
+                  ? `${lotProduit.collecteur.slice(
+                      0,
+                      6
+                    )}...${lotProduit.collecteur.slice(-4)}`
+                  : "N/A"}
               </div>
               <div className="mb-3">
-                <strong>Récoltes sources:</strong> {lotProduit?.idRecoltes ? lotProduit.idRecoltes.length : 0} récolte(s)
+                <strong>Récoltes sources:</strong>{" "}
+                {lotProduit?.idRecoltes ? lotProduit.idRecoltes.length : 0}{" "}
+                récolte(s)
               </div>
               {lotProduit?.cid && (
                 <div className="mb-3">
                   <strong>CID IPFS:</strong>
-                  <a href={getIPFSURL(lotProduit.cid)} target="_blank" rel="noopener noreferrer" className="ms-2 text-decoration-none">
+                  <a
+                    href={getIPFSURL(lotProduit.cid)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ms-2 text-decoration-none"
+                  >
                     {lotProduit.cid.substring(0, 10)}...
                   </a>
                 </div>
@@ -718,35 +834,67 @@ function StockDetails() {
             <div className="card-header">
               <h5 className="mb-0">
                 <Package2 size={20} className="me-2" />
-                Récolte #{recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}
+                Récolte #
+                {recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}
               </h5>
             </div>
             <div className="card-body">
               <div className="mb-3">
-                <strong>Produit:</strong> {recoltes.length > 0 ? (recoltes[0]?.nomProduit || "N/A") : "N/A"}
+                <strong>Produit:</strong>{" "}
+                {recoltes.length > 0 ? recoltes[0]?.nomProduit || "N/A" : "N/A"}
               </div>
               <div className="mb-3">
-                <strong>Date de récolte:</strong> {recoltes.length > 0 ? (recoltes[0]?.dateRecolte || "N/A") : "N/A"}
+                <strong>Date de récolte:</strong>{" "}
+                {recoltes.length > 0
+                  ? recoltes[0]?.dateRecolte || "N/A"
+                  : "N/A"}
               </div>
               <div className="mb-3">
-                <strong>Quantité:</strong> {recoltes.length > 0 ? (recoltes[0]?.quantite || "N/A") : "N/A"} kg
+                <strong>Quantité:</strong>{" "}
+                {recoltes.length > 0 ? recoltes[0]?.quantite || "N/A" : "N/A"}{" "}
+                kg
               </div>
               <div className="mb-3">
-                <strong>Prix unitaire:</strong> {recoltes.length > 0 ? (recoltes[0]?.prixUnit || "N/A") : "N/A"} Ar
+                <strong>Prix unitaire:</strong>{" "}
+                {recoltes.length > 0 ? recoltes[0]?.prixUnit || "N/A" : "N/A"}{" "}
+                Ar
               </div>
               <div className="mb-3">
-                <strong>Certifié:</strong> 
-                <span className={`badge ms-2 ${recoltes.length > 0 && recoltes[0]?.certifie ? 'bg-success' : 'bg-warning'}`}>
-                  {recoltes.length > 0 ? (recoltes[0]?.certifie ? 'Oui' : 'Non') : "N/A"}
+                <strong>Certifié:</strong>
+                <span
+                  className={`badge ms-2 ${
+                    recoltes.length > 0 && recoltes[0]?.certifie
+                      ? "bg-success"
+                      : "bg-warning"
+                  }`}
+                >
+                  {recoltes.length > 0
+                    ? recoltes[0]?.certifie
+                      ? "Oui"
+                      : "Non"
+                    : "N/A"}
                 </span>
               </div>
               <div className="mb-3">
-                <strong>Producteur:</strong> {recoltes.length > 0 ? (recoltes[0]?.producteur ? `${recoltes[0].producteur.slice(0, 6)}...${recoltes[0].producteur.slice(-4)}` : "N/A") : "N/A"}
+                <strong>Producteur:</strong>{" "}
+                {recoltes.length > 0
+                  ? recoltes[0]?.producteur
+                    ? `${recoltes[0].producteur.slice(
+                        0,
+                        6
+                      )}...${recoltes[0].producteur.slice(-4)}`
+                    : "N/A"
+                  : "N/A"}
               </div>
               {recoltes.length > 0 && recoltes[0]?.cid && (
                 <div className="mb-3">
                   <strong>CID IPFS:</strong>
-                  <a href={getIPFSURL(recoltes[0].cid)} target="_blank" rel="noopener noreferrer" className="ms-2 text-decoration-none">
+                  <a
+                    href={getIPFSURL(recoltes[0].cid)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ms-2 text-decoration-none"
+                  >
                     {recoltes[0].cid.substring(0, 10)}...
                   </a>
                 </div>
@@ -761,38 +909,66 @@ function StockDetails() {
             <div className="card-header">
               <h5 className="mb-0">
                 <TreePine size={20} className="me-2" />
-                Parcelle #{parcelles.length > 0 ? parcelles[0]?.id || "N/A" : "N/A"}
+                Parcelle #
+                {parcelles.length > 0 ? parcelles[0]?.id || "N/A" : "N/A"}
               </h5>
             </div>
             <div className="card-body">
               <div className="mb-3">
-                <strong>Nom:</strong> {parcelles.length > 0 ? (parcelles[0]?.nom || "N/A") : "N/A"}
+                <strong>Nom:</strong>{" "}
+                {parcelles.length > 0 ? parcelles[0]?.nom || "N/A" : "N/A"}
               </div>
               <div className="mb-3">
-                <strong>Superficie:</strong> {parcelles.length > 0 ? (parcelles[0]?.superficie || 0) : 0} ha
+                <strong>Superficie:</strong>{" "}
+                {parcelles.length > 0 ? parcelles[0]?.superficie || 0 : 0} ha
               </div>
               <div className="mb-3">
-                <strong>Producteur:</strong> {parcelles.length > 0 ? (parcelles[0]?.producteur ? `${parcelles[0].producteur.slice(0, 6)}...${parcelles[0].producteur.slice(-4)}` : "N/A") : "N/A"}
+                <strong>Producteur:</strong>{" "}
+                {parcelles.length > 0
+                  ? parcelles[0]?.producteur
+                    ? `${parcelles[0].producteur.slice(
+                        0,
+                        6
+                      )}...${parcelles[0].producteur.slice(-4)}`
+                    : "N/A"
+                  : "N/A"}
               </div>
-              {parcelles.length > 0 && parcelles[0]?.photos && parcelles[0].photos.length > 0 && (
-                <div className="mb-3">
-                  <strong>Photos:</strong> {parcelles[0].photos.length} photo(s)
-                </div>
-              )}
-              {parcelles.length > 0 && parcelles[0]?.intrants && parcelles[0].intrants.length > 0 && (
-                <div className="mb-3">
-                  <strong>Intrants:</strong> {parcelles[0].intrants.length} intrant(s)
-                </div>
-              )}
-              {parcelles.length > 0 && parcelles[0]?.inspections && parcelles[0].inspections.length > 0 && (
-                <div className="mb-3">
-                  <strong>Inspections:</strong> {parcelle.inspections ? parcelle.inspections.length : 0} inspection(s)
-                </div>
-              )}
+              {parcelles.length > 0 &&
+                parcelles[0]?.photos &&
+                parcelles[0].photos.length > 0 && (
+                  <div className="mb-3">
+                    <strong>Photos:</strong> {parcelles[0].photos.length}{" "}
+                    photo(s)
+                  </div>
+                )}
+              {parcelles.length > 0 &&
+                parcelles[0]?.intrants &&
+                parcelles[0].intrants.length > 0 && (
+                  <div className="mb-3">
+                    <strong>Intrants:</strong> {parcelles[0].intrants.length}{" "}
+                    intrant(s)
+                  </div>
+                )}
+              {parcelles.length > 0 &&
+                parcelles[0]?.inspections &&
+                parcelles[0].inspections.length > 0 && (
+                  <div className="mb-3">
+                    <strong>Inspections:</strong>{" "}
+                    {parcelles[0].inspections
+                      ? parcelles[0].inspections.length
+                      : 0}{" "}
+                    inspection(s)
+                  </div>
+                )}
               {parcelles.length > 0 && parcelles[0]?.cid && (
                 <div className="mb-3">
                   <strong>CID IPFS:</strong>
-                  <a href={getIPFSURL(parcelles[0].cid)} target="_blank" rel="noopener noreferrer" className="ms-2 text-decoration-none">
+                  <a
+                    href={getIPFSURL(parcelles[0].cid)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ms-2 text-decoration-none"
+                  >
                     {parcelles[0].cid.substring(0, 10)}...
                   </a>
                 </div>
@@ -813,7 +989,8 @@ function StockDetails() {
               </div>
               <div className="card-body">
                 <div className="mb-3">
-                  <strong>Température:</strong> {conditionsTransport.temperature}°C
+                  <strong>Température:</strong>{" "}
+                  {conditionsTransport.temperature}°C
                 </div>
                 <div className="mb-3">
                   <strong>Humidité:</strong> {conditionsTransport.humidite}%
@@ -821,7 +998,10 @@ function StockDetails() {
                 {conditionsTransport.ipfsRoot && (
                   <div className="mb-3">
                     <strong>Données IPFS:</strong>
-                    <pre className="mt-2 small bg-light p-2 rounded" style={{maxHeight: 200, overflow: 'auto'}}>
+                    <pre
+                      className="mt-2 small bg-light p-2 rounded"
+                      style={{ maxHeight: 200, overflow: "auto" }}
+                    >
                       {JSON.stringify(conditionsTransport.ipfsRoot, null, 2)}
                     </pre>
                   </div>
@@ -845,7 +1025,10 @@ function StockDetails() {
                 {commande?.hashMerkle && (
                   <div className="col-md-3">
                     <strong>Hash Merkle Commande:</strong>
-                    <div className="small text-muted mt-1" title={commande.hashMerkle}>
+                    <div
+                      className="small text-muted mt-1"
+                      title={commande.hashMerkle}
+                    >
                       {commande.hashMerkle.substring(0, 20)}...
                     </div>
                   </div>
@@ -853,7 +1036,10 @@ function StockDetails() {
                 {lotProduit?.hashMerkle && (
                   <div className="col-md-3">
                     <strong>Hash Merkle Lot Produit:</strong>
-                    <div className="small text-muted mt-1" title={lotProduit.hashMerkle}>
+                    <div
+                      className="small text-muted mt-1"
+                      title={lotProduit.hashMerkle}
+                    >
                       {lotProduit.hashMerkle.substring(0, 20)}...
                     </div>
                   </div>
@@ -861,7 +1047,10 @@ function StockDetails() {
                 {recoltes.length > 0 && recoltes[0]?.hashMerkle && (
                   <div className="col-md-3">
                     <strong>Hash Merkle Récolte:</strong>
-                    <div className="small text-muted mt-1" title={recoltes[0].hashMerkle}>
+                    <div
+                      className="small text-muted mt-1"
+                      title={recoltes[0].hashMerkle}
+                    >
                       {recoltes[0].hashMerkle.substring(0, 20)}...
                     </div>
                   </div>
@@ -869,7 +1058,10 @@ function StockDetails() {
                 {parcelles.length > 0 && parcelles[0]?.hashMerkle && (
                   <div className="col-md-3">
                     <strong>Hash Merkle Parcelle:</strong>
-                    <div className="small text-muted mt-1" title={parcelles[0].hashMerkle}>
+                    <div
+                      className="small text-muted mt-1"
+                      title={parcelles[0].hashMerkle}
+                    >
                       {parcelles[0].hashMerkle.substring(0, 20)}...
                     </div>
                   </div>
@@ -895,9 +1087,16 @@ function StockDetails() {
                     <div key={produit.id} className="col-md-4 mb-3">
                       <div className="border rounded p-3">
                         <h6>Produit #{produit.id}</h6>
-                        <p><strong>Quantité:</strong> {produit.quantite} kg</p>
-                        <p><strong>Récolte source:</strong> #{produit.idRecolte}</p>
-                        <p><strong>Enregistré:</strong> {produit.enregistre ? 'Oui' : 'Non'}</p>
+                        <p>
+                          <strong>Quantité:</strong> {produit.quantite} kg
+                        </p>
+                        <p>
+                          <strong>Récolte source:</strong> #{produit.idRecolte}
+                        </p>
+                        <p>
+                          <strong>Enregistré:</strong>{" "}
+                          {produit.enregistre ? "Oui" : "Non"}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -922,12 +1121,27 @@ function StockDetails() {
                     <div key={recolte.id} className="col-md-4 mb-3">
                       <div className="border rounded p-3">
                         <h6>Récolte #{recolte.id}</h6>
-                        <p><strong>Produit:</strong> {recolte.nomProduit || "N/A"}</p>
-                        <p><strong>Date:</strong> {recolte.dateRecolte || "N/A"}</p>
-                        <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                        <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ar</p>
-                        <p><strong>Certifié:</strong> {recolte.certifie ? 'Oui' : 'Non'}</p>
-                        <p><strong>Parcelles:</strong> {recolte.idParcelles ? recolte.idParcelles.length : 0}</p>
+                        <p>
+                          <strong>Produit:</strong>{" "}
+                          {recolte.nomProduit || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Date:</strong> {recolte.dateRecolte || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Quantité:</strong> {recolte.quantite} kg
+                        </p>
+                        <p>
+                          <strong>Prix unitaire:</strong> {recolte.prixUnit} Ar
+                        </p>
+                        <p>
+                          <strong>Certifié:</strong>{" "}
+                          {recolte.certifie ? "Oui" : "Non"}
+                        </p>
+                        <p>
+                          <strong>Parcelles:</strong>{" "}
+                          {recolte.idParcelles ? recolte.idParcelles.length : 0}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -952,11 +1166,26 @@ function StockDetails() {
                     <div key={parcelle.id} className="col-md-4 mb-3">
                       <div className="border rounded p-3">
                         <h6>Parcelle #{parcelle.id}</h6>
-                        <p><strong>Nom:</strong> {parcelle.nom || "N/A"}</p>
-                        <p><strong>Superficie:</strong> {parcelle.superficie} ha</p>
-                        <p><strong>Photos:</strong> {parcelle.photos ? parcelle.photos.length : 0}</p>
-                        <p><strong>Intrants:</strong> {parcelle.intrants ? parcelle.intrants.length : 0}</p>
-                        <p><strong>Inspections:</strong> {parcelle.inspections ? parcelle.inspections.length : 0}</p>
+                        <p>
+                          <strong>Nom:</strong> {parcelle.nom || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Superficie:</strong> {parcelle.superficie} ha
+                        </p>
+                        <p>
+                          <strong>Photos:</strong>{" "}
+                          {parcelle.photos ? parcelle.photos.length : 0}
+                        </p>
+                        <p>
+                          <strong>Intrants:</strong>{" "}
+                          {parcelle.intrants ? parcelle.intrants.length : 0}
+                        </p>
+                        <p>
+                          <strong>Inspections:</strong>{" "}
+                          {parcelle.inspections
+                            ? parcelle.inspections.length
+                            : 0}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -977,14 +1206,17 @@ function StockDetails() {
                 Arbre de Merkle - Traçabilité Complète
               </h5>
               <div>
-                <button 
-                  className="btn btn-primary me-2" 
+                <button
+                  className="btn btn-primary me-2"
                   onClick={generateMerkleTree}
                   disabled={isGeneratingMerkle || !commande}
                 >
                   {isGeneratingMerkle ? (
                     <>
-                      <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                      <div
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      ></div>
                       Génération...
                     </>
                   ) : (
@@ -995,8 +1227,8 @@ function StockDetails() {
                   )}
                 </button>
                 {merkleTree && (
-                  <button 
-                    className="btn btn-success" 
+                  <button
+                    className="btn btn-success"
                     onClick={exportMerkleData}
                   >
                     <Download size={16} className="me-2" />
@@ -1009,8 +1241,14 @@ function StockDetails() {
               {!merkleTree ? (
                 <div className="text-center text-muted py-4">
                   <GitBranch size={48} className="mb-3" />
-                  <p>Cliquez sur "Générer l'Arbre Merkle" pour créer l'arbre de traçabilité complet</p>
-                  <p className="small">L'arbre Merkle garantit l'intégrité et l'authenticité de toute la chaîne de traçabilité</p>
+                  <p>
+                    Cliquez sur "Générer l'Arbre Merkle" pour créer l'arbre de
+                    traçabilité complet
+                  </p>
+                  <p className="small">
+                    L'arbre Merkle garantit l'intégrité et l'authenticité de
+                    toute la chaîne de traçabilité
+                  </p>
                 </div>
               ) : (
                 <div>
@@ -1024,7 +1262,8 @@ function StockDetails() {
                       {merkleTree.root}
                     </code>
                     <small className="text-muted">
-                      Cette racine unique représente l'intégrité de toute la chaîne de traçabilité
+                      Cette racine unique représente l'intégrité de toute la
+                      chaîne de traçabilité
                     </small>
                   </div>
 
@@ -1032,13 +1271,19 @@ function StockDetails() {
                   <div className="row mb-4">
                     <div className="col-md-3">
                       <div className="text-center">
-                        <h4 className="text-primary">{merkleTree.leaves.length}</h4>
-                        <small className="text-muted">Feuilles (Transactions)</small>
+                        <h4 className="text-primary">
+                          {merkleTree.leaves.length}
+                        </h4>
+                        <small className="text-muted">
+                          Feuilles (Transactions)
+                        </small>
                       </div>
                     </div>
                     <div className="col-md-3">
                       <div className="text-center">
-                        <h4 className="text-success">{merkleTree.tree.length}</h4>
+                        <h4 className="text-success">
+                          {merkleTree.tree.length}
+                        </h4>
                         <small className="text-muted">Niveaux</small>
                       </div>
                     </div>
@@ -1050,7 +1295,9 @@ function StockDetails() {
                     </div>
                     <div className="col-md-3">
                       <div className="text-center">
-                        <h4 className="text-warning">{new Date().toLocaleDateString()}</h4>
+                        <h4 className="text-warning">
+                          {new Date().toLocaleDateString()}
+                        </h4>
                         <small className="text-muted">Généré le</small>
                       </div>
                     </div>
@@ -1063,7 +1310,7 @@ function StockDetails() {
                         <Eye size={16} className="me-2" />
                         Détails de l'Arbre
                       </h6>
-                      
+
                       {/* Feuilles (Transactions) */}
                       <div className="mb-4">
                         <h6>Feuilles (Transactions) :</h6>
@@ -1071,8 +1318,13 @@ function StockDetails() {
                           {merkleTree.leaves.map((leaf, index) => (
                             <div key={index} className="col-md-6 mb-2">
                               <div className="border rounded p-2 bg-light">
-                                <small className="text-muted">Hash #{index + 1}:</small>
-                                <div className="small text-truncate" title={leaf}>
+                                <small className="text-muted">
+                                  Hash #{index + 1}:
+                                </small>
+                                <div
+                                  className="small text-truncate"
+                                  title={leaf}
+                                >
                                   {leaf.substring(0, 20)}...
                                 </div>
                               </div>
@@ -1089,9 +1341,13 @@ function StockDetails() {
                             <div key={index} className="col-md-6 mb-2">
                               <div className="border rounded p-2">
                                 <small className="text-muted">
-                                  Niveau {index + 1} - {proof.isRight ? 'Droite' : 'Gauche'}:
+                                  Niveau {index + 1} -{" "}
+                                  {proof.isRight ? "Droite" : "Gauche"}:
                                 </small>
-                                <div className="small text-truncate" title={proof.hash}>
+                                <div
+                                  className="small text-truncate"
+                                  title={proof.hash}
+                                >
                                   {proof.hash.substring(0, 20)}...
                                 </div>
                               </div>
@@ -1106,11 +1362,13 @@ function StockDetails() {
                         <div className="bg-light p-3 rounded">
                           {merkleTree.tree.map((level, levelIndex) => (
                             <div key={levelIndex} className="mb-2">
-                              <small className="text-muted">Niveau {levelIndex + 1}:</small>
+                              <small className="text-muted">
+                                Niveau {levelIndex + 1}:
+                              </small>
                               <div className="d-flex flex-wrap">
                                 {level.map((hash, hashIndex) => (
-                                  <span 
-                                    key={hashIndex} 
+                                  <span
+                                    key={hashIndex}
                                     className="badge bg-secondary me-1 mb-1"
                                     title={hash}
                                   >
@@ -1130,10 +1388,22 @@ function StockDetails() {
                           Sécurité et Intégrité
                         </h6>
                         <ul className="mb-0 small">
-                          <li>Chaque modification des données change la racine de Merkle</li>
-                          <li>Les preuves permettent de vérifier l'appartenance sans révéler l'arbre complet</li>
-                          <li>L'arbre garantit l'intégrité de toute la chaîne de traçabilité</li>
-                          <li>Impossible de modifier une transaction sans détecter la fraude</li>
+                          <li>
+                            Chaque modification des données change la racine de
+                            Merkle
+                          </li>
+                          <li>
+                            Les preuves permettent de vérifier l'appartenance
+                            sans révéler l'arbre complet
+                          </li>
+                          <li>
+                            L'arbre garantit l'intégrité de toute la chaîne de
+                            traçabilité
+                          </li>
+                          <li>
+                            Impossible de modifier une transaction sans détecter
+                            la fraude
+                          </li>
                         </ul>
                       </div>
                     </div>
