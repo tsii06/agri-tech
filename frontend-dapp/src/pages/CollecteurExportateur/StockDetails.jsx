@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { keccak256 } from "ethers";
+import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 
 // Fonction pour hasher une transaction
 function hashTx(tx) {
@@ -121,21 +122,28 @@ function StockDetails() {
         // 1. Charger la commande
         const commandeRaw = await contractCE.getCommande(Number(id));
 
-        const commandeEnrichie = {
-          id: Number(commandeRaw.id),
-          idLotProduit: Number(commandeRaw.idLotProduit),
-          quantite: Number(commandeRaw.quantite),
-          prix: Number(commandeRaw.prix),
+        const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+        const produit =
+          idLotProduitNum > 0
+            ? await getLotProduitEnrichi(idLotProduitNum)
+            : {};
+
+        let commandeEnrichie = {
+          id: Number(commandeRaw.id ?? i),
+          idLotProduit: idLotProduitNum,
+          quantite: Number(commandeRaw.quantite ?? 0),
+          prix: Number(commandeRaw.prix ?? 0),
           payer: Boolean(commandeRaw.payer),
-          statutTransport: Number(commandeRaw.statutTransport),
-          statutProduit: Number(commandeRaw.statutProduit),
-          collecteur: commandeRaw.collecteur?.toString?.() || "",
-          exportateur: commandeRaw.exportateur?.toString?.() || "",
-          cid: commandeRaw.cid || "",
-          hashMerkle: commandeRaw.hashMerkle || "",
+          statutTransport: Number(commandeRaw.statutTransport ?? 0),
+          statutProduit: Number(commandeRaw.statutProduit ?? 0),
+          collecteur: commandeRaw.collecteur,
+          exportateur: commandeRaw.exportateur,
+          nomProduit: produit?.nom || "",
+          cid: produit.cid || "",
+          hashMerkle: produit.hashMerkle || "",
         };
 
-        // Charger les données IPFS de la commande
+        // Charger les données IPFS si un CID existe
         if (commandeEnrichie.cid) {
           try {
             const response = await fetch(getIPFSURL(commandeEnrichie.cid));
@@ -143,13 +151,23 @@ function StockDetails() {
               const ipfsData = await response.json();
               const root =
                 ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-              commandeEnrichie.nomProduit = root.nomProduit || "";
-              commandeEnrichie.ipfsRoot = root;
-              commandeEnrichie.ipfsTimestamp = ipfsData.timestamp;
+              commandeEnrichie = {
+                ...commandeEnrichie,
+                nomProduit:
+                  root.nomProduit ||
+                  produit?.nom ||
+                  commandeEnrichie.nomProduit,
+                ipfsTimestamp: ipfsData.timestamp,
+                ipfsVersion: ipfsData.version,
+                produitHashMerkle:
+                  root.produitHashMerkle || ipfsData.produitHashMerkle || "",
+                ipfsRoot: root,
+                ipfsType: root.type || ipfsData.type || null,
+              };
             }
           } catch (ipfsError) {
-            console.error(
-              "Erreur lors du chargement IPFS de la commande:",
+            console.log(
+              `Erreur lors du chargement IPFS pour la commande ${i}:`,
               ipfsError
             );
           }
@@ -683,7 +701,9 @@ function StockDetails() {
                   </div>
                   <div className="small">Parcelle</div>
                   <div className="fw-bold">
-                    {parcelles.length > 0 ? parcelles.map(p => p.id).join(", " ) || "N/A" : "N/A"}
+                    {parcelles.length > 0
+                      ? parcelles.map((p) => p.id).join(", ") || "N/A"
+                      : "N/A"}
                   </div>
                 </div>
                 <div className="text-center flex-fill">
@@ -695,7 +715,9 @@ function StockDetails() {
                   </div>
                   <div className="small">Récolte</div>
                   <div className="fw-bold">
-                    {recoltes.length > 0 ? lotProduit.idRecoltes.join(", ") || "N/A" : "N/A"}
+                    {recoltes.length > 0
+                      ? lotProduit.idRecoltes.join(", ") || "N/A"
+                      : "N/A"}
                   </div>
                 </div>
                 <div className="text-center flex-fill">
