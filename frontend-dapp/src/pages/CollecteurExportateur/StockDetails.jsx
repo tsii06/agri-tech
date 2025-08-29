@@ -346,6 +346,7 @@ function StockDetails() {
                           parcelleEnrichie.photos = root.photos || [];
                           parcelleEnrichie.intrants = root.intrants || [];
                           parcelleEnrichie.inspections = root.inspections || [];
+                          parcelleEnrichie.certificat = root.certificat || "";
                           parcelleEnrichie.ipfsRoot = root;
                           parcelleEnrichie.ipfsTimestamp = ipfsData.timestamp;
                         }
@@ -632,7 +633,6 @@ function StockDetails() {
       traceabilityData: {
         commande,
         lotProduit,
-        produits,
         recoltes,
         parcelles,
         conditionsTransport,
@@ -1065,6 +1065,17 @@ function StockDetails() {
                               : "Non spécifiée"}
                           </div>
                           <div className="mb-3">
+                            <strong>Certificat :</strong>{" "}
+                            <a
+                              href={getIPFSURL(parcelle.certificat)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ms-2 text-decoration-none text-success"
+                            >
+                              Voir ici
+                            </a>
+                          </div>
+                          <div className="mb-3">
                             <strong>Producteur:</strong>{" "}
                             {parcelles.length > 0
                               ? parcelle.producteur
@@ -1090,17 +1101,44 @@ function StockDetails() {
                               : 0}{" "}
                             inspection(s)
                           </div>
-                          <div className="mb-3">
-                            <strong>CID IPFS:</strong>
-                            <a
-                              href={getIPFSURL(parcelles[0].cid)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ms-2 text-decoration-none"
-                            >
-                              {parcelle.cid.substring(0, 10)}...
-                            </a>
-                          </div>
+                          {/* Informations IPFS et Merkle */}
+                          {parcelle.cid && (
+                            <div className="mt-2 p-2 bg-light rounded">
+                              <p className="mb-1">
+                                <strong>CID IPFS:</strong>
+                                <a
+                                  href={getIPFSURL(parcelle.cid)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ms-2 text-decoration-none text-primary"
+                                  title="Voir les données consolidées sur IPFS"
+                                >
+                                  {parcelle.cid.substring(0, 10)}...
+                                </a>
+                              </p>
+
+                              {parcelle.hashMerkle && (
+                                <p className="mb-1">
+                                  <strong>Hash Merkle:</strong>
+                                  <span
+                                    className="ms-2 text-muted"
+                                    title={parcelle.hashMerkle}
+                                  >
+                                    {parcelle.hashMerkle.substring(0, 10)}...
+                                  </span>
+                                </p>
+                              )}
+
+                              {parcelle.ipfsTimestamp && (
+                                <p className="mb-1 text-muted small">
+                                  <strong>Dernière mise à jour IPFS:</strong>{" "}
+                                  {new Date(
+                                    parcelle.ipfsTimestamp
+                                  ).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
