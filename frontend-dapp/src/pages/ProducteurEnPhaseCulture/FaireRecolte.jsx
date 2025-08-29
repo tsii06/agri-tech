@@ -177,11 +177,12 @@ function FaireRecolte() {
             onChange={handleInputChange}
           >
             <option value="">Sélectionnez un produit</option>
-            <option value="Vanille Bourbon">Vanille Bourbon</option>
+            <option value="Vanille">Vanille</option>
             <option value="Girofle">Girofle</option>
             <option value="Poivre noir">Poivre noir</option>
-            <option value="Curcuma">Curcuma</option>
-            <option value="Ravintsara">Huile essentielle de Ravintsara</option>
+            <option value="Cacao">Cacao</option>
+            <option value="Café">Café</option>
+            <option value="Cannelle">Cannelle</option>
           </select>
         </div>
 
