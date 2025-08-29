@@ -97,7 +97,6 @@ function StockDetails() {
   const { id } = useParams();
   const [commande, setCommande] = useState(null);
   const [lotProduit, setLotProduit] = useState(null);
-  const [produits, setProduits] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
   const [parcelles, setParcelles] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState(null);
@@ -207,44 +206,6 @@ function StockDetails() {
                   "Erreur lors du chargement IPFS du lot de produit:",
                   ipfsError
                 );
-              }
-            }
-
-            // 3. Charger les produits du lot
-            const produitsDuLot = [];
-            if (
-              lotProduitEnrichi.idRecoltes &&
-              lotProduitEnrichi.idRecoltes.length > 0
-            ) {
-              for (let i = 0; i < lotProduitEnrichi.idRecoltes.length; i++) {
-                const idRecolte = Number(lotProduitEnrichi.idRecoltes[i]);
-
-                const compteurProduits = Number(
-                  await contractCE.getCompteurProduit()
-                );
-                for (let j = 1; j <= compteurProduits; j++) {
-                  try {
-                    const produitRaw = await contractCE.getProduit(j);
-                    if (Number(produitRaw.idRecolte) === idRecolte) {
-                      const produitEnrichi = {
-                        id: Number(produitRaw.id),
-                        idRecolte: Number(produitRaw.idRecolte),
-                        quantite: Number(produitRaw.quantite),
-                        collecteur: produitRaw.collecteur?.toString?.() || "",
-                        enregistre: Boolean(produitRaw.enregistre),
-                        hashMerkle: produitRaw.hashMerkle || "",
-                      };
-                      produitsDuLot.push(produitEnrichi);
-                    }
-                  } catch (error) {
-                    console.error(
-                      "Erreur lors du chargement du produit",
-                      j,
-                      ":",
-                      error
-                    );
-                  }
-                }
               }
             }
 
@@ -379,7 +340,6 @@ function StockDetails() {
 
             // Stocker les données dans l'état
             setLotProduit(lotProduitEnrichi);
-            setProduits(produitsDuLot);
             setRecoltes(recoltesDuLot);
             setParcelles(parcellesDuLotClean);
           } catch (lotProduitError) {
@@ -518,22 +478,6 @@ function StockDetails() {
           },
         });
       }
-
-      // 3. Ajouter tous les produits
-      produits.forEach((produit) => {
-        allTransactions.push({
-          type: "produit",
-          id: produit.id,
-          data: {
-            idRecolte: produit.idRecolte,
-            quantite: produit.quantite,
-            collecteur: produit.collecteur,
-            enregistre: produit.enregistre,
-            hashMerkle: produit.hashMerkle,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      });
 
       // 4. Ajouter toutes les récoltes
       recoltes.forEach((recolte) => {
