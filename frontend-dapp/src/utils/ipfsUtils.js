@@ -34,11 +34,12 @@ export const uploadToIPFS = async (file, metadata = {}) => {
 /**
  * Uploader un objet js dans ipfs sous forme de json
  * @param {object} data 
+ * @param {string} type
  * @returns 
  */
-export const uploadJsonToIpfs = async (data) => {
+export const uploadJsonToIpfs = async (data, type) => {
   try {
-    const res = await myPinataSDK.upload.public.json(data);
+    const res = await myPinataSDK.upload.public.json(data).name(`${type}-${Date.now()}.json`);
     return {...res, success:true};
   } catch (error) {
     console.error("Erreur upload json : ", error);
@@ -92,7 +93,7 @@ export const uploadInspection = async (file, inspectionData) => {
   if (file !== null)
     return await uploadToIPFS(file, metadata);
   else
-    return await uploadJsonToIpfs(inspectionData);
+    return await uploadJsonToIpfs(inspectionData, "inspection");
 };
 
 /**
