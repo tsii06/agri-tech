@@ -6,6 +6,17 @@ import { User, Mail, Phone, BadgeCheck, BadgeX, KeyRound, UserCheck, Search, Che
 import { hasRole } from '../utils/roles';
 
 
+const ROLE_LABELS = [
+  "Producteur", // 0
+  "Fournisseur", // 1
+  "Certificateur", // 2
+  "Collecteur", // 3
+  "Auditeur", // 4
+  "Transporteur", // 5
+  "Exportateur", // 6
+  "Administration" // 7
+];
+
 export default function ListeActeursRole() {
   const { roles } = useUserContext();
   const [acteurs, setActeurs] = useState([]);
@@ -50,7 +61,7 @@ export default function ListeActeursRole() {
               email: details[7],
               telephone: details[8],
               actif: details[2],
-              role: details[1],
+              role: Number(details[1]),
               idBlockchain: details[0],
             });
           } catch (e) {
@@ -135,7 +146,7 @@ export default function ListeActeursRole() {
                   <div className="card-body">
                     <h5 className="card-title text-center mb-3">{acteur.nom}</h5>
                     <p><KeyRound size={16} className="me-2 text-success" /><strong>ID Blockchain:</strong> {acteur.idBlockchain}</p>
-                    <p><UserCheck size={16} className="me-2 text-success" /><strong>Rôle:</strong> {acteur.role}</p>
+                    <p><UserCheck size={16} className="me-2 text-success" /><strong>Rôle:</strong> {ROLE_LABELS[acteur.role]}</p>
                     <p><Mail size={16} className="me-2 text-success" /><strong>Email:</strong> {acteur.email}</p>
                     <p><Phone size={16} className="me-2 text-success" /><strong>Téléphone:</strong> {acteur.telephone}</p>
                     <p><strong>Adresse:</strong> {acteur.adresse}</p>
