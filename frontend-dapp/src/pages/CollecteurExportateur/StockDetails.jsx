@@ -853,81 +853,6 @@ function StockDetails() {
           </div>
         </div>
 
-        {/* Détails de la récolte */}
-        <div className="col-md-6">
-          <div className="card h-100">
-            <div className="card-header">
-              <h5 className="mb-0">
-                <Package2 size={20} className="me-2" />
-                Récolte #
-                {recoltes.length > 0 ? recoltes[0]?.id || "N/A" : "N/A"}
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="mb-3">
-                <strong>Produit:</strong>{" "}
-                {recoltes.length > 0 ? recoltes[0]?.nomProduit || "N/A" : "N/A"}
-              </div>
-              <div className="mb-3">
-                <strong>Date de récolte:</strong>{" "}
-                {recoltes.length > 0
-                  ? recoltes[0]?.dateRecolte || "N/A"
-                  : "N/A"}
-              </div>
-              <div className="mb-3">
-                <strong>Quantité:</strong>{" "}
-                {recoltes.length > 0 ? recoltes[0]?.quantite || "N/A" : "N/A"}{" "}
-                kg
-              </div>
-              <div className="mb-3">
-                <strong>Prix unitaire:</strong>{" "}
-                {recoltes.length > 0 ? recoltes[0]?.prixUnit || "N/A" : "N/A"}{" "}
-                Ar
-              </div>
-              <div className="mb-3">
-                <strong>Certifié:</strong>
-                <span
-                  className={`badge ms-2 ${
-                    recoltes.length > 0 && recoltes[0]?.certifie
-                      ? "bg-success"
-                      : "bg-warning"
-                  }`}
-                >
-                  {recoltes.length > 0
-                    ? recoltes[0]?.certifie
-                      ? "Oui"
-                      : "Non"
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="mb-3">
-                <strong>Producteur:</strong>{" "}
-                {recoltes.length > 0
-                  ? recoltes[0]?.producteur
-                    ? `${recoltes[0].producteur.slice(
-                        0,
-                        6
-                      )}...${recoltes[0].producteur.slice(-4)}`
-                    : "N/A"
-                  : "N/A"}
-              </div>
-              {recoltes.length > 0 && recoltes[0]?.cid && (
-                <div className="mb-3">
-                  <strong>CID IPFS:</strong>
-                  <a
-                    href={getIPFSURL(recoltes[0].cid)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ms-2 text-decoration-none"
-                  >
-                    {recoltes[0].cid.substring(0, 10)}...
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Conditions de transport */}
         {conditionsTransport && (
           <div className="col-md-6">
@@ -1023,40 +948,6 @@ function StockDetails() {
         </div>
 
         {/* Détails complets de traçabilité */}
-        {produits.length > 0 && (
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header">
-                <h5 className="mb-0">
-                  <Package2 size={20} className="me-2" />
-                  Produits du Lot ({produits.length})
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  {produits.map((produit, index) => (
-                    <div key={produit.id} className="col-md-4 mb-3">
-                      <div className="border rounded p-3">
-                        <h6>Produit #{produit.id}</h6>
-                        <p>
-                          <strong>Quantité:</strong> {produit.quantite} kg
-                        </p>
-                        <p>
-                          <strong>Récolte source:</strong> #{produit.idRecolte}
-                        </p>
-                        <p>
-                          <strong>Enregistré:</strong>{" "}
-                          {produit.enregistre ? "Oui" : "Non"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {recoltes.length > 1 && (
           <div className="col-12">
             <div className="card">
@@ -1086,13 +977,58 @@ function StockDetails() {
                           <strong>Prix unitaire:</strong> {recolte.prixUnit} Ar
                         </p>
                         <p>
-                          <strong>Certifié:</strong>{" "}
-                          {recolte.certifie ? "Oui" : "Non"}
+                          <strong>Certificat phytosanitaire :</strong>{" "}
+                          <a
+                            href={getIPFSURL(recolte.certificatPhytosanitaire)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ms-2 text-decoration-none text-success"
+                          >
+                            Voir ici
+                          </a>
                         </p>
                         <p>
                           <strong>Parcelles:</strong>{" "}
                           {recolte.idParcelles ? recolte.idParcelles.length : 0}
                         </p>
+                        {/* Informations IPFS et Merkle */}
+                        {recolte.cid && (
+                          <div className="mt-2 p-2 bg-light rounded">
+                            <p className="mb-1">
+                              <strong>CID IPFS:</strong>
+                              <a
+                                href={getIPFSURL(recolte.cid)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ms-2 text-decoration-none text-primary"
+                                title="Voir les données consolidées sur IPFS"
+                              >
+                                {recolte.cid.substring(0, 10)}...
+                              </a>
+                            </p>
+
+                            {recolte.hashMerkle && (
+                              <p className="mb-1">
+                                <strong>Hash Merkle:</strong>
+                                <span
+                                  className="ms-2 text-muted"
+                                  title={recolte.hashMerkle}
+                                >
+                                  {recolte.hashMerkle.substring(0, 10)}...
+                                </span>
+                              </p>
+                            )}
+
+                            {recolte.ipfsTimestamp && (
+                              <p className="mb-1 text-muted small">
+                                <strong>Dernière mise à jour IPFS:</strong>{" "}
+                                {new Date(
+                                  recolte.ipfsTimestamp
+                                ).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1108,7 +1044,7 @@ function StockDetails() {
               <div className="card-header">
                 <h5 className="mb-0">
                   <TreePine size={20} className="me-2" />
-                  Toutes les Parcelles conscerner ({parcelles.length})
+                  Toutes les Parcelles ({parcelles.length})
                 </h5>
               </div>
               <div className="card-body">
@@ -1120,7 +1056,9 @@ function StockDetails() {
                         <div className="card-body">
                           <div className="mb-3">
                             <strong>Coordonnees :</strong> &nbsp;
-                            {parcelle.location && parcelle.location.lat && parcelle.location.lng
+                            {parcelle.location &&
+                            parcelle.location.lat &&
+                            parcelle.location.lng
                               ? `${parcelle.location.lat.toFixed(
                                   4
                                 )}, ${parcelle.location.lng.toFixed(4)}`
