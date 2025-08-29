@@ -38,7 +38,8 @@ import StockDetails from "./pages/CollecteurExportateur/StockDetails";
 import {
   ShieldCheck, TreePine, ShoppingBasket, Package,
   ShoppingCart, Search, Users, Truck, Home as HomeIcon, ChevronRight,
-  Group
+  Group,
+  Box
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
 
@@ -111,6 +112,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
     if (t.includes("collecteur")) return <Users size={18} />;
     if (t.includes("exportateur")) return <Truck size={18} />;
     if (t.includes("accueil") || t.includes("home")) return <HomeIcon size={18} />;
+    if (t.includes("stock")) return <Box size={18} />;
     return <ChevronRight size={18} />;
   };
 
