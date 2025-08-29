@@ -32,6 +32,20 @@ export const uploadToIPFS = async (file, metadata = {}) => {
 };
 
 /**
+ * Uploader un objet js dans ipfs sous forme de json
+ * @param {object} data 
+ * @returns 
+ */
+export const uploadJsonToIpfs = async (data) => {
+  try {
+    const res = await myPinataSDK.upload.public.json(data);
+    return {...res, success:true};
+  } catch (error) {
+    console.error("Erreur upload json : ", error);
+  }
+};
+
+/**
  * Upload des photos de parcelle sur IPFS
  * @param {File} file - Le fichier photo
  * @param {string} parcelleId - L'ID de la parcelle
@@ -75,7 +89,10 @@ export const uploadInspection = async (file, inspectionData) => {
     rapport: inspectionData.rapport,
     timestamp: Date.now().toString(),
   };
-  return await uploadToIPFS(file, metadata);
+  if (file !== null)
+    return await uploadToIPFS(file, metadata);
+  else
+    return await uploadJsonToIpfs(inspectionData);
 };
 
 /**
