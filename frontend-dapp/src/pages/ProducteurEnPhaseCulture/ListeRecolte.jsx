@@ -62,7 +62,12 @@ function ListeRecoltes() {
           if (roles.includes(0))
             if (recolte.producteur.toLowerCase() !== account.toLowerCase())
               continue;
-
+        
+        // Filtre les recoltes si 'address' est definie dans l'url
+        if (address !== undefined)
+          if (recolte.producteur.toLowerCase() !== address.toLowerCase())
+            continue;
+        
         // Charger les données IPFS consolidées si la récolte a un CID
         if (recolte.cid) {
           try {
