@@ -55,15 +55,19 @@ contract ProducteurEnPhaseCulture {
     // ====================================== Parcelle =========================================================
     function creerParcelle(string memory _ipfs) public seulementProducteur seulementActeurAutorise {
         compteurParcelles++;
+
+        // calcule de la haskMerkle
+        bytes32 hashMerkle = keccak256(abi.encodePacked(
+            compteurParcelles,
+            msg.sender,
+            _ipfs,
+            block.timestamp
+        ));
+        
         parcelles[compteurParcelles].id = compteurParcelles;
         parcelles[compteurParcelles].producteur = msg.sender;
         parcelles[compteurParcelles].cid = _ipfs;
-        parcelles[compteurParcelles].hashMerkle = "";
-    }
-
-    function ajoutHashMerkleParcelle(uint32 _idParcelle, string memory _hash) public {
-        require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
-        parcelles[_idParcelle].hashMerkle = _hash;
+        parcelles[compteurParcelles].hashMerkle = hashMerkle;
     }
 
     // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des photos individuelles

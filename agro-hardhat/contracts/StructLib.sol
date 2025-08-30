@@ -68,7 +68,7 @@ library StructLib {
         uint32 id;
         address producteur;
         string cid; // CID IPFS pour les photos et détails complets
-        string hashMerkle;
+        bytes32 hashMerkle;
         // Suppression des arrays lourds (photos, intrants, inspections) - maintenant dans IPFS
     }
 
