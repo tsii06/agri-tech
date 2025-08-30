@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
 import { getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
 import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
+import { useUserContext } from "../../context/useContextt";
 
 function LivraisonRecolte() {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,6 +14,8 @@ function LivraisonRecolte() {
   const [commandes, setCommandes] = useState([]);
   const [commandesRecolte, setCommandesRecolte] = useState([]);
   const [error, setError] = useState(null);
+
+  const { account } = useUserContext();
 
   const chargerDetails = async () => {
     try {
@@ -73,6 +76,9 @@ function LivraisonRecolte() {
       
       for (let i = 1; i <= compteurCommandesRecolte; i++) {
         const c = await contractCP.commandes(i);
+
+        // ignorer les commandes que le transporteur n'a pas access.
+        if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
         
         // Charger les données IPFS consolidées si la commande a un CID
         let commandeRecolteEnrichie = {
