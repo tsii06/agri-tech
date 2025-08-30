@@ -138,6 +138,7 @@ library StructLib {
         StatutProduit statutProduit;
         string hashMerkle;
         bool enregistre;
+        bool enregistrerCondition;
     }
 
     struct Article {

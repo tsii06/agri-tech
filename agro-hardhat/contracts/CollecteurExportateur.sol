@@ -15,7 +15,6 @@ contract CollecteurExportateur {
     uint32 public compteurCommandes;
     uint32 public compteurProduits;
     uint32 public compteurLotProduits;
-    uint32 public compteurConditions;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
 
@@ -25,7 +24,7 @@ contract CollecteurExportateur {
     event ProduitAjoute(uint32 indexed idProduit, uint32 quantite, uint32 idRecolte);
     event ProduitValide(uint32 indexed idProduit, bool valide);
     event PaiementEffectue(uint32 indexed idProduit, uint32 idPaiement, address payeur, uint32 montant, StructLib.ModePaiement mode);
-    event ConditionEnregistree(uint32 indexed idProduit, uint32 idCondition, string cid, uint timestamp);
+    event ConditionEnregistree(uint32 indexed idProduit, string cid, uint timestamp);
     event StatutTransportMisAJour(uint32 indexed idProduit, StructLib.StatutTransport statut);
     // Evenement produit lorsqu une commande est passer
     event CommandePasser(address indexed exportateur, uint32 idProduit);
@@ -97,7 +96,7 @@ contract CollecteurExportateur {
         lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "", false);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "", false, false);
 
         emit CommandePasser(msg.sender, _idLotProduit);
     }
@@ -119,10 +118,11 @@ contract CollecteurExportateur {
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
         // verifie si l'idCommande est valide.
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        require(!commandes[_idCommande].enregistrerCondition, "Il y a deja des conditions enregistrer.");
 
-        compteurConditions++;
-        conditions[_idCommande] = StructLib.EnregistrementCondition(compteurConditions, _cid, block.timestamp, "");
-        emit ConditionEnregistree(_idCommande, compteurConditions, _cid, block.timestamp);
+        commandes[_idCommande].enregistrerCondition = true;
+        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, "");
+        emit ConditionEnregistree(_idCommande, _cid, block.timestamp);
     }
 
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
@@ -182,7 +182,7 @@ contract CollecteurExportateur {
         return compteurCommandes;
     }
     function getCompteurCondition() public view returns(uint32) {
-        return compteurConditions;
+        return compteurCommandes;
     }
     // -------------------------------------- Fin Getter ------------------------------------------------
 }
