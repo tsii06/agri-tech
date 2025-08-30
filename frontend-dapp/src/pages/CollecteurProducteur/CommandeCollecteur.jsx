@@ -379,7 +379,8 @@ function CommandeCollecteur() {
 
                   <div className="d-flex justify-content-between mt-3">
                     {/* Actions selon le statut */}
-                    {!commande.payer && (
+                    {/* afficher btn payer si la commande n'a pas encors ete payer et que la commande a ete valider */}
+                    {!commande.payer && commande.statusRecolte === 1 && (
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={() => {
@@ -391,7 +392,8 @@ function CommandeCollecteur() {
                       </button>
                     )}
 
-                    {commande.statutRecolte === 0 && (
+                    {/* Afficher btn valider et rejeter si la commande a ete livrer avec success. */}
+                    {commande.statutRecolte === 0 && commande.statutTransport === 1 && (
                       <div className="d-flex gap-1">
                         <button
                           className="btn btn-success btn-sm"

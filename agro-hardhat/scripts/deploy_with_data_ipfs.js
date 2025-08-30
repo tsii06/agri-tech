@@ -185,13 +185,9 @@ async function main() {
     // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(2, "bafkreigmn6cm7j6ecodtwvatuc34rjutkuvn32ujvzvmz3qyzc3ss3w5du");
     // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(3, "bafkreie4eaudwwhyrnyd3h75mxpikmwbebkcnyviwv77r2dcdb4ddwyl4i");
 
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(1, "0x3edcaf6e4372c46e3092f7c95944961fe46c1c1d087e8dd69096e48f5225801f");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(2, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(3, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
-
     // // Passer commande recolte
-    // console.log("Passage d'une commande de recolte pour le collecteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 150);
+    console.log("Passage d'une commande de recolte pour le collecteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 35);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 20);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(2, 200);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(3, 45);
