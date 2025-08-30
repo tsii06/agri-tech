@@ -39,8 +39,11 @@ function InspectionsParcelle() {
           const response = await fetch(getIPFSURL(parcelleData.cid));
           if (response.ok) {
             const data = await response.json();
-            if (data.inspections && Array.isArray(data.inspections)) {
-              setInspections(data.inspections);
+            const root = data && data.items ? data.items : data;
+
+            // recuperer tous les data necessaire a un intrant
+            if (root && root.inspections && Array.isArray(root.inspections)) {
+              setInspections(root.inspections);
             }
           }
         } catch (error) {
