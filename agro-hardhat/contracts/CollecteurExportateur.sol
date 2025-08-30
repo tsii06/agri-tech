@@ -51,30 +51,42 @@ contract CollecteurExportateur {
     }
 
     // ==================================== Produit =========================================================
-    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, address _collecteur) public {
+    function ajouterProduit(uint32 _idCommandeRecolte, uint32 _idRecolte, uint32 _quantite, address _collecteur) public {
         compteurProduits++;
 
-        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _quantite, _collecteur, false, "");
+        produits[compteurProduits] = StructLib.Produit(compteurProduits, _idRecolte, _idCommandeRecolte, _quantite, _collecteur, false);
 
         emit ProduitAjoute(compteurProduits, _quantite, _idRecolte);
     }
 
     function ajouterLotProduit(uint32[] memory _idProduits, string memory _cid, uint32 _prix) public seulementCollecteur {
         uint32[] memory _idRecoltes = new uint32[](_idProduits.length);
+        uint32[] memory _idCommandeRecoltes = new uint32[](_idProduits.length);
         uint32 _quantite = 0;
         for(uint32 i=0 ; i<_idProduits.length ; i++) {
             if (_idProduits[i] > compteurProduits) revert();
             StructLib.Produit memory produit = produits[_idProduits[i]];
             _idRecoltes[i] = produit.idRecolte;
+            _idCommandeRecoltes[i] = produit.idCommandeRecolte;
             _quantite += produit.quantite;
             if (produit.collecteur != msg.sender) revert();
             if (produit.enregistre) revert();
         }
         compteurLotProduits++;
+
+        // calcule du hashMerkle
+        bytes32 hashMerkle = keccak256(abi.encodePacked(
+            _cid,
+            msg.sender,
+            block.timestamp,
+            _idRecoltes,
+            _idCommandeRecoltes
+        ));
+        
         for(uint32 i=0 ; i<_idProduits.length ; i++) {
             produits[_idProduits[i]].enregistre = true;
         }
-        lotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _quantite, _prix, msg.sender, _cid, "");
+        lotProduits[compteurLotProduits] = StructLib.LotProduit(compteurLotProduits, _idRecoltes, _idCommandeRecoltes, _quantite, _prix, msg.sender, _cid, hashMerkle);
 
         emit AjoutLotProduit(msg.sender, compteurLotProduits, _quantite, _prix);
     }

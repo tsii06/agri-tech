@@ -104,7 +104,6 @@ library StructLib {
         address producteur;
         address collecteur;
         StatutProduit statutRecolte;
-        string hashMerkle;
         bool enregistrerCondition;
         address transporteur;
     }
@@ -112,20 +111,21 @@ library StructLib {
     struct Produit {
         uint32 id;
         uint32 idRecolte;
+        uint32 idCommandeRecolte;
         uint32 quantite;
         address collecteur;
         bool enregistre;
-        string hashMerkle;
     }
 
     struct LotProduit {
         uint32 id;
         uint32[] idRecolte;
+        uint32[] idCommandeRecoltes;
         uint32 quantite;
         uint32 prix;
         address collecteur;
         string cid;
-        string hashMerkle;
+        bytes32 hashMerkle;
     }
 
     struct CommandeProduit {

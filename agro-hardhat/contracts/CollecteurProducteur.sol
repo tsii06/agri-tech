@@ -110,7 +110,7 @@ contract CollecteurProducteur {
 
         compteurCommandes++;
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, "", true, address(0));
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, true, address(0));
     }
     function choisirTransporteurCommandeRecolte(uint32 idCommande, address transporteur) public seulementCollecteur commandeExistant(idCommande) {
         if (commandes[idCommande].collecteur != msg.sender) revert();
@@ -135,7 +135,7 @@ contract CollecteurProducteur {
         if (commande.statutRecolte != StructLib.StatutProduit.Valide) revert();
 
         // ajout automatique de produit dans le contrat CollecteurExportateur
-        moduleCE.ajouterProduit(commande.idRecolte, commande.quantite, msg.sender);
+        moduleCE.ajouterProduit(commande.id, commande.idRecolte, commande.quantite, msg.sender);
 
         // definie la commande comme deja payer
         commandes[_idCommande].payer = true;
@@ -186,7 +186,7 @@ contract CollecteurProducteur {
     }
 }
 interface ICollecteurExportateur {
-    function ajouterProduit(uint32 _idRecolte, uint32 _quantite, address _collecteur) external;
+    function ajouterProduit(uint32 _idCommandeRecolte, uint32 _idRecolte, uint32 _quantite, address _collecteur) external;
 }
 interface IProducteur {
     function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
