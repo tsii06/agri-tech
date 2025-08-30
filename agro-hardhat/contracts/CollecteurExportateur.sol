@@ -96,9 +96,14 @@ contract CollecteurExportateur {
         lotProduits[_idLotProduit].quantite = temp;
 
         compteurCommandes++;
-        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, "", false, false);
+        commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, false, false, address(0));
 
         emit CommandePasser(msg.sender, _idLotProduit);
+    }
+    function choisirTransporteurCommandeProduit(uint32 idCommande, address transporteur) public seulementExportateur {
+        if (idCommande > compteurCommandes) revert();
+        if (commandes[idCommande].exportateur != msg.sender) revert();
+        commandes[idCommande].transporteur = transporteur;
     }
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
@@ -126,8 +131,8 @@ contract CollecteurExportateur {
     }
 
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
-        // verifie si l'idCommande est valide.
         if (_idCommande > compteurCommandes) revert();
+        if (commandes[_idCommande].transporteur != msg.sender) revert();
         
         commandes[_idCommande].statutTransport = _statut;
         emit StatutTransportMisAJour(_idCommande, _statut);
