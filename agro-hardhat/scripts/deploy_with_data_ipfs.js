@@ -170,74 +170,74 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteurAddress, await collecteurExportateurProxy.getAddress());
 
 
-    // Creation d'une parcelle de test pour le producteur
-    console.log("Création d'une parcelle de test pour le producteur...");
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiafmozmclolxpzbevdltres3qyjquld7ig74ak6ad2vfv2oow45pm");
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleParcelle(1, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
+    // // Creation d'une parcelle de test pour le producteur
+    // console.log("Création d'une parcelle de test pour le producteur...");
+    // await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiafmozmclolxpzbevdltres3qyjquld7ig74ak6ad2vfv2oow45pm");
+    // await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleParcelle(1, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
 
-    // Ajout recolte
-    console.log("Ajout d'un recolte de test pour le producteur...");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 500, 20000, "bafkreigy4yddpp3raziqi375qzhrwekejey3ri5wk63ukqvxyk5gkeotym");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 750, 45000, "bafkreibhuvbcce4cuwwp2immw5v7byhr2fsburg7lt52qcrjsywa2bkjpm");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 790, 45000, "bafkreiapv5fwpgeouodygsqj5lf735wwjoef7ywwiy2rbbyzkychflrcqa");
+    // // Ajout recolte
+    // console.log("Ajout d'un recolte de test pour le producteur...");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 500, 20000, "bafkreigy4yddpp3raziqi375qzhrwekejey3ri5wk63ukqvxyk5gkeotym");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 750, 45000, "bafkreibhuvbcce4cuwwp2immw5v7byhr2fsburg7lt52qcrjsywa2bkjpm");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 790, 45000, "bafkreiapv5fwpgeouodygsqj5lf735wwjoef7ywwiy2rbbyzkychflrcqa");
 
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreihnku4eiwp4v6jckstjzlyobq2m5dus4gdv2rojk3ecc4acvkvmqy");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(2, "bafkreigmn6cm7j6ecodtwvatuc34rjutkuvn32ujvzvmz3qyzc3ss3w5du");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(3, "bafkreie4eaudwwhyrnyd3h75mxpikmwbebkcnyviwv77r2dcdb4ddwyl4i");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreihnku4eiwp4v6jckstjzlyobq2m5dus4gdv2rojk3ecc4acvkvmqy");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(2, "bafkreigmn6cm7j6ecodtwvatuc34rjutkuvn32ujvzvmz3qyzc3ss3w5du");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(3, "bafkreie4eaudwwhyrnyd3h75mxpikmwbebkcnyviwv77r2dcdb4ddwyl4i");
 
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(1, "0x3edcaf6e4372c46e3092f7c95944961fe46c1c1d087e8dd69096e48f5225801f");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(2, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(3, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(1, "0x3edcaf6e4372c46e3092f7c95944961fe46c1c1d087e8dd69096e48f5225801f");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(2, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleRecolte(3, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
 
-    // Passer commande recolte
-    console.log("Passage d'une commande de recolte pour le collecteur...");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 150);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 20);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(2, 200);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(3, 45);
+    // // Passer commande recolte
+    // console.log("Passage d'une commande de recolte pour le collecteur...");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 150);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 20);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(2, 200);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(3, 45);
 
-    // effectuer livraison recolte
-    console.log("Effectuer la livraison de la recolte par le transporteur...");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(2, 1);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(3, 1);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(4, 1);
+    // // effectuer livraison recolte
+    // console.log("Effectuer la livraison de la recolte par le transporteur...");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(2, 1);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(3, 1);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(4, 1);
 
-    // valider commande recolte
-    console.log("Validation de la commande de recolte par le producteur...");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(3, true);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(4, true);
+    // // valider commande recolte
+    // console.log("Validation de la commande de recolte par le producteur...");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(3, true);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(4, true);
 
-    // payer recolte
-    console.log("Paiement de la commande de recolte par le producteur...");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
-    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(4, 2025000, 0);
+    // // payer recolte
+    // console.log("Paiement de la commande de recolte par le producteur...");
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
+    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(4, 2025000, 0);
     
-    // ajouter lot produit.
-    console.log("Creation d'un lot produit...");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1, 4], "bafkreiboteljvcnraqbwcih5keu3wc4e23rkr3dphrfqikwrajwbou232y", 37000);
+    // // ajouter lot produit.
+    // console.log("Creation d'un lot produit...");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1, 4], "bafkreiboteljvcnraqbwcih5keu3wc4e23rkr3dphrfqikwrajwbou232y", 37000);
 
-    // passer commande lot produit
-    console.log("Passage d'une commande de lot produit pour l'exportateur...");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 45);
+    // // passer commande lot produit
+    // console.log("Passage d'une commande de lot produit pour l'exportateur...");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 45);
 
-    // livrer commande lot produit
-    console.log("Effectuer la livraison du lot produit par le transporteur...");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
+    // // livrer commande lot produit
+    // console.log("Effectuer la livraison du lot produit par le transporteur...");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
 
-    // valider commande lot produit
-    console.log("Validation de la commande du lot produit par l'exportateur...");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).mettreAJourStatutCommande(1, 1); // Valider
+    // // valider commande lot produit
+    // console.log("Validation de la commande du lot produit par l'exportateur...");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).mettreAJourStatutCommande(1, 1); // Valider
     
-    // payer commande lot produit
-    console.log("Paiement de la commande du lot produit par l'exportateur...");
-    await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 1665000, 0);
+    // // payer commande lot produit
+    // console.log("Paiement de la commande du lot produit par l'exportateur...");
+    // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 1665000, 0);
 
-    console.log("Déploiement terminé avec succès!");
+    // console.log("Déploiement terminé avec succès!");
 }
 
 main()

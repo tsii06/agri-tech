@@ -66,7 +66,8 @@ function CreerParcelle() {
 
     try {
       const contract = await getContract();
-      const idNewParcelle = await contract.getCompteurParcelle();
+      let idNewParcelle = await contract.getCompteurParcelle();
+      idNewParcelle = Number(idNewParcelle) + 1;
 
       // UPLOADE CERTIFICAT PHYTOSANITAIRE
       if (!certificat) {
@@ -79,7 +80,7 @@ function CreerParcelle() {
           region: region.current.value,
           autoriteCertificatrice: autoriteCertificatrice.current.value,
           adresseProducteur: account,
-          idParcelle: Number(idNewParcelle).toString(),
+          idParcelle: idNewParcelle.toString(),
           numeroCertificat: numero_certificat.current.value
         };
         
@@ -116,20 +117,13 @@ function CreerParcelle() {
         throw new Error("Erreur lors de l'upload des données de la parcelle");
       }
 
-      // Calculer le hash Merkle initial
-      const hashMerkleInitial = calculateParcelleMerkleHash(
-        { id: Number(idNewParcelle), producteur: account, cid: parcelleUpload.cid },
-        parcelleData.photos,
-        parcelleData.intrants,
-        parcelleData.inspections
-      );
-
       // CREATION PARCELLE avec le nouveau format
       const tx = await contract.creerParcelle(parcelleUpload.cid);
       await tx.wait();
 
       // Mettre à jour le hash Merkle de la parcelle
-      const txHashMerkle = await contract.ajoutHashMerkleParcelle(Number(idNewParcelle), hashMerkleInitial);
+      const hashMerkleInitial = tx.hash;
+      const txHashMerkle = await contract.ajoutHashMerkleParcelle(idNewParcelle, hashMerkleInitial);
       await txHashMerkle.wait();
 
       navigate("/mes-parcelles");
