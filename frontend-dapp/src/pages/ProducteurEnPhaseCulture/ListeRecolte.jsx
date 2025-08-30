@@ -183,6 +183,7 @@ function ListeRecoltes() {
   };
 
   const handleCommander = async (recolteId) => {
+    setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
       const recolte = recoltes.find(r => r.id === recolteId);
@@ -211,6 +212,8 @@ function ListeRecoltes() {
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
       setError("Erreur lors de la commande. Veuillez réessayer.");
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -493,8 +496,9 @@ function ListeRecoltes() {
                   type="button"
                   className="btn btn-primary"
                   onClick={() => handleCommander(recolteSelectionnee.id)}
+                  disabled={btnLoading}
                 >
-                  Commander
+                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)}&nbsp;Commander
                 </button>
               </div>
             </div>
@@ -663,7 +667,7 @@ function ListeRecoltes() {
                   onClick={handleModifierPrix}
                   disabled={btnLoading}
                 >
-                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)} &nbsp; Modifier le prix
+                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)}&nbsp;Modifier le prix
                 </button>
               </div>
             </div>
