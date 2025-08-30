@@ -103,7 +103,7 @@ function InspectionsParcelle() {
       const nouvellesInspections = [...inspections, nouvelleInspection];
 
       // mettre a jour la nouvelle cid relier au parcelle
-      const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(
+      const masterUpload = await updateCidParcelle(
         parcelle,
         nouvellesInspections,
         "inspections"
@@ -115,7 +115,7 @@ function InspectionsParcelle() {
         id: parcelle.id,
         producteur: parcelle.producteur,
         cid: masterUpload.cid,
-        hashMerkle: hashMerkleMisAJour,
+        hashMerkle: parcelle.hashMerkle,
       });
 
       setFormData({ rapport: "", observations: "", recommandations: "" });

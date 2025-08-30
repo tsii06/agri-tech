@@ -121,11 +121,6 @@ function CreerParcelle() {
       const tx = await contract.creerParcelle(parcelleUpload.cid);
       await tx.wait();
 
-      // Mettre à jour le hash Merkle de la parcelle
-      const hashMerkleInitial = tx.hash;
-      const txHashMerkle = await contract.ajoutHashMerkleParcelle(idNewParcelle, hashMerkleInitial);
-      await txHashMerkle.wait();
-
       navigate("/mes-parcelles");
 
     } catch (error) {

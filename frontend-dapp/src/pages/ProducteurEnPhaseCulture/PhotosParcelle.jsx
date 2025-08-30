@@ -77,7 +77,7 @@ function PhotosParcelle() {
         const nouvellesPhotos = [...photos, photoData];
 
         // mettre a jour la nouvelle cid relier au parcelle
-        const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(
+        const masterUpload = await updateCidParcelle(
           parcelle,
           nouvellesPhotos,
           "photos"
@@ -89,7 +89,7 @@ function PhotosParcelle() {
           id: parcelle.id,
           producteur: parcelle.producteur,
           cid: masterUpload.cid,
-          hashMerkle: hashMerkleMisAJour,
+          hashMerkle: parcelle.hashMerkle,
         });
 
         setIpfsUrl(getIPFSURL(res.cid));

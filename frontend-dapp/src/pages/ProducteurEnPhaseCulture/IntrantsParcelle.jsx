@@ -125,7 +125,7 @@ function IntrantsParcelle() {
         const nouvellesIntrants = [...intrants, intrantData];
 
         // mettre a jour la nouvelle cid relier au parcelle
-        const { masterUpload, hashMerkleMisAJour } = await updateCidParcelle(
+        const masterUpload = await updateCidParcelle(
           parcelle,
           nouvellesIntrants,
           "intrants"
@@ -137,7 +137,7 @@ function IntrantsParcelle() {
           id: parcelle.id,
           producteur: parcelle.producteur,
           cid: masterUpload.cid,
-          hashMerkle: hashMerkleMisAJour,
+          hashMerkle: parcelle.hashMerkle,
         });
 
         setMessage(

@@ -324,21 +324,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
     await deleteFromIPFSByCid(parcelle.cid);
   }
 
-  // 6. Mettre à jour le hash Merkle de la parcelle
-  const hashMerkleMisAJour = calculateParcelleMerkleHash(
-    { ...parcelle, cid: masterUpload.cid },
-    newData,
-    [], // intrants
-    [] // inspections
-  );
-
-  const txHashMerkle = await contract.ajoutHashMerkleParcelle(
-    Number(parcelle.id),
-    hashMerkleMisAJour
-  );
-  await txHashMerkle.wait();
-
-  return { masterUpload, hashMerkleMisAJour };
+  return masterUpload;
 };
 
 /**
