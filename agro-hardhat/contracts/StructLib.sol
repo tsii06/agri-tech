@@ -106,6 +106,7 @@ library StructLib {
         StatutProduit statutRecolte;
         string hashMerkle;
         bool enregistrerCondition;
+        address transporteur;
     }
 
     struct Produit {

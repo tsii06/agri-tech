@@ -110,7 +110,12 @@ contract CollecteurProducteur {
 
         compteurCommandes++;
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, "", true);
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, "", true, address(0));
+    }
+    function choisirTransporteurCommandeRecolte(uint32 idCommande, address transporteur) public seulementCollecteur {
+        require(idCommande <= compteurCommandes, "Commande non existant.");
+        require(commandes[idCommande].collecteur == msg.sender, "Ce n'est pas votre commande.");
+        commandes[idCommande].transporteur = transporteur;
     }
     function validerCommandeRecolte(uint32 _idCommande, bool _valide) public seulementCollecteur {
         require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore arriver");
@@ -138,14 +143,6 @@ contract CollecteurProducteur {
         commandes[_idCommande].payer = true;
 
         paiements[_idCommande] = StructLib.Paiement(_idCommande, msg.sender, commande.producteur, _montant, _mode, block.timestamp, "");
-    }
-
-    function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
-        // verifie si l'idCommande est valide.
-        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
-        
-        commandes[_idCommande].statutTransport = _statut;
-        emit StatutTransportMisAJour(_idCommande, _statut, msg.sender);
     }
 
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
