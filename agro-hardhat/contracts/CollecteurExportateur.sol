@@ -45,7 +45,7 @@ contract CollecteurExportateur {
     }
 
     function initialiser(address _gestionnaireActeurs) public {
-        require(!initialised, "Contrat deja initialiser !");
+        if (initialised) revert();
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
         initialised = true;
     }
@@ -63,12 +63,12 @@ contract CollecteurExportateur {
         uint32[] memory _idRecoltes = new uint32[](_idProduits.length);
         uint32 _quantite = 0;
         for(uint32 i=0 ; i<_idProduits.length ; i++) {
-            require(_idProduits[i] <= compteurProduits, "Produit non existant.");
+            if (_idProduits[i] > compteurProduits) revert();
             StructLib.Produit memory produit = produits[_idProduits[i]];
             _idRecoltes[i] = produit.idRecolte;
             _quantite += produit.quantite;
-            require(produit.collecteur == msg.sender, "Vous n'est pas proprietaire de ce produit.");
-            require(!produit.enregistre, "Produit deja enregistre comme lot");
+            if (produit.collecteur != msg.sender) revert();
+            if (produit.enregistre) revert();
         }
         compteurLotProduits++;
         for(uint32 i=0 ; i<_idProduits.length ; i++) {
@@ -80,15 +80,15 @@ contract CollecteurExportateur {
     }
     
     function setPriceProduit(uint32 _idLotProduit, uint32 _prix) public seulementCollecteur {
-        require(_idLotProduit <= compteurLotProduits, "Id incorect");
-        require(lotProduits[_idLotProduit].collecteur == msg.sender, "Vous n'etes pas proprietaire de ce produit");
+        if (_idLotProduit > compteurLotProduits) revert();
+        if (lotProduits[_idLotProduit].collecteur != msg.sender) revert();
         lotProduits[_idLotProduit].prix = _prix;
     }
 
     // Modifie la fonction qui passe une commande
     function passerCommande(uint32 _idLotProduit, uint32 _quantite) public seulementExportateur {
         // la quantite ne doit pas etre superieur au quantite de produit enregistrer.
-        require(_quantite <= lotProduits[_idLotProduit].quantite, "Quantite invalide");
+        if (_quantite > lotProduits[_idLotProduit].quantite) revert();
 
         uint32 _prix = _quantite * lotProduits[_idLotProduit].prix;
         // la quantite de produit doit etre diminuer.
@@ -103,9 +103,9 @@ contract CollecteurExportateur {
 
     function effectuerPaiement(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementExportateur {
         StructLib.LotProduit memory _lotProduit = lotProduits[commandes[_idCommande].idLotProduit];
-        require(_montant == commandes[_idCommande].prix, "Montant incorrect");
-        require(!commandes[_idCommande].payer, "Commande deja payer");
-        require(commandes[_idCommande].statutProduit == StructLib.StatutProduit.Valide, "Commande non valider.");
+        if (_montant != commandes[_idCommande].prix) revert();
+        if (commandes[_idCommande].payer) revert();
+        if (commandes[_idCommande].statutProduit != StructLib.StatutProduit.Valide) revert();
 
         // definit la commande comme deja payee
         commandes[_idCommande].payer = true;
@@ -117,8 +117,8 @@ contract CollecteurExportateur {
 
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
         // verifie si l'idCommande est valide.
-        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
-        require(!commandes[_idCommande].enregistrerCondition, "Il y a deja des conditions enregistrer.");
+        if (_idCommande > compteurCommandes) revert();
+        if (commandes[_idCommande].enregistrerCondition) revert();
 
         commandes[_idCommande].enregistrerCondition = true;
         conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, "");
@@ -127,14 +127,14 @@ contract CollecteurExportateur {
 
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur {
         // verifie si l'idCommande est valide.
-        require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        if (_idCommande > compteurCommandes) revert();
         
         commandes[_idCommande].statutTransport = _statut;
         emit StatutTransportMisAJour(_idCommande, _statut);
     }
 
     function mettreAJourStatutCommande(uint32 _idCommande, StructLib.StatutProduit _status) public seulementExportateur {
-        require(commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre, "Commande pas encore livre.");
+        if (commandes[_idCommande].statutTransport != StructLib.StatutTransport.Livre) revert();
         commandes[_idCommande].statutProduit = _status;
         emit StatusCommandeMisAJour(_idCommande, _status);
     }
