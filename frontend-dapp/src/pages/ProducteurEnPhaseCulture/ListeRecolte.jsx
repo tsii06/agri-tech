@@ -166,19 +166,6 @@ function ListeRecoltes() {
       const tx = await contract.certifieRecolte(recolteSelectionnee.id, certificatUpload.cid);
       await tx.wait();
 
-      // Mettre à jour le hash Merkle de la récolte
-      const hashMerkleRecolte = calculateRecolteMerkleHash(
-        {
-          ...recolteSelectionnee,
-          certifie: true,
-          certificatPhytosanitaire: certificatUpload.cid
-        },
-        [] // Parcelles associées (à récupérer si nécessaire)
-      );
-
-      const txHashMerkle = await contract.ajoutHashMerkleRecolte(recolteSelectionnee.id, hashMerkleRecolte);
-      await txHashMerkle.wait();
-
       chargerRecoltes();
       setShowModalCertification(false);
       alert("Récolte certifiée avec succès !");
