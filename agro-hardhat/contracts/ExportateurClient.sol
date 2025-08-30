@@ -44,6 +44,13 @@ contract ExportateurClient {
         );
         _;
     }
+    modifier seulementActeurAutorise() {
+        require(
+            gestionnaireActeurs.aContratDelegue(msg.sender, address(this)),
+            "Non autorise: contrat non delegue"
+        );
+        _;
+    }
 
     /**
     Les evenements
@@ -70,7 +77,7 @@ contract ExportateurClient {
         uint32 _prix,
         string memory _cid,
         string memory _hashMerkle
-    ) public seulementExportateur {
+    ) public seulementExportateur seulementActeurAutorise {
         uint32[] memory _idLotProduits = new uint32[](
             _idCommandeProduits.length
         );
@@ -110,7 +117,7 @@ contract ExportateurClient {
     /**
      * Met à jour le prix d'un article
      */
-    function setPriceArticle(uint32 _idArticle, uint32 _prix) public seulementExportateur {
+    function setPriceArticle(uint32 _idArticle, uint32 _prix) public seulementExportateur seulementActeurAutorise {
         require(_idArticle <= compteurArticles, "Id incorrect");
         require(articles[_idArticle].exportateur == msg.sender, "Vous n'etes pas proprietaire de cette article");
         articles[_idArticle].prix = _prix;

@@ -67,19 +67,19 @@ contract ProducteurEnPhaseCulture {
     }
 
     // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des photos individuelles
-    function mettreAJourPhotosParcelle(uint32 _idParcelle, string memory _cidPhotos) public seulementProducteur {
+    function mettreAJourPhotosParcelle(uint32 _idParcelle, string memory _cidPhotos) public seulementProducteur seulementActeurAutorise {
         require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
         parcelles[_idParcelle].cid = _cidPhotos; // Met à jour le CID avec les nouvelles photos
     }
 
     // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des intrants individuels
-    function mettreAJourIntrantsParcelle(uint32 _idParcelle, string memory _cidIntrants) public seulementFournisseur {
+    function mettreAJourIntrantsParcelle(uint32 _idParcelle, string memory _cidIntrants) public seulementFournisseur seulementActeurAutorise {
         require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
         parcelles[_idParcelle].cid = _cidIntrants;
     }
 
     // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des inspections individuelles
-    function mettreAJourInspectionsParcelle(uint32 _idParcelle, string memory _cidInspections) public seulementAuditeur {
+    function mettreAJourInspectionsParcelle(uint32 _idParcelle, string memory _cidInspections) public seulementAuditeur seulementActeurAutorise {
         require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
         parcelles[_idParcelle].cid = _cidInspections;
     }

@@ -16,7 +16,6 @@ contract CollecteurExportateur {
     uint32 public compteurProduits;
     uint32 public compteurLotProduits;
     uint32 public compteurConditions;
-    uint32 public compteurPaiements;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
 
@@ -112,9 +111,9 @@ contract CollecteurExportateur {
         // definit la commande comme deja payee
         commandes[_idCommande].payer = true;
 
-        compteurPaiements++;
-        paiements[compteurPaiements] = StructLib.Paiement(compteurPaiements, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp, "");
-        emit PaiementEffectue(_lotProduit.id, compteurPaiements, msg.sender, _montant, _mode);
+        // idcommande et idpaiement est la meme
+        paiements[_idCommande] = StructLib.Paiement(_idCommande, msg.sender, commandes[_idCommande].collecteur, _montant, _mode, block.timestamp, "");
+        emit PaiementEffectue(_lotProduit.id, _idCommande, msg.sender, _montant, _mode);
     }
 
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
@@ -180,7 +179,7 @@ contract CollecteurExportateur {
         return compteurProduits;
     }
     function getCompteurPaiement() public view returns(uint32) {
-        return compteurPaiements;
+        return compteurCommandes;
     }
     function getCompteurCondition() public view returns(uint32) {
         return compteurConditions;

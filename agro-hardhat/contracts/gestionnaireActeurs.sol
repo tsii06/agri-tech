@@ -9,16 +9,6 @@ import "./StructLib.sol";
  * @dev Smart contract pour centraliser la gestion des acteurs de la supply chain
  */
 contract GestionnaireActeurs {
-    // Définition des rôles dans l'écosystème
-    // enum Role {
-    //     Producteur,
-    //     Collecteur,
-    //     Exportateur,
-    //     Certificateur,
-    //     Auditeur,
-    //     Transporteur,
-    //     Administration
-    // }
     
     // Type d'entité (soit undividuel soit morale pour une société)
     enum TypeEntite {
