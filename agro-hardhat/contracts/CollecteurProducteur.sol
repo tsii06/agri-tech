@@ -97,6 +97,10 @@ contract CollecteurProducteur {
         recoltes[_idRecolte].certifie = true;
         recoltes[_idRecolte].certificatPhytosanitaire = _certificat;
     }
+    function modifierPrixRecolte(uint32 idRecolte, uint32 newPrix) public seulementProducteur recolteExistant(idRecolte) {
+        if (recoltes[idRecolte].producteur != msg.sender) revert();
+        recoltes[idRecolte].prixUnit = newPrix;
+    }
     /*
     ici les fonctions pour les commandes
     */
