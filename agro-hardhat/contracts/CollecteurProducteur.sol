@@ -78,11 +78,19 @@ contract CollecteurProducteur {
         }
 
         compteurRecoltes++;
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, "", _cid);
-    }
-    function ajoutHashMerkleRecolte(uint32 _idRecolte, string memory _hash) public recolteExistant(_idRecolte) {
-        recoltes[_idRecolte].hashMerkle = _hash;
-    }    
+
+        // calcule de la hashMerkle
+        bytes32 hashMerkle = keccak256(abi.encodePacked(
+            _idParcelles,
+            _quantite,
+            _prix,
+            _cid,
+            msg.sender,
+            block.timestamp
+        ));
+        
+        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, hashMerkle, _cid);
+    } 
     function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur recolteExistant(_idRecolte) {
         require(bytes(_certificat).length != 0, "Certificat vide");
 

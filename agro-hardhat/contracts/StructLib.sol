@@ -90,7 +90,7 @@ library StructLib {
         bool certifie;
         string certificatPhytosanitaire;
         address producteur;
-        string hashMerkle;
+        bytes32 hashMerkle;
         string cid;
     }
 
