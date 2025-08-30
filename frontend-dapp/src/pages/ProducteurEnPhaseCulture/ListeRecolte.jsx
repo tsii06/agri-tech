@@ -29,6 +29,10 @@ function ListeRecoltes() {
   const autoriteCertificatrice = useRef(null);
   const numeroCertificat = useRef(null);
   const region = useRef(null);
+  // Pour modification de prix
+  const [showModalPrix, setShowModalPrix] = useState(false);
+  const [recoltePrixSelectionnee, setRecoltePrixSelectionnee] = useState(null);
+  const [nouveauPrix, setNouveauPrix] = useState("");
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
@@ -210,6 +214,24 @@ function ListeRecoltes() {
     }
   };
 
+  const handleModifierPrix = async (event) => {
+    event.preventDefault();
+    setBtnLoading(true);
+    try {
+      const contract = await getCollecteurProducteurContract();
+      const tx = await contract.modifierPrixRecolte(recoltePrixSelectionnee.id, nouveauPrix);
+      await tx.wait();
+      chargerRecoltes();
+      setShowModalPrix(false);
+      alert("Prix modifié avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la modification du prix:", error);
+      alert("Erreur lors de la modification du prix. Veuillez réessayer.");
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
   // Filtrage recoltes selon recherche et statut
   const recoltesFiltres = recoltes.filter((recolte) => {
     const searchLower = search.toLowerCase();
@@ -386,6 +408,18 @@ function ListeRecoltes() {
                         }}
                       >
                         Certifier
+                      </button>
+                    )}
+
+                    {hasRole(roles, 0) && (
+                      <button
+                        className="btn btn-agrichain"
+                        onClick={() => {
+                          setRecoltePrixSelectionnee(recolte);
+                          setShowModalPrix(true);
+                        }}
+                      >
+                        Modifier le prix
                       </button>
                     )}
 
@@ -588,8 +622,57 @@ function ListeRecoltes() {
         </div>
       )}
 
+      {/* Modal de modification de prix */}
+      {showModalPrix && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Modifier le prix de la récolte #{recoltePrixSelectionnee?.id}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModalPrix(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="nouveauPrix" className="form-label">Nouveau prix unitaire (Ariary)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="nouveauPrix"
+                    value={nouveauPrix}
+                    onChange={(e) => setNouveauPrix(e.target.value)}
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModalPrix(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleModifierPrix}
+                  disabled={btnLoading}
+                >
+                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)} &nbsp; Modifier le prix
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay pour les modals */}
-      {(showModal || showModalCertification) && (
+      {(showModal || showModalCertification || showModalPrix) && (
         <div className="modal-backdrop fade show"></div>
       )}
 
@@ -602,4 +685,4 @@ function ListeRecoltes() {
   );
 }
 
-export default ListeRecoltes; 
+export default ListeRecoltes;
