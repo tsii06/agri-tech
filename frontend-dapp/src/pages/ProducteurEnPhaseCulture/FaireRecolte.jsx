@@ -80,31 +80,7 @@ function FaireRecolte() {
         parseInt(recolteData.prix),
         recolteUpload.cid // CID IPFS
       );
-
       await tx.wait();
-
-      // 4. Récupérer l'ID de la récolte créée pour mettre à jour le hash Merkle
-      const compteurRecoltes = await contract.compteurRecoltes();
-      const idRecolte = Number(compteurRecoltes);
-
-      // 5. Calculer le hash Merkle de la récolte
-      const hashMerkleRecolte = calculateRecolteMerkleHash(
-        {
-          id: idRecolte,
-          idParcelle: parseInt(id),
-          quantite: parseInt(recolteData.quantite),
-          prixUnit: parseInt(recolteData.prix),
-          certifie: false,
-          certificatPhytosanitaire: "",
-          producteur: account,
-          cid: recolteUpload.cid
-        },
-        [parcelle] // Parcelles associées
-      );
-
-      // 6. Mettre à jour le hash Merkle de la récolte
-      const txHashMerkle = await contract.ajoutHashMerkleRecolte(idRecolte, hashMerkleRecolte);
-      await txHashMerkle.wait();
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
