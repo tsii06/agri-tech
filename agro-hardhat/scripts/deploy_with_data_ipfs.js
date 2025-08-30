@@ -170,18 +170,18 @@ async function main() {
     await gestionnaireActeursProxy.ajouterContratDelegue(transporteurAddress, await collecteurExportateurProxy.getAddress());
 
 
-    // // Creation d'une parcelle de test pour le producteur
-    // console.log("Création d'une parcelle de test pour le producteur...");
-    // await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiafmozmclolxpzbevdltres3qyjquld7ig74ak6ad2vfv2oow45pm");
+    // Creation d'une parcelle de test pour le producteur
+    console.log("Création d'une parcelle de test pour le producteur...");
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreig4gjy4qyj5spaxv2c5smoh65qpttmqkafhzk5ln5kpwqzp3ic64q");
     // await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).ajoutHashMerkleParcelle(1, "0xaeb8007deb15f14da909caf39293c8ad15b929a4d76a1fc4ed6b17122784b742");
 
-    // // Ajout recolte
-    // console.log("Ajout d'un recolte de test pour le producteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 500, 20000, "bafkreigy4yddpp3raziqi375qzhrwekejey3ri5wk63ukqvxyk5gkeotym");
+    // Ajout recolte
+    console.log("Ajout d'un recolte de test pour le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 235, 15000, "bafkreihoiomzsdkljhbojvvn5mkx3xv7eapmwvhtdd4vcorh62mrqjeiu4");
     // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 750, 45000, "bafkreibhuvbcce4cuwwp2immw5v7byhr2fsburg7lt52qcrjsywa2bkjpm");
     // await collecteurProducteurProxy.connect(await ethers.getSigner(producteurAddress)).ajoutRecolte([1], 790, 45000, "bafkreiapv5fwpgeouodygsqj5lf735wwjoef7ywwiy2rbbyzkychflrcqa");
 
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreihnku4eiwp4v6jckstjzlyobq2m5dus4gdv2rojk3ecc4acvkvmqy");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(1, "bafkreibfdzokxc5pltuxq6mw5xg5r2dumqza3bmgbdeqhfhy36w7ejziuq");
     // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(2, "bafkreigmn6cm7j6ecodtwvatuc34rjutkuvn32ujvzvmz3qyzc3ss3w5du");
     // await collecteurProducteurProxy.connect(await ethers.getSigner(certificateurAddress)).certifieRecolte(3, "bafkreie4eaudwwhyrnyd3h75mxpikmwbebkcnyviwv77r2dcdb4ddwyl4i");
 
