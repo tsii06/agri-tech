@@ -201,7 +201,7 @@ async function main() {
     // Enregistrer conditions de transport pour commande recolte
     console.log("Enregistrement condition de transport pour commande recolte...");
     await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).enregistrerCondition(1, "bafkreicgqedsgccuy2iic7olels4j7foj45vk6l5yfv2mjz6se2gzbrwfa");
-    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).enregistrerCondition(1, "bafkreib73jea6ctcsmgzi44bz263yheke7q3fbjchg3ssgfty37ky26spe");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).enregistrerCondition(2, "bafkreib73jea6ctcsmgzi44bz263yheke7q3fbjchg3ssgfty37ky26spe");
 
     // effectuer livraison recolte
     console.log("Effectuer la livraison de la recolte par le transporteur...");
@@ -211,36 +211,36 @@ async function main() {
     // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(4, 1);
 
     // valider commande recolte
-    // console.log("Validation de la commande de recolte par le producteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
+    console.log("Validation de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(3, true);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(4, true);
 
     // payer recolte
-    // console.log("Paiement de la commande de recolte par le producteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 525000, 0);
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
+    console.log("Paiement de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 525000, 0);
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 1800000, 0);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(4, 2025000, 0);
     
-    // // ajouter lot produit.
+    // ajouter lot produit.
     // console.log("Creation d'un lot produit...");
     // await collecteurExportateurProxy.connect(await ethers.getSigner(collecteurAddress)).ajouterLotProduit([1, 4], "bafkreiboteljvcnraqbwcih5keu3wc4e23rkr3dphrfqikwrajwbou232y", 37000);
 
-    // // passer commande lot produit
+    // passer commande lot produit
     // console.log("Passage d'une commande de lot produit pour l'exportateur...");
     // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).passerCommande(1, 45);
 
-    // // livrer commande lot produit
+    // livrer commande lot produit
     // console.log("Effectuer la livraison du lot produit par le transporteur...");
     // await collecteurExportateurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
 
-    // // valider commande lot produit
+    // valider commande lot produit
     // console.log("Validation de la commande du lot produit par l'exportateur...");
     // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).mettreAJourStatutCommande(1, 1); // Valider
     
-    // // payer commande lot produit
+    // payer commande lot produit
     // console.log("Paiement de la commande du lot produit par l'exportateur...");
     // await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 1665000, 0);
 
