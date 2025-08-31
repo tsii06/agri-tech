@@ -32,6 +32,8 @@ function CommandeCollecteur() {
   const [error, setError] = useState(null);
   const [warnings, setWarnings] = useState([]);
   const [commandeErrors, setCommandeErrors] = useState({});
+  const [detailsCondition, setDetailsCondition] = useState({});
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const { account } = useUserContext();
 
@@ -53,8 +55,28 @@ function CommandeCollecteur() {
           collecteurAddr &&
           collecteurAddr.toLowerCase() === account.toLowerCase()
         ) {
+          // recuperer condition de transport s'il y en a
+          let commande = {};
+          if (commandeRaw.enregistrerCondition) {
+            const conditions = await contract.getConditionTransport(i);
+            const res = await fetch(getIPFSURL(conditions.cid));
+            if (res.ok) {
+              const ipfsData = await res.json();
+              const root =
+                ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+              commande = {
+                temperature: root.temperature,
+                humidite: root.humidite,
+                dureeTransport: root.dureeTransport,
+                lieuDepart: root.lieuDepart,
+                destination: root.destination,
+              };
+            }
+          }
+
           // Normaliser la commande en objet simple (évite BigInt/Result)
-          let commande = {
+          commande = {
+            ...commande,
             id: Number(commandeRaw.id ?? i),
             idRecolte: Number(commandeRaw.idRecolte ?? 0),
             quantite: Number(commandeRaw.quantite ?? 0),
@@ -74,16 +96,15 @@ function CommandeCollecteur() {
             hashMerkle: commandeRaw.hashMerkle || "",
             // placeholders enrichis après
             nomProduit: "",
+            enregistrerCondition: commandeRaw.enregistrerCondition,
             ipfsTimestamp: null,
             ipfsVersion: null,
-            cid: "",
           };
 
           // Charger la récolte associée pour enrichir (cid, nom/date via IPFS)
           try {
             const recolteRaw = await contract.getRecolte(commande.idRecolte);
             const recolteCid = recolteRaw.cid || "";
-            commande.cid = recolteCid; // pour compatibilité avec l'UI existante
             // Si le cid de la récolte pointe vers un JSON, charger nom/date
             if (recolteCid) {
               const resp = await fetch(getIPFSURL(recolteCid));
@@ -481,45 +502,6 @@ function CommandeCollecteur() {
                       </p>
                     )}
 
-                    {/* Informations IPFS et Merkle */}
-                    {commande.cid && (
-                      <div className="mt-2 p-2 bg-light rounded">
-                        <p className="mb-1">
-                          <strong>CID IPFS:</strong>
-                          <a
-                            href={getIPFSURL(commande.cid)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ms-2 text-decoration-none text-primary"
-                            title="Voir les données consolidées sur IPFS"
-                          >
-                            {commande.cid.substring(0, 10)}...
-                          </a>
-                        </p>
-
-                        {commande.hashMerkle && (
-                          <p className="mb-1">
-                            <strong>Hash Merkle:</strong>
-                            <span
-                              className="ms-2 text-muted"
-                              title={commande.hashMerkle}
-                            >
-                              {commande.hashMerkle.substring(0, 10)}...
-                            </span>
-                          </p>
-                        )}
-
-                        {commande.ipfsTimestamp && (
-                          <p className="mb-1 text-muted small">
-                            <strong>Dernière mise à jour IPFS:</strong>{" "}
-                            {new Date(
-                              commande.ipfsTimestamp
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
                     {/* Statuts */}
                     <div className="mt-3">
                       <div className="d-flex gap-2 mb-2">
@@ -563,32 +545,46 @@ function CommandeCollecteur() {
                           >
                             Valider
                           </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => validerCommande(commande.id, false)}
-                            disabled={btnLoading}
-                          >
-                            Rejeter
-                          </button>
                         </div>
                       )}
 
-                    {/* Lien vers liste de transporteur */}
-                    {!commande.payer && (
+                    {commandeErrors[commande.id] && (
+                      <div
+                        className="alert alert-danger mt-2 py-2 px-3"
+                        role="alert"
+                      >
+                        {commandeErrors[commande.id]}
+                      </div>
+                    )}
+                  </div>
+                  {/* Lien vers liste de transporteur */}
+                  {!commande.payer && (
+                    <div className="mt-2">
                       <Link
                         to={`/liste-transporteur-commande-recolte/5/${commande.id}`}
-                        className="btn btn-outline-secondary btn-sm"
+                        className="btn btn-outline-secondary btn-sm w-100"
                       >
                         Choisir transporteur
                       </Link>
-                    )}
-                  </div>
-                  {commandeErrors[commande.id] && (
-                    <div
-                      className="alert alert-danger mt-2 py-2 px-3"
-                      role="alert"
-                    >
-                      {commandeErrors[commande.id]}
+                    </div>
+                  )}
+                  {commande.enregistrerCondition && (
+                    <div className="mt-2">
+                      <button
+                        className="btn btn-outline-success btn-sm w-100"
+                        onClick={() => {
+                          setDetailsCondition({
+                            temperature: commande.temperature,
+                            humidite: commande.humidite,
+                            dureeTransport: commande.dureeTransport,
+                            lieuDepart: commande.lieuDepart,
+                            destination: commande.destination,
+                          });
+                          setShowDetailsModal(true);
+                        }}
+                      >
+                        Voir détails conditions
+                      </button>
                     </div>
                   )}
                 </div>
@@ -667,6 +663,64 @@ function CommandeCollecteur() {
                 >
                   {btnLoading ? "Paiement..." : "Confirmer le paiement"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour afficher les détails des conditions de transport */}
+      {showDetailsModal && (
+        <div>
+          <div className="modal-backdrop fade show"></div>
+          <div
+            className="modal fade show"
+            style={{ display: "block" }}
+            tabIndex="-1"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    Détails des conditions de transport
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDetailsModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    <strong>Température :</strong>{" "}
+                    {detailsCondition.temperature || "N/A"} °C
+                  </p>
+                  <p>
+                    <strong>Humidité :</strong>{" "}
+                    {detailsCondition.humidite || "N/A"} %
+                  </p>
+                  <p>
+                    <strong>Durée de transport :</strong>{" "}
+                    {detailsCondition.dureeTransport || "N/A"} heures
+                  </p>
+                  <p>
+                    <strong>Lieu de départ :</strong>{" "}
+                    {detailsCondition.lieuDepart || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Destination :</strong>{" "}
+                    {detailsCondition.destination || "N/A"}
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDetailsModal(false)}
+                  >
+                    Fermer
+                  </button>
+                </div>
               </div>
             </div>
           </div>
