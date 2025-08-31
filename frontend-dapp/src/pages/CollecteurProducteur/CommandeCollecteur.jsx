@@ -46,7 +46,6 @@ function CommandeCollecteur() {
 
       for (let i = 1; i <= compteurCommandes; i++) {
         const commandeRaw = await contract.getCommande(i);
-        console.log(commandeRaw.statutRecolte);
         // Filtrer par collecteur connecté
         const collecteurAddr =
           commandeRaw.collecteur?.toString?.() || commandeRaw.collecteur;
