@@ -545,6 +545,13 @@ function CommandeCollecteur() {
                           >
                             Valider
                           </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => validerCommande(commande.id, false)}
+                            disabled={btnLoading}
+                          >
+                            Rejeter
+                          </button>
                         </div>
                       )}
 
