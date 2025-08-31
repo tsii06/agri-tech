@@ -12,6 +12,7 @@ function LivraisonRecolte() {
   const [btnLoading, setBtnLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [temperature, setTemperature] = useState("");
   const [humidite, setHumidite] = useState("");
   const [dureeTransport, setDureeTransport] = useState("");
@@ -20,6 +21,7 @@ function LivraisonRecolte() {
   const [commandes, setCommandes] = useState([]);
   const [commandesRecolte, setCommandesRecolte] = useState([]);
   const [error, setError] = useState(null);
+  const [detailsCondition, setDetailsCondition] = useState({});
 
   const { account } = useUserContext();
 
@@ -37,12 +39,32 @@ function LivraisonRecolte() {
         // si commande n'est pas au transporteur ne pas l'afficher
         if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
 
+        // recuperer condition de transport si deja enregister
+        let conditions = {};
+        let commandeEnrichie = {};
+        if (c.enregistrerCondition) {
+          conditions = await contract.getCondition(i);
+          const res = await fetch(getIPFSURL(conditions.cid));
+          if (res.ok) {
+            const ipfsData = await res.json();
+            const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+            commandeEnrichie = {
+              temperature: root.temperature,
+              humidite: root.humidite,
+              dureeTransport: root.dureeTransport,
+              lieuDepart: root.lieuDepart,
+              destination: root.destination,
+            };
+          }
+        }
+
         const idProduitNum = Number(c.idProduit ?? 0);
         const p =
           idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
 
         // Charger les données IPFS consolidées si la commande a un CID
-        let commandeEnrichie = {
+        commandeEnrichie = {
+          ...commandeEnrichie,
           id: Number(c.id ?? i),
           idProduit: idProduitNum,
           quantite: Number(c.quantite ?? 0),
@@ -56,29 +78,6 @@ function LivraisonRecolte() {
           hashMerkle: c.hashMerkle || "",
           enregistrerCondition: Boolean(c.enregistrerCondition),
         };
-
-        if (c.cid) {
-          try {
-            const response = await fetch(getIPFSURL(c.cid));
-            if (response.ok) {
-              const ipfsData = await response.json();
-
-              // Fusionner avec les données IPFS
-              commandeEnrichie = {
-                ...commandeEnrichie,
-                nomProduit: ipfsData.nomProduit || p.nom,
-                ipfsTimestamp: ipfsData.timestamp,
-                ipfsVersion: ipfsData.version,
-                produitHashMerkle: ipfsData.produitHashMerkle || "",
-              };
-            }
-          } catch (ipfsError) {
-            console.log(
-              `Erreur lors du chargement IPFS pour la commande produit ${i}:`,
-              ipfsError
-            );
-          }
-        }
 
         commandesTemp.push(commandeEnrichie);
       }
@@ -95,8 +94,28 @@ function LivraisonRecolte() {
         // ignorer les commandes que le transporteur n'a pas access.
         if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
 
+        // recuperer condition de transport si deja enregister
+        let conditions = {};
+        let commandeRecolteEnrichie = {};
+        if (c.enregistrerCondition) {
+          conditions = await contractCP.getConditionTransport(i);
+          const res = await fetch(getIPFSURL(conditions.cid));
+          if (res.ok) {
+            const ipfsData = await res.json();
+            const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+            commandeRecolteEnrichie = {
+              temperature: root.temperature,
+              humidite: root.humidite,
+              dureeTransport: root.dureeTransport,
+              lieuDepart: root.lieuDepart,
+              destination: root.destination,
+            };
+          }
+        }
+
         // Charger les données IPFS consolidées si la commande a un CID
-        let commandeRecolteEnrichie = {
+        commandeRecolteEnrichie = {
+          ...commandeRecolteEnrichie,
           id: c.id.toString(),
           idRecolte: c.idRecolte.toString(),
           quantite: c.quantite.toString(),
@@ -109,29 +128,6 @@ function LivraisonRecolte() {
           hashMerkle: c.hashMerkle,
           enregistrerCondition: Boolean(c.enregistrerCondition),
         };
-
-        if (c.cid) {
-          try {
-            const response = await fetch(getIPFSURL(c.cid));
-            if (response.ok) {
-              const ipfsData = await response.json();
-
-              // Fusionner avec les données IPFS
-              commandeRecolteEnrichie = {
-                ...commandeRecolteEnrichie,
-                nomProduit: ipfsData.nomProduit || "Produit non spécifié",
-                ipfsTimestamp: ipfsData.timestamp,
-                ipfsVersion: ipfsData.version,
-                recolteHashMerkle: ipfsData.recolteHashMerkle || "",
-              };
-            }
-          } catch (ipfsError) {
-            console.log(
-              `Erreur lors du chargement IPFS pour la commande récolte ${i}:`,
-              ipfsError
-            );
-          }
-        }
 
         commandesRecolteTemp.push(commandeRecolteEnrichie);
       }
@@ -442,17 +438,22 @@ function LivraisonRecolte() {
                       Livrer
                     </button>
                   )}
-
-                  {/* Lien vers les données IPFS complètes */}
-                  {cmd.cid && (
-                    <a
-                      href={getIPFSURL(cmd.cid)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline-secondary btn-sm"
+                  {cmd.enregistrerCondition && (
+                    <button
+                      className="btn btn-outline-success btn-sm"
+                      onClick={() => {
+                        setDetailsCondition({
+                          temperature: cmd.temperature,
+                          humidite: cmd.humidite,
+                          dureeTransport: cmd.dureeTransport,
+                          lieuDepart: cmd.lieuDepart,
+                          destination: cmd.destination,
+                        });
+                        setShowDetailsModal(true);
+                      }}
                     >
-                      Voir données IPFS
-                    </a>
+                      Voir détails conditions
+                    </button>
                   )}
                 </div>
               </div>
@@ -580,17 +581,22 @@ function LivraisonRecolte() {
                       Livrer
                     </button>
                   )}
-
-                  {/* Lien vers les données IPFS complètes */}
-                  {commande.cid && (
-                    <a
-                      href={getIPFSURL(commande.cid)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-outline-secondary btn-sm"
+                  {cmd.enregistrerCondition && (
+                    <button
+                      className="btn btn-outline-success btn-sm"
+                      onClick={() => {
+                        setDetailsCondition({
+                          temperature: cmd.temperature,
+                          humidite: cmd.humidite,
+                          dureeTransport: cmd.dureeTransport,
+                          lieuDepart: cmd.lieuDepart,
+                          destination: cmd.destination,
+                        });
+                        setShowDetailsModal(true);
+                      }}
                     >
-                      Voir données IPFS
-                    </a>
+                      Voir détails conditions
+                    </button>
                   )}
                 </div>
               </div>
@@ -725,8 +731,64 @@ function LivraisonRecolte() {
         </div>
       )}
 
+      {/* Modal pour afficher les détails des conditions de transport */}
+      {showDetailsModal && (
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  Détails des conditions de transport
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDetailsModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  <strong>Température :</strong>{" "}
+                  {detailsCondition.temperature || "N/A"} °C
+                </p>
+                <p>
+                  <strong>Humidité :</strong>{" "}
+                  {detailsCondition.humidite || "N/A"} %
+                </p>
+                <p>
+                  <strong>Durée de transport :</strong>{" "}
+                  {detailsCondition.dureeTransport || "N/A"} heures
+                </p>
+                <p>
+                  <strong>Lieu de départ :</strong>{" "}
+                  {detailsCondition.lieuDepart || "N/A"}
+                </p>
+                <p>
+                  <strong>Destination :</strong>{" "}
+                  {detailsCondition.destination || "N/A"}
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDetailsModal(false)}
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay pour les modals */}
       {showConditionModal && <div className="modal-backdrop fade show"></div>}
+      {showDetailsModal && <div className="modal-backdrop fade show"></div>}
     </div>
   );
 }
