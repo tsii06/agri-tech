@@ -191,24 +191,28 @@ async function main() {
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(1, 20);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(2, 200);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).passerCommandeVersProducteur(3, 45);
+    
+    // choisir transporteur pour la commande recolte
+    console.log("Choix de transporteur pour la commande recolte...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).choisirTransporteurCommandeRecolte(1, transporteurAddress);
 
-    // // effectuer livraison recolte
-    // console.log("Effectuer la livraison de la recolte par le transporteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
+    // effectuer livraison recolte
+    console.log("Effectuer la livraison de la recolte par le transporteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(1, 1);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(2, 1);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(3, 1);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(transporteurAddress)).mettreAJourStatutTransport(4, 1);
 
-    // // valider commande recolte
-    // console.log("Validation de la commande de recolte par le producteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
+    // valider commande recolte
+    console.log("Validation de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(1, true);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(2, true);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(3, true);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).validerCommandeRecolte(4, true);
 
-    // // payer recolte
-    // console.log("Paiement de la commande de recolte par le producteur...");
-    // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 3000000, 0);
+    // payer recolte
+    console.log("Paiement de la commande de recolte par le producteur...");
+    await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(1, 525000, 0);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(2, 400000, 0);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(3, 9000000, 0);
     // await collecteurProducteurProxy.connect(await ethers.getSigner(collecteurAddress)).effectuerPaiementVersProducteur(4, 2025000, 0);
