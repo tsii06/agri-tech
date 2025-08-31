@@ -46,6 +46,7 @@ function CommandeCollecteur() {
 
       for (let i = 1; i <= compteurCommandes; i++) {
         const commandeRaw = await contract.getCommande(i);
+        console.log(commandeRaw.statutRecolte);
         // Filtrer par collecteur connecté
         const collecteurAddr =
           commandeRaw.collecteur?.toString?.() || commandeRaw.collecteur;
@@ -76,7 +77,6 @@ function CommandeCollecteur() {
             nomProduit: "",
             ipfsTimestamp: null,
             ipfsVersion: null,
-            recolteHashMerkle: "",
             cid: "",
           };
 
@@ -462,16 +462,20 @@ function CommandeCollecteur() {
                       <strong>Prix:</strong> {commande.prix} Ariary
                     </p>
                     <p>
+                      <strong>Date recolte :</strong> {commande.dateRecolte}
+                    </p>
+                    <p>
                       <strong>Producteur:</strong> {commande.producteur}
                     </p>
 
                     {/* Affiche adresse transporteur si specifier */}
-                    {commande.transporteur !== ethers.ZeroAddress.toString() && (
+                    {commande.transporteur !==
+                      ethers.ZeroAddress.toString() && (
                       <p>
                         <strong>Transporteur:</strong> {commande.transporteur}
                       </p>
                     )}
-                    
+
                     {commande.ipfsWarning && (
                       <p className="text-warning small mb-1">
                         {commande.ipfsWarning}
@@ -537,7 +541,7 @@ function CommandeCollecteur() {
                   <div className="d-flex justify-content-between mt-3">
                     {/* Actions selon le statut */}
                     {/* afficher btn payer si la commande n'a pas encors ete payer et que la commande a ete valider */}
-                    {!commande.payer && commande.statusRecolte === 1 && (
+                    {!commande.payer && commande.statutRecolte === 1 && (
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={() => {
@@ -571,12 +575,14 @@ function CommandeCollecteur() {
                       )}
 
                     {/* Lien vers liste de transporteur */}
-                    <Link
-                      to={`/liste-transporteur-commande-recolte/5/${commande.id}`}
-                      className="btn btn-outline-secondary btn-sm"
-                    >
-                      Choisir transporteur
-                    </Link>
+                    {!commande.payer && (
+                      <Link
+                        to={`/liste-transporteur-commande-recolte/5/${commande.id}`}
+                        className="btn btn-outline-secondary btn-sm"
+                      >
+                        Choisir transporteur
+                      </Link>
+                    )}
                   </div>
                   {commandeErrors[commande.id] && (
                     <div
