@@ -114,7 +114,7 @@ contract CollecteurProducteur {
 
         compteurCommandes++;
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, true, address(0));
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, false, address(0));
     }
     function choisirTransporteurCommandeRecolte(uint32 idCommande, address transporteur) public seulementCollecteur commandeExistant(idCommande) {
         if (commandes[idCommande].collecteur != msg.sender) revert();
@@ -147,14 +147,24 @@ contract CollecteurProducteur {
         paiements[_idCommande] = StructLib.Paiement(_idCommande, msg.sender, commande.producteur, _montant, _mode, block.timestamp, "");
     }
     function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur commandeExistant(_idCommande) transporteurNonAutoriser(_idCommande) {
+        require(commandes[_idCommande].enregistrerCondition, "Condition transport non enregister");
         commandes[_idCommande].statutTransport = _statut;
     } 
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur commandeExistant(_idCommande) transporteurNonAutoriser(_idCommande) {
         if (commandes[_idCommande].enregistrerCondition) revert();
+        if (commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre) revert();
 
         commandes[_idCommande].enregistrerCondition = true;
+
+        // calcule de la hashMerkle
+        bytes32 hashMerkle = keccak256(abi.encodePacked(
+            _idCommande,
+            _cid,
+            msg.sender,
+            block.timestamp
+        ));
         
-        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, "");
+        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, hashMerkle);
         emit ConditionEnregistree(_idCommande, _cid, block.timestamp, msg.sender);
     }
     // ====================================== getter et setter =============================================

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { getCollecteurExportateurContract, getCollecteurProducteurContract } from "../../utils/contract";
+import {
+  getCollecteurExportateurContract,
+  getCollecteurProducteurContract,
+} from "../../utils/contract";
 import { getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
 import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
@@ -11,6 +14,9 @@ function LivraisonRecolte() {
   const [showConditionModal, setShowConditionModal] = useState(false);
   const [temperature, setTemperature] = useState("");
   const [humidite, setHumidite] = useState("");
+  const [dureeTransport, setDureeTransport] = useState("");
+  const [lieuDepart, setLieuDepart] = useState("");
+  const [destination, setDestination] = useState("");
   const [commandes, setCommandes] = useState([]);
   const [commandesRecolte, setCommandesRecolte] = useState([]);
   const [error, setError] = useState(null);
@@ -24,12 +30,17 @@ function LivraisonRecolte() {
       const compteurCommandesRaw = await contract.getCompteurCommande();
       const compteurCommandes = Number(compteurCommandesRaw);
       const commandesTemp = [];
-      
+
       for (let i = 1; i <= compteurCommandes; i++) {
         const c = await contract.getCommande(i);
+
+        // si commande n'est pas au transporteur ne pas l'afficher
+        if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
+
         const idProduitNum = Number(c.idProduit ?? 0);
-        const p = idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
-        
+        const p =
+          idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
+
         // Charger les données IPFS consolidées si la commande a un CID
         let commandeEnrichie = {
           id: Number(c.id ?? i),
@@ -38,11 +49,12 @@ function LivraisonRecolte() {
           statutTransport: Number(c.statutTransport ?? 0),
           prix: Number(c.prix ?? 0),
           payer: Boolean(c.payer),
-          collecteur: (c.collecteur?.toString?.() || c.collecteur || ""),
-          exportateur: (c.exportateur?.toString?.() || c.exportateur || ""),
+          collecteur: c.collecteur?.toString?.() || c.collecteur || "",
+          exportateur: c.exportateur?.toString?.() || c.exportateur || "",
           nomProduit: p?.nom || "",
           cid: c.cid || "",
-          hashMerkle: c.hashMerkle || ""
+          hashMerkle: c.hashMerkle || "",
+          enregistrerCondition: Boolean(c.enregistrerCondition),
         };
 
         if (c.cid) {
@@ -50,36 +62,39 @@ function LivraisonRecolte() {
             const response = await fetch(getIPFSURL(c.cid));
             if (response.ok) {
               const ipfsData = await response.json();
-              
+
               // Fusionner avec les données IPFS
               commandeEnrichie = {
                 ...commandeEnrichie,
                 nomProduit: ipfsData.nomProduit || p.nom,
                 ipfsTimestamp: ipfsData.timestamp,
                 ipfsVersion: ipfsData.version,
-                produitHashMerkle: ipfsData.produitHashMerkle || ""
+                produitHashMerkle: ipfsData.produitHashMerkle || "",
               };
             }
           } catch (ipfsError) {
-            console.log(`Erreur lors du chargement IPFS pour la commande produit ${i}:`, ipfsError);
+            console.log(
+              `Erreur lors du chargement IPFS pour la commande produit ${i}:`,
+              ipfsError
+            );
           }
         }
 
         commandesTemp.push(commandeEnrichie);
       }
       setCommandes(commandesTemp);
-      
+
       // Charger les CommandeRecolte (CollecteurProducteur)
       const contractCP = await getCollecteurProducteurContract();
       const compteurCommandesRecolte = await contractCP.getCompteurCommandes();
       const commandesRecolteTemp = [];
-      
+
       for (let i = 1; i <= compteurCommandesRecolte; i++) {
         const c = await contractCP.commandes(i);
 
         // ignorer les commandes que le transporteur n'a pas access.
         if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
-        
+
         // Charger les données IPFS consolidées si la commande a un CID
         let commandeRecolteEnrichie = {
           id: c.id.toString(),
@@ -91,7 +106,8 @@ function LivraisonRecolte() {
           producteur: c.producteur,
           collecteur: c.collecteur,
           cid: c.cid,
-          hashMerkle: c.hashMerkle
+          hashMerkle: c.hashMerkle,
+          enregistrerCondition: Boolean(c.enregistrerCondition),
         };
 
         if (c.cid) {
@@ -99,18 +115,21 @@ function LivraisonRecolte() {
             const response = await fetch(getIPFSURL(c.cid));
             if (response.ok) {
               const ipfsData = await response.json();
-              
+
               // Fusionner avec les données IPFS
               commandeRecolteEnrichie = {
                 ...commandeRecolteEnrichie,
                 nomProduit: ipfsData.nomProduit || "Produit non spécifié",
                 ipfsTimestamp: ipfsData.timestamp,
                 ipfsVersion: ipfsData.version,
-                recolteHashMerkle: ipfsData.recolteHashMerkle || ""
+                recolteHashMerkle: ipfsData.recolteHashMerkle || "",
               };
             }
           } catch (ipfsError) {
-            console.log(`Erreur lors du chargement IPFS pour la commande récolte ${i}:`, ipfsError);
+            console.log(
+              `Erreur lors du chargement IPFS pour la commande récolte ${i}:`,
+              ipfsError
+            );
           }
         }
 
@@ -130,9 +149,12 @@ function LivraisonRecolte() {
 
   const getStatutTransportLabel = (statutCode) => {
     switch (statutCode) {
-      case 0: return <span className="badge ms-2 bg-warning fw-bold">En cours</span>;
-      case 1: return <span className="badge ms-2 bg-success fw-bold">Livré</span>;
-      default: return "Inconnu";
+      case 0:
+        return <span className="badge ms-2 bg-warning fw-bold">En cours</span>;
+      case 1:
+        return <span className="badge ms-2 bg-success fw-bold">Livré</span>;
+      default:
+        return "Inconnu";
     }
   };
 
@@ -141,14 +163,22 @@ function LivraisonRecolte() {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
-      const tx = await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      const tx = await contract.mettreAJourStatutTransport(
+        Number(commandeId),
+        1
+      );
       await tx.wait();
       await chargerDetails();
       alert("Statut de transport mis à jour avec succès !");
       setError(null);
     } catch (error) {
-      console.error("Erreur lors de la mise a jour du status transport de la commande d'un produit : ", error.message);
-      setError("Erreur lors de la mise a jour du status transport de la commande d'un produit. Veuillez reessayer plus tard.");
+      console.error(
+        "Erreur lors de la mise a jour du status transport de la commande d'un produit : ",
+        error.message
+      );
+      setError(
+        "Erreur lors de la mise a jour du status transport de la commande d'un produit. Veuillez reessayer plus tard."
+      );
     } finally {
       setIsProcessing(false);
       setBtnLoading(false);
@@ -160,29 +190,47 @@ function LivraisonRecolte() {
     try {
       // 1) Créer les données de condition et uploader sur IPFS (JSON)
       const conditionData = {
-        type: 'condition-transport-produit',
+        type: "condition-transport-produit",
         commandeId: Number(commandeId),
         temperature: temperature || null,
         humidite: humidite || null,
+        dureeTransport: dureeTransport || null,
+        lieuDepart: lieuDepart || null,
+        destination: destination || null,
         timestamp: Date.now(),
-        version: '1.0'
+        version: "1.0",
       };
-      const uploaded = await uploadConsolidatedData(conditionData, 'conditions-transport');
+      const uploaded = await uploadConsolidatedData(
+        conditionData,
+        "conditions-transport"
+      );
       if (!uploaded.success) {
-        throw new Error('Echec upload IPFS des conditions');
+        throw new Error("Echec upload IPFS des conditions");
       }
       // 2) Enregistrer côté contrat (signature: (id, cid))
       const contract = await getCollecteurExportateurContract();
-      const tx = await contract.enregistrerCondition(Number(commandeId), uploaded.cid);
+      const tx = await contract.enregistrerCondition(
+        Number(commandeId),
+        uploaded.cid
+      );
       await tx.wait();
+      await chargerDetails();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
       setHumidite("");
+      setDureeTransport("");
+      setLieuDepart("");
+      setDestination("");
       setError(null);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut de transport (Produit):", error.message);
-      setError("Erreur lors de la mise à jour du statut de transport (Produit). Veuillez réessayer plus tard.");
+      console.error(
+        "Erreur lors de la mise à jour du statut de transport (Produit):",
+        error.message
+      );
+      setError(
+        "Erreur lors de la mise à jour du statut de transport (Produit). Veuillez réessayer plus tard."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -194,14 +242,22 @@ function LivraisonRecolte() {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.mettreAJourStatutTransport(Number(commandeId), 1);
+      const tx = await contract.mettreAJourStatutTransport(
+        Number(commandeId),
+        1
+      );
       await tx.wait();
       await chargerDetails();
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setError(null);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut de transport (Récolte):", error);
-      setError("Erreur lors de la mise à jour du statut de transport (Récolte). Veuillez réessayer plus tard.");
+      console.error(
+        "Erreur lors de la mise à jour du statut de transport (Récolte):",
+        error
+      );
+      setError(
+        "Erreur lors de la mise à jour du statut de transport (Récolte). Veuillez réessayer plus tard."
+      );
     } finally {
       setIsProcessing(false);
       setBtnLoading(false);
@@ -214,29 +270,46 @@ function LivraisonRecolte() {
     try {
       // 1) Créer les données et uploader sur IPFS (JSON)
       const conditionData = {
-        type: 'condition-transport-recolte',
-        commandeId: Number(commandeId),
+        type: "condition-transport-recolte",
         temperature: temperature || null,
         humidite: humidite || null,
+        dureeTransport: dureeTransport || null,
+        lieuDepart: lieuDepart || null,
+        destination: destination || null,
         timestamp: Date.now(),
-        version: '1.0'
+        version: "1.0",
       };
-      const uploaded = await uploadConsolidatedData(conditionData, 'conditions-transport');
+      const uploaded = await uploadConsolidatedData(
+        conditionData,
+        "conditions-transport"
+      );
       if (!uploaded.success) {
-        throw new Error('Echec upload IPFS des conditions');
+        throw new Error("Echec upload IPFS des conditions");
       }
       // 2) Enregistrer côté contrat CP (signature: (id, cid))
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.enregistrerCondition(Number(commandeId), uploaded.cid);
+      const tx = await contract.enregistrerCondition(
+        Number(commandeId),
+        uploaded.cid
+      );
       await tx.wait();
+      await chargerDetails();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
       setHumidite("");
+      setDureeTransport("");
+      setLieuDepart("");
+      setDestination("");
       setError(null);
     } catch (error) {
-      console.error("Erreur lors de l'enregistrement de la condition de transport (Récolte):", error.message);
-      setError("Erreur lors de l'enregistrement de la condition de transport (Récolte). Veuillez réessayer plus tard.");
+      console.error(
+        "Erreur lors de l'enregistrement de la condition de transport (Récolte):",
+        error.message
+      );
+      setError(
+        "Erreur lors de l'enregistrement de la condition de transport (Récolte). Veuillez réessayer plus tard."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -256,13 +329,17 @@ function LivraisonRecolte() {
 
       {/* LISTE DES COMMANDES SUR LES RECOLTES DES PRODUCTEURS */}
       <div className="card p-4 shadow-sm my-4">
-        <h2 className="h5 mb-3">Liste des Commandes sur <strong>Récolte</strong></h2>
+        <h2 className="h5 mb-3">
+          Liste des Commandes sur <strong>Récolte</strong>
+        </h2>
         <div className="row g-3">
           {commandesRecolte.map((cmd) => (
             <div key={cmd.id} className="col-md-4">
               <div className="card shadow-sm p-3 mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="card-title mb-0">Commande Récolte #{cmd.id}</h5>
+                  <h5 className="card-title mb-0">
+                    Commande Récolte #{cmd.id}
+                  </h5>
                   <div>
                     {cmd.cid && cmd.hashMerkle ? (
                       <span className="badge bg-success me-1">
@@ -279,19 +356,40 @@ function LivraisonRecolte() {
                     )}
                   </div>
                 </div>
-                
-                <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {cmd.id}</p>
-                <p><Hash size={16} className="me-2 text-success" /><strong>ID Récolte:</strong> {cmd.idRecolte}</p>
-                <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {cmd.quantite} KG</p>
-                <p><User size={16} className="me-2 text-success" /><strong>Producteur:</strong> {cmd.producteur.substring(0, 6)}...{cmd.producteur.substring(cmd.producteur.length - 4)}</p>
-                <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {cmd.collecteur.substring(0, 6)}...{cmd.collecteur.substring(cmd.collecteur.length - 4)}</p>
-                <p><Truck size={16} className="me-2 text-success" /><strong>Transport:</strong> {getStatutTransportLabel(cmd.statutTransport)}</p>
-                
+
+                <p>
+                  <Hash size={16} className="me-2 text-success" />
+                  <strong>ID Commande:</strong> {cmd.id}
+                </p>
+                <p>
+                  <Hash size={16} className="me-2 text-success" />
+                  <strong>ID Récolte:</strong> {cmd.idRecolte}
+                </p>
+                <p>
+                  <Package2 size={16} className="me-2 text-success" />
+                  <strong>Quantité:</strong> {cmd.quantite} KG
+                </p>
+                <p>
+                  <User size={16} className="me-2 text-success" />
+                  <strong>Producteur:</strong> {cmd.producteur.substring(0, 6)}
+                  ...{cmd.producteur.substring(cmd.producteur.length - 4)}
+                </p>
+                <p>
+                  <User size={16} className="me-2 text-success" />
+                  <strong>Collecteur:</strong> {cmd.collecteur.substring(0, 6)}
+                  ...{cmd.collecteur.substring(cmd.collecteur.length - 4)}
+                </p>
+                <p>
+                  <Truck size={16} className="me-2 text-success" />
+                  <strong>Transport:</strong>{" "}
+                  {getStatutTransportLabel(cmd.statutTransport)}
+                </p>
+
                 {/* Informations IPFS et Merkle */}
                 {cmd.cid && (
                   <div className="mt-2 p-2 bg-light rounded">
                     <p className="mb-1">
-                      <strong>CID IPFS:</strong> 
+                      <strong>CID IPFS:</strong>
                       <a
                         href={getIPFSURL(cmd.cid)}
                         target="_blank"
@@ -302,11 +400,14 @@ function LivraisonRecolte() {
                         {cmd.cid.substring(0, 10)}...
                       </a>
                     </p>
-                    
+
                     {cmd.hashMerkle && (
                       <p className="mb-1">
-                        <strong>Hash Merkle:</strong> 
-                        <span className="ms-2 text-muted" title={cmd.hashMerkle}>
+                        <strong>Hash Merkle:</strong>
+                        <span
+                          className="ms-2 text-muted"
+                          title={cmd.hashMerkle}
+                        >
                           {cmd.hashMerkle.substring(0, 10)}...
                         </span>
                       </p>
@@ -314,22 +415,34 @@ function LivraisonRecolte() {
 
                     {cmd.ipfsTimestamp && (
                       <p className="mb-1 text-muted small">
-                        <strong>Dernière mise à jour IPFS:</strong> {new Date(cmd.ipfsTimestamp).toLocaleDateString()}
+                        <strong>Dernière mise à jour IPFS:</strong>{" "}
+                        {new Date(cmd.ipfsTimestamp).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                 )}
-                
+
                 <div className="d-flex gap-2 mt-3">
-                  <button className="btn btn-outline-primary btn-sm" onClick={() => { setShowConditionModal(`recolte-${cmd.id}`); }}>
-                    Condition de transport
-                  </button>
-                  {cmd.statutTransport == 0 && (
-                    <button className="btn btn-success btn-sm" onClick={() => handleSubmitStatutRecolte(cmd.id)} disabled={btnLoading}>
+                  {!cmd.enregistrerCondition && (
+                    <button
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={() => {
+                        setShowConditionModal(`recolte-${cmd.id}`);
+                      }}
+                    >
+                      Condition de transport
+                    </button>
+                  )}
+                  {cmd.statutTransport == 0 && cmd.enregistrerCondition && (
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleSubmitStatutRecolte(cmd.id)}
+                      disabled={btnLoading}
+                    >
                       Livrer
                     </button>
                   )}
-                  
+
                   {/* Lien vers les données IPFS complètes */}
                   {cmd.cid && (
                     <a
@@ -350,13 +463,17 @@ function LivraisonRecolte() {
 
       {/* LISTE DES COMMANDES SUR LES PRODUITS DES COLLECTEURS */}
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">Liste des Commandes sur <strong>Produit</strong></h2>
+        <h2 className="h5 mb-3">
+          Liste des Commandes sur <strong>Produit</strong>
+        </h2>
         <div className="row g-3">
           {commandes.map((commande) => (
             <div key={commande.id} className="col-md-4">
               <div className="card shadow-sm p-3 mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="card-title mb-0">Commande Produit #{commande.id}</h5>
+                  <h5 className="card-title mb-0">
+                    Commande Produit #{commande.id}
+                  </h5>
                   <div>
                     {commande.cid && commande.hashMerkle ? (
                       <span className="badge bg-success me-1">
@@ -373,19 +490,46 @@ function LivraisonRecolte() {
                     )}
                   </div>
                 </div>
-                
-                <p><Hash size={16} className="me-2 text-success" /><strong>ID Commande:</strong> {commande.id}</p>
-                <p><Hash size={16} className="me-2 text-success" /><strong>ID Produit:</strong> {commande.idProduit}</p>
-                <p><Package2 size={16} className="me-2 text-success" /><strong>Quantité:</strong> {commande.quantite} KG</p>
-                <p><User size={16} className="me-2 text-success" /><strong>Collecteur:</strong> {commande.collecteur.substring(0, 6)}...{commande.collecteur.substring(commande.collecteur.length - 4)}</p>
-                <p><User size={16} className="me-2 text-success" /><strong>Exportateur:</strong> {commande.exportateur.substring(0, 6)}...{commande.exportateur.substring(commande.exportateur.length - 4)}</p>
-                <p><Truck size={16} className="me-2 text-success" /><strong>Transport:</strong> {getStatutTransportLabel(commande.statutTransport)}</p>
-                
+
+                <p>
+                  <Hash size={16} className="me-2 text-success" />
+                  <strong>ID Commande:</strong> {commande.id}
+                </p>
+                <p>
+                  <Hash size={16} className="me-2 text-success" />
+                  <strong>ID Produit:</strong> {commande.idProduit}
+                </p>
+                <p>
+                  <Package2 size={16} className="me-2 text-success" />
+                  <strong>Quantité:</strong> {commande.quantite} KG
+                </p>
+                <p>
+                  <User size={16} className="me-2 text-success" />
+                  <strong>Collecteur:</strong>{" "}
+                  {commande.collecteur.substring(0, 6)}...
+                  {commande.collecteur.substring(
+                    commande.collecteur.length - 4
+                  )}
+                </p>
+                <p>
+                  <User size={16} className="me-2 text-success" />
+                  <strong>Exportateur:</strong>{" "}
+                  {commande.exportateur.substring(0, 6)}...
+                  {commande.exportateur.substring(
+                    commande.exportateur.length - 4
+                  )}
+                </p>
+                <p>
+                  <Truck size={16} className="me-2 text-success" />
+                  <strong>Transport:</strong>{" "}
+                  {getStatutTransportLabel(commande.statutTransport)}
+                </p>
+
                 {/* Informations IPFS et Merkle */}
                 {commande.cid && (
                   <div className="mt-2 p-2 bg-light rounded">
                     <p className="mb-1">
-                      <strong>CID IPFS:</strong> 
+                      <strong>CID IPFS:</strong>
                       <a
                         href={getIPFSURL(commande.cid)}
                         target="_blank"
@@ -396,11 +540,14 @@ function LivraisonRecolte() {
                         {commande.cid.substring(0, 10)}...
                       </a>
                     </p>
-                    
+
                     {commande.hashMerkle && (
                       <p className="mb-1">
-                        <strong>Hash Merkle:</strong> 
-                        <span className="ms-2 text-muted" title={commande.hashMerkle}>
+                        <strong>Hash Merkle:</strong>
+                        <span
+                          className="ms-2 text-muted"
+                          title={commande.hashMerkle}
+                        >
                           {commande.hashMerkle.substring(0, 10)}...
                         </span>
                       </p>
@@ -408,22 +555,32 @@ function LivraisonRecolte() {
 
                     {commande.ipfsTimestamp && (
                       <p className="mb-1 text-muted small">
-                        <strong>Dernière mise à jour IPFS:</strong> {new Date(commande.ipfsTimestamp).toLocaleDateString()}
+                        <strong>Dernière mise à jour IPFS:</strong>{" "}
+                        {new Date(commande.ipfsTimestamp).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                 )}
-                
+
                 <div className="d-flex gap-2 mt-3">
-                  <button className="btn btn-outline-primary btn-sm" onClick={() => { setShowConditionModal(`produit-${commande.id}`); }}>
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => {
+                      setShowConditionModal(`produit-${commande.id}`);
+                    }}
+                  >
                     Condition de transport
                   </button>
                   {commande.statutTransport == 0 && (
-                    <button className="btn btn-success btn-sm" onClick={() => handleSubmitStatut(commande.id)} disabled={btnLoading}>
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleSubmitStatut(commande.id)}
+                      disabled={btnLoading}
+                    >
                       Livrer
                     </button>
                   )}
-                  
+
                   {/* Lien vers les données IPFS complètes */}
                   {commande.cid && (
                     <a
@@ -444,11 +601,17 @@ function LivraisonRecolte() {
 
       {/* Modal pour enregistrer les conditions de transport */}
       {showConditionModal && (
-        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Enregistrer les conditions de transport</h5>
+                <h5 className="modal-title">
+                  Enregistrer les conditions de transport
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -457,7 +620,9 @@ function LivraisonRecolte() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label htmlFor="temperature" className="form-label">Température (°C)</label>
+                  <label htmlFor="temperature" className="form-label">
+                    Température (°C)
+                  </label>
                   <input
                     type="number"
                     className="form-control"
@@ -469,7 +634,9 @@ function LivraisonRecolte() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="humidite" className="form-label">Humidité (%)</label>
+                  <label htmlFor="humidite" className="form-label">
+                    Humidité (%)
+                  </label>
                   <input
                     type="number"
                     className="form-control"
@@ -479,6 +646,46 @@ function LivraisonRecolte() {
                     min="0"
                     max="100"
                     placeholder="60"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="dureeTransport" className="form-label">
+                    Durée de transport (en heures)
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="dureeTransport"
+                    value={dureeTransport}
+                    onChange={(e) => setDureeTransport(e.target.value)}
+                    min="0"
+                    placeholder="5"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="lieuDepart" className="form-label">
+                    Lieu de départ
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="lieuDepart"
+                    value={lieuDepart}
+                    onChange={(e) => setLieuDepart(e.target.value)}
+                    placeholder="Antananarivo"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="destination" className="form-label">
+                    Destination
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="destination"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Toamasina"
                   />
                 </div>
               </div>
@@ -494,11 +701,17 @@ function LivraisonRecolte() {
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    if (showConditionModal.startsWith('recolte-')) {
-                      const commandeId = showConditionModal.replace('recolte-', '');
+                    if (showConditionModal.startsWith("recolte-")) {
+                      const commandeId = showConditionModal.replace(
+                        "recolte-",
+                        ""
+                      );
                       handleEnregistrerConditionRecolte(commandeId);
                     } else {
-                      const commandeId = showConditionModal.replace('produit-', '');
+                      const commandeId = showConditionModal.replace(
+                        "produit-",
+                        ""
+                      );
                       handleEnregistrerCondition(commandeId);
                     }
                   }}
@@ -513,11 +726,9 @@ function LivraisonRecolte() {
       )}
 
       {/* Overlay pour les modals */}
-      {showConditionModal && (
-        <div className="modal-backdrop fade show"></div>
-      )}
+      {showConditionModal && <div className="modal-backdrop fade show"></div>}
     </div>
   );
 }
 
-export default LivraisonRecolte; 
+export default LivraisonRecolte;

@@ -61,7 +61,7 @@ library StructLib {
         uint32 id;
         string cid; // CID IPFS pour les conditions détaillées
         uint timestamp;
-        string hashMerkle;
+        bytes32 hashMerkle;
     }
 
     struct Parcelle {
@@ -120,7 +120,7 @@ library StructLib {
     struct LotProduit {
         uint32 id;
         uint32[] idRecolte;
-        uint32[] idCommandeRecoltes;
+        uint32[] idCommandeRecoltes; // pour retrouver les conditions de transports
         uint32 quantite;
         uint32 prix;
         address collecteur;
