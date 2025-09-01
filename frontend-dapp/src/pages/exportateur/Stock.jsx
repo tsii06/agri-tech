@@ -21,6 +21,7 @@ import { getIPFSURL } from "../../utils/ipfsUtils";
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 import { ethers } from "ethers";
 import { ajoutArticle } from "../../utils/contrat/exportateurClient";
+import { uploadArticle } from "../../utils/ifps/exportateurClient";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -229,6 +230,8 @@ function StockExportateur() {
       alert("Veuillez choisir des produits de meme type.");
       return;
     }
+    // ajouter nomProduit dans ShipmentDetail
+    setShipmentDetails(prev => ({...prev, nomProduit: stockSelected[0].nomProduit}));
     setShowShipmentModal(true);
   };
 
@@ -238,15 +241,19 @@ function StockExportateur() {
   };
 
   const handleSubmitShipment = async () => {
-    const { prixVente, dateExpedition, lieuDepart, destination, typeTransport } = shipmentDetails;
+    const { prixVente, dateExpedition, lieuDepart, destination, typeTransport, nomProduit } = shipmentDetails;
 
     if (!prixVente || !dateExpedition || !lieuDepart || !destination || !typeTransport) {
       alert("Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre.");
       return;
     }
 
-    await ajoutArticle(selectedStocks, prixVente, "");
-    
+    // creer donnee article sur ipfs
+    const ipfsArticle = await uploadArticle(nomProduit, dateExpedition, lieuDepart, destination, typeTransport);
+
+    // creer article on-chain
+    await ajoutArticle(selectedStocks, prixVente, ipfsArticle.cid);
+
     setShowShipmentModal(false);
     setSelectedStocks([]);
     setShipmentDetails({
