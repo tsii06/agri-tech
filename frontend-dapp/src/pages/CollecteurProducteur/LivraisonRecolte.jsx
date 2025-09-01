@@ -363,7 +363,7 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <Package2 size={16} className="me-2 text-success" />
-                  <strong>Quantité:</strong> {cmd.quantite} KG
+                  <strong>Quantité:</strong> {cmd.quantite} kg
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
@@ -502,7 +502,7 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <Package2 size={16} className="me-2 text-success" />
-                  <strong>Quantité:</strong> {commande.quantite} KG
+                  <strong>Quantité:</strong> {commande.quantite} kg
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
@@ -564,33 +564,36 @@ function LivraisonRecolte() {
                 )}
 
                 <div className="d-flex gap-2 mt-3">
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => {
-                      setShowConditionModal(`produit-${commande.id}`);
-                    }}
-                  >
-                    Condition de transport
-                  </button>
-                  {commande.statutTransport == 0 && (
+                  {!commande.enregistrerCondition && (
                     <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => handleSubmitStatut(commande.id)}
-                      disabled={btnLoading}
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={() => {
+                        setShowConditionModal(`produit-${commande.id}`);
+                      }}
                     >
-                      Livrer
+                      Condition de transport
                     </button>
                   )}
-                  {cmd.enregistrerCondition && (
+                  {commande.statutTransport == 0 &&
+                    commande.enregistrerCondition && (
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => handleSubmitStatut(commande.id)}
+                        disabled={btnLoading}
+                      >
+                        Livrer
+                      </button>
+                    )}
+                  {commande.enregistrerCondition && (
                     <button
                       className="btn btn-outline-success btn-sm"
                       onClick={() => {
                         setDetailsCondition({
-                          temperature: cmd.temperature,
-                          humidite: cmd.humidite,
-                          dureeTransport: cmd.dureeTransport,
-                          lieuDepart: cmd.lieuDepart,
-                          destination: cmd.destination,
+                          temperature: commande.temperature,
+                          humidite: commande.humidite,
+                          dureeTransport: commande.dureeTransport,
+                          lieuDepart: commande.lieuDepart,
+                          destination: commande.destination,
                         });
                         setShowDetailsModal(true);
                       }}
