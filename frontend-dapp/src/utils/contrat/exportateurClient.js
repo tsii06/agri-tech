@@ -20,7 +20,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   for (let id of _idCommandeProduits) {
     try {
       const conditions = await collecteurExportateur.getCondition(id);
-      hashTransportCE.push(conditions.hashMerkle);
+      hashTransportCE.push(conditions.hashMerkle.toString());
     } catch (error) {
       console.error(
         "Recuperation des hashs de conditions de transport CE: ",
@@ -41,7 +41,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
       );
       idCommandeRecoltes.push(...lotProduit.idCommandeRecoltes);
       idRecoltes.push(...lotProduit.idRecolte);
-      hashLotProduits.push(lotProduit.hashMerkle);
+      hashLotProduits.push(lotProduit.hashMerkle.toString());
     } catch (error) {
       console.error("Recuperation des hashs des lot produits : ", error);
       return;
@@ -52,7 +52,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   for (let id of idCommandeRecoltes) {
     try {
       const conditions = await collecteurProducteur.getConditionTransport(id);
-      hashTransportPC.push(conditions.hashMerkle);
+      hashTransportPC.push(conditions.hashMerkle.toString());
     } catch (error) {
       console.error("Recuperation hash transport PC : ", error);
       return;
@@ -64,7 +64,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   for (let id of idRecoltes) {
     try {
       const recolte = await collecteurProducteur.getRecolte(id);
-      hashRecoltes.push(recolte.hashMerkle);
+      hashRecoltes.push(recolte.hashMerkle.toString());
       idParcelles.push(...recolte.idParcelle);
     } catch (error) {
       console.error("Recuperation hashs recoltes : ", error);
@@ -76,7 +76,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   for (let id of idParcelles) {
     try {
       const parcelle = await producteurContrat.getParcelle(id);
-      hashParcelles.push(parcelle.hashMerkle);
+      hashParcelles.push(parcelle.hashMerkle.toString());
     } catch (error) {
       console.error("Recuperation hashs parcelles : ", error);
       return;
@@ -91,9 +91,9 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   hashParcelles = [...new Set(hashParcelles)];
 
 
-  console.log("hashTransportCE : ", hashTransportCE);
-  console.log("hashLotProduit : ", hashLotProduits);
-  console.log("hashTransportPC : ", hashTransportPC);
-  console.log("hashRecoltes : ", hashRecoltes);
-  console.log("hashParcelles : ", hashParcelles);
+  // console.log("hashTransportCE : ", hashTransportCE);
+  // console.log("hashLotProduit : ", hashLotProduits);
+  // console.log("hashTransportPC : ", hashTransportPC);
+  // console.log("hashRecoltes : ", hashRecoltes);
+  // console.log("hashParcelles : ", hashParcelles);
 };
