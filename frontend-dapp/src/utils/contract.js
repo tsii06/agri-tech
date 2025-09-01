@@ -3,6 +3,7 @@ import ProducteurEnPhaseCulture from "../abi/ProducteurEnPhaseCulture.json";
 import CollecteurExportateur from "../abi/CollecteurExportateur.json";
 import CollecteurProducteur from "../abi/CollecteurProducteur.json";
 import GestionnaireActeurs from "../abi/GestionnaireActeurs.json";
+import ExportateurClient from "../abi/ExportateurClient.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
@@ -11,6 +12,7 @@ const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C
 const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; 
 // Adresse du contrat GestionnaireActeurs déployé sur le réseau local
 const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
+const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"; // À remplacer par la vraie adresse après déploiement
 
 export async function getProvider() {
   if (!window.ethereum) {
@@ -64,6 +66,22 @@ export async function getCollecteurProducteurContract() {
     );
   } catch (error) {
     console.error("Erreur lors de l'initialisation du contrat Collecteur:", error);
+    throw error;
+  }
+}
+
+// ExportateurClient 
+export async function getExportateurClientContract() {
+  try {
+    const provider = await getProvider();
+    const signer = await provider.getSigner();
+    return new ethers.Contract(
+      EXPORTATEUR_CLIENT_ADDRESS,
+      ExportateurClient.abi,
+      signer
+    );
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation du contrat ExportateurClient:", error);
     throw error;
   }
 }
