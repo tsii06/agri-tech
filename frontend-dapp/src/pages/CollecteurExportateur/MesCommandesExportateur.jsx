@@ -598,7 +598,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                     {isStockPage && commande.payer && (
                       <Link
                         to={`/stock/${commande.id}`}
-                        className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                        className="btn btn-primary btn-sm d-flex align-items-center gap-1 mt-2"
                       >
                         <Eye size={16} />
                         Voir détails
