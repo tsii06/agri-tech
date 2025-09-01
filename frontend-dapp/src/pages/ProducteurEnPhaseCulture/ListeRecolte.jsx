@@ -5,7 +5,6 @@ import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../../utils/roles';
 import { uploadCertificatPhytosanitaire, getIPFSURL } from "../../utils/ipfsUtils";
-import { calculateRecolteMerkleHash } from "../../utils/merkleUtils";
 
 function ListeRecoltes() {
   const { address } = useParams();

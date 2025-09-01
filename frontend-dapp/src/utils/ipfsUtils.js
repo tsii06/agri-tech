@@ -1,5 +1,4 @@
 import { getContract } from "./contract";
-import { calculateParcelleMerkleHash } from "./merkleUtils";
 import myPinataSDK from "./pinata";
 
 /**

@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCollecteurProducteurContract, getContract } from "../../utils/contract";
-import { uploadConsolidatedData } from "../../utils/ipfsUtils";
-import { calculateRecolteMerkleHash } from "../../utils/merkleUtils";
+import { uploadConsolidatedData } from "../../utils/ipfsUtils"; 
 import { useUserContext } from "../../context/useContextt";
 
 function FaireRecolte() {

@@ -4,7 +4,6 @@ import { ethers } from "ethers";
 import { getContract } from "../../utils/contract";
 import { getRoleName } from "../../components/Layout/Header";
 import { getIPFSURL } from "../../utils/ipfsUtils";
-import { calculateRecolteMerkleHash } from "../../utils/merkleUtils";
 
 function AcheterRecolte() {
   const { address } = useParams();

@@ -7,7 +7,6 @@ import {
   uploadCertificatPhytosanitaire,
   getIPFSURL,
 } from "../../utils/ipfsUtils";
-import { calculateParcelleMerkleHash } from "../../utils/merkleUtils";
 import { useUserContext } from "../../context/useContextt";
 
 const defaultCenter = {
