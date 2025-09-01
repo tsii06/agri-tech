@@ -36,6 +36,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   const [visibleCount, setVisibleCount] = useState(9);
   const [expandedId, setExpandedId] = useState(null);
   const location = useLocation();
+  const [detailsCondition, setDetailsCondition] = useState({});
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
@@ -92,39 +94,25 @@ function MesCommandesExportateur({ onlyPaid = false }) {
               exportateur: exportateurAddr,
               transporteur: commandeRaw.transporteur.toString(),
               nomProduit: produit?.nom || "",
-              cid: produit.cid || "",
-              hashMerkle: produit.hashMerkle || "",
+              enregistrerCondition: commandeRaw.enregistrerCondition,
             };
 
-            // Charger les données IPFS si un CID existe
-            if (commandeEnrichie.cid) {
-              try {
-                const response = await fetch(getIPFSURL(commandeEnrichie.cid));
-                if (response.ok) {
-                  const ipfsData = await response.json();
-                  const root =
-                    ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                  commandeEnrichie = {
-                    ...commandeEnrichie,
-                    nomProduit:
-                      root.nomProduit ||
-                      produit?.nom ||
-                      commandeEnrichie.nomProduit,
-                    ipfsTimestamp: ipfsData.timestamp,
-                    ipfsVersion: ipfsData.version,
-                    produitHashMerkle:
-                      root.produitHashMerkle ||
-                      ipfsData.produitHashMerkle ||
-                      "",
-                    ipfsRoot: root,
-                    ipfsType: root.type || ipfsData.type || null,
-                  };
-                }
-              } catch (ipfsError) {
-                console.log(
-                  `Erreur lors du chargement IPFS pour la commande ${i}:`,
-                  ipfsError
-                );
+            // Charger les condition de transport
+            if (commandeRaw.enregistrerCondition) {
+              const conditions = await contract.getCondition(i);
+              const res = await fetch(getIPFSURL(conditions.cid));
+              if (res.ok) {
+                const ipfsData = await res.json();
+                const root =
+                  ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+                commandeEnrichie = {
+                  ...commandeEnrichie,
+                  temperature: root.temperature,
+                  humidite: root.humidite,
+                  dureeTransport: root.dureeTransport,
+                  lieuDepart: root.lieuDepart,
+                  destination: root.destination,
+                };
               }
             }
 
@@ -547,7 +535,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 d-flex gap-2">
+                  <div className="mt-2">
                     {!isStockPage &&
                       !commande.payer &&
                       commande.statutProduit === 1 && (
@@ -563,26 +551,49 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       )}
 
                     {/* Lien vers liste de transporteur */}
-                    {!commande.payer && !isStockPage && (
-                      <div className="mt-2">
-                        <Link
-                          to={`/liste-transporteur-commande-produit/5/${commande.id}`}
-                          className="btn btn-outline-secondary btn-sm w-100"
-                        >
-                          Choisir transporteur
-                        </Link>
-                      </div>
+                    {!commande.payer &&
+                      !isStockPage &&
+                      commande.statutTransport !== 1 && (
+                        <div className="mt-2">
+                          <Link
+                            to={`/liste-transporteur-commande-produit/5/${commande.id}`}
+                            className="btn btn-outline-secondary btn-sm w-100"
+                          >
+                            Choisir transporteur
+                          </Link>
+                        </div>
+                      )}
+
+                    {/* Btn pour afficher les conditions transport */}
+                    {commande.enregistrerCondition && (
+                      <button
+                        className="btn btn-outline-success btn-sm w-100"
+                        onClick={() => {
+                          setDetailsCondition({
+                            temperature: commande.temperature,
+                            humidite: commande.humidite,
+                            dureeTransport: commande.dureeTransport,
+                            lieuDepart: commande.lieuDepart,
+                            destination: commande.destination,
+                          });
+                          setShowDetailsModal(true);
+                        }}
+                      >
+                        Voir détails conditions
+                      </button>
                     )}
 
                     {!isStockPage &&
                       Number(commande.statutTransport) === 1 &&
                       Number(commande.statutProduit) !== 1 && (
-                        <button
-                          onClick={() => handleValiderCommande(commande.id)}
-                          className="btn btn-success btn-sm"
-                        >
-                          Valider la commande
-                        </button>
+                        <div className="mt-2">
+                          <button
+                            onClick={() => handleValiderCommande(commande.id)}
+                            className="btn btn-success btn-sm"
+                          >
+                            Valider la commande
+                          </button>
+                        </div>
                       )}
                     {isStockPage && commande.payer && (
                       <Link
@@ -689,6 +700,64 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           >
             Charger plus
           </button>
+        </div>
+      )}
+
+      {/* Modal pour afficher les détails des conditions de transport */}
+      {showDetailsModal && (
+        <div>
+          <div className="modal-backdrop fade show"></div>
+          <div
+            className="modal fade show"
+            style={{ display: "block" }}
+            tabIndex="-1"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    Détails des conditions de transport
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDetailsModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    <strong>Température :</strong>{" "}
+                    {detailsCondition.temperature || "N/A"} °C
+                  </p>
+                  <p>
+                    <strong>Humidité :</strong>{" "}
+                    {detailsCondition.humidite || "N/A"} %
+                  </p>
+                  <p>
+                    <strong>Durée de transport :</strong>{" "}
+                    {detailsCondition.dureeTransport || "N/A"} heures
+                  </p>
+                  <p>
+                    <strong>Lieu de départ :</strong>{" "}
+                    {detailsCondition.lieuDepart || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Destination :</strong>{" "}
+                    {detailsCondition.destination || "N/A"}
+                  </p>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDetailsModal(false)}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
