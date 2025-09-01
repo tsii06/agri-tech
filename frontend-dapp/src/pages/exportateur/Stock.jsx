@@ -20,6 +20,7 @@ import {
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 import { ethers } from "ethers";
+import { ajoutArticle } from "../../utils/contrat/exportateurClient";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -236,9 +237,16 @@ function StockExportateur() {
     setShipmentDetails((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitShipment = () => {
-    console.log("Creating shipment lot with details:", shipmentDetails);
-    console.log("Selected stocks:", selectedStocks);
+  const handleSubmitShipment = async () => {
+    const { prixVente, dateExpedition, lieuDepart, destination, typeTransport } = shipmentDetails;
+
+    if (!prixVente || !dateExpedition || !lieuDepart || !destination || !typeTransport) {
+      alert("Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre.");
+      return;
+    }
+
+    await ajoutArticle(selectedStocks, prixVente, "");
+    
     setShowShipmentModal(false);
     setSelectedStocks([]);
     setShipmentDetails({

@@ -17,7 +17,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   const producteurContrat = await getProducteurContract();
   // recuper le hashMerkle des du condition de transport : collecteur -> exportateur
   let hashTransportCE = [];
-  for (id of _idCommandeProduits) {
+  for (let id of _idCommandeProduits) {
     try {
       const conditions = await collecteurExportateur.getCondition(id);
       hashTransportCE.push(conditions.hashMerkle);
@@ -33,7 +33,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   let hashLotProduits = [];
   let idCommandeRecoltes = [];
   let idRecoltes = [];
-  for (id of _idCommandeProduits) {
+  for (let id of _idCommandeProduits) {
     try {
       const commande = await collecteurExportateur.getCommande(id);
       const lotProduit = await collecteurExportateur.getLotProduit(
@@ -49,7 +49,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   }
   // recuperer les hashMerkles des conditions de transport recolte : producteur -> collecteur
   let hashTransportPC = [];
-  for (id of idCommandeRecoltes) {
+  for (let id of idCommandeRecoltes) {
     try {
       const conditions = await collecteurProducteur.getConditionTransport(id);
       hashTransportPC.push(conditions.hashMerkle);
@@ -61,7 +61,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   // recuperer hashMerkles recoltes
   let hashRecoltes = [];
   let idParcelles = [];
-  for (id of idRecoltes) {
+  for (let id of idRecoltes) {
     try {
       const recolte = await collecteurProducteur.getRecolte(id);
       hashRecoltes.push(recolte.hashMerkle);
@@ -73,7 +73,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   }
   // recuperer hashMerkles parcelles
   let hashParcelles = [];
-  for (id of idParcelles) {
+  for (let id of idParcelles) {
     try {
       const parcelle = await producteurContrat.getParcelle(id);
       hashParcelles.push(parcelle.hashMerkle);
@@ -82,6 +82,13 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
       return;
     }
   }
+
+  // supprimer les doublants
+  hashTransportCE = [...new Set(hashTransportCE)];
+  hashLotProduits = [...new Set(hashLotProduits)];
+  hashTransportPC = [...new Set(hashTransportPC)];
+  hashRecoltes = [...new Set(hashRecoltes)];
+  hashParcelles = [...new Set(hashParcelles)];
 
 
   console.log("hashTransportCE : ", hashTransportCE);

@@ -137,8 +137,16 @@ contract CollecteurExportateur {
         if (commandes[_idCommande].enregistrerCondition) revert();
         if (commandes[_idCommande].transporteur != msg.sender) revert();
 
+        // calcule hashMerkle
+        bytes32 hashMerkle = keccak256(abi.encodePacked(
+            _idCommande,
+            _cid,
+            msg.sender,
+            block.timestamp
+        ));
+
         commandes[_idCommande].enregistrerCondition = true;
-        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, "");
+        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, hashMerkle);
         emit ConditionEnregistree(_idCommande, _cid, block.timestamp);
     }
 
