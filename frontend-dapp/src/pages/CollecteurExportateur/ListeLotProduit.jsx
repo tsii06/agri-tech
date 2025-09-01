@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   getCollecteurExportateurContract,
 } from "../../utils/contract";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Group,
@@ -36,6 +36,7 @@ function ListeLotProduits() {
   const [showLotModal, setShowLotModal] = useState(false);
   const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
+  const nav = useNavigate();
 
   useEffect(() => {
     if (!account && !address) {
@@ -133,6 +134,7 @@ function ListeLotProduits() {
       // Optionnel : rafraîchir la liste
       setState({});
       setError(false);
+      nav('/mes-commandes-exportateur');
     } catch (error) {
       console.error("Erreur lors de la commande d'un produit :", error.message);
       setError(

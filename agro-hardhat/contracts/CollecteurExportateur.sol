@@ -133,9 +133,9 @@ contract CollecteurExportateur {
     }
 
     function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur {
-        // verifie si l'idCommande est valide.
         if (_idCommande > compteurCommandes) revert();
         if (commandes[_idCommande].enregistrerCondition) revert();
+        if (commandes[_idCommande].transporteur != msg.sender) revert();
 
         commandes[_idCommande].enregistrerCondition = true;
         conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, "");

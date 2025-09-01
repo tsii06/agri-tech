@@ -179,6 +179,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="listeproduit/:address" element={<ListeProduits />} />
                 <Route path="liste-acteurs-role" element={<ListeActeursRole />} />
                 <Route path="liste-transporteur-commande-recolte/:role/:idCommandeRecolte" element={<ListeActeursRole />} />
+                <Route path="liste-transporteur-commande-produit/:role/:idCommandeProduit" element={<ListeActeursRole />} />
                 <Route path="liste-recolte" element={<ListeRecoltes />} />
                 <Route path="mettre-a-jour-transport/:id" element={<LivraisonRecolte />} />
                 <Route path="mes-parcelles" element={<MesParcelles />} />

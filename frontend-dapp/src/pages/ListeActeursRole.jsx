@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
-import { getCollecteurProducteurContract, getGestionnaireActeursContract } from "../utils/contract";
+import { getCollecteurExportateurContract, getCollecteurProducteurContract, getGestionnaireActeursContract } from "../utils/contract";
 import {
   User,
   Mail,
@@ -29,11 +29,10 @@ const ROLE_LABELS = [
 export default function ListeActeursRole() {
   const { roles } = useUserContext();
 
-  const { role, idCommandeRecolte } = useParams();
+  const { role, idCommandeRecolte, idCommandeProduit } = useParams();
   const roleUrl = role ? parseInt(role, 10) : null;
-  const idCommandeR = idCommandeRecolte
-    ? parseInt(idCommandeRecolte, 10)
-    : null;
+  const idCommandeR = idCommandeRecolte ? parseInt(idCommandeRecolte, 10) : null;
+  const idCommandeP = idCommandeProduit ? parseInt(idCommandeProduit, 10) : null;
 
   const [acteurs, setActeurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,9 +62,15 @@ export default function ListeActeursRole() {
   // Détermine le rôle cible à afficher si le role est specifie dans l'url
   if (roleUrl !== null) {
     roleCible = roleUrl;
+
     // si c'est pour le choix d'un transporteur pour une commande recolte
-    if (roleUrl === 5 && idCommandeR !== null)
+    if (idCommandeR !== null)
       titre = `Choisir transporteur pour la commande recolte #${idCommandeR}`;
+    
+    // si c'est pour le choix d'un transporteur pour une commande recolte
+    else if (idCommandeP !== null)
+      titre = `Choisir transporteur pour la commande produit #${idCommandeP}`;
+
     else
       titre = `Liste des ${ROLE_LABELS[roleUrl]}s`;
   }
@@ -78,6 +83,22 @@ export default function ListeActeursRole() {
       tx.wait();
 
       nav('/liste-collecteur-commande');
+    } catch (error) {
+      console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
+      alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const handleChoisirTransporteurCommandeProduit = async (addrTransporteur) => {
+    setBtnLoading(true);
+    try {
+      const contrat = await getCollecteurExportateurContract();
+      const tx = await contrat.choisirTransporteurCommandeProduit(idCommandeP, addrTransporteur);
+      tx.wait();
+
+      nav('/mes-commandes-exportateur');
     } catch (error) {
       console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
       alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");
@@ -292,11 +313,16 @@ export default function ListeActeursRole() {
                     </p>
 
                     {/* Bouton d'action */}
-                    {/* Si choisir un transporteur pour une commande recolte */}
-                    {roleUrl === 5 && idCommandeR !== null ? (
+                    {/* Si choisir un transporteur pour une commande */}
+                    {roleUrl === 5 ? (
                       <button
                         className="btn-agrichain"
-                        onClick={() => handleChoisirTransporteurCommandeRecolte(acteur.adresse)}
+                        onClick={() => {
+                          if (idCommandeR !== null)
+                            return handleChoisirTransporteurCommandeRecolte(acteur.adresse);
+                          else if (idCommandeP !== null)
+                            return handleChoisirTransporteurCommandeProduit(acteur.adresse);
+                        }}
                         disabled={btnLoading}
                       >
                         {btnLoading && <span className="spinner-border spinner-border-sm"></span>}&nbsp;Choisir
