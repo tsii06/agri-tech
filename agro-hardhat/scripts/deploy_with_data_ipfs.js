@@ -53,6 +53,19 @@ async function main() {
     );
     console.log("CollecteurProducteur deployed to:", await collecteurProducteurProxy.getAddress());
 
+    // Deployer le ExportateurClient
+    const ExportateurClient = await ethers.getContractFactory("ExportateurClient");
+    const exportateurClient = await ExportateurClient.deploy();
+    await exportateurClient.waitForDeployment();
+    let exportateurClientProxy = await ProxyFactory.deploy(await exportateurClient.getAddress()); // utilisation du proxy
+    await exportateurClientProxy.waitForDeployment();
+    exportateurClientProxy = await ethers.getContractAt("ExportateurClient", await exportateurClientProxy.getAddress()); // pour pouvoir interagisser avec le proxy en tant que ExportateurClient
+    await exportateurClientProxy.initialiser(
+        await gestionnaireActeursProxy.getAddress(),
+        await collecteurExportateurProxy.getAddress()
+    );
+    console.log("ExportateurClient deployed to:", await exportateurClientProxy.getAddress());
+
     // 5. Enregistrer les acteurs dans le GestionnaireActeurs
     console.log("Enregistrement des acteurs...");
     
