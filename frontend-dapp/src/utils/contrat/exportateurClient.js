@@ -82,4 +82,11 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
       return;
     }
   }
+
+
+  console.log("hashTransportCE : ", hashTransportCE);
+  console.log("hashLotProduit : ", hashLotProduits);
+  console.log("hashTransportPC : ", hashTransportPC);
+  console.log("hashRecoltes : ", hashRecoltes);
+  console.log("hashParcelles : ", hashParcelles);
 };

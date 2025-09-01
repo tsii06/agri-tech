@@ -25,9 +25,6 @@ function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
-  const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
   const [userRole, setUserRole] = useState(null);
   const { account } = useUserContext();
   const [search, setSearch] = useState("");
@@ -35,6 +32,15 @@ function StockExportateur() {
   const [expandedId, setExpandedId] = useState(null);
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedStocks, setSelectedStocks] = useState([]);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [shipmentDetails, setShipmentDetails] = useState({
+    prixVente: "",
+    dateExpedition: "",
+    lieuDepart: "",
+    destination: "",
+    typeTransport: "",
+  });
 
   useEffect(() => {
     if (!account) return;
@@ -202,6 +208,48 @@ function StockExportateur() {
   });
   const commandesAffichees = commandesFiltres.slice(0, visibleCount);
 
+  const handleCheckboxChange = (id) => {
+    setSelectedStocks((prev) =>
+      prev.includes(id)
+        ? prev.filter((stockId) => stockId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleCreateShipment = () => {
+    if (selectedStocks.length === 0) {
+      alert("Veuillez sélectionner au moins un stock.");
+      return;
+    }
+    // Annuler si les produits sont de types differents
+    const stockSelected = commandes.filter(el => selectedStocks.includes(el.id));
+    const IsStockSameType = stockSelected.every(el => el.nomProduit === stockSelected[0].nomProduit);
+    if (!IsStockSameType) {
+      alert("Veuillez choisir des produits de meme type.");
+      return;
+    }
+    setShowShipmentModal(true);
+  };
+
+  const handleShipmentDetailChange = (e) => {
+    const { name, value } = e.target;
+    setShipmentDetails((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitShipment = () => {
+    console.log("Creating shipment lot with details:", shipmentDetails);
+    console.log("Selected stocks:", selectedStocks);
+    setShowShipmentModal(false);
+    setSelectedStocks([]);
+    setShipmentDetails({
+      prixVente: "",
+      dateExpedition: "",
+      lieuDepart: "",
+      destination: "",
+      typeTransport: "",
+    });
+  };
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -290,6 +338,15 @@ function StockExportateur() {
         ) : (
           /* LISTE DES COMMANDES */
           <div className="row g-3">
+            <div className="d-flex justify-content-center">
+              <button
+                className="btn btn-primary"
+                onClick={handleCreateShipment}
+                disabled={selectedStocks.length === 0}
+              >
+                Créer un lot d'expédition
+              </button>
+            </div>
             {commandesAffichees.map((commande) => (
               <div key={commande.id} className="col-md-4">
                 <div
@@ -299,6 +356,21 @@ function StockExportateur() {
                     boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
                   }}
                 >
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`checkbox-${commande.id}`}
+                      checked={selectedStocks.includes(commande.id)}
+                      onChange={() => handleCheckboxChange(commande.id)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`checkbox-${commande.id}`}
+                    >
+                      Sélectionner
+                    </label>
+                  </div>
                   <div
                     className="d-flex justify-content-center align-items-center mb-2"
                     style={{ fontSize: 32, color: "#4d7c0f" }}
@@ -475,6 +547,123 @@ function StockExportateur() {
                     onClick={() => setShowDetailsModal(false)}
                   >
                     Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour créer un lot d'expédition */}
+      {showShipmentModal && (
+        <div>
+          <div className="modal-backdrop fade show"></div>
+          <div
+            className="modal fade show"
+            style={{ display: "block" }}
+            tabIndex="-1"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Créer un lot d'expédition</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowShipmentModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label htmlFor="prixVente" className="form-label">
+                      Prix de vente
+                    </label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      id="prixVente"
+                      name="prixVente"
+                      value={shipmentDetails.prixVente}
+                      onChange={handleShipmentDetailChange}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="dateExpedition" className="form-label">
+                      Date d'expédition
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      id="dateExpedition"
+                      name="dateExpedition"
+                      value={shipmentDetails.dateExpedition}
+                      onChange={handleShipmentDetailChange}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="lieuDepart" className="form-label">
+                      Lieu de départ
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="lieuDepart"
+                      name="lieuDepart"
+                      value={shipmentDetails.lieuDepart}
+                      onChange={handleShipmentDetailChange}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="destination" className="form-label">
+                      Destination
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="destination"
+                      name="destination"
+                      value={shipmentDetails.destination}
+                      onChange={handleShipmentDetailChange}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="typeTransport" className="form-label">
+                      Type de transport
+                    </label>
+                    <select
+                      className="form-select"
+                      id="typeTransport"
+                      name="typeTransport"
+                      value={shipmentDetails.typeTransport}
+                      onChange={handleShipmentDetailChange}
+                      required
+                    >
+                      <option value="">Sélectionner</option>
+                      <option value="Routier">Routier</option>
+                      <option value="Maritime">Maritime</option>
+                      <option value="Aérien">Aérien</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowShipmentModal(false)}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSubmitShipment}
+                  >
+                    Confirmer
                   </button>
                 </div>
               </div>
