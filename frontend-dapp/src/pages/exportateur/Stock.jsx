@@ -44,98 +44,101 @@ function StockExportateur() {
     typeTransport: "",
   });
 
+  const chargerCommandes = async () => {
+    try {
+      const contract = await getCollecteurExportateurContract();
+      let role = userRole;
+      if (!role) {
+        role = await getRoleOfAddress(account);
+        setUserRole(role);
+      }
+
+      // Obtenir le nombre total de commandes
+      const compteurCommandesRaw = await contract.getCompteurCommande();
+      const compteurCommandes = Number(compteurCommandesRaw);
+
+      // Charger toutes les commandes
+      const commandesTemp = [];
+      for (let i = 1; i <= compteurCommandes; i++) {
+        const commandeRaw = await contract.getCommande(i);
+
+        // Ne pas afficher les commandes non payer dans l'interface stock
+        if (!commandeRaw.payer) continue;
+
+        // Ne plus afficher les commandes deja expedier
+        if (commandeRaw.enregistre) continue;
+
+        // Normaliser adresses
+        const exportateurAddr =
+          commandeRaw.exportateur?.toString?.() ||
+          commandeRaw.exportateur ||
+          "";
+        const collecteurAddr =
+          commandeRaw.collecteur?.toString?.() ||
+          commandeRaw.collecteur ||
+          "";
+        if (!exportateurAddr) continue;
+
+        // Vérifier si la commande appartient à l'exportateur connecté
+        if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
+          // Normaliser types primitifs
+          const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+          const produit =
+            idLotProduitNum > 0
+              ? await getLotProduitEnrichi(idLotProduitNum)
+              : {};
+
+          let commandeEnrichie = {
+            id: Number(commandeRaw.id ?? i),
+            idLotProduit: idLotProduitNum,
+            quantite: Number(commandeRaw.quantite ?? 0),
+            prix: Number(commandeRaw.prix ?? 0),
+            payer: Boolean(commandeRaw.payer),
+            statutTransport: Number(commandeRaw.statutTransport ?? 0),
+            statutProduit: Number(commandeRaw.statutProduit ?? 0),
+            collecteur: collecteurAddr,
+            exportateur: exportateurAddr,
+            transporteur: commandeRaw.transporteur.toString(),
+            nomProduit: produit?.nom || "",
+            enregistrerCondition: commandeRaw.enregistrerCondition,
+          };
+
+          // Charger les condition de transport
+          if (commandeRaw.enregistrerCondition) {
+            const conditions = await contract.getCondition(i);
+            const res = await fetch(getIPFSURL(conditions.cid));
+            if (res.ok) {
+              const ipfsData = await res.json();
+              const root =
+                ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
+              commandeEnrichie = {
+                ...commandeEnrichie,
+                temperature: root.temperature,
+                humidite: root.humidite,
+                dureeTransport: root.dureeTransport,
+                lieuDepart: root.lieuDepart,
+                destination: root.destination,
+              };
+            }
+          }
+
+          commandesTemp.push(commandeEnrichie);
+        }
+      }
+
+      // Inverser le tri des commandes pour que les plus récentes soient en premier
+      commandesTemp.reverse();
+      setCommandes(commandesTemp);
+    } catch (error) {
+      console.error("Erreur lors du chargement des commandes:", error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!account) return;
-    const chargerCommandes = async () => {
-      try {
-        const contract = await getCollecteurExportateurContract();
-        let role = userRole;
-        if (!role) {
-          role = await getRoleOfAddress(account);
-          setUserRole(role);
-        }
-
-        // Obtenir le nombre total de commandes
-        const compteurCommandesRaw = await contract.getCompteurCommande();
-        const compteurCommandes = Number(compteurCommandesRaw);
-
-        // Charger toutes les commandes
-        const commandesTemp = [];
-        for (let i = 1; i <= compteurCommandes; i++) {
-          const commandeRaw = await contract.getCommande(i);
-
-          // Ne pas afficher les commandes non payer dans l'interface stock
-          if (!commandeRaw.payer) continue;
-
-          // Normaliser adresses
-          const exportateurAddr =
-            commandeRaw.exportateur?.toString?.() ||
-            commandeRaw.exportateur ||
-            "";
-          const collecteurAddr =
-            commandeRaw.collecteur?.toString?.() ||
-            commandeRaw.collecteur ||
-            "";
-          if (!exportateurAddr) continue;
-
-          // Vérifier si la commande appartient à l'exportateur connecté
-          if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
-            // Normaliser types primitifs
-            const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
-            const produit =
-              idLotProduitNum > 0
-                ? await getLotProduitEnrichi(idLotProduitNum)
-                : {};
-
-            let commandeEnrichie = {
-              id: Number(commandeRaw.id ?? i),
-              idLotProduit: idLotProduitNum,
-              quantite: Number(commandeRaw.quantite ?? 0),
-              prix: Number(commandeRaw.prix ?? 0),
-              payer: Boolean(commandeRaw.payer),
-              statutTransport: Number(commandeRaw.statutTransport ?? 0),
-              statutProduit: Number(commandeRaw.statutProduit ?? 0),
-              collecteur: collecteurAddr,
-              exportateur: exportateurAddr,
-              transporteur: commandeRaw.transporteur.toString(),
-              nomProduit: produit?.nom || "",
-              enregistrerCondition: commandeRaw.enregistrerCondition,
-            };
-
-            // Charger les condition de transport
-            if (commandeRaw.enregistrerCondition) {
-              const conditions = await contract.getCondition(i);
-              const res = await fetch(getIPFSURL(conditions.cid));
-              if (res.ok) {
-                const ipfsData = await res.json();
-                const root =
-                  ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                commandeEnrichie = {
-                  ...commandeEnrichie,
-                  temperature: root.temperature,
-                  humidite: root.humidite,
-                  dureeTransport: root.dureeTransport,
-                  lieuDepart: root.lieuDepart,
-                  destination: root.destination,
-                };
-              }
-            }
-
-            commandesTemp.push(commandeEnrichie);
-          }
-        }
-
-        // Inverser le tri des commandes pour que les plus récentes soient en premier
-        commandesTemp.reverse();
-        setCommandes(commandesTemp);
-      } catch (error) {
-        console.error("Erreur lors du chargement des commandes:", error);
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     chargerCommandes();
   }, [account, userRole]);
 
@@ -254,6 +257,7 @@ function StockExportateur() {
     // creer article on-chain
     await ajoutArticle(selectedStocks, prixVente, ipfsArticle.cid);
 
+    await chargerCommandes();
     setShowShipmentModal(false);
     setSelectedStocks([]);
     setShipmentDetails({

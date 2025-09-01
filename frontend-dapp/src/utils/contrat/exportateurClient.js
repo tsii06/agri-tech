@@ -1,8 +1,10 @@
 import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
+  getExportateurClientContract,
   getProducteurContract,
 } from "../contract";
+import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
 
 /**
  *
@@ -12,6 +14,29 @@ import {
  */
 export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   // CALCULER LE ROOT MERKLE A L'ARTICLE.
+  const allHash = await getAllHashMerkle(_idCommandeProduits);
+  const tree = createMerkleTree(allHash);
+  const merkleRoot = getMerkleRoot(tree);
+
+  const exportateurClient = await getExportateurClientContract();
+  try {
+    const res = await exportateurClient.ajoutArticle(
+      _idCommandeProduits,
+      _prix,
+      _cid,
+      merkleRoot
+    );
+    return res;
+  } catch (error) {
+    console.error("Creation d'une article : ", error);
+  }
+};
+
+/**
+ * Recupere tous les hashs feuilles d'une article
+ * @param {Array} _idCommandeProduits ids des commandes de lot produits
+ */
+export const getAllHashMerkle = async (_idCommandeProduits) => {
   const collecteurExportateur = await getCollecteurExportateurContract();
   const collecteurProducteur = await getCollecteurProducteurContract();
   const producteurContrat = await getProducteurContract();
@@ -90,10 +115,11 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
   hashRecoltes = [...new Set(hashRecoltes)];
   hashParcelles = [...new Set(hashParcelles)];
 
-
-  // console.log("hashTransportCE : ", hashTransportCE);
-  // console.log("hashLotProduit : ", hashLotProduits);
-  // console.log("hashTransportPC : ", hashTransportPC);
-  // console.log("hashRecoltes : ", hashRecoltes);
-  // console.log("hashParcelles : ", hashParcelles);
+  return [
+    ...hashTransportCE,
+    ...hashLotProduits,
+    ...hashTransportPC,
+    ...hashRecoltes,
+    ...hashParcelles,
+  ];
 };

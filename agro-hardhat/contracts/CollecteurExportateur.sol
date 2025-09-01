@@ -164,9 +164,9 @@ contract CollecteurExportateur {
         emit StatusCommandeMisAJour(_idCommande, _status);
     }
 
-    function enregistrerCommande(uint32 _idCommande, bool _enregistre) public seulementExportateur {
+    function enregistrerCommande(uint32 _idCommande, bool _enregistre, address _appelleur) public {
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
-        if (commandes[_idCommande].exportateur != msg.sender) revert();
+        if (commandes[_idCommande].exportateur != _appelleur) revert();
         commandes[_idCommande].enregistre = _enregistre;
     }
 

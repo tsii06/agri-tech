@@ -123,6 +123,7 @@ async function main() {
         "5544332211"
     );
     await gestionnaireActeursProxy.ajouterContratDelegue(exportateurAddress, await collecteurExportateurProxy.getAddress());
+    await gestionnaireActeursProxy.ajouterContratDelegue(exportateurAddress, await exportateurClientProxy.getAddress());
 
     // Enregistrer un certificateur de test
     const certificateurAddress = "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"; // Adresse de test
@@ -138,6 +139,7 @@ async function main() {
     );
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateurAddress, await collecteurProducteurProxy.getAddress());
     await gestionnaireActeursProxy.ajouterContratDelegue(certificateurAddress, await collecteurExportateurProxy.getAddress());
+    await gestionnaireActeursProxy.ajouterContratDelegue(certificateurAddress, await exportateurClientProxy.getAddress());
 
     // Enregistrer un fournisseur de test
     const fournisseurAddress = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"; // Adresse de test

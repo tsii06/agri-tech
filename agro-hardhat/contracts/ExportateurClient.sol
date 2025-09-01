@@ -118,7 +118,8 @@ contract ExportateurClient {
         for (uint32 i = 0; i < _idCommandeProduits.length; i++) {
             collecteurExportateur.enregistrerCommande(
                 _idCommandeProduits[i],
-                true
+                true,
+                msg.sender
             );
         }
 
