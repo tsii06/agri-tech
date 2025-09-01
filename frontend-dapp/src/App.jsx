@@ -42,6 +42,7 @@ import {
   Box
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
+import StockExportateur from "./pages/exportateur/Stock";
 
 function App() {
   const [state, setState] = useState({});
@@ -193,6 +194,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="parcelle/:id/faire-recolte" element={<FaireRecolte />} />
                 <Route path="producteur/:address/recoltes/acheter" element={<AcheterRecolte />} />
                 <Route path="retirer-contrat-delegue" element={<RetirerContratDelegue />} />
+                <Route path="stock-exportateur" element={<StockExportateur />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>
