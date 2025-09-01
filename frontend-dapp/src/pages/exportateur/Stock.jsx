@@ -131,36 +131,6 @@ function StockExportateur() {
     chargerCommandes();
   }, [account, userRole]);
 
-  const handlePayer = async (commandeId) => {
-    try {
-      const contract = await getCollecteurExportateurContract();
-      const commande = commandes.find((c) => c.id === commandeId);
-
-      // Effectuer le paiement
-      const tx = await contract.effectuerPaiement(
-        commandeId,
-        commande.prix,
-        modePaiement,
-        { value: commande.prix } // La valeur envoyée doit correspondre au prix
-      );
-      await tx.wait();
-
-      // Mettre à jour l'état local
-      const commandesTemp = [...commandes];
-      const index = commandesTemp.findIndex((c) => c.id === commandeId);
-      if (index !== -1) {
-        commandesTemp[index].payer = true;
-        setCommandes(commandesTemp);
-      }
-
-      // Fermer le modal
-      setShowModal(false);
-    } catch (error) {
-      console.error("Erreur lors du paiement:", error);
-      setError(error.message);
-    }
-  };
-
   const getStatutPaiement = (payer) => {
     return payer ? "Payé" : "Non payé";
   };
@@ -350,10 +320,6 @@ function StockExportateur() {
                     <p>
                       <Package2 size={16} className="me-2 text-success" />
                       <strong>Quantité:</strong> {commande.quantite} kg
-                    </p>
-                    <p>
-                      <BadgeEuro size={16} className="me-2 text-success" />
-                      <strong>Prix:</strong> {commande.prix} Ar
                     </p>
                     <p>
                       <User size={16} className="me-2 text-success" />

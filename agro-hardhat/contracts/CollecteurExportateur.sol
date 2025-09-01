@@ -158,6 +158,7 @@ contract CollecteurExportateur {
 
     function enregistrerCommande(uint32 _idCommande, bool _enregistre) public seulementExportateur {
         require(_idCommande <= compteurCommandes, "La commande n'existe pas.");
+        if (commandes[_idCommande].exportateur != msg.sender) revert();
         commandes[_idCommande].enregistre = _enregistre;
     }
 

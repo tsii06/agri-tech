@@ -146,12 +146,14 @@ library StructLib {
     struct Article {
         uint32 id;
         string ref;
-        uint32[] idLotProduit;
+        uint32[] idCommandeProduit;
         uint32 quantite;
         uint32 prix;
         address exportateur;
-        string cid;
-        string hashMerkle;
+        string cid; // nom produit, date d'expedition, lieu de depart, destination, type de transport
+        bytes32 rootMerkle;
+        bool certifier;
+        bytes32 cidCertificat;
     }
     
 }

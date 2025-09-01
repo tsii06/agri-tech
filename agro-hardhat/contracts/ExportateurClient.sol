@@ -51,11 +51,16 @@ contract ExportateurClient {
         );
         _;
     }
+    modifier seulementCertificateur() {
+        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Certificateur), "Non autorise: seulement Certificateur");
+        _;
+    }
 
     /**
     Les evenements
      */
     event AjoutArticle (address indexed exportateur, uint32 idArticle, uint32 quantite, uint32 prix);
+    event CertifierArticle (address indexed certificateur, uint32 idArticle, bytes32 cidCertificat);
 
     /* Fonction d'initialisation */
     function initialiser(
@@ -76,26 +81,24 @@ contract ExportateurClient {
         uint32[] memory _idCommandeProduits,
         uint32 _prix,
         string memory _cid,
-        string memory _hashMerkle
+        bytes32 _rootMerkle
     ) public seulementExportateur seulementActeurAutorise {
-        uint32[] memory _idLotProduits = new uint32[](
-            _idCommandeProduits.length
-        );
         uint32 _quantite = 0;
         for (uint i = 0; i < _idCommandeProduits.length; i++) {
             StructLib.CommandeProduit memory commande = collecteurExportateur
                 .getCommande(_idCommandeProduits[i]);
-            _idLotProduits[i] = commande.idLotProduit;
             _quantite += commande.quantite;
             require(commande.payer, "Commande non payer.");
             require(
                 commande.exportateur == msg.sender,
                 "Vous n'est pas proprietaire."
             );
+            require(!commande.enregistre, "commande deja enregistrer.");
         }
 
         compteurArticles++;
 
+        // Pour ne plus utiliser les commandes deja enregistrer
         for(uint32 i=0 ; i<_idCommandeProduits.length ; i++) {
             collecteurExportateur.enregistrerCommande(_idCommandeProduits[i], true);
         }
@@ -103,20 +106,30 @@ contract ExportateurClient {
         articles[compteurArticles] = StructLib.Article(
             compteurArticles,
             genererNumeroReference(),
-            _idLotProduits,
+            _idCommandeProduits,
             _quantite,
             _prix,
             msg.sender,
             _cid,
-            _hashMerkle
+            _rootMerkle,
+            false,
+            bytes32(0)
         );
 
         emit AjoutArticle(msg.sender, compteurArticles, _quantite, _prix);
     }
 
-    /**
-     * Met à jour le prix d'un article
-     */
+    function certifierArticle(uint32 _idArticle, bytes32 _cidCertificat) public seulementCertificateur {
+        if (_idArticle > compteurArticles) revert();
+        if (articles[_idArticle].certifier) revert();
+
+        articles[_idArticle].certifier = true;
+        articles[_idArticle].cidCertificat = _cidCertificat;
+
+        emit CertifierArticle(msg.sender, _idArticle, _cidCertificat);
+    }
+
+    // Met à jour le prix d'un article
     function setPriceArticle(uint32 _idArticle, uint32 _prix) public seulementExportateur seulementActeurAutorise {
         require(_idArticle <= compteurArticles, "Id incorrect");
         require(articles[_idArticle].exportateur == msg.sender, "Vous n'etes pas proprietaire de cette article");
