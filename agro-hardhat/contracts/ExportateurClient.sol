@@ -7,6 +7,7 @@ import "./CollecteurExportateur.sol";
 
 contract ExportateurClient {
     mapping(uint32 => StructLib.Article) public articles;
+    mapping(string => uint32) private referenceToIdArticle; // Ajout d'un mapping pour associer les références des articles à leurs identifiants
     uint32 public compteurArticles;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
@@ -52,15 +53,30 @@ contract ExportateurClient {
         _;
     }
     modifier seulementCertificateur() {
-        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Certificateur), "Non autorise: seulement Certificateur");
+        require(
+            gestionnaireActeurs.estActeurAvecRole(
+                msg.sender,
+                StructLib.Role.Certificateur
+            ),
+            "Non autorise: seulement Certificateur"
+        );
         _;
     }
 
     /**
     Les evenements
      */
-    event AjoutArticle (address indexed exportateur, uint32 idArticle, uint32 quantite, uint32 prix);
-    event CertifierArticle (address indexed certificateur, uint32 idArticle, bytes32 cidCertificat);
+    event AjoutArticle(
+        address indexed exportateur,
+        uint32 idArticle,
+        uint32 quantite,
+        uint32 prix
+    );
+    event CertifierArticle(
+        address indexed certificateur,
+        uint32 idArticle,
+        bytes32 cidCertificat
+    );
 
     /* Fonction d'initialisation */
     function initialiser(
@@ -99,13 +115,17 @@ contract ExportateurClient {
         compteurArticles++;
 
         // Pour ne plus utiliser les commandes deja enregistrer
-        for(uint32 i=0 ; i<_idCommandeProduits.length ; i++) {
-            collecteurExportateur.enregistrerCommande(_idCommandeProduits[i], true);
+        for (uint32 i = 0; i < _idCommandeProduits.length; i++) {
+            collecteurExportateur.enregistrerCommande(
+                _idCommandeProduits[i],
+                true
+            );
         }
-        
+
+        string memory ref = genererNumeroReference();
         articles[compteurArticles] = StructLib.Article(
             compteurArticles,
-            genererNumeroReference(),
+            ref,
             _idCommandeProduits,
             _quantite,
             _prix,
@@ -116,10 +136,16 @@ contract ExportateurClient {
             bytes32(0)
         );
 
+        // Mise à jour du mapping
+        referenceToIdArticle[ref] = compteurArticles;
+
         emit AjoutArticle(msg.sender, compteurArticles, _quantite, _prix);
     }
 
-    function certifierArticle(uint32 _idArticle, bytes32 _cidCertificat) public seulementCertificateur {
+    function certifierArticle(
+        uint32 _idArticle,
+        bytes32 _cidCertificat
+    ) public seulementCertificateur {
         if (_idArticle > compteurArticles) revert();
         if (articles[_idArticle].certifier) revert();
 
@@ -130,15 +156,20 @@ contract ExportateurClient {
     }
 
     // Met à jour le prix d'un article
-    function setPriceArticle(uint32 _idArticle, uint32 _prix) public seulementExportateur seulementActeurAutorise {
+    function setPriceArticle(
+        uint32 _idArticle,
+        uint32 _prix
+    ) public seulementExportateur seulementActeurAutorise {
         require(_idArticle <= compteurArticles, "Id incorrect");
-        require(articles[_idArticle].exportateur == msg.sender, "Vous n'etes pas proprietaire de cette article");
+        require(
+            articles[_idArticle].exportateur == msg.sender,
+            "Vous n'etes pas proprietaire de cette article"
+        );
         articles[_idArticle].prix = _prix;
     }
 
     // Fonction pour générer un numéro de référence alphanumérique unique pour les articles
-    function genererNumeroReference() internal returns (string memory) {
-        compteurArticles += 1;
+    function genererNumeroReference() internal view returns (string memory) {
         return
             string(
                 abi.encodePacked(
@@ -176,7 +207,6 @@ contract ExportateurClient {
     fallback() external payable {}
     receive() external payable {}
 
-
     // ------------------------------------- Setter ----------------------------------------------------
     function setGestionnaireActeurs(address _addr) public {
         gestionnaireActeurs = GestionnaireActeurs(_addr);
@@ -185,10 +215,19 @@ contract ExportateurClient {
         collecteurExportateur = CollecteurExportateur(_addr);
     }
     // -------------------------------------- Getter ----------------------------------------------------
-    function getArticle(uint32 id) public view returns(StructLib.Article memory) {
+    function getArticle(
+        uint32 id
+    ) public view returns (StructLib.Article memory) {
         return articles[id];
     }
-    function getCompteurArticles() public view returns(uint32) {
+    function getArticleByReference(
+        string memory _reference
+    ) public view returns (StructLib.Article memory) {
+        uint32 idArticle = referenceToIdArticle[_reference];
+        require(idArticle != 0, "Reference invalide ou article inexistant.");
+        return articles[idArticle];
+    }
+    function getCompteurArticles() public view returns (uint32) {
         return compteurArticles;
     }
 }
