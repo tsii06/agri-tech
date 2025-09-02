@@ -55,12 +55,12 @@ import {
   Box,
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
-import StockExportateur from "./pages/exportateur/Stock";
+import StockExportateur from "./pages/Exportateur/Stock";
 import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
 import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
 import ProduitDetails from "./pages/EspaceClient/ProduitDetails";
 import EspaceClient from "./pages/client/EspaceClient";
-import DetailsExpedition from "./pages/exportateur/DetailsExpedition";
+import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
 
 function App() {
   const [state, setState] = useState({});
