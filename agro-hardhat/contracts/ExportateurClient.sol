@@ -174,7 +174,7 @@ contract ExportateurClient {
         return
             string(
                 abi.encodePacked(
-                    "ART",
+                    "EXP-",
                     uint2str(block.timestamp),
                     uint2str(compteurExpeditions)
                 )

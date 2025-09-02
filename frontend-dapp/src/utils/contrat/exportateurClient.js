@@ -135,9 +135,14 @@ export const getDetailsExpeditionByRef = async (_ref) => {
   const contrat = await getExportateurClientContract();
   // recuperer info on-chain
   const expeditionOnChain = await contrat.getExpeditionByReference(_ref);
+
+  // convertir en array
+  const idCommandeProduit = Object.values(expeditionOnChain.idCommandeProduit);
+  
   let expeditionComplet = {
+    id: expeditionOnChain.id,
     ref: expeditionOnChain.ref,
-    idCommandeProduit: expeditionOnChain.idCommandeProduit.map(el => Number(el)),
+    idCommandeProduit: idCommandeProduit.map(el => Number(el)),
     quantite: Number(expeditionOnChain.quantite),
     prix: Number(expeditionOnChain.prix),
     exportateur: expeditionOnChain.exportateur,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getDetailsExpeditionByRef } from "../../utils/contrat/exportateurClient";
 import { Box, ChevronDown, ChevronUp } from "lucide-react";
+import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -107,12 +108,8 @@ const DetailsExpedition = ({}) => {
               )}
             </div>
             {showProcess && (
-              <div className="mt-2">
-                <h6 className="card-title">Visualisation des processus</h6>
-                <p className="card-text">
-                  Ce bloc contient des informations détaillées sur les processus liés à l'expédition.
-                </p>
-                {/* Ajoutez ici le contenu détaillé des processus */}
+              <div className="mt-4">
+                <ProcessusExpedition expedition={expedition} />
               </div>
             )}
           </div>

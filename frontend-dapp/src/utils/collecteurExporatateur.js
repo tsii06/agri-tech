@@ -1,5 +1,5 @@
 import { getCollecteurExportateurContract } from "./contract";
-import { getIPFSURL } from "./ipfsUtils";
+import { getFileFromPinata, getIPFSURL } from "./ipfsUtils";
 import { hasRole } from "./roles";
 
 /**
@@ -24,9 +24,14 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     return null;
   }
 
+  // convertir en array
+  const idCommandeRecoltes = Object.values(produitRaw.idCommandeRecoltes);
+  const idRecoltes = Object.values(produitRaw.idRecolte);
+
   let produitEnrichi = {
     id: _id,
-    idRecolte: [...new Set(produitRaw.idRecolte)], // supprime les doublants s'il existe
+    idRecolte: [...new Set(idRecoltes)], // supprime les doublants s'il existe
+    idCommandeRecoltes: idCommandeRecoltes.map(el => Number(el)),
     nom: "",
     quantite: Number(produitRaw.quantite ?? 0),
     prixUnit: produitRaw.prix ?? 0,
@@ -52,5 +57,62 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
   } catch (e) {
     console.error("Erreur lors de la recuperation d'infos sur  un lot de produit : ", e);
     return null;
+  }
+};
+
+/**
+ * 
+ * @param {number} _idCommande 
+ * @returns 
+ */
+export const getConditionTransportCE = async (_idCommande) => {
+  const contrat = await getCollecteurExportateurContract();
+  let conditionComplet = {};
+  // recuperer conditions transport on-chain
+  try {
+    const conditionOnChain = await contrat.getCondition(_idCommande);
+    conditionComplet = {
+      id: conditionOnChain.id,
+      cid: conditionOnChain.cid,
+      hashMerkle: conditionOnChain.hashMerkle,
+    };
+  } catch (error) {
+    console.error("Erreur recuperation condition transport CE : ", error);
+    return;
+  }
+  // recuperer conditions transport ipfs
+  const conditionIpfs = await getFileFromPinata(conditionComplet.cid);
+  conditionComplet = {
+    ...conditionComplet,
+    ...conditionIpfs.data.items
+  };
+  return conditionComplet;
+};
+
+/**
+ * 
+ * @param {number} _idCommande 
+ * @returns 
+ */
+export const getCommandeProduit = async (_idCommande) => {
+  const contrat = await getCollecteurExportateurContract();
+  try {
+    const res = await contrat.getCommande(_idCommande);
+    return {
+      id: Number(res.id),
+      idLotProduit: Number(res.idLotProduit),
+      quantite: Number(res.quantite),
+      prix: Number(res.prix),
+      statutTransport: Number(res.statutTransport),
+      statutProduit: Number(res.statutProduit),
+      payer: res.payer,
+      collecteur: res.collecteur.toString(),
+      exportateur: res.exportateur.toString(),
+      enregistre: res.enregistre,
+      enregistrerCondition: res.enregistrerCondition,
+      transporteur: res.transporteur.toString(),
+    };
+  } catch (error) {
+    console.log("Recuperation commande lot produit : ", error);
   }
 };
