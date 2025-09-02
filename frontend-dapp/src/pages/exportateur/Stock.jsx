@@ -20,8 +20,8 @@ import {
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 import { ethers } from "ethers";
-import { ajoutArticle } from "../../utils/contrat/exportateurClient";
-import { uploadArticle } from "../../utils/ifps/exportateurClient";
+import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
+import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -100,6 +100,7 @@ function StockExportateur() {
             exportateur: exportateurAddr,
             transporteur: commandeRaw.transporteur.toString(),
             nomProduit: produit?.nom || "",
+            enregistre: commandeRaw.enregistre,
             enregistrerCondition: commandeRaw.enregistrerCondition,
           };
 
@@ -252,10 +253,10 @@ function StockExportateur() {
     }
 
     // creer donnee article sur ipfs
-    const ipfsArticle = await uploadArticle(nomProduit, dateExpedition, lieuDepart, destination, typeTransport);
+    const ipfsArticle = await uploadExpedition(nomProduit, dateExpedition, lieuDepart, destination, typeTransport);
 
     // creer article on-chain
-    await ajoutArticle(selectedStocks, prixVente, ipfsArticle.cid);
+    await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
 
     await chargerCommandes();
     setShowShipmentModal(false);

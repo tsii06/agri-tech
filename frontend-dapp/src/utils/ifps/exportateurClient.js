@@ -8,7 +8,7 @@ import { uploadConsolidatedData } from "../ipfsUtils";
  * @param {string} _destination
  * @param {string} _typeTransport
  */
-export const uploadArticle = async (
+export const uploadExpedition = async (
   _nomProduit,
   _dateExpedition,
   _lieuDepart,
@@ -16,8 +16,8 @@ export const uploadArticle = async (
   _typeTransport
 ) => {
   try {
-    const articleConsolidee = {
-      type: "article",
+    const expeditionConsolidee = {
+      type: "expedition",
       nomProduit: _nomProduit,
       dateExpedition: _dateExpedition,
       lieuDepart: _lieuDepart,
@@ -27,12 +27,12 @@ export const uploadArticle = async (
       version: "1.0",
     };
     const articleUpload = await uploadConsolidatedData(
-      articleConsolidee,
-      "article"
+      expeditionConsolidee,
+      "expedition"
     );
     return articleUpload;
   } catch (error) {
-    console.error("Upload article : ", error);
+    console.error("Upload expedition : ", error);
     return;
   }
 };

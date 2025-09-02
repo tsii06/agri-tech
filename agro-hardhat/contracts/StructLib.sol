@@ -143,7 +143,7 @@ library StructLib {
         address transporteur;
     }
 
-    struct Article {
+    struct Expedition {
         uint32 id;
         string ref;
         uint32[] idCommandeProduit;

@@ -12,7 +12,7 @@ import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
  * @param {number} _prix
  * @param {string} _cid pour stocker les data sup de l'article
  */
-export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
+export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
   // CALCULER LE ROOT MERKLE A L'ARTICLE.
   const allHash = await getAllHashMerkle(_idCommandeProduits);
   const tree = createMerkleTree(allHash);
@@ -20,7 +20,7 @@ export const ajoutArticle = async (_idCommandeProduits, _prix, _cid) => {
 
   const exportateurClient = await getExportateurClientContract();
   try {
-    const res = await exportateurClient.ajoutArticle(
+    const res = await exportateurClient.ajouterExpedition(
       _idCommandeProduits,
       _prix,
       _cid,

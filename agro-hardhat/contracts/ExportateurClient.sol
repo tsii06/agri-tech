@@ -6,9 +6,9 @@ import "./gestionnaireActeurs.sol";
 import "./CollecteurExportateur.sol";
 
 contract ExportateurClient {
-    mapping(uint32 => StructLib.Article) public articles;
-    mapping(string => uint32) private referenceToIdArticle; // Ajout d'un mapping pour associer les références des articles à leurs identifiants
-    uint32 public compteurArticles;
+    mapping(uint32 => StructLib.Expedition) public expeditions;
+    mapping(string => uint32) private referenceToIdExpedition; // Ajout d'un mapping pour associer les références des expeditions à leurs identifiants
+    uint32 public compteurExpeditions;
     // limite le nombre d'appel a la fonction initialiser a 1
     bool private initialised;
     GestionnaireActeurs public gestionnaireActeurs;
@@ -66,13 +66,13 @@ contract ExportateurClient {
     /**
     Les evenements
      */
-    event AjoutArticle(
+    event AjouterExpedition(
         address indexed exportateur,
         uint32 idArticle,
         uint32 quantite,
         uint32 prix
     );
-    event CertifierArticle(
+    event CertifierExpedition(
         address indexed certificateur,
         uint32 idArticle,
         bytes32 cidCertificat
@@ -93,7 +93,7 @@ contract ExportateurClient {
     /**
      * Ajoute un article à la commande
      */
-    function ajoutArticle(
+    function ajouterExpedition(
         uint32[] memory _idCommandeProduits,
         uint32 _prix,
         string memory _cid,
@@ -112,7 +112,7 @@ contract ExportateurClient {
             require(!commande.enregistre, "commande deja enregistrer.");
         }
 
-        compteurArticles++;
+        compteurExpeditions++;
 
         // Pour ne plus utiliser les commandes deja enregistrer
         for (uint32 i = 0; i < _idCommandeProduits.length; i++) {
@@ -124,8 +124,8 @@ contract ExportateurClient {
         }
 
         string memory ref = genererNumeroReference();
-        articles[compteurArticles] = StructLib.Article(
-            compteurArticles,
+        expeditions[compteurExpeditions] = StructLib.Expedition(
+            compteurExpeditions,
             ref,
             _idCommandeProduits,
             _quantite,
@@ -138,35 +138,35 @@ contract ExportateurClient {
         );
 
         // Mise à jour du mapping
-        referenceToIdArticle[ref] = compteurArticles;
+        referenceToIdExpedition[ref] = compteurExpeditions;
 
-        emit AjoutArticle(msg.sender, compteurArticles, _quantite, _prix);
+        emit AjouterExpedition(msg.sender, compteurExpeditions, _quantite, _prix);
     }
 
-    function certifierArticle(
-        uint32 _idArticle,
+    function certifierExpedition(
+        uint32 _idExpedition,
         bytes32 _cidCertificat
     ) public seulementCertificateur {
-        if (_idArticle > compteurArticles) revert();
-        if (articles[_idArticle].certifier) revert();
+        if (_idExpedition > compteurExpeditions) revert();
+        if (expeditions[_idExpedition].certifier) revert();
 
-        articles[_idArticle].certifier = true;
-        articles[_idArticle].cidCertificat = _cidCertificat;
+        expeditions[_idExpedition].certifier = true;
+        expeditions[_idExpedition].cidCertificat = _cidCertificat;
 
-        emit CertifierArticle(msg.sender, _idArticle, _cidCertificat);
+        emit CertifierExpedition(msg.sender, _idExpedition, _cidCertificat);
     }
 
     // Met à jour le prix d'un article
     function setPriceArticle(
-        uint32 _idArticle,
+        uint32 _idExpedition,
         uint32 _prix
     ) public seulementExportateur seulementActeurAutorise {
-        require(_idArticle <= compteurArticles, "Id incorrect");
+        require(_idExpedition <= compteurExpeditions, "Id incorrect");
         require(
-            articles[_idArticle].exportateur == msg.sender,
+            expeditions[_idExpedition].exportateur == msg.sender,
             "Vous n'etes pas proprietaire de cette article"
         );
-        articles[_idArticle].prix = _prix;
+        expeditions[_idExpedition].prix = _prix;
     }
 
     // Fonction pour générer un numéro de référence alphanumérique unique pour les articles
@@ -176,7 +176,7 @@ contract ExportateurClient {
                 abi.encodePacked(
                     "ART",
                     uint2str(block.timestamp),
-                    uint2str(compteurArticles)
+                    uint2str(compteurExpeditions)
                 )
             );
     }
@@ -216,19 +216,19 @@ contract ExportateurClient {
         collecteurExportateur = CollecteurExportateur(_addr);
     }
     // -------------------------------------- Getter ----------------------------------------------------
-    function getArticle(
+    function getExpedition(
         uint32 id
-    ) public view returns (StructLib.Article memory) {
-        return articles[id];
+    ) public view returns (StructLib.Expedition memory) {
+        return expeditions[id];
     }
-    function getArticleByReference(
+    function getExpeditionByReference(
         string memory _reference
-    ) public view returns (StructLib.Article memory) {
-        uint32 idArticle = referenceToIdArticle[_reference];
-        require(idArticle != 0, "Reference invalide ou article inexistant.");
-        return articles[idArticle];
+    ) public view returns (StructLib.Expedition memory) {
+        uint32 idExpedition = referenceToIdExpedition[_reference];
+        require(idExpedition != 0, "Reference invalide ou article inexistant.");
+        return expeditions[idExpedition];
     }
     function getCompteurArticles() public view returns (uint32) {
-        return compteurArticles;
+        return compteurExpeditions;
     }
 }
