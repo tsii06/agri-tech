@@ -43,6 +43,7 @@ const ROLE_LINKS = {
     { to: "/liste-lot-produits", text: "Passer commande" },
     { to: "/mes-commandes-exportateur", text: "Mes commandes" },
     { to: "/stock-exportateur", text: "Stock" },
+    { to: "/expeditions", text: "Expéditions" },
     { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
   ]
 };
