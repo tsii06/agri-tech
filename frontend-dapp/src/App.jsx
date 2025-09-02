@@ -56,6 +56,9 @@ import {
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/exportateur/Stock";
+import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
+import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
+import ProduitDetails from "./pages/EspaceClient/ProduitDetails";
 import EspaceClient from "./pages/client/EspaceClient";
 import DetailsExpedition from "./pages/exportateur/DetailsExpedition";
 
@@ -308,6 +311,10 @@ function AppLayout({
                   path="stock-exportateur"
                   element={<StockExportateur />}
                 />
+                <Route path="expeditions" element={<ListeExpeditions />} />
+                {/* <Route path="expeditions/:id" element={<DetailsExpedition />} /> */}
+                <Route path="certificateur/expeditions" element={<CertifierExpeditions />} />
+                <Route path="espace-client/produit/:id" element={<ProduitDetails />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>

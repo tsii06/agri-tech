@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const ROLE_LABELS = {
   0: "Producteur",
@@ -23,7 +23,8 @@ const ROLE_LINKS = {
   ],
   2: [
     { to: "/mes-parcelles", text: "Validation des intrants" },
-    { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+    { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" },
+    { to: "/certificateur/expeditions", text: "Certifier expéditions" }
   ],
   3: [
     { to: "/liste-recolte", text: "Passer commande" },
@@ -43,6 +44,7 @@ const ROLE_LINKS = {
     { to: "/liste-lot-produits", text: "Passer commande" },
     { to: "/mes-commandes-exportateur", text: "Mes commandes" },
     { to: "/stock-exportateur", text: "Stock" },
+    { to: "/expeditions", text: "Expéditions" },
     { to: "/liste-acteurs-role", text: "Liste des Collecteurs" },
   ]
 };
@@ -51,8 +53,33 @@ const ROLE_LINKS = {
 function Sidebar({ account, roles, getLinkIcon }) {
   const [openGroups, setOpenGroups] = useState({});
   const navigator = useNavigate();
+  const location = useLocation();
 
-  if (!account || !roles || roles.length === 0) return null;
+  // Afficher un sidebar minimal pour les visiteurs de l'espace client
+  if ((!account || !roles || roles.length === 0) && location.pathname.startsWith('/espace-client')) {
+    return (
+      <div className="position-sticky">
+        <ul className="nav flex-column px-3">
+          <li className="nav-item mb-2">
+            <div
+              className="d-flex align-items-center justify-content-between"
+              style={{ cursor: "pointer", fontWeight: 600, color: "#4e944f" }}
+            >
+              <span>Client</span>
+            </div>
+            <ul className="list-unstyled ps-3" style={{ marginTop: 6, marginBottom: 0 }}>
+              <li>
+                <Link to="/espace-client" className="nav-link d-flex align-items-center gap-2 py-2 rounded" style={{ color: "#333" }}>
+                  {getLinkIcon && getLinkIcon('Accueil')}
+                  Accueil client
+                </Link>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    );
+  }
 
   const handleToggle = (role) => {
     setOpenGroups(prev => ({
