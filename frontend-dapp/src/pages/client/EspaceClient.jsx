@@ -1,27 +1,18 @@
 import { Sprout } from "lucide-react";
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const EspaceClient = () => {
   const [reference, setReference] = useState("");
   const [traceabilityData, setTraceabilityData] = useState(null);
+  const nav = useNavigate();
 
   const handleSearch = async () => {
     if (!reference) {
       alert("Veuillez entrer une référence produit.");
       return;
     }
-
-    try {
-      // Simuler une requête pour récupérer les données de traçabilité
-      const data = await fetch(`/api/traceability?reference=${reference}`);
-      if (!data.ok) {
-        throw new Error("Référence invalide ou données introuvables.");
-      }
-      const result = await data.json();
-      setTraceabilityData(result);
-    } catch (error) {
-      alert(error.message);
-    }
+    nav(`/client-detail-expedition/${reference}`);
   };
 
   return (
@@ -50,9 +41,6 @@ const EspaceClient = () => {
             Afficher traçabilité
           </button>
         </div>
-        <p className="text-center text-muted mt-3">
-          Références de test disponibles : REF-12345, REF-67890
-        </p>
       </div>
 
       {/* Ajout des trois cartes sous la barre de recherche */}

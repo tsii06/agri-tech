@@ -4,6 +4,7 @@ import {
   getExportateurClientContract,
   getProducteurContract,
 } from "../contract";
+import { getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
 
 /**
@@ -35,6 +36,7 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
 /**
  * Recupere tous les hashs feuilles d'une article
  * @param {Array} _idCommandeProduits ids des commandes de lot produits
+ * @returns {Array}
  */
 export const getAllHashMerkle = async (_idCommandeProduits) => {
   const collecteurExportateur = await getCollecteurExportateurContract();
@@ -122,4 +124,33 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
     ...hashRecoltes,
     ...hashParcelles,
   ];
+};
+
+/**
+ * 
+ * @param {string} _ref 
+ * @returns {object}
+ */
+export const getDetailsExpeditionByRef = async (_ref) => {
+  const contrat = await getExportateurClientContract();
+  // recuperer info on-chain
+  const expeditionOnChain = await contrat.getExpeditionByReference(_ref);
+  let expeditionComplet = {
+    ref: expeditionOnChain.ref,
+    idCommandeProduit: expeditionOnChain.idCommandeProduit.map(el => Number(el)),
+    quantite: Number(expeditionOnChain.quantite),
+    prix: Number(expeditionOnChain.prix),
+    exportateur: expeditionOnChain.exportateur,
+    cid: expeditionOnChain.cid,
+    rootMerkle: expeditionOnChain.rootMerkle,
+    certifier: expeditionOnChain.certifier,
+    cidCertificat: expeditionOnChain.cidCertificat,
+  };
+  // recuperer info off-chain
+  const expeditionIpfs = await getFileFromPinata(expeditionComplet.cid);
+  expeditionComplet = {
+    ...expeditionComplet,
+    ...expeditionIpfs.data.items
+  };
+  return expeditionComplet;
 };

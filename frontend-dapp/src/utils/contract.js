@@ -7,11 +7,14 @@ import ExportateurClient from "../abi/ExportateurClient.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";  // ProducteurProxy
-const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853";  // CollecteurProxy
-const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; 
+const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"; // ProducteurProxy
+const CollecteurExportateur_PROXY_ADDRESS =
+  "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"; // CollecteurProxy
+const CollecteurProducteur_PROXY_ADDRESS =
+  "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
 // Adresse du contrat GestionnaireActeurs déployé sur le réseau local
-const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
+const GESTIONNAIRE_ACTEURS_ADDRESS =
+  "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
 const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"; // À remplacer par la vraie adresse après déploiement
 
 export async function getProvider() {
@@ -35,7 +38,10 @@ export async function getProducteurContract() {
       signer
     );
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du contrat Producteur:", error);
+    console.error(
+      "Erreur lors de l'initialisation du contrat Producteur:",
+      error
+    );
     throw error;
   }
 }
@@ -50,7 +56,10 @@ export async function getCollecteurExportateurContract() {
       signer
     );
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du contrat Collecteur:", error);
+    console.error(
+      "Erreur lors de l'initialisation du contrat Collecteur:",
+      error
+    );
     throw error;
   }
 }
@@ -65,12 +74,15 @@ export async function getCollecteurProducteurContract() {
       signer
     );
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du contrat Collecteur:", error);
+    console.error(
+      "Erreur lors de l'initialisation du contrat Collecteur:",
+      error
+    );
     throw error;
   }
 }
 
-// ExportateurClient 
+// ExportateurClient
 export async function getExportateurClientContract() {
   try {
     const provider = await getProvider();
@@ -81,7 +93,10 @@ export async function getExportateurClientContract() {
       signer
     );
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du contrat ExportateurClient:", error);
+    console.error(
+      "Erreur lors de l'initialisation du contrat ExportateurClient:",
+      error
+    );
     throw error;
   }
 }
@@ -99,7 +114,10 @@ export async function getGestionnaireActeursContract() {
       signer
     );
   } catch (error) {
-    console.error("Erreur lors de l'initialisation du contrat GestionnaireActeurs:", error);
+    console.error(
+      "Erreur lors de l'initialisation du contrat GestionnaireActeurs:",
+      error
+    );
     throw error;
   }
 }

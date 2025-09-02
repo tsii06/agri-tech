@@ -57,6 +57,7 @@ import {
 import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/exportateur/Stock";
 import EspaceClient from "./pages/client/EspaceClient";
+import DetailsExpedition from "./pages/exportateur/DetailsExpedition";
 
 function App() {
   const [state, setState] = useState({});
@@ -180,7 +181,7 @@ function AppLayout({
       />
 
       <div className="flex-grow-1">
-        {location.pathname === "/"||"/espace-client" ? (
+        {location.pathname === "/" || location.pathname.includes("client") ? (
           <Routes>
             <Route
               path="/"
@@ -189,6 +190,7 @@ function AppLayout({
               }
             />
             <Route path="/espace-client" element={<EspaceClient />} />
+            <Route path="/client-detail-expedition/:reference" element={<DetailsExpedition />} />
           </Routes>
         ) : (
           <div className="row">
