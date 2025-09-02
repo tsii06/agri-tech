@@ -46,6 +46,7 @@ import StockExportateur from "./pages/exportateur/Stock";
 import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
 import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
 import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
+import ProduitDetails from "./pages/EspaceClient/ProduitDetails";
 
 function App() {
   const [state, setState] = useState({});
@@ -201,6 +202,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="expeditions" element={<ListeExpeditions />} />
                 <Route path="expeditions/:id" element={<DetailsExpedition />} />
                 <Route path="certificateur/expeditions" element={<CertifierExpeditions />} />
+                <Route path="espace-client/produit/:id" element={<ProduitDetails />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>
