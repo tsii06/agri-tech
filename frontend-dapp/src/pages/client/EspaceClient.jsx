@@ -1,7 +1,7 @@
 import { Sprout } from "lucide-react";
 import React, { useState } from "react";
 
-const VoirDetailsExpedition = () => {
+const EspaceClient = () => {
   const [reference, setReference] = useState("");
   const [traceabilityData, setTraceabilityData] = useState(null);
 
@@ -104,4 +104,4 @@ const VoirDetailsExpedition = () => {
   );
 };
 
-export default VoirDetailsExpedition;
+export default EspaceClient;

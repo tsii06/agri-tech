@@ -56,7 +56,7 @@ import {
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/exportateur/Stock";
-import VoirDetailsExpedition from "./pages/client/VoirDetailsExpedition";
+import EspaceClient from "./pages/client/EspaceClient";
 
 function App() {
   const [state, setState] = useState({});
@@ -188,7 +188,7 @@ function AppLayout({
                 <HomePage account={account} onConnectWallet={connectWallet} />
               }
             />
-            <Route path="/espace-client" element={<VoirDetailsExpedition />} />
+            <Route path="/espace-client" element={<EspaceClient />} />
           </Routes>
         ) : (
           <div className="row">
@@ -228,10 +228,6 @@ function AppLayout({
                   element={<AjouterRoleActeur />}
                 />
                 <Route path="creer-parcelle" element={<CreerParcelle />} />
-                <Route
-                  path="detail-expedition"
-                  element={<VoirDetailsExpedition />}
-                />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route
                   path="effectuer-paiement/:id"
