@@ -23,7 +23,8 @@ const ROLE_LINKS = {
   ],
   2: [
     { to: "/mes-parcelles", text: "Validation des intrants" },
-    { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" }
+    { to: "/liste-recolte", text: "Contrôle Phytosanitaire Recolte" },
+    { to: "/certificateur/expeditions", text: "Certifier expéditions" }
   ],
   3: [
     { to: "/liste-recolte", text: "Passer commande" },

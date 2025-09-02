@@ -45,6 +45,7 @@ import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/exportateur/Stock";
 import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
 import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
+import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
 
 function App() {
   const [state, setState] = useState({});
@@ -199,6 +200,7 @@ function AppLayout({ state, setState, account, setAccount, setRole, sidebarOpen,
                 <Route path="stock-exportateur" element={<StockExportateur />} />
                 <Route path="expeditions" element={<ListeExpeditions />} />
                 <Route path="expeditions/:id" element={<DetailsExpedition />} />
+                <Route path="certificateur/expeditions" element={<CertifierExpeditions />} />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>
