@@ -1,5 +1,5 @@
 import { Handle, Position } from "reactflow";
-import { Globe, Truck } from "lucide-react";
+import { Globe, Group, Truck } from "lucide-react";
 
 function CustomNode({ data }) {
   return (
@@ -76,6 +76,44 @@ export const ConditionNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Humidite: {data.humidite || "Non certifier"} %
+      </p>
+      {/* Point de sortie (droite) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ background: "var(--madtx-green)" }}
+      />
+      {/* Point d’entrée (gauche) */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: "var(--madtx-green)" }}
+      />
+    </div>
+  );
+};
+
+export const LotProduitNode = ({ data }) => {
+  return (
+    <div
+      style={{
+        padding: 15,
+        border: "2px solid var(--madtx-green)",
+        borderRadius: 10,
+        backgroundColor: "#E8F5E9",
+        textAlign: "center",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+      }}
+    >
+      <Group size={32} color="var(--madtx-green)" style={{ marginBottom: 10 }} />
+      <h3 style={{ margin: "5px 0", color: "var(--madtx-green)" }}>
+        {data.nom}&nbsp;#{data.id}
+      </h3>
+      <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
+        Collecteur: {data.collecteur.slice(0, 6)}...
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        Quantité: {data.quantite || "Non spécifiée"} kg
       </p>
       {/* Point de sortie (droite) */}
       <Handle

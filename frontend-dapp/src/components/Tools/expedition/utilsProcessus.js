@@ -10,7 +10,7 @@ import {
 } from "../../../utils/contrat/collecteurProducteur";
 import { getParcelle } from "../../../utils/contrat/producteur";
 
-const INTERVAL_HORIZONTAL = 400;
+const INTERVAL_HORIZONTAL = 600;
 const INTERVAL_VERTICAL = 400;
 
 /**
@@ -69,7 +69,7 @@ const creerNodesProcessus = async (_expedition) => {
     const lotProduit = await getLotProduitEnrichi(idLotProduit);
     const nodeLotProduit = {
       id: `lotProduit-${lotProduit.id}`,
-      type: "custom",
+      type: "lotProduitNode",
       position: { ...positionInitial },
       data: { ...lotProduit, label: lotProduit.hashMerkle.slice(0, 6) },
     };
