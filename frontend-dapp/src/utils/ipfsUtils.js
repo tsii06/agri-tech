@@ -32,18 +32,18 @@ export const uploadToIPFS = async (file, metadata = {}) => {
 
 /**
  * Uploader un objet js dans ipfs sous forme de json
- * @param {object} data 
+ * @param {object} data
  * @param {string} type
  * @param {object} metadata
- * @returns 
+ * @returns
  */
-export const uploadJsonToIpfs = async (data, type, metadata={}) => {
+export const uploadJsonToIpfs = async (data, type, metadata = {}) => {
   try {
     const res = await myPinataSDK.upload.public
       .json(data)
       .name(`${type}-${Date.now()}.json`)
       .keyvalues(metadata);
-    return {...res, success:true};
+    return { ...res, success: true };
   } catch (error) {
     console.error("Erreur upload json : ", error);
   }
@@ -93,10 +93,8 @@ export const uploadInspection = async (file, inspectionData) => {
     rapport: inspectionData.rapport,
     timestamp: Date.now().toString(),
   };
-  if (file !== null)
-    return await uploadToIPFS(file, metadata);
-  else
-    return await uploadJsonToIpfs(inspectionData, "inspection", metadata);
+  if (file !== null) return await uploadToIPFS(file, metadata);
+  else return await uploadJsonToIpfs(inspectionData, "inspection", metadata);
 };
 
 /**
@@ -354,4 +352,18 @@ export const getMetadataFromPinata = async (_cid) => {
     );
     return;
   }
+};
+
+/**
+ * url pour pouvoir telecharger le fichier depuis pinata
+ * @param {string} _cid 
+ * @returns {string}
+ */
+export const getUrlDownloadFilePinata = async (_cid) => {
+  const res = await myPinataSDK.gateways.public.get(_cid);
+  if (res.data instanceof Blob) {
+    const blob = new Blob([res.data]);
+    return URL.createObjectURL(blob);
+  }
+  return "";
 };

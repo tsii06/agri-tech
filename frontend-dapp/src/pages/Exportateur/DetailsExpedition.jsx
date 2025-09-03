@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getDetailsExpeditionByRef, getParcellesExpedition } from "../../utils/contrat/exportateurClient";
+import {
+  getDetailsExpeditionByRef,
+  getParcellesExpedition,
+  getRecoltesExpedition,
+} from "../../utils/contrat/exportateurClient";
 import { Box, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
+import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
   const [expedition, setExpedition] = useState({});
   const [parcelles, setParcelles] = useState([]);
+  const [recoltes, setRecoltes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
+  const [showRecoltes, setShowRecoltes] = useState(false);
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
@@ -22,8 +29,13 @@ const DetailsExpedition = ({}) => {
   };
 
   const chargerParcelles = async () => {
-    const parcellesExp = await getParcellesExpedition(expedition.idCommandeProduit);
+    const parcellesExp = await getParcellesExpedition(expedition);
     setParcelles(parcellesExp);
+  };
+
+  const chargerRecoltes = async () => {
+    const recoltesExp = await getRecoltesExpedition(expedition);
+    setRecoltes(recoltesExp);
   };
 
   useEffect(() => {
@@ -71,7 +83,9 @@ const DetailsExpedition = ({}) => {
                 </div>
                 <div className="col-md-6 mb-3 text-end">
                   <label className="text-muted">Prix</label>
-                  <p className="card-text fw-bold">{expedition.prix || "N/A"} €</p>
+                  <p className="card-text fw-bold">
+                    {expedition.prix || "N/A"} €
+                  </p>
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="text-muted">Exportateur</label>
@@ -116,17 +130,20 @@ const DetailsExpedition = ({}) => {
             >
               <div
                 className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{ cursor: "pointer", transition: "background-color 0.3s ease" }}
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
                 onClick={() => setShowProcess(!showProcess)}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
               >
                 <h6 className="mb-0 fw-bold">Visualisation des processus</h6>
-                {showProcess ? (
-                  <ChevronUp />
-                ) : (
-                  <ChevronDown />
-                )}
+                {showProcess ? <ChevronUp /> : <ChevronDown />}
               </div>
               <div
                 className={`bg-light overflow-hidden`}
@@ -139,6 +156,45 @@ const DetailsExpedition = ({}) => {
               </div>
             </div>
 
+            {/* Bloc iformation de recolte */}
+            <div
+              className="card shadow-sm"
+              style={{ width: "100%", margin: "0 auto" }}
+            >
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom p-4"
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
+                onClick={() => {
+                  if (!showRecoltes) chargerRecoltes();
+                  setShowRecoltes(!showRecoltes);
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
+              >
+                <h6 className="mb-0 fw-bold">Informations de recolte</h6>
+                {showRecoltes ? <ChevronUp /> : <ChevronDown />}
+              </div>
+              <div
+                className={`bg-light overflow-hidden`}
+                style={{
+                  maxHeight: showRecoltes ? "1000px" : "0",
+                  transition: "max-height 0.5s ease-in-out",
+                }}
+              >
+                {recoltes.length > 0 &&
+                  recoltes.map((recolte) => (
+                    <RecolteDetails recolte={recolte} key={recolte.id} />
+                  ))}
+              </div>
+            </div>
+
             {/* Bloc Parcelle de production */}
             <div
               className="card shadow-sm"
@@ -146,20 +202,23 @@ const DetailsExpedition = ({}) => {
             >
               <div
                 className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{ cursor: "pointer", transition: "background-color 0.3s ease" }}
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
                 onClick={() => {
                   if (!showParcelleProduction) chargerParcelles();
                   setShowParcelleProduction(!showParcelleProduction);
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
               >
                 <h6 className="mb-0 fw-bold">Parcelles de production</h6>
-                {showParcelleProduction ? (
-                  <ChevronUp />
-                ) : (
-                  <ChevronDown />
-                )}
+                {showParcelleProduction ? <ChevronUp /> : <ChevronDown />}
               </div>
               <div
                 className={`bg-light overflow-hidden`}
@@ -168,9 +227,10 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                {parcelles.length > 0 && parcelles.map((parcelle) => (
-                  <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
-                ))}
+                {parcelles.length > 0 &&
+                  parcelles.map((parcelle) => (
+                    <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
+                  ))}
               </div>
             </div>
           </div>

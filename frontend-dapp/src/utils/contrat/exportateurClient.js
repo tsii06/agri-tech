@@ -163,10 +163,15 @@ export const getDetailsExpeditionByRef = async (_ref) => {
   return expeditionComplet;
 };
 
-export const getParcellesExpedition = async (_idCommandeProduits) => {
+/**
+ * 
+ * @param {object} _expedition 
+ * @returns {object}
+ */
+export const getParcellesExpedition = async (_expedition) => {
   // recuperer les ids recolte
   let idRecoltes = [];
-  for (let id of _idCommandeProduits) {
+  for (let id of _expedition.idCommandeProduit) {
     try {
       const commande = await getCommandeProduit(id);
       const lotProduit = await getLotProduitEnrichi(
@@ -201,4 +206,38 @@ export const getParcellesExpedition = async (_idCommandeProduits) => {
   }
 
   return parcelles;
+};
+
+/**
+ * 
+ * @param {object} _expedition 
+ * @returns {object}
+ */
+export const getRecoltesExpedition = async (_expedition) => {
+  // recuperer les ids recolte
+  let idRecoltes = [];
+  for (let id of _expedition.idCommandeProduit) {
+    try {
+      const commande = await getCommandeProduit(id);
+      const lotProduit = await getLotProduitEnrichi(
+        commande.idLotProduit
+      );
+      idRecoltes.push(...lotProduit.idRecolte);
+    } catch (error) {
+      console.error("Recuperation des ids des lot produits : ", error);
+      return;
+    }
+  }
+
+  // SUPPRIMER LES DOUBLANTS
+  idRecoltes = [...new Set(idRecoltes)];
+
+  // recuperer les parcelles
+  let recoltes = [];
+  for (let id of idRecoltes) {
+    const recolte = await getRecolte(id);
+    recoltes.push(recolte);
+  }
+
+  return recoltes;
 };
