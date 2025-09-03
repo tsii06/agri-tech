@@ -9,7 +9,7 @@ const DetailsExpedition = ({}) => {
   const { reference } = useParams();
   const [expedition, setExpedition] = useState({});
   const [parcelles, setParcelles] = useState([]);
-  
+
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
 
@@ -106,8 +106,10 @@ const DetailsExpedition = ({}) => {
           >
             <div
               className="d-flex align-items-center justify-content-between border-bottom p-4"
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", transition: "background-color 0.3s ease" }}
               onClick={() => setShowProcess(!showProcess)}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
             >
               <h6 className="mb-0 fw-bold">Visualisation des processus</h6>
               {showProcess ? (
@@ -116,11 +118,15 @@ const DetailsExpedition = ({}) => {
                 <ChevronDown />
               )}
             </div>
-            {showProcess && (
-              <div className="bg-light">
-                <ProcessusExpedition expedition={expedition} />
-              </div>
-            )}
+            <div
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showProcess ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
+            >
+              <ProcessusExpedition expedition={expedition} />
+            </div>
           </div>
 
           {/* Bloc Parcelle de production */}
@@ -130,12 +136,13 @@ const DetailsExpedition = ({}) => {
           >
             <div
               className="d-flex align-items-center justify-content-between border-bottom p-4"
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", transition: "background-color 0.3s ease" }}
               onClick={() => {
-                if (!showParcelleProduction)
-                  chargerParcelles();
+                if (!showParcelleProduction) chargerParcelles();
                 setShowParcelleProduction(!showParcelleProduction);
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
             >
               <h6 className="mb-0 fw-bold">Parcelles de production</h6>
               {showParcelleProduction ? (
@@ -144,13 +151,17 @@ const DetailsExpedition = ({}) => {
                 <ChevronDown />
               )}
             </div>
-            {showParcelleProduction && (
-              <div className="bg-light">
-                {parcelles.map((parcelle) => (
-                  <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
-                ))}
-              </div>
-            )}
+            <div
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showParcelleProduction ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
+            >
+              {parcelles.map((parcelle) => (
+                <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
