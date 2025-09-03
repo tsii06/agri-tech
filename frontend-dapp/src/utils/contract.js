@@ -17,15 +17,24 @@ const GESTIONNAIRE_ACTEURS_ADDRESS =
   "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
 const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"; // À remplacer par la vraie adresse après déploiement
 
+const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
+
 export async function getProvider() {
   if (!window.ethereum) {
     throw new Error("MetaMask n'est pas installé");
   }
 
-  const provider = new ethers.BrowserProvider(window.ethereum, "any");
-  await provider.ready;
-  await provider.getBlockNumber();
-  return provider;
+  const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
+  const providerClient = new ethers.JsonRpcProvider(RPC_PROVIDER_CLIENT);
+
+  const accounts = await providerActeur.listAccounts();
+  if (accounts && accounts.length > 0) {
+    await providerActeur.ready();
+    await providerActeur.getBlockNumber();
+    return providerActeur;
+  } else {
+    return providerClient;
+  }
 }
 
 export async function getProducteurContract() {
