@@ -24,7 +24,7 @@ const ParcelleDetails = ({ parcelle }) => {
           {parcelle.id || "n/a"}
         </h6>
         <p>
-          <p className="text-muted small">Géolocalisation:</p>
+          <span className="text-muted small">Géolocalisation:</span> <br />
           {parcelle.location && parcelle.location.lat && parcelle.location.lng ? (
             <button
               className="btn btn-link p-0 ms-2"

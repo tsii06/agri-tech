@@ -168,7 +168,7 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                {parcelles.map((parcelle) => (
+                {parcelles.length > 0 && parcelles.map((parcelle) => (
                   <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
                 ))}
               </div>
