@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import ReactFlow, { MiniMap, Controls, Handle, Position } from "reactflow";
 import "reactflow/dist/style.css";
 import creerNodesProcessus from "./utilsProcessus";
-import CustomNode, { ConditionNode, ExpeditionNode, LotProduitNode } from "./CustomNode";
+import CustomNode, { ConditionNode, ExpeditionNode, LotProduitNode, RecolteNode } from "./CustomNode";
 
 const nodeTypes = {
   custom: CustomNode,
   expeditionNode: ExpeditionNode,
   conditionNode: ConditionNode,
   lotProduitNode: LotProduitNode,
+  recolteNode: RecolteNode
 };
 
 const ProcessusExpedition = ({ expedition }) => {

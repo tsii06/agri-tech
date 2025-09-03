@@ -75,7 +75,7 @@ export const getRecolte = async (_idRecolte) => {
       quantite: Number(recolteOnChain.quantite),
       prixUnit: Number(recolteOnChain.prixUnit),
       idParcelle: idParcelles.map(id => Number(id)),
-      certifie: recolteOnChain.ceritifie,
+      certifie: recolteOnChain.certifie,
       certificatPhytosanitaire: recolteOnChain.certificatPhytosanitaire.toString(),
       producteur: recolteOnChain.producteur.toString(),
       hashMerkle: recolteOnChain.hashMerkle.toString(),

@@ -123,7 +123,7 @@ const creerNodesProcessus = async (_expedition) => {
     const recolte = await getRecolte(idRecolte);
     const nodeRecolte = {
       id: `recolte-${recolte.id}`,
-      type: "custom",
+      type: "recolteNode",
       position: { ...positionInitial },
       data: { ...recolte, label: recolte.hashMerkle.slice(0, 6) },
     };
