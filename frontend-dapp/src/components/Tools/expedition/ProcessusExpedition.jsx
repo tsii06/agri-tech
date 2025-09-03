@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import ReactFlow, { MiniMap, Controls, Handle, Position } from "reactflow";
 import "reactflow/dist/style.css";
 import creerNodesProcessus from "./utilsProcessus";
-import CustomNode, { ExpeditionNode } from "./CustomNode";
+import CustomNode, { ConditionNode, ExpeditionNode } from "./CustomNode";
 
 const nodeTypes = {
   custom: CustomNode,
-  expeditionNode: ExpeditionNode
+  expeditionNode: ExpeditionNode,
+  conditionNode: ConditionNode
 };
 
 const ProcessusExpedition = ({ expedition }) => {
@@ -25,7 +26,7 @@ const ProcessusExpedition = ({ expedition }) => {
 
   return (
     <div className="bg-light" style={{ height: "400px" }}>
-      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
+      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.2}>
         <MiniMap />
         <Controls />
       </ReactFlow>

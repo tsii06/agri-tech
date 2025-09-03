@@ -10,8 +10,8 @@ import {
 } from "../../../utils/contrat/collecteurProducteur";
 import { getParcelle } from "../../../utils/contrat/producteur";
 
-const INTERVAL_HORIZONTAL = 200;
-const INTERVAL_VERTICAL = 200;
+const INTERVAL_HORIZONTAL = 400;
+const INTERVAL_VERTICAL = 400;
 
 /**
  *
@@ -43,7 +43,7 @@ const creerNodesProcessus = async (_expedition) => {
     const condition = await getConditionTransportCE(id);
     const nodeCondition = {
       id: `conditionCE-${condition.id}`,
-      type: "custom",
+      type: "conditionNode",
       position: { ...positionInitial },
       data: { ...condition, label: condition.hashMerkle.slice(0, 6) },
     };
@@ -96,7 +96,7 @@ const creerNodesProcessus = async (_expedition) => {
       _idCommandesRecoltes.push(idC);
       const nodeCondition = {
         id: `conditionPC-${condition.id}`,
-        type: "custom",
+        type: "conditionNode",
         position: { ...positionInitial },
         data: { ...condition, label: condition.hashMerkle.slice(0, 6) },
       };
