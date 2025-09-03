@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
   getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
-import { Box, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+import { Box, ChevronDown, ChevronUp, MapPin, Truck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
 import LotProduitDetails from "../../components/Tools/expedition/LotProduitDetails";
+import LogistiqueDetails from "../../components/Tools/expedition/LogistiqueDetails";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -18,12 +20,14 @@ const DetailsExpedition = ({}) => {
   const [parcelles, setParcelles] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
+  const [conditionsTransport, setConditionsTransport] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
   const [showRecoltes, setShowRecoltes] = useState(false);
   const [showProduits, setShowProduits] = useState(false);
+  const [showLogistique, setShowLogistique] = useState(false);
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
@@ -45,6 +49,11 @@ const DetailsExpedition = ({}) => {
   const chargerLotProduits = async () => {
     const lotProduitsExp = await getLotProduisExpedition(expedition);
     setLotProduits(lotProduitsExp);
+  };
+
+  const chargerConditionsTransport = async () => {
+    const conditionsExp = await getConditionsTransportExpedition(expedition);
+    setConditionsTransport(conditionsExp);
   };
 
   useEffect(() => {
@@ -165,6 +174,50 @@ const DetailsExpedition = ({}) => {
               </div>
             </div>
 
+            {/* Bloc Logistique */}
+            <div
+              className="card shadow-sm"
+              style={{ width: "100%", margin: "0 auto" }}
+            >
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom p-4"
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
+                onClick={() => {
+                  if (!showLogistique) chargerConditionsTransport();
+                  setShowLogistique(!showLogistique);
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
+              >
+                <h6 className="mb-0 fw-bold">Logistique</h6>
+                {showLogistique ? <ChevronUp /> : <ChevronDown />}
+              </div>
+              <div
+                className={`bg-light overflow-hidden px-4`}
+                style={{
+                  maxHeight: showLogistique ? "1000px" : "0",
+                  transition: "max-height 0.5s ease-in-out",
+                }}
+              >
+                <h6 className="card-title text-start my-4">
+                  <span>
+                    <Truck size={18} className="text-primary" /> Logistique
+                  </span>
+                </h6>
+                {conditionsTransport.length > 0 &&
+                  conditionsTransport.map((condition, index) => (
+                    <LogistiqueDetails condition={condition} key={index} />
+                  ))}
+              </div>
+            </div>
+
             {/* Bloc produits collecter */}
             <div
               className="card shadow-sm"
@@ -199,7 +252,10 @@ const DetailsExpedition = ({}) => {
               >
                 {lotProduits.length > 0 &&
                   lotProduits.map((lotProduit) => (
-                    <LotProduitDetails lotProduit={lotProduit} key={lotProduit.id} />
+                    <LotProduitDetails
+                      lotProduit={lotProduit}
+                      key={lotProduit.id}
+                    />
                   ))}
               </div>
             </div>

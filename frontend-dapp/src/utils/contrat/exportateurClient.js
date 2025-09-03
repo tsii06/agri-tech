@@ -1,5 +1,6 @@
 import {
   getCommandeProduit,
+  getConditionTransportCE,
   getLotProduitEnrichi,
 } from "../collecteurExporatateur";
 import {
@@ -10,7 +11,7 @@ import {
 } from "../contract";
 import { getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
-import { getRecolte } from "./collecteurProducteur";
+import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getParcelle } from "./producteur";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
@@ -271,4 +272,41 @@ export const getLotProduisExpedition = async (_expedition) => {
   }
 
   return lotProduits;
+};
+
+/**
+ *
+ * @param {object} _expedition
+ * @returns {object}
+ */
+export const getConditionsTransportExpedition = async (_expedition) => {
+  let conditions = [];
+  let idCommandeRecoltes = [];
+  // recuperer les conditions transport CE
+  for (let id of _expedition.idCommandeProduit) {
+    const condition = await getConditionTransportCE(id);
+    conditions.push(condition);
+    // recuperer les ids des commandes recoltes
+    try {
+      const commande = await collecteurExportateur.getCommande(id);
+      const lotProduit = await collecteurExportateur.getLotProduit(
+        commande.idLotProduit
+      );
+      idCommandeRecoltes.push(...lotProduit.idCommandeRecoltes);
+    } catch (error) {
+      console.error("Recuperation des ids des commandes recoltes : ", error);
+      return;
+    }
+  }
+
+  // suprimmer les doublants
+  idCommandeRecoltes = [...new Set(idCommandeRecoltes)];
+  
+  // recuperer les conditions transport PC
+  for (let id of idCommandeRecoltes) {
+    const condition = await getConditionTransportPC(id);
+    conditions.push(condition);
+  }
+
+  return conditions;
 };
