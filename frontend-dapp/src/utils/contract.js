@@ -23,16 +23,17 @@ export async function getProvider() {
   if (!window.ethereum) {
     throw new Error("MetaMask n'est pas installé");
   }
-
-  const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
-  const providerClient = new ethers.JsonRpcProvider(RPC_PROVIDER_CLIENT);
-
-  const accounts = await providerActeur.listAccounts();
+  
+  // const accounts = await providerActeur.listAccounts();
+  const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+  
   if (accounts && accounts.length > 0) {
+    const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
     await providerActeur.ready;
     await providerActeur.getBlockNumber();
     return providerActeur;
   } else {
+    const providerClient = new ethers.JsonRpcProvider(RPC_PROVIDER_CLIENT);
     return providerClient;
   }
 }
