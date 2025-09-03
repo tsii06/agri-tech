@@ -12,6 +12,7 @@ import {
 import { getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
+import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
@@ -153,7 +154,7 @@ export const getDetailsExpeditionByRef = async (_ref) => {
     idCommandeProduit: idCommandeProduit.map((el) => Number(el)),
     quantite: Number(expeditionOnChain.quantite),
     prix: Number(expeditionOnChain.prix),
-    exportateur: expeditionOnChain.exportateur,
+    exportateur: await getActeur(expeditionOnChain.exportateur),
     cid: expeditionOnChain.cid,
     rootMerkle: expeditionOnChain.rootMerkle,
     certifier: expeditionOnChain.certifier,

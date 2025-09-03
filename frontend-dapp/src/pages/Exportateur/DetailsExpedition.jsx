@@ -109,9 +109,7 @@ const DetailsExpedition = ({}) => {
                   <label className="text-muted">Exportateur</label>
                   <p className="card-text fw-bold">
                     {expedition.exportateur
-                      ? expedition.exportateur.slice(0, 6) +
-                        "..." +
-                        expedition.exportateur.slice(-4)
+                      ? expedition.exportateur.nom
                       : "N/A"}
                   </p>
                 </div>
