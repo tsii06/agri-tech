@@ -147,7 +147,7 @@ const creerNodesProcessus = async (_expedition) => {
       const parcelle = await getParcelle(idP);
       const nodeParcelle = {
         id: `parcelle-${parcelle.id}`,
-        type: "custom",
+        type: "parcelleNode",
         position: { ...positionInitial },
         data: { ...parcelle, label: parcelle.hashMerkle.slice(0, 6) },
       };
