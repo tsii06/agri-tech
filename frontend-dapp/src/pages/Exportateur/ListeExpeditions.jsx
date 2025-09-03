@@ -91,7 +91,7 @@ export default function ListeExpeditions() {
                   <td>{e.prix}</td>
                   <td>{e.certifier ? "Oui" : "Non"}</td>
                   <td>
-                    <Link className="btn btn-sm btn-outline-primary" to={`/expeditions/${e.id}`}>
+                    <Link className="btn btn-sm btn-outline-primary" to={`/exportateur-details-expedition/${e.ref}`}>
                       Détails
                     </Link>
                   </td>

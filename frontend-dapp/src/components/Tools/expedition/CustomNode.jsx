@@ -61,6 +61,7 @@ export const ExpeditionNode = ({ data }) => {
 export const ConditionNode = ({ data }) => {
   return (
     <div
+      className="border border-primary bg-opacity-25"
       style={{
         padding: 15,
         border: "2px solid var(--madtx-green)",
@@ -70,12 +71,8 @@ export const ConditionNode = ({ data }) => {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <Truck
-        size={32}
-        color="var(--madtx-green)"
-        style={{ marginBottom: 10 }}
-      />
-      <h3 style={{ margin: "5px 0", color: "var(--madtx-green)" }}>
+      <Truck className="text-primary" size={32} style={{ marginBottom: 10 }} />
+      <h3 className="text-primary" style={{ margin: "5px 0" }}>
         {data.lieuDepart} - {data.destination}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
@@ -163,7 +160,11 @@ export const RecolteNode = ({ data }) => {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <Sprout size={32} color="var(--madtx-green)" style={{ marginBottom: 10 }} />
+      <Sprout
+        size={32}
+        color="var(--madtx-green)"
+        style={{ marginBottom: 10 }}
+      />
       <h3 style={{ margin: "5px 0", color: "var(--madtx-green)" }}>
         Recolte&nbsp;#{data.id}
       </h3>

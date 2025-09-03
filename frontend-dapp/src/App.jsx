@@ -238,6 +238,10 @@ function AppLayout({
                   path="effectuer-paiement/:id"
                   element={<EffectuerPaiement />}
                 />
+                <Route
+                  path="exportateur-details-expedition/:reference"
+                  element={<DetailsExpedition />}
+                />
                 <Route path="liste-produits" element={<ListeProduits />} />
                 <Route
                   path="liste-lot-produits"
