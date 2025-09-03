@@ -6,7 +6,8 @@ const UserContext = createContext();
 export const UserProvider = ({ children, state }) => {
     const [roles, setRoles] = useState([]);
     const [isActeur, setIsActeur] = useState(false);
-    const [account, setAccount] = useState("");
+    const [account, setAccount] = useState(() => localStorage.getItem("madtx_user_address") || "");
+    const [loadingUserAddr, setLoadingUserAddr] = useState(true);
 
     const verifeActeur = async (userAddress) => {
         try {
@@ -33,19 +34,23 @@ export const UserProvider = ({ children, state }) => {
                 if (window.ethereum) {
                     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
                     if (accounts.length > 0) {
+                        // sauvegarder dans le storage
+                        localStorage.setItem("madtx_user_address", accounts[0]);
                         setAccount(accounts[0]);
                         await verifeActeur(accounts[0]);
                     }
                 }
             } catch(err) {
                 console.error("Erreur lors de l'initialisation dans UserProvider : ", err);
+            } finally {
+                setLoadingUserAddr(false);
             }
         };
 
         checkAccount();
     }, [state]);
 
-    if(isActeur && roles.length <= 0)
+    if(isActeur && roles.length <= 0 || loadingUserAddr)
         return <div className='container-fluid d-flex justify-content-center pt-5'><div className="spinner-border"></div> &nbsp; Chargement...</div>
 
     return (
