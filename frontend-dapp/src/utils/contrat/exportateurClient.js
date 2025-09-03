@@ -1,3 +1,4 @@
+import { getCommandeProduit, getLotProduitEnrichi } from "../collecteurExporatateur";
 import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
@@ -6,6 +7,8 @@ import {
 } from "../contract";
 import { getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
+import { getRecolte } from "./collecteurProducteur";
+import { getParcelle } from "./producteur";
 
 /**
  *
@@ -127,8 +130,8 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
 };
 
 /**
- * 
- * @param {string} _ref 
+ *
+ * @param {string} _ref
  * @returns {object}
  */
 export const getDetailsExpeditionByRef = async (_ref) => {
@@ -138,11 +141,11 @@ export const getDetailsExpeditionByRef = async (_ref) => {
 
   // convertir en array
   const idCommandeProduit = Object.values(expeditionOnChain.idCommandeProduit);
-  
+
   let expeditionComplet = {
     id: expeditionOnChain.id,
     ref: expeditionOnChain.ref,
-    idCommandeProduit: idCommandeProduit.map(el => Number(el)),
+    idCommandeProduit: idCommandeProduit.map((el) => Number(el)),
     quantite: Number(expeditionOnChain.quantite),
     prix: Number(expeditionOnChain.prix),
     exportateur: expeditionOnChain.exportateur,
@@ -155,7 +158,47 @@ export const getDetailsExpeditionByRef = async (_ref) => {
   const expeditionIpfs = await getFileFromPinata(expeditionComplet.cid);
   expeditionComplet = {
     ...expeditionComplet,
-    ...expeditionIpfs.data.items
+    ...expeditionIpfs.data.items,
   };
   return expeditionComplet;
+};
+
+export const getParcellesExpedition = async (_idCommandeProduits) => {
+  // recuperer les ids recolte
+  let idRecoltes = [];
+  for (let id of _idCommandeProduits) {
+    try {
+      const commande = await getCommandeProduit(id);
+      const lotProduit = await getLotProduitEnrichi(
+        commande.idLotProduit
+      );
+      idRecoltes.push(...lotProduit.idRecolte);
+    } catch (error) {
+      console.error("Recuperation des ids des lot produits : ", error);
+      return;
+    }
+  }
+  // recuperer les ids parcelles
+  let idParcelles = [];
+  for (let id of idRecoltes) {
+    try {
+      const recolte = await getRecolte(id);
+      idParcelles.push(...recolte.idParcelle);
+    } catch (error) {
+      console.error("Recuperation ids recoltes : ", error);
+      return;
+    }
+  }
+
+  // SUPPRIMER LES DOUBLANTS
+  idParcelles = [...new Set(idParcelles)];
+
+  // recuperer les parcelles
+  let parcelles = [];
+  for (let id of idParcelles) {
+    const parcelle = await getParcelle(id);
+    parcelles.push(parcelle);
+  }
+
+  return parcelles;
 };

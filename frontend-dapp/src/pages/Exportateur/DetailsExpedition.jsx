@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getDetailsExpeditionByRef } from "../../utils/contrat/exportateurClient";
-import { Box, ChevronDown, ChevronUp } from "lucide-react";
+import { getDetailsExpeditionByRef, getParcellesExpedition } from "../../utils/contrat/exportateurClient";
+import { Box, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
+import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
   const [expedition, setExpedition] = useState({});
+  const [parcelles, setParcelles] = useState([]);
+  
   const [showProcess, setShowProcess] = useState(false);
+  const [showParcelleProduction, setShowParcelleProduction] = useState(false);
 
   const chargerDetailsExpedition = async () => {
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
     setExpedition(detailsExpedition);
+  };
+
+  const chargerParcelles = async () => {
+    const parcellesExp = await getParcellesExpedition(expedition.idCommandeProduit);
+    setParcelles(parcellesExp);
   };
 
   useEffect(() => {
@@ -24,7 +33,7 @@ const DetailsExpedition = ({}) => {
         <div className="col-12">
           {/* Details expedition */}
           <div
-            className="card shadow-sm p-4 mb-4"
+            className="card shadow-sm p-4 mb-4 bg-light"
             style={{ width: "100%", margin: "0 auto" }}
           >
             <h6 className="card-title text-start mb-2">
@@ -92,15 +101,15 @@ const DetailsExpedition = ({}) => {
 
           {/* Bloc Visualisation des processus */}
           <div
-            className="card shadow-sm p-4"
+            className="card shadow-sm"
             style={{ width: "100%", margin: "0 auto" }}
           >
             <div
-              className="d-flex align-items-center justify-content-between"
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
               style={{ cursor: "pointer" }}
               onClick={() => setShowProcess(!showProcess)}
             >
-              <h6 className="mb-0">Visualisation des processus</h6>
+              <h6 className="mb-0 fw-bold">Visualisation des processus</h6>
               {showProcess ? (
                 <ChevronUp />
               ) : (
@@ -108,8 +117,38 @@ const DetailsExpedition = ({}) => {
               )}
             </div>
             {showProcess && (
-              <div className="mt-4">
+              <div className="bg-light">
                 <ProcessusExpedition expedition={expedition} />
+              </div>
+            )}
+          </div>
+
+          {/* Bloc Parcelle de production */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
+            <div
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                if (!showParcelleProduction)
+                  chargerParcelles();
+                setShowParcelleProduction(!showParcelleProduction);
+              }}
+            >
+              <h6 className="mb-0 fw-bold">Parcelles de production</h6>
+              {showParcelleProduction ? (
+                <ChevronUp />
+              ) : (
+                <ChevronDown />
+              )}
+            </div>
+            {showParcelleProduction && (
+              <div className="bg-light">
+                {parcelles.map((parcelle) => (
+                  <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
+                ))}
               </div>
             )}
           </div>
