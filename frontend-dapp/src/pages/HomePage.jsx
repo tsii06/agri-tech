@@ -9,15 +9,6 @@ function HomePage({ account, onConnectWallet }) {
 
   return (
     <div className="d-flex flex-column">
-      {/* Top quick access bar */}
-      <div className="w-100 py-2 border-bottom bg-white">
-        <div className="container d-flex justify-content-end">
-          <Link to="/espace-client" className="btn btn-outline-success btn-sm fw-semibold">
-            Espace Client
-          </Link>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8 bg-white shadow-md rounded-lg mt-5 mb-5 p-5">
         <h1 className="text-3xl font-bold mb-6 text-center text-green-700">Bienvenue sur MadTX !</h1>
 

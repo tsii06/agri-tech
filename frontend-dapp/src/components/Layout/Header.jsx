@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getGestionnaireActeursContract } from "../../utils/contract";
-import {
-  User,
-  LogOut,
-  Wallet,
-  RefreshCw,
-} from "lucide-react";
+import { User, LogOut, Wallet, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const getRoleName = (roleNumber) => {
@@ -18,7 +13,7 @@ export const getRoleName = (roleNumber) => {
     4: "AUDITEUR",
     5: "TRANSPORTEUR",
     6: "EXPORTATEUR",
-    7: "ADMINISTRATEUR"
+    7: "ADMINISTRATEUR",
   };
   return roles[roleNumber] || "INCONNU";
 };
@@ -32,7 +27,7 @@ function Header({ state, setAccount, setRole, setState }) {
     if (window.ethereum) {
       try {
         const accounts = await window.ethereum.request({
-          method: 'eth_accounts'
+          method: "eth_accounts",
         });
         if (accounts.length > 0) {
           setAccountLocal(accounts[0]);
@@ -40,18 +35,21 @@ function Header({ state, setAccount, setRole, setState }) {
           await verifierActeur(accounts[0]);
         }
       } catch (error) {
-        console.error("Erreur lors de la vérification de la connexion initiale:", error);
+        console.error(
+          "Erreur lors de la vérification de la connexion initiale:",
+          error
+        );
       }
     }
   };
 
   const connectWallet = async () => {
-    sessionStorage.removeItem('madtx-logout');
+    sessionStorage.removeItem("madtx-logout");
     if (window.ethereum) {
       try {
         await window.ethereum.request({
-          method: 'wallet_requestPermissions',
-          params: [{ eth_accounts: {} }]
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }],
         });
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -73,11 +71,11 @@ function Header({ state, setAccount, setRole, setState }) {
     if (window.ethereum) {
       try {
         await window.ethereum.request({
-          method: 'wallet_requestPermissions',
-          params: [{ eth_accounts: {} }]
+          method: "wallet_requestPermissions",
+          params: [{ eth_accounts: {} }],
         });
         const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts'
+          method: "eth_requestAccounts",
         });
         if (accounts[0]) {
           setAccountLocal(accounts[0]);
@@ -97,8 +95,8 @@ function Header({ state, setAccount, setRole, setState }) {
     setRoleLocal(null);
     setAccount && setAccount(null);
     setRole && setRole(null);
-    sessionStorage.setItem('madtx-logout', '1');
-    window.location.href = '/';
+    sessionStorage.setItem("madtx-logout", "1");
+    window.location.href = "/";
   };
 
   const verifierActeur = async (userAddress) => {
@@ -119,7 +117,7 @@ function Header({ state, setAccount, setRole, setState }) {
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('madtx-logout') === '1') return;
+    if (sessionStorage.getItem("madtx-logout") === "1") return;
     verifierConnexionInitiale();
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -151,7 +149,11 @@ function Header({ state, setAccount, setRole, setState }) {
       <nav className="navbar navbar-expand-md navbar-light bg-white">
         <div className="container">
           {/* Titre cliquable */}
-          <Link to="/" className="navbar-brand project-title fw-bold" style={{ color: "#2c6a2e" }}>
+          <Link
+            to="/"
+            className="navbar-brand project-title fw-bold"
+            style={{ color: "#2c6a2e" }}
+          >
             MadTX
           </Link>
           {/* Bouton hamburger */}
@@ -165,37 +167,82 @@ function Header({ state, setAccount, setRole, setState }) {
             <span className="navbar-toggler-icon"></span>
           </button>
           {/* Menu responsive */}
-          <div className={`collapse navbar-collapse${menuOpen ? " show" : ""}`} id="mainNavbar">
+          <div
+            className={`collapse navbar-collapse${menuOpen ? " show" : ""}`}
+            id="mainNavbar"
+          >
             <ul className="navbar-nav me-auto mb-2 mb-md-0">
               <li className="nav-item">
-                <Link to="/dashboard" className="nav-link fw-semibold" style={{ color: "#4e944f" }}>
+                <Link
+                  to="/dashboard"
+                  className="nav-link fw-semibold"
+                  style={{ color: "#4e944f" }}
+                >
                   Dashboard
                 </Link>
               </li>
-
             </ul>
-            <div className="d-flex flex-wrap gap-2 justify-content-end align-items-center" style={{ minWidth: 0 }}>
+            <div
+              className="d-flex flex-wrap gap-2 justify-content-end align-items-center"
+              style={{ minWidth: 0 }}
+            >
               {account ? (
                 <>
-                  <span className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1 text-truncate" style={{maxWidth: 120}}>
+                  <span
+                    className="badge madtx-badge px-3 py-1 d-flex align-items-center gap-1 text-truncate"
+                    style={{ maxWidth: 120 }}
+                  >
                     <User size={16} /> {getRoleName(role)}
                   </span>
-                  <span className="fw-medium text-muted d-flex align-items-center gap-1 text-truncate" style={{maxWidth: 120}}>
-                    <User size={16} /> {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
+                  <span
+                    className="fw-medium text-muted d-flex align-items-center gap-1 text-truncate"
+                    style={{ maxWidth: 120 }}
+                  >
+                    <User size={16} />{" "}
+                    {`${account.substring(0, 6)}...${account.substring(
+                      account.length - 4
+                    )}`}
                   </span>
-                  <div className="status-indicator" style={{ width: 12, height: 12, borderRadius: '50%', background: role !== null ? 'var(--madtx-green)' : 'var(--madtx-brown)', marginLeft: 8 }}></div>
-                  <button onClick={async () => await changerCompte()} className="btn btn-success btn-sm d-flex align-items-center gap-1 flex-shrink-0">
+                  <div
+                    className="status-indicator"
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      background:
+                        role !== null
+                          ? "var(--madtx-green)"
+                          : "var(--madtx-brown)",
+                      marginLeft: 8,
+                    }}
+                  ></div>
+                  <button
+                    onClick={async () => await changerCompte()}
+                    className="btn btn-success btn-sm d-flex align-items-center gap-1 flex-shrink-0"
+                  >
                     <RefreshCw size={16} /> Changer
                   </button>
-                  <button onClick={deconnecterWallet} className="btn btn-warning btn-sm d-flex align-items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={deconnecterWallet}
+                    className="btn btn-warning btn-sm d-flex align-items-center gap-1 flex-shrink-0"
+                  >
                     <LogOut size={16} /> Déconnecter
                   </button>
                 </>
               ) : (
-                <button onClick={connectWallet} className="btn btn-primary d-flex align-items-center gap-2">
+                <button
+                  onClick={connectWallet}
+                  className="btn btn-primary d-flex align-items-center gap-2 btn-sm"
+                >
                   <Wallet size={18} /> Connecter Wallet
                 </button>
               )}
+              <Link
+                to="/espace-client"
+                className="btn btn-outline-success btn-sm fw-semibold"
+              >
+                Espace Client
+              </Link>
             </div>
           </div>
         </div>
@@ -205,4 +252,3 @@ function Header({ state, setAccount, setRole, setState }) {
 }
 
 export default Header;
-
