@@ -1,5 +1,6 @@
 import { getCollecteurProducteurContract } from "../contract";
 import { getFileFromPinata } from "../ipfsUtils";
+import { getActeur } from "./gestionnaireActeurs";
 
 const contrat = await getCollecteurProducteurContract();
 
@@ -68,8 +69,12 @@ export const getRecolte = async (_idRecolte) => {
   // recuperer info on-chain
   try {
     const recolteOnChain = await contrat.getRecolte(_idRecolte);
+
     // convertir array
     const idParcelles = Object.values(recolteOnChain.idParcelle);
+    // recuperer details acteur
+    const producteurDetails = await getActeur(recolteOnChain.producteur.toString());  
+
     recolteComplet = {
       id: Number(recolteOnChain.id),
       quantite: Number(recolteOnChain.quantite),
@@ -77,7 +82,7 @@ export const getRecolte = async (_idRecolte) => {
       idParcelle: idParcelles.map(id => Number(id)),
       certifie: recolteOnChain.certifie,
       certificatPhytosanitaire: recolteOnChain.certificatPhytosanitaire.toString(),
-      producteur: recolteOnChain.producteur.toString(),
+      producteur: {...producteurDetails},
       hashMerkle: recolteOnChain.hashMerkle.toString(),
       cid: recolteOnChain.cid.toString(),
     }
@@ -88,7 +93,7 @@ export const getRecolte = async (_idRecolte) => {
   // recuperation info off-chain
   const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
   return {
+    ...recolteIpfs.data.items,
     ...recolteComplet,
-    ...recolteIpfs.data.items
   };
 };

@@ -174,7 +174,7 @@ export const RecolteNode = ({ data }) => {
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Producteur:{" "}
         {data.producteur
-          ? data.producteur.slice(0, 6) + "..."
+          ? data.producteur.nom
           : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>

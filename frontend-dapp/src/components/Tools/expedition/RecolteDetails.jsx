@@ -1,6 +1,6 @@
 import { Sprout, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { getIPFSURL, getUrlDownloadFilePinata } from "../../../utils/ipfsUtils";
+import { useEffect, useState } from "react";
+import { getUrlDownloadFilePinata } from "../../../utils/ipfsUtils";
 
 const RecolteDetails = ({ recolte }) => {
   const [pdfDownload, setPdfDownload] = useState("");
@@ -39,7 +39,7 @@ const RecolteDetails = ({ recolte }) => {
           <p className="card-text fw-bold">
             {recolte.producteur.nom || "N/A"} <br />
             <span className="text-muted small">
-              {recolte.producteur.localisation || "N/A"}
+              {recolte.producteur.adresseOfficielle || "N/A"}
             </span>
           </p>
         </div>
