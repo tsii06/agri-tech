@@ -29,7 +29,7 @@ export async function getProvider() {
 
   const accounts = await providerActeur.listAccounts();
   if (accounts && accounts.length > 0) {
-    await providerActeur.ready();
+    await providerActeur.ready;
     await providerActeur.getBlockNumber();
     return providerActeur;
   } else {
