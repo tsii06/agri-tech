@@ -1,21 +1,13 @@
 import { useEffect, useState } from "react";
 import ReactFlow, { MiniMap, Controls, Handle, Position } from "reactflow";
 import "reactflow/dist/style.css";
-import creerNodesProcessus from "./utils";
+import creerNodesProcessus from "./utilsProcessus";
+import CustomNode, { ExpeditionNode } from "./CustomNode";
 
-function CustomNode({ data }) {
-  return (
-    <div style={{ padding: 10, border: "2px solid #333", borderRadius: 8 }}>
-      <h4>{data.label}</h4>
-      {/* Point de sortie (droite) */}
-      <Handle type="source" position={Position.Right} />
-      {/* Point d’entrée (gauche) */}
-      <Handle type="target" position={Position.Left} />
-    </div>
-  );
-}
-
-const nodeTypes = { custom: CustomNode };
+const nodeTypes = {
+  custom: CustomNode,
+  expeditionNode: ExpeditionNode
+};
 
 const ProcessusExpedition = ({ expedition }) => {
   const [nodes, setNodes] = useState([]);

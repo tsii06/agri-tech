@@ -31,7 +31,7 @@ const creerNodesProcessus = async (_expedition) => {
   // Creer node pour l'expedition.
   const nodeExpedition = {
     id: `expedition-${_expedition.id}`,
-    type: "custom",
+    type: "expeditionNode",
     position: { ...positionInitial },
     data: { ..._expedition, label: _expedition.ref },
   };
