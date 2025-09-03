@@ -399,8 +399,7 @@ function ListeLotProduits() {
                     <p>
                       <User size={16} className="me-2 text-success" />
                       <strong>Collecteur:</strong>&nbsp;
-                      {produit.collecteur.slice(0, 6)}...
-                      {produit.collecteur.slice(-4)}
+                      {produit.collecteur.nom}
                     </p>
 
                     {/* Informations IPFS et Merkle */}

@@ -1,4 +1,7 @@
-import { getCommandeProduit, getLotProduitEnrichi } from "../collecteurExporatateur";
+import {
+  getCommandeProduit,
+  getLotProduitEnrichi,
+} from "../collecteurExporatateur";
 import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
@@ -9,6 +12,10 @@ import { getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
 import { getRecolte } from "./collecteurProducteur";
 import { getParcelle } from "./producteur";
+
+const collecteurExportateur = await getCollecteurExportateurContract();
+const collecteurProducteur = await getCollecteurProducteurContract();
+const producteurContrat = await getProducteurContract();
 
 /**
  *
@@ -42,9 +49,6 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
  * @returns {Array}
  */
 export const getAllHashMerkle = async (_idCommandeProduits) => {
-  const collecteurExportateur = await getCollecteurExportateurContract();
-  const collecteurProducteur = await getCollecteurProducteurContract();
-  const producteurContrat = await getProducteurContract();
   // recuper le hashMerkle des du condition de transport : collecteur -> exportateur
   let hashTransportCE = [];
   for (let id of _idCommandeProduits) {
@@ -164,8 +168,8 @@ export const getDetailsExpeditionByRef = async (_ref) => {
 };
 
 /**
- * 
- * @param {object} _expedition 
+ *
+ * @param {object} _expedition
  * @returns {object}
  */
 export const getParcellesExpedition = async (_expedition) => {
@@ -174,9 +178,7 @@ export const getParcellesExpedition = async (_expedition) => {
   for (let id of _expedition.idCommandeProduit) {
     try {
       const commande = await getCommandeProduit(id);
-      const lotProduit = await getLotProduitEnrichi(
-        commande.idLotProduit
-      );
+      const lotProduit = await getLotProduitEnrichi(commande.idLotProduit);
       idRecoltes.push(...lotProduit.idRecolte);
     } catch (error) {
       console.error("Recuperation des ids des lot produits : ", error);
@@ -209,8 +211,8 @@ export const getParcellesExpedition = async (_expedition) => {
 };
 
 /**
- * 
- * @param {object} _expedition 
+ *
+ * @param {object} _expedition
  * @returns {object}
  */
 export const getRecoltesExpedition = async (_expedition) => {
@@ -219,9 +221,7 @@ export const getRecoltesExpedition = async (_expedition) => {
   for (let id of _expedition.idCommandeProduit) {
     try {
       const commande = await getCommandeProduit(id);
-      const lotProduit = await getLotProduitEnrichi(
-        commande.idLotProduit
-      );
+      const lotProduit = await getLotProduitEnrichi(commande.idLotProduit);
       idRecoltes.push(...lotProduit.idRecolte);
     } catch (error) {
       console.error("Recuperation des ids des lot produits : ", error);
@@ -232,7 +232,7 @@ export const getRecoltesExpedition = async (_expedition) => {
   // SUPPRIMER LES DOUBLANTS
   idRecoltes = [...new Set(idRecoltes)];
 
-  // recuperer les parcelles
+  // recuperer les recoltes
   let recoltes = [];
   for (let id of idRecoltes) {
     const recolte = await getRecolte(id);
@@ -240,4 +240,35 @@ export const getRecoltesExpedition = async (_expedition) => {
   }
 
   return recoltes;
+};
+
+/**
+ *
+ * @param {object} _expedition
+ * @returns {object}
+ */
+export const getLotProduisExpedition = async (_expedition) => {
+  // recuperer les ids des lot de produits (collecteur)
+  let idLotProduits = [];
+  for (let id of _expedition.idCommandeProduit) {
+    try {
+      const commande = await collecteurExportateur.getCommande(id);
+      idLotProduits.push(commande.idLotProduit);
+    } catch (error) {
+      console.error("Recuperation des ids des lot produits : ", error);
+      return;
+    }
+  }
+
+  // suprimmer les doublants
+  idLotProduits = [...new Set(idLotProduits)];
+
+  // recuperer les lot produits
+  let lotProduits = [];
+  for (let id of idLotProduits) {
+    const lotProduit = await getLotProduitEnrichi(id);
+    lotProduits.push(lotProduit);
+  }
+
+  return lotProduits;
 };

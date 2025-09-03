@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   getDetailsExpeditionByRef,
+  getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
@@ -9,17 +10,20 @@ import { Box, ChevronDown, ChevronUp, MapPin } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
+import LotProduitDetails from "../../components/Tools/expedition/LotProduitDetails";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
   const [expedition, setExpedition] = useState({});
   const [parcelles, setParcelles] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
+  const [lotProduits, setLotProduits] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
   const [showRecoltes, setShowRecoltes] = useState(false);
+  const [showProduits, setShowProduits] = useState(false);
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
@@ -36,6 +40,11 @@ const DetailsExpedition = ({}) => {
   const chargerRecoltes = async () => {
     const recoltesExp = await getRecoltesExpedition(expedition);
     setRecoltes(recoltesExp);
+  };
+
+  const chargerLotProduits = async () => {
+    const lotProduitsExp = await getLotProduisExpedition(expedition);
+    setLotProduits(lotProduitsExp);
   };
 
   useEffect(() => {
@@ -153,6 +162,45 @@ const DetailsExpedition = ({}) => {
                 }}
               >
                 <ProcessusExpedition expedition={expedition} />
+              </div>
+            </div>
+
+            {/* Bloc produits collecter */}
+            <div
+              className="card shadow-sm"
+              style={{ width: "100%", margin: "0 auto" }}
+            >
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom p-4"
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
+                onClick={() => {
+                  if (!showProduits) chargerLotProduits();
+                  setShowProduits(!showProduits);
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
+              >
+                <h6 className="mb-0 fw-bold">Produits collecter</h6>
+                {showProduits ? <ChevronUp /> : <ChevronDown />}
+              </div>
+              <div
+                className={`bg-light overflow-hidden`}
+                style={{
+                  maxHeight: showProduits ? "1000px" : "0",
+                  transition: "max-height 0.5s ease-in-out",
+                }}
+              >
+                {lotProduits.length > 0 &&
+                  lotProduits.map((lotProduit) => (
+                    <LotProduitDetails lotProduit={lotProduit} key={lotProduit.id} />
+                  ))}
               </div>
             </div>
 

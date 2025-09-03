@@ -126,7 +126,7 @@ export const LotProduitNode = ({ data }) => {
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Collecteur:{" "}
         {data.collecteur
-          ? data.collecteur.slice(0, 6) + "..."
+          ? data.collecteur.nom
           : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
