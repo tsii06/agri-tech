@@ -23,6 +23,7 @@ import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
 import LotProduitDetails from "../../components/Tools/expedition/LotProduitDetails";
 import LogistiqueDetails from "../../components/Tools/expedition/LogistiqueDetails";
 import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkleTree";
+import { getIPFSURL } from "../../utils/ipfsUtils";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -45,7 +46,9 @@ const DetailsExpedition = ({}) => {
   const chargerDetailsExpedition = async () => {
     setLoading(true);
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
-    const hashesMerkle = await getAllHashMerkle(detailsExpedition.idCommandeProduit);
+    const hashesMerkle = await getAllHashMerkle(
+      detailsExpedition.idCommandeProduit
+    );
     setExpedition(detailsExpedition);
     setAllHashesMerkle(hashesMerkle);
     setLoading(false);
@@ -99,12 +102,17 @@ const DetailsExpedition = ({}) => {
             >
               <h6 className="card-title text-start mb-2">
                 <Box className="text-success" size={18} />
-                &nbsp;Lot d'exportation
+                &nbsp;Lot d'exportation &nbsp;
+                {expedition.certifier ? (
+                  <span className="badge bg-success">Certifiée</span>
+                ) : (
+                  <span className="badge bg-warning">Pas encore certifiée</span>
+                )}
               </h6>
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="text-muted">Référence</label> <br />
-                  <p className="card-text fw-bold badge bg-dark">
+                  <p className="card-text fw-bold badge bg-success">
                     {expedition.ref || "N/A"}
                   </p>
                 </div>
@@ -167,6 +175,29 @@ const DetailsExpedition = ({}) => {
                   <label className="text-muted">Destination</label>
                   <p className="card-text fw-bold">
                     {expedition.destination || "N/A"}
+                  </p>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="text-muted">Type de transport</label>
+                  <p className="card-text fw-bold">
+                    {expedition.typeTransport || "N/A"}
+                  </p>
+                </div>
+                <div className="col-md-6 mb-3 text-end">
+                  <label className="text-muted">Certificat Phytosanitaire</label>
+                  <p className="card-text fw-bold">
+                    {expedition.cidCertificat ? (
+                      <a
+                        href={getIPFSURL(expedition.cidCertificat)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-success btn-sm"
+                      >
+                        Voir le certificat
+                      </a>
+                    ) : (
+                      "Non disponible"
+                    )}
                   </p>
                 </div>
               </div>

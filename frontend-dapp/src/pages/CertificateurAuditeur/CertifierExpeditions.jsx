@@ -75,10 +75,8 @@ export default function CertifierExpeditions() {
       if (!upload?.success || !upload?.cid) {
         throw new Error(upload?.error || "Echec d'upload IPFS");
       }
-      const cid = upload.cid;
-      const cidBytes32 = ethers.keccak256(ethers.toUtf8Bytes(cid));
       const contract = await getExportateurClientContract();
-      const tx = await contract.certifierExpedition(id, cidBytes32);
+      const tx = await contract.certifierExpedition(id, upload.cid);
       await tx.wait();
       setMessage(`Expédition #${id} certifiée avec succès`);
       await loadExpeditions();

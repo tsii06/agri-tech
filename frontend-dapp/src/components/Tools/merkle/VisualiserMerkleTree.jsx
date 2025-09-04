@@ -8,7 +8,7 @@ const nodeTypes = {
   merkleNode: MerkleTreeNode,
 };
 
-const INTERVAL_X = 300;
+const INTERVAL_X = 500;
 const INTERVAL_Y = 200;
 
 const VisualiserMerkleTree = ({ hashes }) => {

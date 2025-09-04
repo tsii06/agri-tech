@@ -153,7 +153,7 @@ library StructLib {
         string cid; // nom produit, date d'expedition, lieu de depart, destination, type de transport
         bytes32 rootMerkle;
         bool certifier;
-        bytes32 cidCertificat;
+        string cidCertificat;
     }
     
 }

@@ -75,7 +75,7 @@ contract ExportateurClient {
     event CertifierExpedition(
         address indexed certificateur,
         uint32 idArticle,
-        bytes32 cidCertificat
+        string cidCertificat
     );
 
     /* Fonction d'initialisation */
@@ -134,7 +134,7 @@ contract ExportateurClient {
             _cid,
             _rootMerkle,
             false,
-            bytes32(0)
+            ""
         );
 
         // Mise à jour du mapping
@@ -145,7 +145,7 @@ contract ExportateurClient {
 
     function certifierExpedition(
         uint32 _idExpedition,
-        bytes32 _cidCertificat
+        string memory _cidCertificat
     ) public seulementCertificateur {
         if (_idExpedition > compteurExpeditions) revert();
         if (expeditions[_idExpedition].certifier) revert();
