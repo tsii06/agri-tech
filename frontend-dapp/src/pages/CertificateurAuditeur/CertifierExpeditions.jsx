@@ -10,6 +10,16 @@ export default function CertifierExpeditions() {
   const [expeditions, setExpeditions] = useState([]);
   const [onlyPending, setOnlyPending] = useState(true);
   const [fileInputs, setFileInputs] = useState({}); // { [id]: File }
+  const [expeditionSelectionnee, setExpeditionSelectionnee] = useState(null);
+  const [showModalCertification, setShowModalCertification] = useState(false);
+  const [certificat, setCertificat] = useState(null);
+  const [dateEmission, setDateEmission] = useState("");
+  const [dateExpiration, setDateExpiration] = useState("");
+  const [dateInspection, setDateInspection] = useState("");
+  const [autoriteCertificatrice, setAutoriteCertificatrice] = useState("");
+  const [numeroCertificat, setNumeroCertificat] = useState("");
+  const [region, setRegion] = useState("");
+  const [btnLoading, setBtnLoading] = useState(false);
 
   const loadExpeditions = async () => {
     setLoading(true);
@@ -31,7 +41,7 @@ export default function CertifierExpeditions() {
             cid: exp.cid,
             rootMerkle: exp.rootMerkle,
             certifier: Boolean(exp.certifier),
-            cidCertificat: exp.cidCertificat
+            cidCertificat: exp.cidCertificat,
           };
           // enrichir depuis IPFS si disponible
           if (e.cid) {
@@ -57,36 +67,69 @@ export default function CertifierExpeditions() {
     setLoading(false);
   };
 
-  useEffect(() => { loadExpeditions(); }, []);
+  useEffect(() => {
+    loadExpeditions();
+  }, []);
 
-  const handleCertifier = async (id) => {
+  const handleCertifier = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setMessage("");
     try {
-      const file = fileInputs[id];
-      if (!file) {
-        throw new Error("Veuillez joindre le certificat (fichier)");
+      if (
+        !certificat ||
+        !dateEmission ||
+        !dateExpiration ||
+        !dateInspection ||
+        !autoriteCertificatrice ||
+        !numeroCertificat ||
+        !region
+      ) {
+        throw new Error("Veuillez remplir tous les champs obligatoires.");
       }
 
-      const upload = await uploadToIPFS(file, {
+      const metadata = {
+        dateEmission,
+        dateExpiration,
+        dateInspection,
+        autoriteCertificatrice,
+        numeroCertificat,
+        region,
+      };
+
+      const upload = await uploadToIPFS(certificat, {
         type: "certificat-expedition",
-        idExpedition: String(id),
+        idExpedition: String(expeditionSelectionnee.id),
+        metadata,
       });
+
       if (!upload?.success || !upload?.cid) {
         throw new Error(upload?.error || "Echec d'upload IPFS");
       }
+
       const contract = await getExportateurClientContract();
-      const tx = await contract.certifierExpedition(id, upload.cid);
+      const tx = await contract.certifierExpedition(
+        expeditionSelectionnee.id,
+        upload.cid
+      );
       await tx.wait();
-      setMessage(`Expédition #${id} certifiée avec succès`);
+
+      setMessage(
+        `Expédition #${expeditionSelectionnee.id} certifiée avec succès`
+      );
       await loadExpeditions();
-    } catch (e) {
-      setMessage("Erreur lors de la certification: " + (e?.message || e));
+      setShowModalCertification(false);
+    } catch (error) {
+      setMessage(
+        "Erreur lors de la certification: " + (error?.message || error)
+      );
     }
     setLoading(false);
   };
 
-  const filtered = expeditions.filter(e => (onlyPending ? !e.certifier : true));
+  const filtered = expeditions.filter((e) =>
+    onlyPending ? !e.certifier : true
+  );
 
   return (
     <div className="container mt-4">
@@ -98,7 +141,7 @@ export default function CertifierExpeditions() {
             type="checkbox"
             className="form-check-input"
             checked={onlyPending}
-            onChange={e => setOnlyPending(e.target.checked)}
+            onChange={(e) => setOnlyPending(e.target.checked)}
           />
           <label htmlFor="onlyPending" className="form-check-label ms-2">
             Afficher uniquement en attente
@@ -119,39 +162,26 @@ export default function CertifierExpeditions() {
                 <th>Quantité</th>
                 <th>Prix</th>
                 <th>Certifiée</th>
-                <th>Pièce jointe (certificat)</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(e => (
+              {filtered.map((e) => (
                 <tr key={e.id}>
                   <td>{e.id}</td>
                   <td>{e.ref || "-"}</td>
                   <td>{e.nomProduit || "-"}</td>
                   <td>{e.quantite}</td>
-                  <td>{e.prix}</td>
+                  <td>{e.prix} $</td>
                   <td>{e.certifier ? "Oui" : "Non"}</td>
-                  <td style={{minWidth: 260}}>
-                    {!e.certifier ? (
-                      <input
-                        type="file"
-                        className="form-control form-control-sm"
-                        onChange={ev => {
-                          const f = ev.target.files && ev.target.files[0];
-                          setFileInputs(prev => ({ ...prev, [e.id]: f }));
-                        }}
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      />
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
                   <td>
                     {!e.certifier ? (
                       <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => handleCertifier(e.id)}
+                        className="btn btn-success btn-sm"
+                        onClick={() => {
+                          setExpeditionSelectionnee(e);
+                          setShowModalCertification(true);
+                        }}
                         disabled={loading}
                       >
                         Certifier
@@ -164,15 +194,189 @@ export default function CertifierExpeditions() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">Aucune expédition</td>
+                  <td colSpan={7} className="text-center text-muted py-4">
+                    Aucune expédition
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* Modal de certification */}
+      {showModalCertification && (
+        <>
+          <div
+            className="modal-backdrop"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              zIndex: 1040,
+            }}
+          ></div>
+          <div
+            className="modal fade show"
+            style={{ display: "block", zIndex: 1050 }}
+            tabIndex="-1"
+          >
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    Certifier l'expédition #{expeditionSelectionnee?.id}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowModalCertification(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <form onSubmit={handleCertifier}>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label htmlFor="certificat" className="form-label">
+                            Certificat phytosanitaire *
+                          </label>
+                          <input
+                            type="file"
+                            className="form-control"
+                            id="certificat"
+                            onChange={(e) => setCertificat(e.target.files[0])}
+                            accept=".pdf,.doc,.docx"
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label htmlFor="dateEmission" className="form-label">
+                            Date d'émission *
+                          </label>
+                          <input
+                            type="date"
+                            className="form-control"
+                            value={dateEmission}
+                            onChange={(e) => setDateEmission(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label
+                            htmlFor="dateExpiration"
+                            className="form-label"
+                          >
+                            Date d'expiration *
+                          </label>
+                          <input
+                            type="date"
+                            className="form-control"
+                            value={dateExpiration}
+                            onChange={(e) => setDateExpiration(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label
+                            htmlFor="dateInspection"
+                            className="form-label"
+                          >
+                            Date d'inspection *
+                          </label>
+                          <input
+                            type="date"
+                            className="form-control"
+                            value={dateInspection}
+                            onChange={(e) => setDateInspection(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label
+                            htmlFor="autoriteCertificatrice"
+                            className="form-label"
+                          >
+                            Autorité certificatrice *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={autoriteCertificatrice}
+                            onChange={(e) =>
+                              setAutoriteCertificatrice(e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label
+                            htmlFor="numeroCertificat"
+                            className="form-label"
+                          >
+                            Numéro du certificat *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={numeroCertificat}
+                            onChange={(e) =>
+                              setNumeroCertificat(e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label htmlFor="region" className="form-label">
+                            Région *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={region}
+                            onChange={(e) => setRegion(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="modal-footer">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setShowModalCertification(false)}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-success"
+                        disabled={btnLoading}
+                      >
+                        {btnLoading
+                          ? "Certification..."
+                          : "Certifier la récolte"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
-
-

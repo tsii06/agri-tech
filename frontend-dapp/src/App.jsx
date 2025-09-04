@@ -53,6 +53,7 @@ import {
   ChevronRight,
   Group,
   Box,
+  Globe,
 } from "lucide-react";
 import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/Exportateur/Stock";
@@ -148,6 +149,7 @@ function AppLayout({
     if (t.includes("inspection")) return <Search size={18} />;
     if (t.includes("collecteur")) return <Users size={18} />;
     if (t.includes("exportateur")) return <Truck size={18} />;
+    if (t.includes("expéditions")) return <Globe size={18} />;
     if (t.includes("accueil") || t.includes("home"))
       return <HomeIcon size={18} />;
     if (t.includes("stock")) return <Box size={18} />;
