@@ -23,11 +23,11 @@ const MerkleTreeNode = ({ data }) => {
       }}
     >
       <Icon size={24} color="var(--madtx-green)" style={{ marginBottom: 5 }} />
-      <p style={{ fontSize: "0.85rem", color: "#555", margin: 0 }}>
+      <p style={{ fontSize: "0.75rem", color: "#777", margin: 0 }}>
         {data.label}
       </p>
-      <p style={{ fontSize: "0.75rem", color: "#777", margin: 0 }}>
-        {data.hash.slice(0, 6)}...{data.hash.slice(-4)}
+      <p style={{ fontSize: "0.90rem", color: "#555", margin: 0 }}>
+        <strong>{data.hash.slice(0, 6)}...{data.hash.slice(-4)}</strong>
       </p>
       <Handle type="source" position={Position.Bottom} style={{ background: "var(--madtx-green)" }} />
       <Handle type="target" position={Position.Top} style={{ background: "var(--madtx-green)" }} />

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
 import "reactflow/dist/style.css";
 import MerkleTreeNode from "./MerkleTreeNode";
@@ -7,6 +7,9 @@ import { createMerkleTree } from "../../../utils/merkleUtils";
 const nodeTypes = {
   merkleNode: MerkleTreeNode,
 };
+
+const INTERVAL_X = 300;
+const INTERVAL_Y = 200;
 
 const VisualiserMerkleTree = ({ hashes }) => {
   const tree = createMerkleTree(hashes);
@@ -24,8 +27,8 @@ const VisualiserMerkleTree = ({ hashes }) => {
     const edges = [];
 
     if (node.left) {
-      const leftX = x - 300 / (depth + 0.8);
-      const leftY = y + 200;
+      const leftX = x - INTERVAL_X / (depth + 0.8);
+      const leftY = y + INTERVAL_Y;
       const leftResult = generateNodesAndEdges(node.left, depth + 1, leftX, leftY);
       nodes.push(...leftResult.nodes);
       edges.push({ id: `${node.hash}-left-${depth}-${leftX}-${leftY}`, source: node.hash, target: node.left.hash });
@@ -33,8 +36,8 @@ const VisualiserMerkleTree = ({ hashes }) => {
     }
 
     if (node.right) {
-      const rightX = x + 300 / (depth + 0.8);
-      const rightY = y + 200;
+      const rightX = x + INTERVAL_X / (depth + 0.8);
+      const rightY = y + INTERVAL_Y;
       const rightResult = generateNodesAndEdges(node.right, depth + 1, rightX, rightY);
       nodes.push(...rightResult.nodes);
       edges.push({ id: `${node.hash}-right-${depth}-${rightX}-${rightY}`, source: node.hash, target: node.right.hash });
@@ -44,7 +47,24 @@ const VisualiserMerkleTree = ({ hashes }) => {
     return { nodes, edges };
   };
 
-  const { nodes, edges } = generateNodesAndEdges(tree);
+  let { nodes, edges } = generateNodesAndEdges(tree);
+
+  // Dupliquer les derniers noeuds si le nombre de feuilles est impair
+  if (hashes.length % 2 !== 0 && hashes.length > 1) {
+    const leafNodes = nodes.filter(n => n.data.isLeaf);
+    const lastLeaf = leafNodes[leafNodes.length - 1];
+    const duplicatedLeaf = {
+      ...lastLeaf,
+      id: `${lastLeaf.id}-dup`,
+      position: { x: lastLeaf.position.x - (INTERVAL_X / (lastLeaf.data.depth - 1 + 0.8)) * 2, y: lastLeaf.position.y },
+    };
+    nodes.push(duplicatedLeaf);
+    // recuper le edge qui pointe vers la derniere feuille
+    const parentEdge = edges.find(e => e.target === lastLeaf.id);
+    if (parentEdge) {
+      edges.push({ ...parentEdge, id: `${parentEdge.id}-dup`, target: duplicatedLeaf.id });
+    }
+  }
 
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
