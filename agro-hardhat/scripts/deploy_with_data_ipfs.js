@@ -276,6 +276,11 @@ async function main() {
     await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(1, 375000, 0);
     await collecteurExportateurProxy.connect(await ethers.getSigner(exportateurAddress)).effectuerPaiement(2, 225000, 0);
 
+    // Ajouter expedition
+    console.log("Création d'une expédition par l'exportateur...");
+    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([2], 32, "bafkreib45g2bcgg44xie2mhgrmdngbqldle4345nsxxmbyntlkgvo6earu", "0x57d2d207e61389ca5d1d4fb3d89341e0187c6ca43005571ff596d8405b2b0773");
+    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([1], 998, "bafkreiadrkfkss3vm5uhjdflp7juovyy5ljgfcatsa5qw4chsi3japnpbq", "0x5470a0be78bb9fa21166f31bf2abf0c857218b7f4bc6899547aeddaebb841026");
+
     console.log("Déploiement terminé avec succès!");
 }
 
