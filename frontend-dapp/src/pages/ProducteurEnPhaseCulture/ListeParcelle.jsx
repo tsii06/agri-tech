@@ -45,7 +45,7 @@ function MesParcelles() {
 
         // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)
         if(hasRole(roles, 0)) {
-          if (parcelleRaw.producteur.adresse.toLowerCase() !== account.toLowerCase()) {
+          if (parcelleRaw.producteur.adresse?.toLowerCase() !== account.toLowerCase()) {
             continue;
           }
         }

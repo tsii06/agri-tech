@@ -4,8 +4,13 @@ import {
   getCollecteurProducteurContract,
 } from "../../utils/contract";
 import { getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
-import { ShoppingCart, Hash, Package2, User, Truck } from "lucide-react";
+import { ShoppingCart, Hash, Package2, User, Truck, Fingerprint, Sprout, Package, ChevronUp, ChevronDown } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
+import {
+  getCommandeRecolte,
+  getConditionTransportPC,
+} from "../../utils/contrat/collecteurProducteur";
+import { getCommandeProduit, getConditionTransportCE } from "../../utils/collecteurExporatateur";
 
 function LivraisonRecolte() {
   const [isLoading, setIsLoading] = useState(true);
@@ -31,53 +36,23 @@ function LivraisonRecolte() {
       // Charger toutes les commandes (CommandeProduit)
       const compteurCommandesRaw = await contract.getCompteurCommande();
       const compteurCommandes = Number(compteurCommandesRaw);
-      const commandesTemp = [];
+      let commandesTemp = [];
 
-      for (let i = 1; i <= compteurCommandes; i++) {
-        const c = await contract.getCommande(i);
+      for (let i = compteurCommandes; i > 0; i--) {
+        const c = await getCommandeProduit(i);
 
         // si commande n'est pas au transporteur ne pas l'afficher
-        if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
+        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase()) continue;
 
         // recuperer condition de transport si deja enregister
-        let conditions = {};
         let commandeEnrichie = {};
         if (c.enregistrerCondition) {
-          conditions = await contract.getCondition(i);
-          const res = await fetch(getIPFSURL(conditions.cid));
-          if (res.ok) {
-            const ipfsData = await res.json();
-            const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-            commandeEnrichie = {
-              temperature: root.temperature,
-              humidite: root.humidite,
-              dureeTransport: root.dureeTransport,
-              lieuDepart: root.lieuDepart,
-              destination: root.destination,
-            };
-          }
+          const conditions = await getConditionTransportCE(i);
+          commandeEnrichie = {
+            ...c,
+            ...conditions,
+          };
         }
-
-        const idProduitNum = Number(c.idProduit ?? 0);
-        const p =
-          idProduitNum > 0 ? await contract.getProduit(idProduitNum) : {};
-
-        // Charger les données IPFS consolidées si la commande a un CID
-        commandeEnrichie = {
-          ...commandeEnrichie,
-          id: Number(c.id ?? i),
-          idProduit: idProduitNum,
-          quantite: Number(c.quantite ?? 0),
-          statutTransport: Number(c.statutTransport ?? 0),
-          prix: Number(c.prix ?? 0),
-          payer: Boolean(c.payer),
-          collecteur: c.collecteur?.toString?.() || c.collecteur || "",
-          exportateur: c.exportateur?.toString?.() || c.exportateur || "",
-          nomProduit: p?.nom || "",
-          cid: c.cid || "",
-          hashMerkle: c.hashMerkle || "",
-          enregistrerCondition: Boolean(c.enregistrerCondition),
-        };
 
         commandesTemp.push(commandeEnrichie);
       }
@@ -88,46 +63,22 @@ function LivraisonRecolte() {
       const compteurCommandesRecolte = await contractCP.getCompteurCommandes();
       const commandesRecolteTemp = [];
 
-      for (let i = 1; i <= compteurCommandesRecolte; i++) {
-        const c = await contractCP.commandes(i);
+      for (let i = compteurCommandesRecolte; i > 0 ; i--) {
+        const c = await getCommandeRecolte(i);
 
         // ignorer les commandes que le transporteur n'a pas access.
-        if (c.transporteur.toLowerCase() !== account.toLowerCase()) continue;
+        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase())
+          continue;
 
         // recuperer condition de transport si deja enregister
-        let conditions = {};
         let commandeRecolteEnrichie = {};
         if (c.enregistrerCondition) {
-          conditions = await contractCP.getConditionTransport(i);
-          const res = await fetch(getIPFSURL(conditions.cid));
-          if (res.ok) {
-            const ipfsData = await res.json();
-            const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-            commandeRecolteEnrichie = {
-              temperature: root.temperature,
-              humidite: root.humidite,
-              dureeTransport: root.dureeTransport,
-              lieuDepart: root.lieuDepart,
-              destination: root.destination,
-            };
-          }
+          const condition = await getConditionTransportPC(i);
+          commandeRecolteEnrichie = {
+            ...c,
+            ...condition,
+          };
         }
-
-        // Charger les données IPFS consolidées si la commande a un CID
-        commandeRecolteEnrichie = {
-          ...commandeRecolteEnrichie,
-          id: c.id.toString(),
-          idRecolte: c.idRecolte.toString(),
-          quantite: c.quantite.toString(),
-          prix: c.prix.toString(),
-          statutTransport: Number(c.statutTransport),
-          payer: c.payer,
-          producteur: c.producteur,
-          collecteur: c.collecteur,
-          cid: c.cid,
-          hashMerkle: c.hashMerkle,
-          enregistrerCondition: Boolean(c.enregistrerCondition),
-        };
 
         commandesRecolteTemp.push(commandeRecolteEnrichie);
       }
@@ -311,6 +262,14 @@ function LivraisonRecolte() {
     }
   };
 
+  // Ajout des états pour gérer l'ouverture/fermeture des sections
+  const [isRecolteOpen, setIsRecolteOpen] = useState(true);
+  const [isProduitOpen, setIsProduitOpen] = useState(true);
+
+  // Fonction pour basculer l'état des sections
+  const toggleRecolte = () => setIsRecolteOpen(!isRecolteOpen);
+  const toggleProduit = () => setIsProduitOpen(!isProduitOpen);
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -325,41 +284,28 @@ function LivraisonRecolte() {
 
       {/* LISTE DES COMMANDES SUR LES RECOLTES DES PRODUCTEURS */}
       <div className="card p-4 shadow-sm my-4">
-        <h2 className="h5 mb-3">
-          Liste des Commandes sur <strong>Récolte</strong>
+        <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
+          <span><Sprout /> Liste des Commandes sur <strong>Récolte</strong></span>
+          <button className="btn" onClick={toggleRecolte}>
+            {isRecolteOpen ? <ChevronUp /> : <ChevronDown />}
+          </button>
         </h2>
-        <div className="row g-3">
-          {commandesRecolte.map((cmd) => (
+        <div
+          className={`row g-3 overflow-hidden transition-all ${isRecolteOpen ? "max-h-screen" : "max-h-0"}`}
+          style={{ transition: "max-height 0.5s ease-in-out" }}
+        >
+          {isRecolteOpen && commandesRecolte.map((cmd) => (
             <div key={cmd.id} className="col-md-4">
               <div className="card shadow-sm p-3 mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="card-title mb-0">
-                    Commande Récolte #{cmd.id}
-                  </h5>
-                  <div>
-                    {cmd.cid && cmd.hashMerkle ? (
-                      <span className="badge bg-success me-1">
-                        IPFS + Merkle
-                      </span>
-                    ) : cmd.cid ? (
-                      <span className="badge bg-warning me-1">
-                        IPFS uniquement
-                      </span>
-                    ) : (
-                      <span className="badge bg-secondary me-1">
-                        Données non consolidées
-                      </span>
-                    )}
-                  </div>
+                  <h4 className="card-title my-2">
+                    Commande Récolte#{cmd.id}
+                  </h4>
                 </div>
 
                 <p>
-                  <Hash size={16} className="me-2 text-success" />
-                  <strong>ID Commande:</strong> {cmd.id}
-                </p>
-                <p>
-                  <Hash size={16} className="me-2 text-success" />
-                  <strong>ID Récolte:</strong> {cmd.idRecolte}
+                  <Sprout size={16} className="me-2 text-success" />
+                  <strong>Récolte:</strong> #{cmd.idRecolte}
                 </p>
                 <p>
                   <Package2 size={16} className="me-2 text-success" />
@@ -367,56 +313,21 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Producteur:</strong> {cmd.producteur.substring(0, 6)}
-                  ...{cmd.producteur.substring(cmd.producteur.length - 4)}
+                  <strong>Producteur:</strong> {cmd.producteur.nom || "N/A"}
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong> {cmd.collecteur.substring(0, 6)}
-                  ...{cmd.collecteur.substring(cmd.collecteur.length - 4)}
+                  <strong>Collecteur:</strong> {cmd.collecteur.nom || "N/A"}
+                </p>
+                <p>
+                  <Fingerprint size={16} className="me-2 text-success" />
+                  <strong>Hash merkle:</strong> {cmd.hashMerkle?.slice(0,6)}...{cmd.hashMerkle?.slice(-4)}
                 </p>
                 <p>
                   <Truck size={16} className="me-2 text-success" />
                   <strong>Transport:</strong>{" "}
                   {getStatutTransportLabel(cmd.statutTransport)}
                 </p>
-
-                {/* Informations IPFS et Merkle */}
-                {cmd.cid && (
-                  <div className="mt-2 p-2 bg-light rounded">
-                    <p className="mb-1">
-                      <strong>CID IPFS:</strong>
-                      <a
-                        href={getIPFSURL(cmd.cid)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ms-2 text-decoration-none text-primary"
-                        title="Voir les données consolidées sur IPFS"
-                      >
-                        {cmd.cid.substring(0, 10)}...
-                      </a>
-                    </p>
-
-                    {cmd.hashMerkle && (
-                      <p className="mb-1">
-                        <strong>Hash Merkle:</strong>
-                        <span
-                          className="ms-2 text-muted"
-                          title={cmd.hashMerkle}
-                        >
-                          {cmd.hashMerkle.substring(0, 10)}...
-                        </span>
-                      </p>
-                    )}
-
-                    {cmd.ipfsTimestamp && (
-                      <p className="mb-1 text-muted small">
-                        <strong>Dernière mise à jour IPFS:</strong>{" "}
-                        {new Date(cmd.ipfsTimestamp).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                )}
 
                 <div className="d-flex gap-2 mt-3">
                   {!cmd.enregistrerCondition && (
@@ -464,41 +375,28 @@ function LivraisonRecolte() {
 
       {/* LISTE DES COMMANDES SUR LES PRODUITS DES COLLECTEURS */}
       <div className="card p-4 shadow-sm">
-        <h2 className="h5 mb-3">
-          Liste des Commandes sur <strong>Produit</strong>
+        <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
+          <span><Package /> Liste des Commandes sur <strong>Produit</strong></span>
+          <button className="btn" onClick={toggleProduit}>
+            {isProduitOpen ? <ChevronUp /> : <ChevronDown />}
+          </button>
         </h2>
-        <div className="row g-3">
-          {commandes.map((commande) => (
+        <div
+          className={`row g-3 overflow-hidden transition-all ${isProduitOpen ? "max-h-screen" : "max-h-0"}`}
+          style={{ transition: "max-height 0.5s ease-in-out" }}
+        >
+          {isProduitOpen && commandes.map((commande) => (
             <div key={commande.id} className="col-md-4">
               <div className="card shadow-sm p-3 mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h5 className="card-title mb-0">
-                    Commande Produit #{commande.id}
-                  </h5>
-                  <div>
-                    {commande.cid && commande.hashMerkle ? (
-                      <span className="badge bg-success me-1">
-                        IPFS + Merkle
-                      </span>
-                    ) : commande.cid ? (
-                      <span className="badge bg-warning me-1">
-                        IPFS uniquement
-                      </span>
-                    ) : (
-                      <span className="badge bg-secondary me-1">
-                        Données non consolidées
-                      </span>
-                    )}
-                  </div>
+                  <h4 className="card-title my-2">
+                    Commande Produit#{commande.id}
+                  </h4>
                 </div>
 
                 <p>
-                  <Hash size={16} className="me-2 text-success" />
-                  <strong>ID Commande:</strong> {commande.id}
-                </p>
-                <p>
-                  <Hash size={16} className="me-2 text-success" />
-                  <strong>ID Produit:</strong> {commande.idProduit}
+                  <Package size={16} className="me-2 text-success" />
+                  <strong>Produit:</strong> #{commande.idLotProduit}
                 </p>
                 <p>
                   <Package2 size={16} className="me-2 text-success" />
@@ -506,62 +404,21 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong>{" "}
-                  {commande.collecteur.substring(0, 6)}...
-                  {commande.collecteur.substring(
-                    commande.collecteur.length - 4
-                  )}
+                  <strong>Collecteur:</strong>{" "} {commande.collecteur.nom || "N/A"}
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Exportateur:</strong>{" "}
-                  {commande.exportateur.substring(0, 6)}...
-                  {commande.exportateur.substring(
-                    commande.exportateur.length - 4
-                  )}
+                  <strong>Exportateur:</strong>{" "} {commande.exportateur.nom || "N/A"}
+                </p>
+                <p>
+                  <Fingerprint size={16} className="me-2 text-success" />
+                  <strong>Hash merkle:</strong> {commande.hashMerkle?.slice(0,6)}...{commande.hashMerkle?.slice(-4)}
                 </p>
                 <p>
                   <Truck size={16} className="me-2 text-success" />
                   <strong>Transport:</strong>{" "}
                   {getStatutTransportLabel(commande.statutTransport)}
                 </p>
-
-                {/* Informations IPFS et Merkle */}
-                {commande.cid && (
-                  <div className="mt-2 p-2 bg-light rounded">
-                    <p className="mb-1">
-                      <strong>CID IPFS:</strong>
-                      <a
-                        href={getIPFSURL(commande.cid)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ms-2 text-decoration-none text-primary"
-                        title="Voir les données consolidées sur IPFS"
-                      >
-                        {commande.cid.substring(0, 10)}...
-                      </a>
-                    </p>
-
-                    {commande.hashMerkle && (
-                      <p className="mb-1">
-                        <strong>Hash Merkle:</strong>
-                        <span
-                          className="ms-2 text-muted"
-                          title={commande.hashMerkle}
-                        >
-                          {commande.hashMerkle.substring(0, 10)}...
-                        </span>
-                      </p>
-                    )}
-
-                    {commande.ipfsTimestamp && (
-                      <p className="mb-1 text-muted small">
-                        <strong>Dernière mise à jour IPFS:</strong>{" "}
-                        {new Date(commande.ipfsTimestamp).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                )}
 
                 <div className="d-flex gap-2 mt-3">
                   {!commande.enregistrerCondition && (

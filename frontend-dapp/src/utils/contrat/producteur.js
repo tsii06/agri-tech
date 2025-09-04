@@ -14,10 +14,11 @@ export const getParcelle = async (_idParcelle) => {
   // Recuperer info on-chain
   try {
     const parcelleOnChain = await contrat.getParcelle(_idParcelle);
+    const producteurDetails = await getActeur(parcelleOnChain.producteur.toString());
     parcelleComplet = {
       id: Number(parcelleOnChain.id),
       cid: parcelleOnChain.cid.toString(),
-      producteur: await getActeur(parcelleOnChain.producteur.toString()),
+      producteur: {...producteurDetails, adresse: parcelleOnChain.producteur.toString()},
       hashMerkle: parcelleOnChain.hashMerkle?.toString() || "",
     };
   } catch (error) {

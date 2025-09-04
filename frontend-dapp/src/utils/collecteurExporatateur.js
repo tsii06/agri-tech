@@ -101,8 +101,14 @@ export const getConditionTransportCE = async (_idCommande) => {
  */
 export const getCommandeProduit = async (_idCommande) => {
   const contrat = await getCollecteurExportateurContract();
+
   try {
     const res = await contrat.getCommande(_idCommande);
+
+    const collecteurDetails = await getActeur(res.collecteur?.toString());
+    const exportateurDetails = await getActeur(res.exportateur?.toString());
+    const transporteurDetails = await getActeur(res.transporteur?.toString());
+
     return {
       id: Number(res.id),
       idLotProduit: Number(res.idLotProduit),
@@ -111,13 +117,14 @@ export const getCommandeProduit = async (_idCommande) => {
       statutTransport: Number(res.statutTransport),
       statutProduit: Number(res.statutProduit),
       payer: res.payer,
-      collecteur: res.collecteur.toString(),
-      exportateur: res.exportateur.toString(),
+      collecteur: {...collecteurDetails, adresse: res.collecteur?.toString()},
+      exportateur: {...exportateurDetails, adresse: res.exportateur?.toString()},
+      transporteur: {...transporteurDetails, adresse: res.transporteur?.toString()},
       enregistre: res.enregistre,
       enregistrerCondition: res.enregistrerCondition,
-      transporteur: res.transporteur.toString(),
     };
   } catch (error) {
     console.log("Recuperation commande lot produit : ", error);
+    return {};
   }
 };
