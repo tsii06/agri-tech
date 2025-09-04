@@ -7,9 +7,16 @@ import myPinataSDK from "./pinata";
  * @param {Object} metadata - Les métadonnées du fichier
  * @returns {Promise<Object>} L'objet de réponse IPFS avec CID
  */
-export const uploadToIPFS = async (file, metadata = {}) => {
+export const uploadToIPFS = async (
+  file,
+  metadata = {},
+  type = "madtx-file"
+) => {
   try {
-    const res = await myPinataSDK.upload.public.file(file).keyvalues(metadata);
+    const res = await myPinataSDK.upload.public
+      .file(file)
+      .keyvalues(metadata)
+      .name(`${type}-${Date.now()}`);
 
     if (res.is_duplicate) {
       throw new Error("Ce fichier a déjà été uploadé sur IPFS.");
@@ -356,7 +363,7 @@ export const getMetadataFromPinata = async (_cid) => {
 
 /**
  * url pour pouvoir telecharger le fichier depuis pinata
- * @param {string} _cid 
+ * @param {string} _cid
  * @returns {string}
  */
 export const getUrlDownloadFilePinata = async (_cid) => {

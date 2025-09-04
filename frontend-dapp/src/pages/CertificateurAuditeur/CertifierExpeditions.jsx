@@ -9,7 +9,6 @@ export default function CertifierExpeditions() {
   const [message, setMessage] = useState("");
   const [expeditions, setExpeditions] = useState([]);
   const [onlyPending, setOnlyPending] = useState(true);
-  const [fileInputs, setFileInputs] = useState({}); // { [id]: File }
   const [expeditionSelectionnee, setExpeditionSelectionnee] = useState(null);
   const [showModalCertification, setShowModalCertification] = useState(false);
   const [certificat, setCertificat] = useState(null);
@@ -73,7 +72,7 @@ export default function CertifierExpeditions() {
 
   const handleCertifier = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setBtnLoading(true);
     setMessage("");
     try {
       if (
@@ -89,19 +88,18 @@ export default function CertifierExpeditions() {
       }
 
       const metadata = {
-        dateEmission,
-        dateExpiration,
-        dateInspection,
-        autoriteCertificatrice,
-        numeroCertificat,
-        region,
+        dateEmission: dateEmission.toString(),
+        dateExpiration: dateExpiration.toString(),
+        dateInspection: dateInspection.toString(),
+        autoriteCertificatrice: autoriteCertificatrice.toString(),
+        numeroCertificat: numeroCertificat.toString(),
+        region: region.toString(),
       };
 
       const upload = await uploadToIPFS(certificat, {
         type: "certificat-expedition",
-        idExpedition: String(expeditionSelectionnee.id),
-        metadata,
-      });
+        ...metadata,
+      }, "certificat-expedition");
 
       if (!upload?.success || !upload?.cid) {
         throw new Error(upload?.error || "Echec d'upload IPFS");
@@ -124,7 +122,7 @@ export default function CertifierExpeditions() {
         "Erreur lors de la certification: " + (error?.message || error)
       );
     }
-    setLoading(false);
+    setBtnLoading(false);
   };
 
   const filtered = expeditions.filter((e) =>
