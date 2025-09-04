@@ -39,6 +39,7 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
       _cid,
       merkleRoot
     );
+    await res.wait();
     return res;
   } catch (error) {
     console.error("Creation d'une article : ", error);
