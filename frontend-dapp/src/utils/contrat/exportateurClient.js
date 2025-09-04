@@ -47,7 +47,7 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
 };
 
 /**
- * Recupere tous les hashs feuilles d'une article
+ * Recupere tous les hashs feuilles d'une expedition
  * @param {Array} _idCommandeProduits ids des commandes de lot produits
  * @returns {Array}
  */

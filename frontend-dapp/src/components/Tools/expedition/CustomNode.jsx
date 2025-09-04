@@ -26,7 +26,8 @@ export const ExpeditionNode = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+    const formattedText = text.startsWith("0x") ? text.slice(2) : text;
+    navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
@@ -94,7 +95,8 @@ export const ConditionNode = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+    const formattedText = text.startsWith("0x") ? text.slice(2) : text;
+    navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
@@ -161,7 +163,8 @@ export const LotProduitNode = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+    const formattedText = text.startsWith("0x") ? text.slice(2) : text;
+    navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
@@ -231,7 +234,8 @@ export const RecolteNode = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+    const formattedText = text.startsWith("0x") ? text.slice(2) : text;
+    navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
@@ -304,7 +308,8 @@ export const ParcelleNode = ({ data }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+    const formattedText = text.startsWith("0x") ? text.slice(2) : text;
+    navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
