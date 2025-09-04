@@ -68,7 +68,7 @@ export const ExpeditionNode = ({ data }) => {
         {data.rootMerkle
           ? data.rootMerkle.slice(0, 6) + "..." + data.rootMerkle.slice(-4)
           : "N/A"}
-        {data.rootMerkle && (
+        {/* {data.rootMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
             onClick={() => copyToClipboard(data.rootMerkle)}
@@ -76,7 +76,7 @@ export const ExpeditionNode = ({ data }) => {
           >
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
-        )}
+        )} */}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -134,7 +134,7 @@ export const ConditionNode = ({ data }) => {
             ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
             : "N/A"}
         </strong>
-        {data.hashMerkle && (
+        {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
             onClick={() => copyToClipboard(data.hashMerkle)}
@@ -142,7 +142,7 @@ export const ConditionNode = ({ data }) => {
           >
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
-        )}
+        )} */}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -205,7 +205,7 @@ export const LotProduitNode = ({ data }) => {
             ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
             : "N/A"}
         </strong>
-        {data.hashMerkle && (
+        {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
             onClick={() => copyToClipboard(data.hashMerkle)}
@@ -213,7 +213,7 @@ export const LotProduitNode = ({ data }) => {
           >
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
-        )}
+        )} */}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -279,7 +279,7 @@ export const RecolteNode = ({ data }) => {
             ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
             : "N/A"}
         </strong>
-        {data.hashMerkle && (
+        {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
             onClick={() => copyToClipboard(data.hashMerkle)}
@@ -287,7 +287,7 @@ export const RecolteNode = ({ data }) => {
           >
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
-        )}
+        )} */}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -353,7 +353,7 @@ export const ParcelleNode = ({ data }) => {
             ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
             : "N/A"}
         </strong>
-        {data.hashMerkle && (
+        {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
             onClick={() => copyToClipboard(data.hashMerkle)}
@@ -361,7 +361,7 @@ export const ParcelleNode = ({ data }) => {
           >
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
-        )}
+        )} */}
       </p>
       {/* Point de sortie (droite) */}
       <Handle

@@ -142,7 +142,7 @@ const DetailsExpedition = ({}) => {
                         "..." +
                         expedition.rootMerkle.slice(-4)
                       : "N/A"}
-                    {expedition.rootMerkle && (
+                    {/* {expedition.rootMerkle && (
                       <button
                         className="btn btn-link p-0 ms-2"
                         onClick={() => copyToClipboard(expedition.rootMerkle)}
@@ -153,7 +153,7 @@ const DetailsExpedition = ({}) => {
                       >
                         {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
                       </button>
-                    )}
+                    )} */}
                   </p>
                 </div>
                 <hr />
