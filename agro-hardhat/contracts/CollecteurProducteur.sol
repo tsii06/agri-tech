@@ -19,19 +19,43 @@ contract CollecteurProducteur {
     bool private initialised;
     // ======================================== modificateur ==================================================
     modifier seulementProducteur() {
-        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Producteur), "seulement Producteur");
+        require(
+            gestionnaireActeurs.estActeurAvecRole(
+                msg.sender,
+                StructLib.Role.Producteur
+            ),
+            "seulement Producteur"
+        );
         _;
     }
     modifier seulementCertificateur() {
-        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Certificateur), "seulement Certificateur");
+        require(
+            gestionnaireActeurs.estActeurAvecRole(
+                msg.sender,
+                StructLib.Role.Certificateur
+            ),
+            "seulement Certificateur"
+        );
         _;
     }
     modifier seulementCollecteur() {
-        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Collecteur), "seulement Collecteur");
+        require(
+            gestionnaireActeurs.estActeurAvecRole(
+                msg.sender,
+                StructLib.Role.Collecteur
+            ),
+            "seulement Collecteur"
+        );
         _;
     }
     modifier seulementTransporteur() {
-        require(gestionnaireActeurs.estActeurAvecRole(msg.sender, StructLib.Role.Transporteur), "seulement Transporteur");
+        require(
+            gestionnaireActeurs.estActeurAvecRole(
+                msg.sender,
+                StructLib.Role.Transporteur
+            ),
+            "seulement Transporteur"
+        );
         _;
     }
     modifier recolteExistant(uint32 _idRecolte) {
@@ -47,10 +71,19 @@ contract CollecteurProducteur {
         _;
     }
     // ================================== evenements =================================================
-    event ConditionEnregistree(uint32 indexed idProduit, string cid, uint timestamp, address transporteur);
+    event ConditionEnregistree(
+        uint32 indexed idProduit,
+        string cid,
+        uint timestamp,
+        address transporteur
+    );
     event ValidationCommandeRecolte(uint32 indexed idCommande, bool status);
     // ================================== initialiser =================================================
-    function initialiser(address _addrCE, address _gestionnaireActeurs, address _producteurEnPhaseCulture) public {
+    function initialiser(
+        address _addrCE,
+        address _gestionnaireActeurs,
+        address _producteurEnPhaseCulture
+    ) public {
         require(!initialised, "Contrat deja initialiser !");
         moduleCE = ICollecteurExportateur(_addrCE);
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
@@ -70,41 +103,75 @@ contract CollecteurProducteur {
     /*
     ici les fonctions pour les recoltes
     */
-    function ajoutRecolte(uint32[] memory _idParcelles, uint32 _quantite, uint32 _prix, string memory _cid) public seulementProducteur {
-        for(uint32 i=0 ; i<_idParcelles.length ; i++) {
-            require(_idParcelles[i] <= producteurEnPhaseCulture.getCompteurParcelle(), "Parcelle non existant.");
-            StructLib.Parcelle memory parcelle = producteurEnPhaseCulture.getParcelle(_idParcelles[i]);
-            require(parcelle.producteur == msg.sender, "Vous n'est pas proprietaire du parcelle.");
+    function ajoutRecolte(
+        uint32[] memory _idParcelles,
+        uint32 _quantite,
+        uint32 _prix,
+        string memory _cid
+    ) public seulementProducteur {
+        for (uint32 i = 0; i < _idParcelles.length; i++) {
+            require(
+                _idParcelles[i] <=
+                    producteurEnPhaseCulture.getCompteurParcelle(),
+                "Parcelle non existant."
+            );
+            StructLib.Parcelle memory parcelle = producteurEnPhaseCulture
+                .getParcelle(_idParcelles[i]);
+            require(
+                parcelle.producteur == msg.sender,
+                "Vous n'est pas proprietaire du parcelle."
+            );
         }
 
         compteurRecoltes++;
 
         // calcule de la hashMerkle
-        bytes32 hashMerkle = keccak256(abi.encodePacked(
+        bytes32 hashMerkle = keccak256(
+            abi.encodePacked(
+                _idParcelles,
+                _quantite,
+                _prix,
+                _cid,
+                msg.sender,
+                block.timestamp
+            )
+        );
+
+        recoltes[compteurRecoltes] = StructLib.Recolte(
+            compteurRecoltes,
             _idParcelles,
             _quantite,
             _prix,
-            _cid,
+            false,
+            "",
             msg.sender,
-            block.timestamp
-        ));
-        
-        recoltes[compteurRecoltes] = StructLib.Recolte(compteurRecoltes, _idParcelles, _quantite, _prix, false, "", msg.sender, hashMerkle, _cid);
-    } 
-    function certifieRecolte(uint32 _idRecolte, string memory _certificat) public seulementCertificateur recolteExistant(_idRecolte) {
+            hashMerkle,
+            _cid
+        );
+    }
+    function certifieRecolte(
+        uint32 _idRecolte,
+        string memory _certificat
+    ) public seulementCertificateur recolteExistant(_idRecolte) {
         require(bytes(_certificat).length != 0, "Certificat vide");
 
         recoltes[_idRecolte].certifie = true;
         recoltes[_idRecolte].certificatPhytosanitaire = _certificat;
     }
-    function modifierPrixRecolte(uint32 idRecolte, uint32 newPrix) public seulementProducteur recolteExistant(idRecolte) {
+    function modifierPrixRecolte(
+        uint32 idRecolte,
+        uint32 newPrix
+    ) public seulementProducteur recolteExistant(idRecolte) {
         if (recoltes[idRecolte].producteur != msg.sender) revert();
         recoltes[idRecolte].prixUnit = newPrix;
     }
     /*
     ici les fonctions pour les commandes
     */
-    function passerCommandeVersProducteur(uint32 _idRecolte, uint32 _quantite) public seulementCollecteur recolteExistant(_idRecolte) {
+    function passerCommandeVersProducteur(
+        uint32 _idRecolte,
+        uint32 _quantite
+    ) public seulementCollecteur recolteExistant(_idRecolte) {
         StructLib.Recolte memory recolte = recoltes[_idRecolte];
         if (!recolte.certifie) revert();
         if (_quantite > recolte.quantite) revert();
@@ -113,25 +180,79 @@ contract CollecteurProducteur {
         recoltes[_idRecolte].quantite -= _quantite;
 
         compteurCommandes++;
+
         uint32 _prix = recolte.prixUnit * _quantite;
-        commandes[compteurCommandes] = StructLib.CommandeRecolte(compteurCommandes, _idRecolte, _quantite, _prix, false, StructLib.StatutTransport.EnCours, recolte.producteur, msg.sender, StructLib.StatutProduit.EnAttente, false, address(0));
+        commandes[compteurCommandes] = StructLib.CommandeRecolte(
+            compteurCommandes,
+            _idRecolte,
+            _quantite,
+            _prix,
+            false,
+            StructLib.StatutTransport.EnCours,
+            recolte.producteur,
+            msg.sender,
+            StructLib.StatutProduit.EnAttente,
+            false,
+            address(0)
+        );
+
+        // pour la gestion multiRole
+        if (recolte.producteur == msg.sender) {
+            // definie le commande comme deja payer
+            commandes[compteurCommandes].payer = true;
+            // definie la commande comme livrer
+            commandes[compteurCommandes].statutTransport = StructLib
+                .StatutTransport
+                .Livre;
+            // definie le statut de la recolte comme valider
+            commandes[compteurCommandes].statutRecolte = StructLib
+                .StatutProduit
+                .Valide;
+            // ajout automatique de produit dans le contrat CollecteurExportateur
+            moduleCE.ajouterProduit(
+                commandes[compteurCommandes].id,
+                commandes[compteurCommandes].idRecolte,
+                commandes[compteurCommandes].quantite,
+                msg.sender
+            );
+        }
     }
-    function choisirTransporteurCommandeRecolte(uint32 idCommande, address transporteur) public seulementCollecteur commandeExistant(idCommande) {
+    function choisirTransporteurCommandeRecolte(
+        uint32 idCommande,
+        address transporteur
+    ) public seulementCollecteur commandeExistant(idCommande) {
         if (commandes[idCommande].collecteur != msg.sender) revert();
         commandes[idCommande].transporteur = transporteur;
     }
-    function validerCommandeRecolte(uint32 _idCommande, bool _valide) public seulementCollecteur commandeExistant(_idCommande) {
-        if (commandes[_idCommande].statutTransport != StructLib.StatutTransport.Livre) revert();
-        if (commandes[_idCommande].statutRecolte != StructLib.StatutProduit.EnAttente) revert();
+    function validerCommandeRecolte(
+        uint32 _idCommande,
+        bool _valide
+    ) public seulementCollecteur commandeExistant(_idCommande) {
+        if (
+            commandes[_idCommande].statutTransport !=
+            StructLib.StatutTransport.Livre
+        ) revert();
+        if (
+            commandes[_idCommande].statutRecolte !=
+            StructLib.StatutProduit.EnAttente
+        ) revert();
 
-        if(_valide)
-            commandes[_idCommande].statutRecolte = StructLib.StatutProduit.Valide;
+        if (_valide)
+            commandes[_idCommande].statutRecolte = StructLib
+                .StatutProduit
+                .Valide;
         else
-            commandes[_idCommande].statutRecolte = StructLib.StatutProduit.Rejete;
+            commandes[_idCommande].statutRecolte = StructLib
+                .StatutProduit
+                .Rejete;
 
         emit ValidationCommandeRecolte(_idCommande, _valide);
     }
-    function effectuerPaiementVersProducteur(uint32 _idCommande, uint32 _montant, StructLib.ModePaiement _mode) public payable seulementCollecteur commandeExistant(_idCommande) {
+    function effectuerPaiementVersProducteur(
+        uint32 _idCommande,
+        uint32 _montant,
+        StructLib.ModePaiement _mode
+    ) public payable seulementCollecteur commandeExistant(_idCommande) {
         StructLib.CommandeRecolte memory commande = commandes[_idCommande];
 
         if (commande.payer) revert();
@@ -139,39 +260,80 @@ contract CollecteurProducteur {
         if (commande.statutRecolte != StructLib.StatutProduit.Valide) revert();
 
         // ajout automatique de produit dans le contrat CollecteurExportateur
-        moduleCE.ajouterProduit(commande.id, commande.idRecolte, commande.quantite, msg.sender);
+        moduleCE.ajouterProduit(
+            commande.id,
+            commande.idRecolte,
+            commande.quantite,
+            msg.sender
+        );
 
         // definie la commande comme deja payer
         commandes[_idCommande].payer = true;
 
-        paiements[_idCommande] = StructLib.Paiement(_idCommande, msg.sender, commande.producteur, _montant, _mode, block.timestamp, "");
+        paiements[_idCommande] = StructLib.Paiement(
+            _idCommande,
+            msg.sender,
+            commande.producteur,
+            _montant,
+            _mode,
+            block.timestamp,
+            ""
+        );
     }
-    function mettreAJourStatutTransport(uint32 _idCommande, StructLib.StatutTransport _statut) public seulementTransporteur commandeExistant(_idCommande) transporteurNonAutoriser(_idCommande) {
-        require(commandes[_idCommande].enregistrerCondition, "Condition transport non enregister");
+    function mettreAJourStatutTransport(
+        uint32 _idCommande,
+        StructLib.StatutTransport _statut
+    )
+        public
+        seulementTransporteur
+        commandeExistant(_idCommande)
+        transporteurNonAutoriser(_idCommande)
+    {
+        if (!commandes[_idCommande].enregistrerCondition) revert();
         commandes[_idCommande].statutTransport = _statut;
-    } 
-    function enregistrerCondition(uint32 _idCommande, string memory _cid) public seulementTransporteur commandeExistant(_idCommande) transporteurNonAutoriser(_idCommande) {
+    }
+    function enregistrerCondition(
+        uint32 _idCommande,
+        string memory _cid
+    )
+        public
+        seulementTransporteur
+        commandeExistant(_idCommande)
+        transporteurNonAutoriser(_idCommande)
+    {
         if (commandes[_idCommande].enregistrerCondition) revert();
-        if (commandes[_idCommande].statutTransport == StructLib.StatutTransport.Livre) revert();
+        if (
+            commandes[_idCommande].statutTransport ==
+            StructLib.StatutTransport.Livre
+        ) revert();
 
         commandes[_idCommande].enregistrerCondition = true;
 
         // calcule de la hashMerkle
-        bytes32 hashMerkle = keccak256(abi.encodePacked(
+        bytes32 hashMerkle = keccak256(
+            abi.encodePacked(_idCommande, _cid, msg.sender, block.timestamp)
+        );
+
+        conditions[_idCommande] = StructLib.EnregistrementCondition(
             _idCommande,
             _cid,
-            msg.sender,
-            block.timestamp
-        ));
-        
-        conditions[_idCommande] = StructLib.EnregistrementCondition(_idCommande, _cid, block.timestamp, hashMerkle);
-        emit ConditionEnregistree(_idCommande, _cid, block.timestamp, msg.sender);
+            block.timestamp,
+            hashMerkle
+        );
+        emit ConditionEnregistree(
+            _idCommande,
+            _cid,
+            block.timestamp,
+            msg.sender
+        );
     }
     // ====================================== getter et setter =============================================
     /*
     ici les getters pour les recoltes
     */
-    function getRecolte(uint32 _idRecolte) public view returns (StructLib.Recolte memory) {
+    function getRecolte(
+        uint32 _idRecolte
+    ) public view returns (StructLib.Recolte memory) {
         return recoltes[_idRecolte];
     }
     function getCompteurRecoltes() public view returns (uint32) {
@@ -180,7 +342,9 @@ contract CollecteurProducteur {
     /*
     ici les getters pour les commandes
     */
-    function getCommande(uint32 _id) public view returns (StructLib.CommandeRecolte memory) {
+    function getCommande(
+        uint32 _id
+    ) public view returns (StructLib.CommandeRecolte memory) {
         return commandes[_id];
     }
     function getCompteurCommandes() public view returns (uint32) {
@@ -189,21 +353,31 @@ contract CollecteurProducteur {
     /*
     ici les getters pour les paiements
     */
-    function getPaiement(uint32 _id) public view returns (StructLib.Paiement memory) {
+    function getPaiement(
+        uint32 _id
+    ) public view returns (StructLib.Paiement memory) {
         return paiements[_id];
     }
     function getCompteurPaiments() public view returns (uint32) {
         return compteurCommandes;
     }
-    function getConditionTransport(uint32 _idCommande) public view returns (StructLib.EnregistrementCondition memory) {
+    function getConditionTransport(
+        uint32 _idCommande
+    ) public view returns (StructLib.EnregistrementCondition memory) {
         return conditions[_idCommande];
     }
 }
 interface ICollecteurExportateur {
-    function ajouterProduit(uint32 _idCommandeRecolte, uint32 _idRecolte, uint32 _quantite, address _collecteur) external;
+    function ajouterProduit(
+        uint32 _idCommandeRecolte,
+        uint32 _idRecolte,
+        uint32 _quantite,
+        address _collecteur
+    ) external;
 }
 interface IProducteur {
-    function getParcelle(uint32 id) external view returns(StructLib.Parcelle memory);
-    function getCompteurParcelle() external view returns(uint32);
-
+    function getParcelle(
+        uint32 id
+    ) external view returns (StructLib.Parcelle memory);
+    function getCompteurParcelle() external view returns (uint32);
 }

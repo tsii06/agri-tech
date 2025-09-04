@@ -110,6 +110,16 @@ contract CollecteurExportateur {
         compteurCommandes++;
         commandes[compteurCommandes] = StructLib.CommandeProduit(compteurCommandes, _idLotProduit, _quantite, _prix, false, StructLib.StatutTransport.EnCours, lotProduits[_idLotProduit].collecteur, msg.sender, StructLib.StatutProduit.EnAttente, false, false, address(0));
 
+        // pour la gestion multirole
+        if (lotProduits[_idLotProduit].collecteur == msg.sender) {
+            // mettre la commande comme deja livrer
+            commandes[compteurCommandes].statutTransport = StructLib.StatutTransport.Livre;
+            // mettre la commande comme valide
+            commandes[compteurCommandes].statutProduit = StructLib.StatutProduit.Valide;
+            // mettre la commande comme deja payee
+            commandes[compteurCommandes].payer = true;
+        }
+
         emit CommandePasser(msg.sender, _idLotProduit);
     }
     function choisirTransporteurCommandeProduit(uint32 idCommande, address transporteur) public seulementExportateur {
