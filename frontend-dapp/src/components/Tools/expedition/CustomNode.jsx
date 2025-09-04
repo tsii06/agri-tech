@@ -1,5 +1,14 @@
 import { Handle, Position } from "reactflow";
-import { Globe, Group, Truck, Sprout, MapPin } from "lucide-react";
+import {
+  Globe,
+  Truck,
+  Sprout,
+  MapPin,
+  CopyCheck,
+  Copy,
+  Package,
+} from "lucide-react";
+import { useState } from "react";
 
 function CustomNode({ data }) {
   return (
@@ -14,6 +23,14 @@ function CustomNode({ data }) {
 }
 
 export const ExpeditionNode = ({ data }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <div
       style={{
@@ -34,13 +51,28 @@ export const ExpeditionNode = ({ data }) => {
         {data.ref}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        {data.nomProduit || "Aucun détail disponible"}
+        <strong>{data.nomProduit || "Aucun détail disponible"}</strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Quantité: {data.quantite || "Non spécifiée"} kg
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Statut: {data.certifier ? "Certifier" : "Non certifier"}
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        RootMerkle:{" "}
+        {data.rootMerkle
+          ? data.rootMerkle.slice(0, 6) + "..." + data.rootMerkle.slice(-4)
+          : "N/A"}
+        {data.rootMerkle && (
+          <button
+            className="btn btn-link p-0 ms-2"
+            onClick={() => copyToClipboard(data.rootMerkle)}
+            style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+          >
+            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+          </button>
+        )}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -59,6 +91,14 @@ export const ExpeditionNode = ({ data }) => {
 };
 
 export const ConditionNode = ({ data }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <div
       className="border border-primary bg-opacity-25"
@@ -76,13 +116,30 @@ export const ConditionNode = ({ data }) => {
         {data.lieuDepart} - {data.destination}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        {data.dureeTransport || "Aucun détail disponible"} heures
+        <strong>{data.dureeTransport || "Aucun détail disponible"} heures</strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Temperature: {data.temperature || "Non spécifiée"} °C
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Humidite: {data.humidite || "Non certifier"} %
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        HashMerkle:{" "}
+        <strong>
+          {data.hashMerkle
+            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+            : "N/A"}
+        </strong>
+        {data.hashMerkle && (
+          <button
+            className="btn btn-link p-0 ms-2"
+            onClick={() => copyToClipboard(data.hashMerkle)}
+            style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+          >
+            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+          </button>
+        )}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -101,6 +158,14 @@ export const ConditionNode = ({ data }) => {
 };
 
 export const LotProduitNode = ({ data }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <div
       style={{
@@ -112,7 +177,7 @@ export const LotProduitNode = ({ data }) => {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <Group
+      <Package
         size={32}
         color="var(--madtx-green)"
         style={{ marginBottom: 10 }}
@@ -121,16 +186,30 @@ export const LotProduitNode = ({ data }) => {
         Lot Produit&nbsp;#{data.id || "N/A"}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        {data.nom || "N/A"}
+        <strong>{data.nom || "N/A"}</strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        Collecteur:{" "}
-        {data.collecteur
-          ? data.collecteur.nom
-          : "Non spécifiée"}
+        Collecteur: {data.collecteur ? data.collecteur.nom : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Quantité: {data.quantite || "Non spécifiée"} kg
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        HashMerkle:{" "}
+        <strong>
+          {data.hashMerkle
+            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+            : "N/A"}
+        </strong>
+        {data.hashMerkle && (
+          <button
+            className="btn btn-link p-0 ms-2"
+            onClick={() => copyToClipboard(data.hashMerkle)}
+            style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+          >
+            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+          </button>
+        )}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -149,6 +228,14 @@ export const LotProduitNode = ({ data }) => {
 };
 
 export const RecolteNode = ({ data }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <div
       style={{
@@ -169,13 +256,7 @@ export const RecolteNode = ({ data }) => {
         Recolte&nbsp;#{data.id}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        {data.nomProduit || "N/A"}
-      </p>
-      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        Producteur:{" "}
-        {data.producteur
-          ? data.producteur.nom
-          : "Non spécifiée"}
+        <strong>{data.nomProduit || "N/A"}</strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Quantité: {data.quantite || "Non spécifiée"} kg
@@ -185,6 +266,23 @@ export const RecolteNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Status: {data.certifie ? "Certifier" : "Non certifier"}
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        HashMerkle:{" "}
+        <strong>
+          {data.hashMerkle
+            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+            : "N/A"}
+        </strong>
+        {data.hashMerkle && (
+          <button
+            className="btn btn-link p-0 ms-2"
+            onClick={() => copyToClipboard(data.hashMerkle)}
+            style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+          >
+            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+          </button>
+        )}
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -203,6 +301,14 @@ export const RecolteNode = ({ data }) => {
 };
 
 export const ParcelleNode = ({ data }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  };
+
   return (
     <div
       style={{
@@ -223,9 +329,9 @@ export const ParcelleNode = ({ data }) => {
         Parcelle&nbsp;#{data.id}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        Producteur:{" "}
+        <span className="small" style={{color:"#777"}}>Producteur:</span>{" "}
         {data.producteur
-          ? data.producteur.slice(0, 6) + "..."
+          ? data.producteur.nom
           : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
@@ -233,6 +339,23 @@ export const ParcelleNode = ({ data }) => {
         {data.location && data.location.lat && data.location.lng
           ? `${data.location.lat.toFixed(4)}, ${data.location.lng.toFixed(4)}`
           : "Non spécifiée"}
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        HashMerkle:{" "}
+        <strong>
+          {data.hashMerkle
+            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+            : "N/A"}
+        </strong>
+        {data.hashMerkle && (
+          <button
+            className="btn btn-link p-0 ms-2"
+            onClick={() => copyToClipboard(data.hashMerkle)}
+            style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+          >
+            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+          </button>
+        )}
       </p>
       {/* Point de sortie (droite) */}
       <Handle

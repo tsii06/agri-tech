@@ -1,5 +1,6 @@
 import { getProducteurContract } from "../contract";
 import { getFileFromPinata } from "../ipfsUtils";
+import { getActeur } from "./gestionnaireActeurs";
 
 const contrat = await getProducteurContract();
 
@@ -16,7 +17,7 @@ export const getParcelle = async (_idParcelle) => {
     parcelleComplet = {
       id: Number(parcelleOnChain.id),
       cid: parcelleOnChain.cid.toString(),
-      producteur: parcelleOnChain.producteur.toString(),
+      producteur: await getActeur(parcelleOnChain.producteur.toString()),
       hashMerkle: parcelleOnChain.hashMerkle.toString(),
     };
   } catch (error) {

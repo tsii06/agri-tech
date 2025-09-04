@@ -7,7 +7,7 @@ import {
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
-import { Box, ChevronDown, ChevronUp, MapPin, Truck } from "lucide-react";
+import { Box, ChevronDown, ChevronUp, MapPin, Truck, Copy, CopyCheck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
@@ -22,6 +22,7 @@ const DetailsExpedition = ({}) => {
   const [lotProduits, setLotProduits] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
@@ -54,6 +55,12 @@ const DetailsExpedition = ({}) => {
   const chargerConditionsTransport = async () => {
     const conditionsExp = await getConditionsTransportExpedition(expedition);
     setConditionsTransport(conditionsExp);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
 
   useEffect(() => {
@@ -121,6 +128,15 @@ const DetailsExpedition = ({}) => {
                         "..." +
                         expedition.rootMerkle.slice(-4)
                       : "N/A"}
+                    {expedition.rootMerkle && (
+                      <button
+                        className="btn btn-link p-0 ms-2"
+                        onClick={() => copyToClipboard(expedition.rootMerkle)}
+                        style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+                      >
+                        {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+                      </button>
+                    )}
                   </p>
                 </div>
                 <hr />
