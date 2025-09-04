@@ -95,14 +95,18 @@ const ParcelleCard = ({
   };
 
   return (
-    <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
-      <div className="d-flex justify-content-center align-items-center mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
+    <div className="card shadow-sm p-3 position-relative" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+      {/* Badge Status in the top-right corner */}
+      <div className="position-absolute" style={{ top: 10, right: 10 }}>
+        {renderStatusBadge()}
+      </div>
+
+      <div className="d-flex justify-content-center align-items-center mt-4 mb-2" style={{ fontSize: 32, color: '#4d7c0f' }}>
         <MapPin size={36} />
       </div>
-      
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h5 className="card-title mb-0"><strong>ID:</strong> {id}</h5>
-        {renderStatusBadge()}
+
+      <div className="d-flex justify-content-center mb-2">
+        <h5 className="card-title mb-0"><strong>Parcelle#{id}</strong></h5>
       </div>
 
       <div className="card-text">
@@ -129,41 +133,6 @@ const ParcelleCard = ({
           <Calendar size={16} className="me-2 text-success" />
           <strong>Date de récolte prévue:</strong> {dateRecolte}
         </p>
-
-        {/* Informations IPFS et Merkle */}
-        {cid && (
-          <div className="mt-2 p-2 bg-light rounded">
-            <p className="mb-1">
-              <Database size={14} className="me-2 text-primary" />
-              <strong>CID IPFS:</strong> 
-              <a
-                href={getIPFSURL(cid)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ms-2 text-decoration-none text-primary"
-                title="Voir les données consolidées sur IPFS"
-              >
-                {cid.substring(0, 10)}...
-              </a>
-            </p>
-            
-            {hashMerkle && (
-              <p className="mb-1">
-                <Hash size={14} className="me-2 text-success" />
-                <strong>Hash Merkle:</strong> 
-                <span className="ms-2 text-muted" title={hashMerkle}>
-                  {hashMerkle.substring(0, 10)}...
-                </span>
-              </p>
-            )}
-
-            {ipfsTimestamp && (
-              <p className="mb-1 text-muted small">
-                <strong>Dernière mise à jour IPFS:</strong> {new Date(ipfsTimestamp).toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Certificat phytosanitaire */}
         {certificatPhytosanitaire && (
@@ -203,21 +172,6 @@ const ParcelleCard = ({
       <div className="d-flex justify-content-between mt-3">
         {renderLinks()}
       </div>
-
-      {/* Lien vers les détails complets IPFS */}
-      {cid && (
-        <div className="mt-2 text-center">
-          <a
-            href={getIPFSURL(cid)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline-primary btn-sm w-100"
-          >
-            <Database size={14} className="me-1" />
-            Voir toutes les données IPFS
-          </a>
-        </div>
-      )}
     </div>
   );
 };

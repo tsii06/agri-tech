@@ -5,9 +5,9 @@ import { getActeur } from "./gestionnaireActeurs";
 const contrat = await getCollecteurProducteurContract();
 
 /**
- * 
- * @param {number} _idCommande 
- * @returns 
+ *
+ * @param {number} _idCommande
+ * @returns
  */
 export const getCommandeRecolte = async (_idCommande) => {
   try {
@@ -31,9 +31,9 @@ export const getCommandeRecolte = async (_idCommande) => {
 };
 
 /**
- * 
- * @param {number} _idCommande 
- * @returns 
+ *
+ * @param {number} _idCommande
+ * @returns
  */
 export const getConditionTransportPC = async (_idCommande) => {
   let conditionComplet = {};
@@ -57,14 +57,14 @@ export const getConditionTransportPC = async (_idCommande) => {
   const conditionIpfs = await getFileFromPinata(conditionComplet.cid);
   conditionComplet = {
     ...conditionComplet,
-    ...conditionIpfs.data.items
+    ...conditionIpfs.data.items,
   };
   return conditionComplet;
 };
 
 /**
- * 
- * @param {number} _idRecolte 
+ *
+ * @param {number} _idRecolte
  * @returns {object}
  */
 export const getRecolte = async (_idRecolte) => {
@@ -77,27 +77,53 @@ export const getRecolte = async (_idRecolte) => {
     // convertir array
     const idParcelles = Object.values(recolteOnChain.idParcelle);
     // recuperer details acteur
-    const producteurDetails = await getActeur(recolteOnChain.producteur.toString());  
+    const producteurDetails = await getActeur(
+      recolteOnChain.producteur.toString()
+    );
 
     recolteComplet = {
       id: Number(recolteOnChain.id),
       quantite: Number(recolteOnChain.quantite),
       prixUnit: Number(recolteOnChain.prixUnit),
-      idParcelle: idParcelles.map(id => Number(id)),
+      idParcelle: idParcelles.map((id) => Number(id)),
       certifie: recolteOnChain.certifie,
-      certificatPhytosanitaire: recolteOnChain.certificatPhytosanitaire.toString(),
-      producteur: {...producteurDetails},
+      certificatPhytosanitaire:
+        recolteOnChain.certificatPhytosanitaire.toString(),
+      producteur: {
+        ...producteurDetails,
+        adresse: recolteOnChain.producteur.toString(),
+      },
       hashMerkle: recolteOnChain.hashMerkle.toString(),
       cid: recolteOnChain.cid.toString(),
-    }
+    };
   } catch (error) {
     console.error("Recuperation recolte : ", error);
   }
 
   // recuperation info off-chain
-  const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
-  return {
-    ...recolteIpfs.data.items,
-    ...recolteComplet,
-  };
+  if (recolteComplet.cid && recolteComplet.cid !== "") {
+    const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
+    // Format : jour mois année
+    let dateRecolteFormat = "N/A";
+    if (
+      recolteIpfs.data.items.dateRecolte &&
+      recolteIpfs.data.items.dateRecolte !== ""
+    ) {
+      dateRecolteFormat = new Date(
+        recolteIpfs.data.items.dateRecolte
+      ).toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    return {
+      ...recolteIpfs.data.items,
+      ...recolteComplet,
+      dateRecolte: dateRecolteFormat,
+    };
+  } else {
+    return recolteComplet;
+  }
 };

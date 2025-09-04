@@ -5,6 +5,7 @@ import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from '../../utils/roles';
 import { uploadCertificatPhytosanitaire, getIPFSURL } from "../../utils/ipfsUtils";
+import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -45,80 +46,19 @@ function ListeRecoltes() {
       const recoltesTemp = [];
       
       for (let i = 1; i <= compteurRecoltes; i++) {
-        const recolteRaw = await contract.getRecolte(i);
-        let recolte = {
-          id: Number(recolteRaw.id ?? i),
-          idParcelles: (recolteRaw.idParcelle || []).map((v) => Number(v)),
-          quantite: Number(recolteRaw.quantite ?? 0),
-          prixUnit: Number(recolteRaw.prixUnit ?? recolteRaw.prix ?? 0),
-          certifie: Boolean(recolteRaw.certifie),
-          certificatPhytosanitaire: recolteRaw.certificatPhytosanitaire || "",
-          producteur: recolteRaw.producteur?.toString?.() || recolteRaw.producteur || "",
-          cid: recolteRaw.cid || "",
-          hashMerkle: recolteRaw.hashMerkle || "",
-          nomProduit: recolteRaw.nomProduit || "",
-          dateRecolte: recolteRaw.dateRecolte || ""
-        };
-
+        const recolteRaw = await getRecolte(i);
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
           if (roles.includes(0))
-            if (recolte.producteur.toLowerCase() !== account.toLowerCase())
+            if (recolteRaw.producteur.adresse.toLowerCase() !== account.toLowerCase())
               continue;
         
         // Filtre les recoltes si 'address' est definie dans l'url
         if (address !== undefined)
-          if (recolte.producteur.toLowerCase() !== address.toLowerCase())
+          if (recolteRaw.producteur.adresse.toLowerCase() !== address.toLowerCase())
             continue;
-        
-        // Charger les données IPFS consolidées si la récolte a un CID
-        if (recolte.cid) {
-          try {
-            const response = await fetch(getIPFSURL(recolte.cid));
-            if (response.ok) {
-              const contentType = response.headers.get('content-type') || '';
-              if (contentType.includes('application/json')) {
-                const ipfsData = await response.json();
-                const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                // Fusionner les données blockchain avec les données IPFS
-                recolte = {
-                  ...recolte,
-                  nomProduit: root.nomProduit || recolte.nomProduit || "Produit non spécifié",
-                  dateRecolte: root.dateRecolte || recolte.dateRecolte || "Date non spécifiée",
-                  ipfsTimestamp: ipfsData.timestamp,
-                  ipfsVersion: ipfsData.version,
-                  parcelleHashMerkle: root.parcelleHashMerkle || ""
-                };
-              } else {
-                // Si ce n'est pas du JSON (ex: PDF), on garde les données blockchain
-                // sans lever d'erreur pour que l'affichage reste correct
-              }
-            }
-          } catch (ipfsError) {
-            console.debug(`IPFS non JSON ou non lisible pour la récolte ${i}:`, ipfsError?.message || ipfsError);
-            // Garder les données blockchain de base si IPFS échoue
-            recolte = {
-              ...recolte,
-              nomProduit: "Données IPFS non disponibles",
-              dateRecolte: "Données IPFS non disponibles",
-              ipfsTimestamp: null,
-              ipfsVersion: null,
-              parcelleHashMerkle: ""
-            };
-          }
-        } else {
-          // Récolte sans CID IPFS (ancienne structure)
-          recolte = {
-            ...recolte,
-            nomProduit: "Données non consolidées",
-            dateRecolte: "Données non consolidées",
-            ipfsTimestamp: null,
-            ipfsVersion: null,
-            parcelleHashMerkle: ""
-          };
-        }
 
-        recoltesTemp.push(recolte);
+        recoltesTemp.push(recolteRaw);
       }
       recoltesTemp.reverse();
       setRecoltes(recoltesTemp);
@@ -223,7 +163,7 @@ function ListeRecoltes() {
       const contract = await getCollecteurProducteurContract();
       const tx = await contract.modifierPrixRecolte(recoltePrixSelectionnee.id, nouveauPrix);
       await tx.wait();
-      chargerRecoltes();
+      await chargerRecoltes();
       setShowModalPrix(false);
       alert("Prix modifié avec succès !");
     } catch (error) {
@@ -337,41 +277,8 @@ function ListeRecoltes() {
                     <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ariary</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
-                    <p><strong>Producteur:</strong> {recolte.producteur}</p>
+                    <p><strong>Producteur:</strong> {recolte.producteur.nom}</p>
                     
-                    {/* Informations IPFS et Merkle */}
-                    {recolte.cid && (
-                      <div className="mt-2 p-2 bg-light rounded">
-                        <p className="mb-1">
-                          <strong>CID IPFS:</strong> 
-                          <a
-                            href={getIPFSURL(recolte.cid)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ms-2 text-decoration-none text-primary"
-                            title="Voir les données consolidées sur IPFS"
-                          >
-                            {recolte.cid.substring(0, 10)}...
-                          </a>
-                        </p>
-                        
-                        {recolte.hashMerkle && (
-                          <p className="mb-1">
-                            <strong>Hash Merkle:</strong> 
-                            <span className="ms-2 text-muted" title={recolte.hashMerkle}>
-                              {recolte.hashMerkle.substring(0, 10)}...
-                            </span>
-                          </p>
-                        )}
-
-                        {recolte.ipfsTimestamp && (
-                          <p className="mb-1 text-muted small">
-                            <strong>Dernière mise à jour IPFS:</strong> {new Date(recolte.ipfsTimestamp).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
                     {recolte.certificatPhytosanitaire && (
                       <p className="mt-2">
                         <strong>Certificat phytosanitaire:</strong>
@@ -423,18 +330,6 @@ function ListeRecoltes() {
                       >
                         Modifier le prix
                       </button>
-                    )}
-
-                    {/* Lien vers les détails complets IPFS */}
-                    {recolte.cid && (
-                      <a
-                        href={getIPFSURL(recolte.cid)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-outline-primary btn-sm"
-                      >
-                        Voir données IPFS
-                      </a>
                     )}
                   </div>
                 </div>
