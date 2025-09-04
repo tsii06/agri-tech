@@ -7,6 +7,9 @@ import {
   CopyCheck,
   Copy,
   Package,
+  ThermometerSnowflakeIcon,
+  DropletsIcon,
+  TimerIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -118,13 +121,11 @@ export const ConditionNode = ({ data }) => {
         {data.lieuDepart} - {data.destination}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        <strong>{data.dureeTransport || "Aucun détail disponible"} heures</strong>
+        <strong><TimerIcon size={18} /> {data.dureeTransport || "Aucun détail disponible"} heures</strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        Temperature: {data.temperature || "Non spécifiée"} °C
-      </p>
-      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        Humidite: {data.humidite || "Non certifier"} %
+        <ThermometerSnowflakeIcon size={14} /> {data.temperature || "Non spécifiée"} °C&nbsp;-&nbsp;
+        <DropletsIcon size={14} /> {data.humidite || "Non spécifiée"} %
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         HashMerkle:{" "}

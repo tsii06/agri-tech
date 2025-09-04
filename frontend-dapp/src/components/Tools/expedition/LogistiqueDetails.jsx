@@ -1,3 +1,4 @@
+import { Droplet, DropletOff, DropletsIcon, Thermometer, ThermometerIcon, ThermometerSnowflake, ThermometerSnowflakeIcon, ThermometerSun } from "lucide-react";
 import React from "react";
 
 const LogistiqueDetails = ({ condition }) => {
@@ -13,8 +14,8 @@ const LogistiqueDetails = ({ condition }) => {
       >
         <div>
           <p className="small mb-0">
-            <span className="text-muted">Température:</span> {condition.temperature || "N/A"} °C <br />
-            <span className="text-muted">Humidite:</span> {condition.humidite || "N/A"} %
+            <span className="text-muted"><ThermometerSnowflakeIcon size={16} /> Température:</span> {condition.temperature || "N/A"} °C <br />
+            <span className="text-muted"><DropletsIcon size={16} /> Humidité:</span> {condition.humidite || "N/A"} %
           </p>
         </div>
         <div>
