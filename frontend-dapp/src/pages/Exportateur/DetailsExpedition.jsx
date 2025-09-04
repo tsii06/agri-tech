@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  getAllHashMerkle,
   getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
   getLotProduisExpedition,
@@ -30,6 +31,7 @@ const DetailsExpedition = ({}) => {
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState([]);
+  const [allHashesMerkle, setAllHashesMerkle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -43,7 +45,9 @@ const DetailsExpedition = ({}) => {
   const chargerDetailsExpedition = async () => {
     setLoading(true);
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
+    const hashesMerkle = await getAllHashMerkle(detailsExpedition.idCommandeProduit);
     setExpedition(detailsExpedition);
+    setAllHashesMerkle(hashesMerkle);
     setLoading(false);
   };
 
@@ -396,7 +400,7 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                <VisualiserMerkleTree />
+                <VisualiserMerkleTree hashes={allHashesMerkle} />
               </div>
             </div>
           </div>
