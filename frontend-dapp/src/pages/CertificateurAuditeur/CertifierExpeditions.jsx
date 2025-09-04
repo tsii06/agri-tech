@@ -133,17 +133,20 @@ export default function CertifierExpeditions() {
     <div className="container mt-4">
       <div className="d-flex align-items-center justify-content-between mb-3">
         <h2>Certification des expéditions</h2>
-        <div className="form-check">
-          <input
-            id="onlyPending"
-            type="checkbox"
-            className="form-check-input"
-            checked={onlyPending}
-            onChange={(e) => setOnlyPending(e.target.checked)}
-          />
-          <label htmlFor="onlyPending" className="form-check-label ms-2">
-            Afficher uniquement en attente
+        <div className="form-group d-flex align-items-center">
+          <label htmlFor="certifierFilter" className="me-2 mb-0">
+            Filtre :
           </label>
+          <select
+            id="certifierFilter"
+            className="form-select"
+            style={{ width: 180 }}
+            value={onlyPending ? "pending" : "all"}
+            onChange={(e) => setOnlyPending(e.target.value === "pending")}
+          >
+            <option value="pending">Non certifiées</option>
+            <option value="all">Toutes</option>
+          </select>
         </div>
       </div>
       {message && <div className="alert alert-info">{message}</div>}

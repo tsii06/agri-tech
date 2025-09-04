@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Package2, BadgeCheck, Calendar, FileCheck2, Hash, Database, AlertCircle } from "lucide-react";
+import { MapPin, Package2, BadgeCheck, Calendar, FileCheck2, Hash, Database, AlertCircle, ShieldCheck, Fingerprint, User } from "lucide-react";
 import { hasRole } from '../../utils/roles';
 import { getIPFSURL } from '../../utils/ipfsUtils';
 
@@ -132,6 +132,16 @@ const ParcelleCard = ({
         <p>
           <Calendar size={16} className="me-2 text-success" />
           <strong>Date de récolte prévue:</strong> {dateRecolte}
+        </p>
+
+        <p>
+          <User size={16} className="me-2 text-success" />
+          <strong>Producteur:</strong> {producteur?.nom || "N/A"}
+        </p>
+
+        <p>
+          <Fingerprint size={16} className="me-2 text-success" />
+          <strong>Hash merkle:</strong> {hashMerkle?.slice(0,6)}...{hashMerkle?.slice(-4)}
         </p>
 
         {/* Certificat phytosanitaire */}

@@ -18,12 +18,16 @@ export const getParcelle = async (_idParcelle) => {
       id: Number(parcelleOnChain.id),
       cid: parcelleOnChain.cid.toString(),
       producteur: await getActeur(parcelleOnChain.producteur.toString()),
-      hashMerkle: parcelleOnChain.hashMerkle.toString(),
+      hashMerkle: parcelleOnChain.hashMerkle?.toString() || "",
     };
   } catch (error) {
     console.error("Recuperation parcelle : ", error);
+    return {};
   }
 
+  if (!parcelleComplet.cid || parcelleComplet.cid === "") {
+    return { ...parcelleComplet };
+  }
   // recuperation data off-chain
   const parcelleIpfs = await getFileFromPinata(parcelleComplet.cid);
 

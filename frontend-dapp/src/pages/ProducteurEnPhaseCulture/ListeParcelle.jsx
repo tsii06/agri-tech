@@ -5,6 +5,7 @@ import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { hasRole } from "../../utils/roles";
+import { getParcelle } from "../../utils/contrat/producteur";
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
@@ -38,83 +39,18 @@ function MesParcelles() {
       }
 
       const parcellesPromises = [];
-      let parcelle;
       
       for (let i = 1; i <= compteurParcelles; i++) {
-        const parcelleRaw = await contract.getParcelle(i);
-        // Normaliser la structure ethers en objet simple pour éviter la perte de champs avec l'opérateur spread
-        const parcelleBase = {
-          id: Number(parcelleRaw.id ?? i),
-          producteur: parcelleRaw.producteur?.toString?.() ?? parcelleRaw.producteur,
-          cid: parcelleRaw.cid ?? "",
-          hashMerkle: parcelleRaw.hashMerkle ?? "",
-          certificatPhytosanitaire: parcelleRaw.certificatPhytosanitaire ?? parcelleRaw.certificat ?? ""
-        };
-        parcelle = parcelleBase;
+        const parcelleRaw = await getParcelle(i);
 
         // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)
         if(hasRole(roles, 0)) {
-          if (parcelle.producteur.toLowerCase() !== account.toLowerCase()) {
+          if (parcelleRaw.producteur.adresse.toLowerCase() !== account.toLowerCase()) {
             continue;
           }
         }
 
-        // Charger les données IPFS consolidées si la parcelle a un CID
-        if (parcelle.cid) {
-          try {
-            const response = await fetch(getIPFSURL(parcelle.cid));
-            if (response.ok) {
-              const ipfsData = await response.json();
-              const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-              
-              // Fusionner les données blockchain avec les données IPFS
-              parcelle = {
-                ...parcelle,
-                // Données de base de la parcelle
-                qualiteSemence: root.qualiteSemence || "Non spécifiée",
-                methodeCulture: root.methodeCulture || "Non spécifiée",
-                dateRecolte: root.dateRecolte || "Non spécifiée",
-                location: root.location || { lat: 0, lng: 0 },
-                // Photos, intrants et inspections depuis IPFS
-                photos: root.photos || [],
-                intrants: root.intrants || [],
-                inspections: root.inspections || [],
-                // Certificat depuis IPFS
-                certificatPhytosanitaire: root.certificat || parcelle.certificatPhytosanitaire,
-                // Métadonnées IPFS
-                ipfsTimestamp: ipfsData.timestamp,
-                ipfsVersion: ipfsData.version
-              };
-            }
-          } catch (ipfsError) {
-            console.log(`Erreur lors du chargement IPFS pour la parcelle ${i}:`, ipfsError);
-            // Garder les données blockchain de base si IPFS échoue
-            parcelle = {
-              ...parcelle,
-              qualiteSemence: "Données IPFS non disponibles",
-              methodeCulture: "Données IPFS non disponibles",
-              dateRecolte: "Données IPFS non disponibles",
-              location: { lat: 0, lng: 0 },
-              photos: [],
-              intrants: [],
-              inspections: []
-            };
-          }
-        } else {
-          // Parcelle sans CID IPFS (ancienne structure)
-          parcelle = {
-            ...parcelle,
-            qualiteSemence: "Données non consolidées",
-            methodeCulture: "Données non consolidées",
-            dateRecolte: "Données non consolidées",
-            location: { lat: 0, lng: 0 },
-            photos: [],
-            intrants: [],
-            inspections: []
-          };
-        }
-
-        parcellesPromises.push(parcelle);
+        parcellesPromises.push(parcelleRaw);
       }
 
       setParcelles(parcellesPromises);
