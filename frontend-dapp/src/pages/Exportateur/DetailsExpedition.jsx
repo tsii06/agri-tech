@@ -7,12 +7,21 @@ import {
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
-import { Box, ChevronDown, ChevronUp, MapPin, Truck, Copy, CopyCheck } from "lucide-react";
+import {
+  Box,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Truck,
+  Copy,
+  CopyCheck,
+} from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
 import LotProduitDetails from "../../components/Tools/expedition/LotProduitDetails";
 import LogistiqueDetails from "../../components/Tools/expedition/LogistiqueDetails";
+import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkleTree";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -29,6 +38,7 @@ const DetailsExpedition = ({}) => {
   const [showRecoltes, setShowRecoltes] = useState(false);
   const [showProduits, setShowProduits] = useState(false);
   const [showLogistique, setShowLogistique] = useState(false);
+  const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
@@ -132,7 +142,10 @@ const DetailsExpedition = ({}) => {
                       <button
                         className="btn btn-link p-0 ms-2"
                         onClick={() => copyToClipboard(expedition.rootMerkle)}
-                        style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+                        style={{
+                          textDecoration: "underline",
+                          color: "var(--madtx-green)",
+                        }}
                       >
                         {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
                       </button>
@@ -349,6 +362,41 @@ const DetailsExpedition = ({}) => {
                   parcelles.map((parcelle) => (
                     <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
                   ))}
+              </div>
+            </div>
+
+            {/* Arbre de merkle */}
+            <div
+              className="card shadow-sm"
+              style={{ width: "100%", margin: "0 auto" }}
+            >
+              <div
+                className="d-flex align-items-center justify-content-between border-bottom p-4"
+                style={{
+                  cursor: "pointer",
+                  transition: "background-color 0.3s ease",
+                }}
+                onClick={() => {
+                  setShowArbreMerkle(!showArbreMerkle);
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "")
+                }
+              >
+                <h6 className="mb-0 fw-bold">Arbre de merkle</h6>
+                {showArbreMerkle ? <ChevronUp /> : <ChevronDown />}
+              </div>
+              <div
+                className={`bg-light overflow-hidden`}
+                style={{
+                  maxHeight: showArbreMerkle ? "1000px" : "0",
+                  transition: "max-height 0.5s ease-in-out",
+                }}
+              >
+                <VisualiserMerkleTree />
               </div>
             </div>
           </div>

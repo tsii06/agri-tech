@@ -278,8 +278,8 @@ async function main() {
 
     // Ajouter expedition
     console.log("Création d'une expédition par l'exportateur...");
-    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([2], 32, "bafkreib45g2bcgg44xie2mhgrmdngbqldle4345nsxxmbyntlkgvo6earu", "0x57d2d207e61389ca5d1d4fb3d89341e0187c6ca43005571ff596d8405b2b0773");
-    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([1], 998, "bafkreiadrkfkss3vm5uhjdflp7juovyy5ljgfcatsa5qw4chsi3japnpbq", "0x5470a0be78bb9fa21166f31bf2abf0c857218b7f4bc6899547aeddaebb841026");
+    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([2], 32, "bafkreib45g2bcgg44xie2mhgrmdngbqldle4345nsxxmbyntlkgvo6earu", "0xd2c0189ead16018833f77f771f697b3a3ea26f66a9c2f527021091bc18dd894a");
+    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([1], 998, "bafkreiadrkfkss3vm5uhjdflp7juovyy5ljgfcatsa5qw4chsi3japnpbq", "0x0e904e82129bcef383eebad3ab2205f88e16a6c4facdef88d17490ddd2671bad");
 
     console.log("Déploiement terminé avec succès!");
 }
