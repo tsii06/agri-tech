@@ -15,7 +15,7 @@ export const getCommandeRecolte = async (_idCommande) => {
     
     const producteurDetails = await getActeur(res.producteur.toString());
     const collecteurDetails = await getActeur(res.collecteur.toString());
-    const transporteurDetails = await getActeur(res.transporteur.toString());
+    const transporteurDetails = await getActeur(res.transporteur.toString()) || {};
 
     return {
       id: Number(res.id),

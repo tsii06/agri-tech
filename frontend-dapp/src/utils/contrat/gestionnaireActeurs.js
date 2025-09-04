@@ -25,6 +25,6 @@ export const getActeur = async (_address) => {
         return acteurComplet;
     } catch (error) {
         console.error("Recuperation acteur : ", error);
-        return;
+        return {};
     }
 };

@@ -2,20 +2,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
-import { getIPFSURL } from "../../utils/ipfsUtils";
 import {
-  ClipboardList,
-  Hash,
-  Package2,
-  BadgeEuro,
-  User,
-  Truck,
-  Wallet,
   Search,
   ChevronDown,
-  Circle,
 } from "lucide-react";
-import { ethers } from "ethers";
+import {
+  getCommandeRecolte,
+  getConditionTransportPC,
+  getRecolte,
+} from "../../utils/contrat/collecteurProducteur";
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
@@ -47,10 +42,10 @@ function CommandeCollecteur() {
       const commandesTemp = [];
 
       for (let i = 1; i <= compteurCommandes; i++) {
-        const commandeRaw = await contract.getCommande(i);
+        const commandeRaw = await getCommandeRecolte(i);
         // Filtrer par collecteur connecté
         const collecteurAddr =
-          commandeRaw.collecteur?.toString?.() || commandeRaw.collecteur;
+          commandeRaw.collecteur.adresse?.toString?.() || "";
         if (
           collecteurAddr &&
           collecteurAddr.toLowerCase() === account.toLowerCase()
@@ -58,96 +53,19 @@ function CommandeCollecteur() {
           // recuperer condition de transport s'il y en a
           let commande = {};
           if (commandeRaw.enregistrerCondition) {
-            const conditions = await contract.getConditionTransport(i);
-            const res = await fetch(getIPFSURL(conditions.cid));
-            if (res.ok) {
-              const ipfsData = await res.json();
-              const root =
-                ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-              commande = {
-                temperature: root.temperature,
-                humidite: root.humidite,
-                dureeTransport: root.dureeTransport,
-                lieuDepart: root.lieuDepart,
-                destination: root.destination,
-              };
-            }
+            const conditions = await getConditionTransportPC(i);
+            commande = {
+              ...conditions,
+            };
           }
+          // recuperer le nom du produit
+          const recolteOnChain = await getRecolte(commandeRaw.idRecolte);
 
-          // Normaliser la commande en objet simple (évite BigInt/Result)
           commande = {
             ...commande,
-            id: Number(commandeRaw.id ?? i),
-            idRecolte: Number(commandeRaw.idRecolte ?? 0),
-            quantite: Number(commandeRaw.quantite ?? 0),
-            prix: Number(commandeRaw.prix ?? 0),
-            payer: Boolean(commandeRaw.payer),
-            statutTransport: Number(commandeRaw.statutTransport ?? 0),
-            producteur:
-              commandeRaw.producteur?.toString?.() ||
-              commandeRaw.producteur ||
-              "",
-            transporteur:
-              commandeRaw.transporteur?.toString?.() ||
-              commandeRaw.transporteur ||
-              "",
-            collecteur: collecteurAddr || "",
-            statutRecolte: Number(commandeRaw.statutRecolte ?? 0),
-            hashMerkle: commandeRaw.hashMerkle || "",
-            // placeholders enrichis après
-            nomProduit: "",
-            enregistrerCondition: commandeRaw.enregistrerCondition,
-            ipfsTimestamp: null,
-            ipfsVersion: null,
+            ...commandeRaw,
+            nomProduit: recolteOnChain.nomProduit,
           };
-
-          // Charger la récolte associée pour enrichir (cid, nom/date via IPFS)
-          try {
-            const recolteRaw = await contract.getRecolte(commande.idRecolte);
-            const recolteCid = recolteRaw.cid || "";
-            // Si le cid de la récolte pointe vers un JSON, charger nom/date
-            if (recolteCid) {
-              const resp = await fetch(getIPFSURL(recolteCid));
-              if (resp.ok) {
-                const contentType = resp.headers.get("content-type") || "";
-                if (contentType.includes("application/json")) {
-                  const ipfsData = await resp.json();
-                  const root =
-                    ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                  commande.nomProduit =
-                    root.nomProduit ||
-                    commande.nomProduit ||
-                    "Produit non spécifié";
-                  commande.dateRecolte =
-                    root.dateRecolte ||
-                    commande.dateRecolte ||
-                    "Date non spécifiée";
-                  commande.ipfsTimestamp = ipfsData.timestamp || null;
-                  commande.ipfsVersion = ipfsData.version || null;
-                  commande.recolteHashMerkle =
-                    root.parcelleHashMerkle || commande.recolteHashMerkle || "";
-                } else {
-                  commande.ipfsWarning =
-                    "Le CID de la récolte ne pointe pas vers un JSON (ex: document)";
-                  setWarnings((prev) => [
-                    ...prev,
-                    `Commande #${commande.id}: CID non JSON`,
-                  ]);
-                }
-              }
-            }
-          } catch (e) {
-            commande.ipfsWarning =
-              e?.message ||
-              "Erreur lors du chargement des données IPFS de la récolte";
-            setWarnings((prev) => [
-              ...prev,
-              `Commande #${commande.id}: ${commande.ipfsWarning}`,
-            ]);
-          }
-
-          // Valeurs par défaut si rien trouvé
-          if (!commande.nomProduit) commande.nomProduit = "(Sans nom)";
 
           commandesTemp.push(commande);
         }
@@ -443,29 +361,7 @@ function CommandeCollecteur() {
                   }}
                 >
                   <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h5 className="card-title mb-0">Commande #{commande.id}</h5>
-                    <div>
-                      {commande.cid && commande.hashMerkle ? (
-                        <span className="badge bg-success me-1">
-                          IPFS + Merkle
-                        </span>
-                      ) : commande.cid ? (
-                        <span className="badge bg-warning me-1">
-                          IPFS uniquement
-                        </span>
-                      ) : (
-                        <span className="badge bg-secondary me-1">
-                          Données non consolidées
-                        </span>
-                      )}
-                      <span
-                        className={`badge ${
-                          commande.payer ? "bg-success" : "bg-warning"
-                        }`}
-                      >
-                        {getStatutPaiement(commande.payer)}
-                      </span>
-                    </div>
+                    <h5 className="card-title mb-4">Commande #{commande.id}</h5>
                   </div>
 
                   <div className="card-text">
@@ -473,7 +369,7 @@ function CommandeCollecteur() {
                       <strong>Produit:</strong> {commande.nomProduit}
                     </p>
                     <p>
-                      <strong>ID Récolte:</strong> {commande.idRecolte}
+                      <strong>Récolte:</strong> #{commande.idRecolte}
                     </p>
                     <p>
                       <strong>Quantité:</strong> {commande.quantite} kg
@@ -485,16 +381,14 @@ function CommandeCollecteur() {
                       <strong>Date recolte :</strong> {commande.dateRecolte}
                     </p>
                     <p>
-                      <strong>Producteur:</strong> {commande.producteur}
+                      <strong>Producteur:</strong>{" "}
+                      {commande.producteur?.nom || "N/A"}
                     </p>
 
-                    {/* Affiche adresse transporteur si specifier */}
-                    {commande.transporteur !==
-                      ethers.ZeroAddress.toString() && (
-                      <p>
-                        <strong>Transporteur:</strong> {commande.transporteur}
-                      </p>
-                    )}
+                    <p>
+                      <strong>Transporteur:</strong>{" "}
+                      {commande.transporteur?.nom || "N/A"}
+                    </p>
 
                     {commande.ipfsWarning && (
                       <p className="text-warning small mb-1">
