@@ -57,7 +57,8 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   for (let id of _idCommandeProduits) {
     try {
       const conditions = await collecteurExportateur.getCondition(id);
-      hashTransportCE.push(conditions.hashMerkle.toString());
+      if (conditions.id && conditions.id !== 0n)
+        hashTransportCE.push(conditions.hashMerkle.toString());
     } catch (error) {
       console.error(
         "Recuperation des hashs de conditions de transport CE: ",
@@ -89,7 +90,8 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   for (let id of idCommandeRecoltes) {
     try {
       const conditions = await collecteurProducteur.getConditionTransport(id);
-      hashTransportPC.push(conditions.hashMerkle.toString());
+      if (conditions.id && conditions.id !== 0n)
+        hashTransportPC.push(conditions.hashMerkle.toString());
     } catch (error) {
       console.error("Recuperation hash transport PC : ", error);
       return;
@@ -287,7 +289,8 @@ export const getConditionsTransportExpedition = async (_expedition) => {
   // recuperer les conditions transport CE
   for (let id of _expedition.idCommandeProduit) {
     const condition = await getConditionTransportCE(id);
-    conditions.push(condition);
+    if (condition.cid && condition.cid !== "")
+      conditions.push(condition);
     // recuperer les ids des commandes recoltes
     try {
       const commande = await collecteurExportateur.getCommande(id);
@@ -307,7 +310,8 @@ export const getConditionsTransportExpedition = async (_expedition) => {
   // recuperer les conditions transport PC
   for (let id of idCommandeRecoltes) {
     const condition = await getConditionTransportPC(id);
-    conditions.push(condition);
+    if (condition.cid && condition.cid !== "")
+      conditions.push(condition);
   }
 
   return conditions;

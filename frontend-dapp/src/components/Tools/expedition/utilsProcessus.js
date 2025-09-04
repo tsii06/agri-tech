@@ -41,6 +41,9 @@ const creerNodesProcessus = async (_expedition) => {
   positionInitial.x -= INTERVAL_HORIZONTAL;
   for (let id of _expedition.idCommandeProduit) {
     const condition = await getConditionTransportCE(id);
+    // si il n'y a pas de condition, passer a la suivante
+    if (!condition.cid || condition.cid === "") continue;
+    // creer node
     const nodeCondition = {
       id: `conditionCE-${condition.id}`,
       type: "conditionNode",
@@ -74,14 +77,29 @@ const creerNodesProcessus = async (_expedition) => {
       data: { ...lotProduit, label: lotProduit.hashMerkle.slice(0, 6) },
     };
     nodesFinal = [...nodesFinal, nodeLotProduit];
-    // creation edge
-    const edge = {
-      ...edgeBase,
-      id: `lotProduitCondition${id}-${lotProduit.id}`,
-      source: nodeLotProduit.id,
-      target: `conditionCE-${id}`,
-    };
-    edgesFinal = [...edgesFinal, edge];
+
+    // Vérifier si une condition de transport existe
+    const conditionCE = await getConditionTransportCE(id);
+    if (!conditionCE.cid || conditionCE.cid === "") {
+      // Pas de condition de transport, relier directement au node d'expédition
+      const edge = {
+        ...edgeBase,
+        id: `lotProduitExpedition${id}-${lotProduit.id}`,
+        source: nodeLotProduit.id,
+        target: `expedition-${_expedition.id}`,
+      };
+      edgesFinal = [...edgesFinal, edge];
+    } else {
+      // Création de l'edge avec la condition de transport
+      const edge = {
+        ...edgeBase,
+        id: `lotProduitCondition${id}-${lotProduit.id}`,
+        source: nodeLotProduit.id,
+        target: `conditionCE-${id}`,
+      };
+      edgesFinal = [...edgesFinal, edge];
+    }
+
     positionInitial.y += INTERVAL_VERTICAL;
   }
 
@@ -94,6 +112,8 @@ const creerNodesProcessus = async (_expedition) => {
     for (let idC of lotProduit.idCommandeRecoltes) {
       const condition = await getConditionTransportPC(idC);
       _idCommandesRecoltes.push(idC);
+      // si il n'y a pas de condition, passer a la suivante
+      if (!condition.cid || condition.cid === "") continue;
       const nodeCondition = {
         id: `conditionPC-${condition.id}`,
         type: "conditionNode",
@@ -128,13 +148,35 @@ const creerNodesProcessus = async (_expedition) => {
       data: { ...recolte, label: recolte.hashMerkle.slice(0, 6) },
     };
     nodesFinal = [...nodesFinal, nodeRecolte];
-    const edge = {
-      ...edgeBase,
-      id: `recolteCondition${id}-${recolte.id}`,
-      source: nodeRecolte.id,
-      target: `conditionPC-${id}`,
-    };
-    edgesFinal = [...edgesFinal, edge];
+
+    const condition = await getConditionTransportPC(id);
+    if (!condition.cid || condition.cid === "") {
+      // Pas de condition de transport, relier directement la récolte au lot produit
+      const lotProduit = idLotProduits.find((lotId) => {
+        const lot = nodesFinal.find((node) => node.id === `lotProduit-${lotId}`);
+        return lot && lot.data.idCommandeRecoltes.includes(id);
+      });
+
+      if (lotProduit) {
+        const edge = {
+          ...edgeBase,
+          id: `recolteLotProduit${id}-${recolte.id}`,
+          source: nodeRecolte.id,
+          target: `lotProduit-${lotProduit}`,
+        };
+        edgesFinal = [...edgesFinal, edge];
+      }
+    } else {
+      // Création de l'edge avec la condition de transport
+      const edge = {
+        ...edgeBase,
+        id: `recolteCondition${id}-${recolte.id}`,
+        source: nodeRecolte.id,
+        target: `conditionPC-${id}`,
+      };
+      edgesFinal = [...edgesFinal, edge];
+    }
+
     positionInitial.y += INTERVAL_VERTICAL;
   }
 

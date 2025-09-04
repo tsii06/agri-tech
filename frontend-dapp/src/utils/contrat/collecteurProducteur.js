@@ -49,6 +49,10 @@ export const getConditionTransportPC = async (_idCommande) => {
     console.error("Erreur recuperation condition transport CE : ", error);
     return;
   }
+  // si il n'y a pas de cid, on arrete
+  if (!conditionComplet.cid || conditionComplet.cid === "") {
+    return conditionComplet;
+  }
   // recuperer conditions transport ipfs
   const conditionIpfs = await getFileFromPinata(conditionComplet.cid);
   conditionComplet = {
