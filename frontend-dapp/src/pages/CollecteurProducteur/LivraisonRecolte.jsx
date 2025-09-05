@@ -52,6 +52,8 @@ function LivraisonRecolte() {
             ...c,
             ...conditions,
           };
+        } else {
+          commandeEnrichie = {...c};
         }
 
         commandesTemp.push(commandeEnrichie);
@@ -78,6 +80,8 @@ function LivraisonRecolte() {
             ...c,
             ...condition,
           };
+        } else {
+          commandeRecolteEnrichie = {...c};
         }
 
         commandesRecolteTemp.push(commandeRecolteEnrichie);
@@ -313,11 +317,11 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Producteur:</strong> {cmd.producteur.nom || "N/A"}
+                  <strong>Producteur:</strong> {cmd.producteur?.nom || "N/A"}
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong> {cmd.collecteur.nom || "N/A"}
+                  <strong>Collecteur:</strong> {cmd.collecteur?.nom || "N/A"}
                 </p>
                 <p>
                   <Fingerprint size={16} className="me-2 text-success" />
@@ -404,11 +408,11 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong>{" "} {commande.collecteur.nom || "N/A"}
+                  <strong>Collecteur:</strong>{" "} {commande.collecteur?.nom || "N/A"}
                 </p>
                 <p>
                   <User size={16} className="me-2 text-success" />
-                  <strong>Exportateur:</strong>{" "} {commande.exportateur.nom || "N/A"}
+                  <strong>Exportateur:</strong>{" "} {commande.exportateur?.nom || "N/A"}
                 </p>
                 <p>
                   <Fingerprint size={16} className="me-2 text-success" />

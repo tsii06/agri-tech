@@ -36,7 +36,7 @@ export default function AdminAjoutContratDelegue() {
       await tx.wait();
       setMessage("Contrat délégué ajouté avec succès !");
     } catch (err) {
-      setMessage("Erreur : " + (err?.reason || err?.message || err));
+      console.error("Ajout contrat deleguer :", err);
     }
     setLoading(false);
   };

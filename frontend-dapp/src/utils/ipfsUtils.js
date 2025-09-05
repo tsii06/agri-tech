@@ -18,10 +18,6 @@ export const uploadToIPFS = async (
       .keyvalues(metadata)
       .name(`${type}-${Date.now()}`);
 
-    if (res.is_duplicate) {
-      throw new Error("Ce fichier a déjà été uploadé sur IPFS.");
-    }
-
     return {
       success: true,
       cid: res.cid,
@@ -68,7 +64,7 @@ export const uploadPhotoParcelle = async (file, parcelleId) => {
     parcelleId: parcelleId,
     timestamp: Date.now().toString(),
   };
-  return await uploadToIPFS(file, metadata);
+  return await uploadToIPFS(file, metadata, "photo-parcelle");
 };
 
 /**
@@ -100,7 +96,7 @@ export const uploadInspection = async (file, inspectionData) => {
     rapport: inspectionData.rapport,
     timestamp: Date.now().toString(),
   };
-  if (file !== null) return await uploadToIPFS(file, metadata);
+  if (file !== null) return await uploadToIPFS(file, metadata, "inspection-parcelle");
   else return await uploadJsonToIpfs(inspectionData, "inspection", metadata);
 };
 
@@ -119,7 +115,7 @@ export const uploadConditionTransport = async (file, conditionData) => {
     humidite: conditionData.humidite,
     timestamp: Date.now().toString(),
   };
-  return await uploadToIPFS(file, metadata);
+  return await uploadToIPFS(file, metadata, "condition-transport");
 };
 
 /**
@@ -131,16 +127,16 @@ export const uploadConditionTransport = async (file, conditionData) => {
 export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
   const metadata = {
     type: "certificat-phytosanitaire",
-    dateEmission: certificatData.dateEmission,
-    dateExpiration: certificatData.dateExpiration,
-    region: certificatData.region,
-    autoriteCertificatrice: certificatData.autoriteCertificatrice,
-    adresseProducteur: certificatData.adresseProducteur,
-    idParcelle: certificatData.idParcelle,
-    numeroCertificat: certificatData.numeroCertificat,
+    dateEmission: certificatData.dateEmission.toString(),
+    dateExpiration: certificatData.dateExpiration.toString(),
+    region: certificatData.region.toString(),
+    autoriteCertificatrice: certificatData.autoriteCertificatrice.toString(),
+    adresseProducteur: certificatData.adresseProducteur.toString(),
+    idParcelle: certificatData.idParcelle?.toString(),
+    numeroCertificat: certificatData.numeroCertificat.toString(),
     timestamp: Date.now().toString(),
   };
-  return await uploadToIPFS(file, metadata);
+  return await uploadToIPFS(file, metadata, "certificat-phytosanitaire");
 };
 
 /**
@@ -225,7 +221,7 @@ export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
       ..._metadata,
     };
 
-    return await uploadToIPFS(file, metadata);
+    return await uploadToIPFS(file, metadata, type);
   } catch (error) {
     console.error("Erreur lors de l'upload des données consolidées:", error);
     return {

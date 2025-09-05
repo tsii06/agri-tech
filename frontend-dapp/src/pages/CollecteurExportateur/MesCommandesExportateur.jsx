@@ -125,7 +125,6 @@ function MesCommandesExportateur({ onlyPaid = false }) {
         setCommandes(commandesTemp);
       } catch (error) {
         console.error("Erreur lors du chargement des commandes:", error);
-        setError(error.message);
       } finally {
         setIsLoading(false);
       }
@@ -179,12 +178,12 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setCommandes(next);
     } catch (e) {
       console.error("Erreur lors de la validation de la commande:", e);
-      setError(
-        e?.reason ||
-          e?.data?.message ||
-          e?.message ||
-          "Erreur lors de la validation de la commande"
-      );
+      // setError(
+      //   e?.reason ||
+      //     e?.data?.message ||
+      //     e?.message ||
+      //     "Erreur lors de la validation de la commande"
+      // );
     }
   };
 

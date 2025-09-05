@@ -76,7 +76,6 @@ function CommandeCollecteur() {
       setCommandes(commandesTemp);
     } catch (error) {
       console.error(error.message);
-      setError(error.message || "Erreur lors du chargement des commandes");
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +131,6 @@ function CommandeCollecteur() {
         error?.data?.message ||
         error?.message ||
         "Erreur lors du paiement";
-      setError(message);
-      setCommandeErrors((prev) => ({ ...prev, [commandeId]: message }));
     } finally {
       setBtnLoading(false);
     }
@@ -159,8 +156,6 @@ function CommandeCollecteur() {
         e?.message ||
         "Erreur lors de la validation de la commande";
       console.error("Erreur lors de la validation d'une commande :", message);
-      setError(message);
-      setCommandeErrors((prev) => ({ ...prev, [_idCommande]: message }));
     } finally {
       setBtnLoading(false);
     }

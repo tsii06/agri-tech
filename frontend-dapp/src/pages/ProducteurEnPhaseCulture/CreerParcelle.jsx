@@ -128,8 +128,10 @@ function CreerParcelle() {
       }
 
       // CREATION PARCELLE avec le nouveau format
+      console.log("Creation parcelle sur blockchain...");
       const tx = await contract.creerParcelle(parcelleUpload.cid);
       await tx.wait();
+      console.clear();
 
       navigate("/mes-parcelles");
     } catch (error) {

@@ -23,7 +23,7 @@ export const getCommandeRecolte = async (_idCommande) => {
       quantite: Number(res.quantite),
       prix: Number(res.prix),
       statutTransport: Number(res.statutTransport),
-      statutProduit: Number(res.statutProduit),
+      statutRecolte: Number(res.statutRecolte),
       payer: res.payer,
       producteur: {...producteurDetails, adresse: res.producteur.toString()},
       collecteur: {...collecteurDetails, adresse: res.collecteur.toString()},

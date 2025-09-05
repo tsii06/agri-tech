@@ -18,8 +18,8 @@ import ExportateurClient from "../abi/ExportateurClient.json";
 // Adresses des contrats déployés sur le réseau amoy
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
 const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2";
-const CollecteurExportateur_PROXY_ADDRESS = "0xD5481a25abffd952FD122f1D520Fb111C0b689D6";
 const CollecteurProducteur_PROXY_ADDRESS = "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
+const CollecteurExportateur_PROXY_ADDRESS = "0xD5481a25abffd952FD122f1D520Fb111C0b689D6";
 const GESTIONNAIRE_ACTEURS_ADDRESS = "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff"; 
 const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1";
 

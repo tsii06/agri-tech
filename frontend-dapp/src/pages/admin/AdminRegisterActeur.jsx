@@ -61,7 +61,7 @@ export default function AdminRegisterActeur() {
       await tx.wait();
       setMessage("Acteur enregistré avec succès !");
     } catch (err) {
-      setMessage("Erreur : " + (err?.reason || err?.message || err));
+      console.error("Enregistrement acteur : ", err);
     }
     setLoading(false);
   };

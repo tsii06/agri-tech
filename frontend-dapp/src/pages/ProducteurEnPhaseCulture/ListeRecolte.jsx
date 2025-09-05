@@ -109,9 +109,9 @@ function ListeRecoltes() {
       const tx = await contract.certifieRecolte(recolteSelectionnee.id, certificatUpload.cid);
       await tx.wait();
 
-      chargerRecoltes();
-      setShowModalCertification(false);
+      await chargerRecoltes();
       alert("Récolte certifiée avec succès !");
+      setShowModalCertification(false);
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError("Erreur lors de la certification de la récolte. Veuillez réessayer.");
