@@ -66,6 +66,22 @@ async function main() {
     );
     console.log("ExportateurClient deployed to:", await exportateurClientProxy.getAddress());
 
+    // 5. Enregistrer les acteurs dans le GestionnaireActeurs
+    console.log("Enregistrement des acteurs...");
+    
+    // Enregistrer le déployeur comme administrateur
+    // gestionnaireActeursProxy = await ethers.getContractAt("GestionnaireActeurs", await gestionnaireActeursProxy.getAddress());
+    await gestionnaireActeursProxy.enregistrerActeur(
+        deployer.address,
+        7, // Role.Administration
+        0, // TypeEntite.Individu
+        "Admin Principal",
+        "117 151 028 139",
+        "Lot III A 11 Tanjombato",
+        "valyandrianimpanana@gmail.com",
+        "+261 34 67 820 93"
+    );
+
 }
 
 main()

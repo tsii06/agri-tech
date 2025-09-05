@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 import { User, LogOut, Wallet, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getActeur } from "../../utils/contrat/gestionnaireActeurs";
 
 export const getRoleName = (roleNumber) => {
   const roles = {

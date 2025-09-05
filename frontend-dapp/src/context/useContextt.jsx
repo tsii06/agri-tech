@@ -12,7 +12,7 @@ export const UserProvider = ({ children, state }) => {
     const verifeActeur = async (userAddress) => {
         try {
             const contract = await getGestionnaireActeursContract();
-            const rolesArray = await contract.getRoles(userAddress);
+            const rolesArray = await contract.getRoles(userAddress.toString());
 
             // verifie que l'user est un acteur
             if(rolesArray.length <= 0)

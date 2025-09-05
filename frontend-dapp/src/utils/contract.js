@@ -7,31 +7,24 @@ import ExportateurClient from "../abi/ExportateurClient.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"; // ProducteurProxy
-const CollecteurExportateur_PROXY_ADDRESS =
-  "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"; // CollecteurProxy
-const CollecteurProducteur_PROXY_ADDRESS =
-  "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
-// Adresse du contrat GestionnaireActeurs déployé sur le réseau local
-const GESTIONNAIRE_ACTEURS_ADDRESS =
-  "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // À remplacer par la vraie adresse après déploiement
-const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82"; // À remplacer par la vraie adresse après déploiement
+// const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+// const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853";
+// const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
+// const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+// const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82";
 
-const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
+// const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
 
 // Adresses des contrats déployés sur le réseau amoy
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-// const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2"; // ProducteurProxy
-// const CollecteurExportateur_PROXY_ADDRESS =
-//   "0xD5481a25abffd952FD122f1D520Fb111C0b689D6"; // CollecteurProxy
-// const CollecteurProducteur_PROXY_ADDRESS =
-//   "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
-// // Adresse du contrat GestionnaireActeurs déployé sur le réseau local
-// const GESTIONNAIRE_ACTEURS_ADDRESS =
-//   "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff"; // À remplacer par la vraie adresse après déploiement
-// const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1"; // À remplacer par la vraie adresse après déploiement
+const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2";
+const CollecteurExportateur_PROXY_ADDRESS = "0xD5481a25abffd952FD122f1D520Fb111C0b689D6";
+const CollecteurProducteur_PROXY_ADDRESS = "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
+const GESTIONNAIRE_ACTEURS_ADDRESS = "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff"; 
+const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1";
 
 // const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
+const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
 
 
 
@@ -46,9 +39,8 @@ export async function getProvider() {
   
   if (accounts && accounts.length > 0) {
     const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
-    providerActeur.pollingInterval = 15000; // toutes les 10 sec au lieu de 1 sec
     await providerActeur.ready;
-    await providerActeur.getBlockNumber();
+    // await providerActeur.getBlockNumber();
     return providerActeur.getSigner();
   } else {
     const providerClient = new ethers.JsonRpcProvider(RPC_PROVIDER_CLIENT);
