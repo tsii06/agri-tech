@@ -19,19 +19,37 @@ const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82";
 
 const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
 
+// Adresses des contrats déployés sur le réseau amoy
+// Ces adresses sont obtenues après le déploiement avec le script deploy.js
+// const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2"; // ProducteurProxy
+// const CollecteurExportateur_PROXY_ADDRESS =
+//   "0xD5481a25abffd952FD122f1D520Fb111C0b689D6"; // CollecteurProxy
+// const CollecteurProducteur_PROXY_ADDRESS =
+//   "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
+// // Adresse du contrat GestionnaireActeurs déployé sur le réseau local
+// const GESTIONNAIRE_ACTEURS_ADDRESS =
+//   "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff"; // À remplacer par la vraie adresse après déploiement
+// const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1"; // À remplacer par la vraie adresse après déploiement
+
+// const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
+
+
+
+
+
 export async function getProvider() {
-  if (!window.ethereum) {
-    throw new Error("MetaMask n'est pas installé");
+  let accounts = [];
+  if (window.ethereum) {
+    accounts = await window.ethereum.request({ method: 'eth_accounts' });
   }
   
-  // const accounts = await providerActeur.listAccounts();
-  const accounts = await window.ethereum.request({ method: 'eth_accounts' });
   
   if (accounts && accounts.length > 0) {
     const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
+    providerActeur.pollingInterval = 15000; // toutes les 10 sec au lieu de 1 sec
     await providerActeur.ready;
     await providerActeur.getBlockNumber();
-    return providerActeur;
+    return providerActeur.getSigner();
   } else {
     const providerClient = new ethers.JsonRpcProvider(RPC_PROVIDER_CLIENT);
     return providerClient;
@@ -41,11 +59,12 @@ export async function getProvider() {
 export async function getProducteurContract() {
   try {
     const provider = await getProvider();
-    const signer = await provider.getSigner();
+    // const signer = await provider.getSigner();
     return new ethers.Contract(
       PRODUCTEUR_PROXY_ADDRESS,
       ProducteurEnPhaseCulture.abi,
-      signer
+      // signer
+      provider
     );
   } catch (error) {
     console.error(
@@ -59,11 +78,12 @@ export async function getProducteurContract() {
 export async function getCollecteurExportateurContract() {
   try {
     const provider = await getProvider();
-    const signer = await provider.getSigner();
+    // const signer = await provider.getSigner();
     return new ethers.Contract(
       CollecteurExportateur_PROXY_ADDRESS,
       CollecteurExportateur.abi,
-      signer
+      // signer
+      provider
     );
   } catch (error) {
     console.error(
@@ -77,11 +97,12 @@ export async function getCollecteurExportateurContract() {
 export async function getCollecteurProducteurContract() {
   try {
     const provider = await getProvider();
-    const signer = await provider.getSigner();
+    // const signer = await provider.getSigner();
     return new ethers.Contract(
       CollecteurProducteur_PROXY_ADDRESS,
       CollecteurProducteur.abi,
-      signer
+      // signer
+      provider
     );
   } catch (error) {
     console.error(
@@ -96,11 +117,12 @@ export async function getCollecteurProducteurContract() {
 export async function getExportateurClientContract() {
   try {
     const provider = await getProvider();
-    const signer = await provider.getSigner();
+    // const signer = await provider.getSigner();
     return new ethers.Contract(
       EXPORTATEUR_CLIENT_ADDRESS,
       ExportateurClient.abi,
-      signer
+      // signer
+      provider
     );
   } catch (error) {
     console.error(
@@ -117,18 +139,19 @@ export async function getExportateurClientContract() {
 export async function getGestionnaireActeursContract() {
   try {
     const provider = await getProvider();
-    const signer = await provider.getSigner();
+    // const signer = await provider.getSigner();
     return new ethers.Contract(
       GESTIONNAIRE_ACTEURS_ADDRESS,
       GestionnaireActeurs.abi,
-      signer
+      // signer
+      provider
     );
   } catch (error) {
     console.error(
       "Erreur lors de l'initialisation du contrat GestionnaireActeurs:",
       error
     );
-    throw error;
+    return false;
   }
 }
 
