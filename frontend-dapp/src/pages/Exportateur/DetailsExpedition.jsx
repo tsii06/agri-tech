@@ -43,10 +43,10 @@ const DetailsExpedition = ({}) => {
   const [showLogistique, setShowLogistique] = useState(false);
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
-  const [isLoadingLogistique, setIsLoadingLogistique] = useState(false);
-  const [isLoadingProduits, setIsLoadingProduits] = useState(false);
-  const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(false);
-  const [isLoadingParcelles, setIsLoadingParcelles] = useState(false);
+  const [isLoadingLogistique, setIsLoadingLogistique] = useState(true);
+  const [isLoadingProduits, setIsLoadingProduits] = useState(true);
+  const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
+  const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
@@ -60,28 +60,24 @@ const DetailsExpedition = ({}) => {
   };
 
   const chargerParcelles = async () => {
-    setIsLoadingParcelles(true);
     const parcellesExp = await getParcellesExpedition(expedition);
     setParcelles(parcellesExp);
     setIsLoadingParcelles(false);
   };
 
   const chargerRecoltes = async () => {
-    setIsLoadingRecoltes(true);
     const recoltesExp = await getRecoltesExpedition(expedition);
     setRecoltes(recoltesExp);
     setIsLoadingRecoltes(false);
   };
 
   const chargerLotProduits = async () => {
-    setIsLoadingProduits(true);
     const lotProduitsExp = await getLotProduisExpedition(expedition);
     setLotProduits(lotProduitsExp);
     setIsLoadingProduits(false);
   };
 
   const chargerConditionsTransport = async () => {
-    setIsLoadingLogistique(true);
     const conditionsExp = await getConditionsTransportExpedition(expedition);
     setConditionsTransport(conditionsExp);
     setIsLoadingLogistique(false);
@@ -261,7 +257,7 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showLogistique) chargerConditionsTransport();
+                  if (!showLogistique && isLoadingLogistique) chargerConditionsTransport();
                   setShowLogistique(!showLogistique);
                 }}
                 onMouseEnter={(e) =>
@@ -313,7 +309,7 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showProduits) chargerLotProduits();
+                  if (!showProduits && isLoadingProduits) chargerLotProduits();
                   setShowProduits(!showProduits);
                 }}
                 onMouseEnter={(e) =>
@@ -361,7 +357,7 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showRecoltes) chargerRecoltes();
+                  if (!showRecoltes && isLoadingRecoltes) chargerRecoltes();
                   setShowRecoltes(!showRecoltes);
                 }}
                 onMouseEnter={(e) =>
@@ -406,7 +402,7 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showParcelleProduction) chargerParcelles();
+                  if (!showParcelleProduction && isLoadingParcelles) chargerParcelles();
                   setShowParcelleProduction(!showParcelleProduction);
                 }}
                 onMouseEnter={(e) =>
