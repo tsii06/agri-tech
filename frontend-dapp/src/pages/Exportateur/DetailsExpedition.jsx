@@ -43,6 +43,11 @@ const DetailsExpedition = ({}) => {
   const [showLogistique, setShowLogistique] = useState(false);
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
+  const [isLoadingLogistique, setIsLoadingLogistique] = useState(false);
+  const [isLoadingProduits, setIsLoadingProduits] = useState(false);
+  const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(false);
+  const [isLoadingParcelles, setIsLoadingParcelles] = useState(false);
+
   const chargerDetailsExpedition = async () => {
     setLoading(true);
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
@@ -55,23 +60,31 @@ const DetailsExpedition = ({}) => {
   };
 
   const chargerParcelles = async () => {
+    setIsLoadingParcelles(true);
     const parcellesExp = await getParcellesExpedition(expedition);
     setParcelles(parcellesExp);
+    setIsLoadingParcelles(false);
   };
 
   const chargerRecoltes = async () => {
+    setIsLoadingRecoltes(true);
     const recoltesExp = await getRecoltesExpedition(expedition);
     setRecoltes(recoltesExp);
+    setIsLoadingRecoltes(false);
   };
 
   const chargerLotProduits = async () => {
+    setIsLoadingProduits(true);
     const lotProduitsExp = await getLotProduisExpedition(expedition);
     setLotProduits(lotProduitsExp);
+    setIsLoadingProduits(false);
   };
 
   const chargerConditionsTransport = async () => {
+    setIsLoadingLogistique(true);
     const conditionsExp = await getConditionsTransportExpedition(expedition);
     setConditionsTransport(conditionsExp);
+    setIsLoadingLogistique(false);
   };
 
   const copyToClipboard = (text) => {
@@ -268,15 +281,23 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                <h6 className="card-title text-start my-4">
-                  <span>
-                    <Truck size={18} className="text-primary" /> Logistique
-                  </span>
-                </h6>
-                {conditionsTransport.length > 0 &&
-                  conditionsTransport.map((condition, index) => (
-                    <LogistiqueDetails condition={condition} key={index} />
-                  ))}
+                {isLoadingLogistique ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-grow text-success"></div>
+                  </div>
+                ) : (
+                  <>
+                    <h6 className="card-title text-start my-4">
+                      <span>
+                        <Truck size={18} className="text-primary" /> Logistique
+                      </span>
+                    </h6>
+                    {conditionsTransport.length > 0 &&
+                      conditionsTransport.map((condition, index) => (
+                        <LogistiqueDetails condition={condition} key={index} />
+                      ))}
+                  </>
+                )}
               </div>
             </div>
 
@@ -312,13 +333,19 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                {lotProduits.length > 0 &&
+                {isLoadingProduits ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-grow text-success"></div>
+                  </div>
+                ) : (
+                  lotProduits.length > 0 &&
                   lotProduits.map((lotProduit) => (
                     <LotProduitDetails
                       lotProduit={lotProduit}
                       key={lotProduit.id}
                     />
-                  ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -354,10 +381,16 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                {recoltes.length > 0 &&
+                {isLoadingRecoltes ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-grow text-success"></div>
+                  </div>
+                ) : (
+                  recoltes.length > 0 &&
                   recoltes.map((recolte) => (
                     <RecolteDetails recolte={recolte} key={recolte.id} />
-                  ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -393,10 +426,16 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                {parcelles.length > 0 &&
+                {isLoadingParcelles ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-grow text-success"></div>
+                  </div>
+                ) : (
+                  parcelles.length > 0 &&
                   parcelles.map((parcelle) => (
                     <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
-                  ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -442,3 +481,23 @@ const DetailsExpedition = ({}) => {
 };
 
 export default DetailsExpedition;
+
+<style jsx>{`
+  .custom-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`}</style>

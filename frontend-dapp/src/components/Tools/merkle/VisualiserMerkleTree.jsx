@@ -27,7 +27,7 @@ const VisualiserMerkleTree = ({ hashes }) => {
     const edges = [];
 
     if (node.left) {
-      const leftX = x - INTERVAL_X / (depth + 0.8);
+      const leftX = x - INTERVAL_X / (depth + 1);
       const leftY = y + INTERVAL_Y;
       const leftResult = generateNodesAndEdges(node.left, depth + 1, leftX, leftY);
       nodes.push(...leftResult.nodes);
@@ -36,7 +36,7 @@ const VisualiserMerkleTree = ({ hashes }) => {
     }
 
     if (node.right) {
-      const rightX = x + INTERVAL_X / (depth + 0.8);
+      const rightX = x + INTERVAL_X / (depth + 1);
       const rightY = y + INTERVAL_Y;
       const rightResult = generateNodesAndEdges(node.right, depth + 1, rightX, rightY);
       nodes.push(...rightResult.nodes);
