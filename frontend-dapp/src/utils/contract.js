@@ -19,9 +19,12 @@ import ExportateurClient from "../abi/ExportateurClient.json";
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
 const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2";
 const CollecteurProducteur_PROXY_ADDRESS = "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
-const CollecteurExportateur_PROXY_ADDRESS = "0xD5481a25abffd952FD122f1D520Fb111C0b689D6";
+// const CollecteurExportateur_PROXY_ADDRESS = "0xD5481a25abffd952FD122f1D520Fb111C0b689D6";
 const GESTIONNAIRE_ACTEURS_ADDRESS = "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff"; 
-const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1";
+// const EXPORTATEUR_CLIENT_ADDRESS = "0x294e884fe1D95D8B349Bc989feB47269E884C6c1";
+
+const CollecteurExportateur_PROXY_ADDRESS = "0x1CBF67931463D5f38fb5855140eA2b302C059243";
+const EXPORTATEUR_CLIENT_ADDRESS = "0xdc0500D7013bA9e8aa20374cCc8894b9c391Ec09";
 
 // const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
 const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";

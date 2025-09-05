@@ -103,6 +103,8 @@ function StockExportateur() {
             enregistre: commandeRaw.enregistre,
             enregistrerCondition: commandeRaw.enregistrerCondition,
           };
+          console.log(commandeRaw.enregistre);
+          
 
           // Charger les condition de transport
           if (commandeRaw.enregistrerCondition) {

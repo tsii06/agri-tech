@@ -90,7 +90,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let hashTransportPC = [];
   for (let id of idCommandeRecoltes) {
     try {
-      const conditions = await collecteurProducteur.getConditionTransport(id);
+      const conditions = await collecteurProducteur.getConditionTransport(Number(id));
       if (conditions.id && conditions.id !== 0n)
         hashTransportPC.push(conditions.hashMerkle.toString());
     } catch (error) {
