@@ -9,18 +9,22 @@ import {
   Hash,
   Package2,
   BadgeEuro,
-  User,
   Truck,
   Wallet,
   Search,
   ChevronDown,
   Eye,
   Box,
+  Fingerprint,
+  Archive,
+  LucideTruck,
 } from "lucide-react";
-import { getIPFSURL } from "../../utils/ipfsUtils";
 import { useLocation, Link } from "react-router-dom";
-import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
-import { ethers } from "ethers";
+import {
+  getCommandeProduit,
+  getConditionTransportCE,
+  getLotProduitEnrichi,
+} from "../../utils/collecteurExporatateur";
 
 function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
@@ -60,15 +64,15 @@ function MesCommandesExportateur({ onlyPaid = false }) {
         // Charger toutes les commandes
         const commandesTemp = [];
         for (let i = 1; i <= compteurCommandes; i++) {
-          const commandeRaw = await contract.getCommande(i);
+          const commandeRaw = await getCommandeProduit(i);
 
           // Normaliser adresses
           const exportateurAddr =
-            commandeRaw.exportateur?.toString?.() ||
+            commandeRaw.exportateur?.adresse.toString?.() ||
             commandeRaw.exportateur ||
             "";
           const collecteurAddr =
-            commandeRaw.collecteur?.toString?.() ||
+            commandeRaw.collecteur?.adresse.toString?.() ||
             commandeRaw.collecteur ||
             "";
           if (!exportateurAddr) continue;
@@ -83,37 +87,18 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                 : {};
 
             let commandeEnrichie = {
-              id: Number(commandeRaw.id ?? i),
+              ...commandeRaw,
               idLotProduit: idLotProduitNum,
-              quantite: Number(commandeRaw.quantite ?? 0),
-              prix: Number(commandeRaw.prix ?? 0),
-              payer: Boolean(commandeRaw.payer),
-              statutTransport: Number(commandeRaw.statutTransport ?? 0),
-              statutProduit: Number(commandeRaw.statutProduit ?? 0),
-              collecteur: collecteurAddr,
-              exportateur: exportateurAddr,
-              transporteur: commandeRaw.transporteur.toString(),
               nomProduit: produit?.nom || "",
-              enregistrerCondition: commandeRaw.enregistrerCondition,
             };
 
             // Charger les condition de transport
             if (commandeRaw.enregistrerCondition) {
-              const conditions = await contract.getCondition(i);
-              const res = await fetch(getIPFSURL(conditions.cid));
-              if (res.ok) {
-                const ipfsData = await res.json();
-                const root =
-                  ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                commandeEnrichie = {
-                  ...commandeEnrichie,
-                  temperature: root.temperature,
-                  humidite: root.humidite,
-                  dureeTransport: root.dureeTransport,
-                  lieuDepart: root.lieuDepart,
-                  destination: root.destination,
-                };
-              }
+              const conditions = await getConditionTransportCE(i);
+              commandeEnrichie = {
+                ...commandeEnrichie,
+                ...conditions,
+              };
             }
 
             commandesTemp.push(commandeEnrichie);
@@ -421,18 +406,19 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       <strong>Prix:</strong> {commande.prix} Ar
                     </p>
                     <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}
-                      {commande.collecteur.slice(0, 6)}...
-                      {commande.collecteur.slice(-4)}
+                      <Archive size={16} className="me-2 text-success" />
+                      <strong>Collecteur:</strong>{" "}{commande.collecteur?.nom}
                     </p>
-                    {commande.transporteur !==
-                      ethers.ZeroAddress.toString() && (
+                    {commande.transporteur && (
                       <p>
-                        <User size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}
-                        {commande.transporteur.slice(0, 6)}...
-                        {commande.transporteur.slice(-4)}
+                        <LucideTruck size={16} className="me-2 text-success" />
+                        <strong>Transporteur:</strong>{" "}{commande.transporteur?.nom}
+                      </p>
+                    )}
+                    {commande.statutTransport === 1 && (
+                      <p>
+                        <Fingerprint size={16} className="me-2 text-success" />
+                        <strong>Hash transaction:</strong>{" "}{commande.hashTransaction?.slice(0,6)}...{commande.hashTransaction?.slice(-4)}
                       </p>
                     )}
                     <p
@@ -500,17 +486,19 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       </button>
                     )}
 
-                    {!isStockPage && !commande.payer && commande.statutProduit === 1 && (
-                      <button
-                        onClick={() => {
-                          setCommandeSelectionnee(commande);
-                          setShowModal(true);
-                        }}
-                        className="btn-agrichain mt-2"
-                      >
-                        Payer
-                      </button>
-                    )}
+                    {!isStockPage &&
+                      !commande.payer &&
+                      commande.statutProduit === 1 && (
+                        <button
+                          onClick={() => {
+                            setCommandeSelectionnee(commande);
+                            setShowModal(true);
+                          }}
+                          className="btn-agrichain mt-2"
+                        >
+                          Payer
+                        </button>
+                      )}
 
                     {!isStockPage &&
                       Number(commande.statutTransport) === 1 &&
