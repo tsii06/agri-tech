@@ -65,6 +65,7 @@ export const getConditionTransportPC = async (_idCommande) => {
   conditionComplet = {
     ...conditionComplet,
     ...conditionIpfs.data.items,
+    ...conditionIpfs?.keyvalues,
   };
   return conditionComplet;
 };

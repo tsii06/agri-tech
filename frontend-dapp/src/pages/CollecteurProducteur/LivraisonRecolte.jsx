@@ -335,7 +335,7 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <Fingerprint size={16} className="me-2 text-success" />
-                  <strong>Hash merkle:</strong> {cmd.hashMerkle?.slice(0,6)}...{cmd.hashMerkle?.slice(-4)}
+                  <strong>Hash transaction:</strong> {cmd.hashTransaction?.slice(0,6)}...{cmd.hashTransaction?.slice(-4)}
                 </p>
                 <p>
                   <Truck size={16} className="me-2 text-success" />
@@ -360,7 +360,7 @@ function LivraisonRecolte() {
                       onClick={() => handleSubmitStatutRecolte(cmd.id)}
                       disabled={btnLoading}
                     >
-                      Livrer
+                      {btnLoading ? "Livraison..." : "Livrer"}
                     </button>
                   )}
                   {cmd.enregistrerCondition && (
