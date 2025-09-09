@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   getCollecteurExportateurContract,
   getRoleOfAddress,
+  URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import {
@@ -397,18 +398,27 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                     </p>
                     <p>
                       <Archive size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}{commande.collecteur?.nom}
+                      <strong>Collecteur:</strong> {commande.collecteur?.nom}
                     </p>
                     {commande.transporteur && (
                       <p>
                         <LucideTruck size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}{commande.transporteur?.nom}
+                        <strong>Transporteur:</strong>{" "}
+                        {commande.transporteur?.nom}
                       </p>
                     )}
                     {commande.statutTransport === 1 && (
                       <p>
                         <Fingerprint size={16} className="me-2 text-success" />
-                        <strong>Hash transaction:</strong>{" "}{commande.hashTransaction?.slice(0,6)}...{commande.hashTransaction?.slice(-4)}
+                        <strong>Hash transaction:</strong>{" "}
+                        <a
+                          href={URL_BLOCK_SCAN + commande.hashTransaction}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {commande.hashTransaction?.slice(0, 6)}...
+                          {commande.hashTransaction?.slice(-4)}
+                        </a>
                       </p>
                     )}
                     <p
@@ -542,7 +552,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       {/* Modal de paiement */}
       {showModal && commandeSelectionnee && (
         <>
-          <div className="modal-backdrop fade show"></div> {/* Ajout de l'arrière-plan assombri */}
+          <div className="modal-backdrop fade show"></div>{" "}
+          {/* Ajout de l'arrière-plan assombri */}
           <div className="modal show d-block" tabIndex="-1">
             <div className="modal-dialog">
               <div className="modal-content">
@@ -560,10 +571,12 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       Produit: {commandeSelectionnee.nomProduit}
                     </label>
                     <p>
-                      <strong>Quantité:</strong> {commandeSelectionnee.quantite} kg
+                      <strong>Quantité:</strong> {commandeSelectionnee.quantite}{" "}
+                      kg
                     </p>
                     <p>
-                      <strong>Prix total:</strong> {commandeSelectionnee.prix} Ar
+                      <strong>Prix total:</strong> {commandeSelectionnee.prix}{" "}
+                      Ar
                     </p>
                   </div>
                   <div className="mb-3">
@@ -593,7 +606,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                     onClick={() => handlePayer(commandeSelectionnee.id)}
                     disabled={btnLoading}
                   >
-                    {btnLoading ? "Confirmer le paiement..." : "Confirmer le paiement"}
+                    {btnLoading
+                      ? "Confirmer le paiement..."
+                      : "Confirmer le paiement"}
                   </button>
                 </div>
               </div>

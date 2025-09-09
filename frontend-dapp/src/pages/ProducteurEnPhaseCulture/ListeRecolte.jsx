@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getCollecteurProducteurContract } from "../../utils/contract";
-import { useUserContext } from '../../context/useContextt';
+import { getCollecteurProducteurContract, URL_BLOCK_SCAN } from "../../utils/contract";
+import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
-import { hasRole } from '../../utils/roles';
-import { uploadCertificatPhytosanitaire, getIPFSURL } from "../../utils/ipfsUtils";
+import { hasRole } from "../../utils/roles";
+import {
+  uploadCertificatPhytosanitaire,
+  getIPFSURL,
+} from "../../utils/ipfsUtils";
 import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 
 function ListeRecoltes() {
@@ -44,18 +47,24 @@ function ListeRecoltes() {
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
-      
+
       for (let i = 1; i <= compteurRecoltes; i++) {
         const recolteRaw = await getRecolte(i);
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
           if (roles.includes(0))
-            if (recolteRaw.producteur.adresse.toLowerCase() !== account.toLowerCase())
+            if (
+              recolteRaw.producteur.adresse.toLowerCase() !==
+              account.toLowerCase()
+            )
               continue;
-        
+
         // Filtre les recoltes si 'address' est definie dans l'url
         if (address !== undefined)
-          if (recolteRaw.producteur.adresse.toLowerCase() !== address.toLowerCase())
+          if (
+            recolteRaw.producteur.adresse.toLowerCase() !==
+            address.toLowerCase()
+          )
             continue;
 
         recoltesTemp.push(recolteRaw);
@@ -94,19 +103,25 @@ function ListeRecoltes() {
         numeroCertificat: numeroCertificat.current.value,
         region: region.current.value,
         idRecolte: recolteSelectionnee.id,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Upload du certificat sur IPFS
-      const certificatUpload = await uploadCertificatPhytosanitaire(certificat, certificatData);
-      
+      const certificatUpload = await uploadCertificatPhytosanitaire(
+        certificat,
+        certificatData
+      );
+
       if (!certificatUpload.success) {
         throw new Error("Erreur lors de l'upload du certificat sur IPFS");
       }
 
       // Certifier la récolte avec le CID du certificat
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.certifieRecolte(recolteSelectionnee.id, certificatUpload.cid);
+      const tx = await contract.certifieRecolte(
+        recolteSelectionnee.id,
+        certificatUpload.cid
+      );
       await tx.wait();
 
       await chargerRecoltes();
@@ -114,8 +129,12 @@ function ListeRecoltes() {
       setShowModalCertification(false);
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
-      setError("Erreur lors de la certification de la récolte. Veuillez réessayer.");
-      alert("Erreur lors de la certification de la récolte. Veuillez réessayer.");
+      setError(
+        "Erreur lors de la certification de la récolte. Veuillez réessayer."
+      );
+      alert(
+        "Erreur lors de la certification de la récolte. Veuillez réessayer."
+      );
     } finally {
       setBtnLoading(false);
     }
@@ -125,7 +144,7 @@ function ListeRecoltes() {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const recolte = recoltes.find(r => r.id === recolteId);
+      const recolte = recoltes.find((r) => r.id === recolteId);
 
       // Vérifier que la quantité est valide
       const quantite = Number(quantiteCommande);
@@ -135,7 +154,9 @@ function ListeRecoltes() {
       }
 
       if (quantite > Number(recolte.quantite)) {
-        setError("La quantité demandée est supérieure à la quantité disponible");
+        setError(
+          "La quantité demandée est supérieure à la quantité disponible"
+        );
         return;
       }
 
@@ -147,7 +168,7 @@ function ListeRecoltes() {
       await tx.wait();
 
       // Rediriger vers la page des commandes
-      navigate('/liste-collecteur-commande');
+      navigate("/liste-collecteur-commande");
     } catch (error) {
       console.error("Erreur lors de la commande:", error);
       setError("Erreur lors de la commande. Veuillez réessayer.");
@@ -161,7 +182,10 @@ function ListeRecoltes() {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.modifierPrixRecolte(recoltePrixSelectionnee.id, nouveauPrix);
+      const tx = await contract.modifierPrixRecolte(
+        recoltePrixSelectionnee.id,
+        nouveauPrix
+      );
       await tx.wait();
       await chargerRecoltes();
       setShowModalPrix(false);
@@ -178,7 +202,8 @@ function ListeRecoltes() {
   const recoltesFiltres = recoltes.filter((recolte) => {
     const searchLower = search.toLowerCase();
     const matchSearch =
-      (recolte.nomProduit && recolte.nomProduit.toLowerCase().includes(searchLower)) ||
+      (recolte.nomProduit &&
+        recolte.nomProduit.toLowerCase().includes(searchLower)) ||
       (recolte.id && recolte.id.toString().includes(searchLower));
     const matchStatut =
       statutFiltre === "all" ||
@@ -189,48 +214,98 @@ function ListeRecoltes() {
   const recoltesAffichees = recoltesFiltres.slice(0, visibleCount);
 
   if (!account && !address) {
-    return <div className="text-center text-muted">Veuillez connecter votre wallet pour voir vos récoltes.</div>;
+    return (
+      <div className="text-center text-muted">
+        Veuillez connecter votre wallet pour voir vos récoltes.
+      </div>
+    );
   }
 
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        <div className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between" style={{ marginBottom: 24 }}>
+        <div
+          className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between"
+          style={{ marginBottom: 24 }}
+        >
           <div className="input-group" style={{ maxWidth: 320 }}>
-            <span className="input-group-text"><Search size={16} /></span>
+            <span className="input-group-text">
+              <Search size={16} />
+            </span>
             <input
               type="text"
               className="form-control"
               placeholder="Rechercher..."
               value={search}
-              onChange={e => { setSearch(e.target.value); setVisibleCount(9); }}
-              style={{ borderRadius: '0 8px 8px 0' }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setVisibleCount(9);
+              }}
+              style={{ borderRadius: "0 8px 8px 0" }}
             />
           </div>
           <div className="dropdown">
-            <button className="btn btn-outline-success dropdown-toggle d-flex align-items-center" type="button" id="dropdownStatut" data-bs-toggle="dropdown" aria-expanded="false">
+            <button
+              className="btn btn-outline-success dropdown-toggle d-flex align-items-center"
+              type="button"
+              id="dropdownStatut"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
               <ChevronDown size={16} className="me-1" />
-              {statutFiltre === 'all' && 'Toutes les récoltes'}
-              {statutFiltre === 'certifie' && 'Certifiées'}
-              {statutFiltre === 'noncertifie' && 'Non certifiées'}
+              {statutFiltre === "all" && "Toutes les récoltes"}
+              {statutFiltre === "certifie" && "Certifiées"}
+              {statutFiltre === "noncertifie" && "Non certifiées"}
             </button>
             <ul className="dropdown-menu" aria-labelledby="dropdownStatut">
-              <li><button className="dropdown-item" onClick={() => setStatutFiltre('all')}>Toutes les récoltes</button></li>
-              <li><button className="dropdown-item" onClick={() => setStatutFiltre('certifie')}>Certifiées</button></li>
-              <li><button className="dropdown-item" onClick={() => setStatutFiltre('noncertifie')}>Non certifiées</button></li>
+              <li>
+                <button
+                  className="dropdown-item"
+                  onClick={() => setStatutFiltre("all")}
+                >
+                  Toutes les récoltes
+                </button>
+              </li>
+              <li>
+                <button
+                  className="dropdown-item"
+                  onClick={() => setStatutFiltre("certifie")}
+                >
+                  Certifiées
+                </button>
+              </li>
+              <li>
+                <button
+                  className="dropdown-item"
+                  onClick={() => setStatutFiltre("noncertifie")}
+                >
+                  Non certifiées
+                </button>
+              </li>
             </ul>
           </div>
         </div>
-        
-        <div style={{ backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))", borderRadius: "8px", padding: "0.75rem 1.25rem", marginBottom: 16 }}>
+
+        <div
+          style={{
+            backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",
+            borderRadius: "8px",
+            padding: "0.75rem 1.25rem",
+            marginBottom: 16,
+          }}
+        >
           <h2 className="h5 mb-0">
-            {hasRole(roles, 3) || hasRole(roles, 2) ? "Liste des Récoltes" : (hasRole(roles, 0) && "Mes Récoltes")}
+            {hasRole(roles, 3) || hasRole(roles, 2)
+              ? "Liste des Récoltes"
+              : hasRole(roles, 0) && "Mes Récoltes"}
           </h2>
           <p className="text-muted mb-0">
             {recoltes.length > 0 && (
               <>
-                {recoltes.filter(r => r.cid).length} récoltes avec données IPFS, 
-                {recoltes.filter(r => !r.cid).length} récoltes sans données IPFS
+                {recoltes.filter((r) => r.cid).length} récoltes avec données
+                IPFS,
+                {recoltes.filter((r) => !r.cid).length} récoltes sans données
+                IPFS
               </>
             )}
           </p>
@@ -247,7 +322,13 @@ function ListeRecoltes() {
           <div className="row g-3">
             {recoltesAffichees.map((recolte) => (
               <div key={recolte.id} className="col-md-4">
-                <div className="card shadow-sm p-3" style={{ borderRadius: 16, boxShadow: '0 2px 12px 0 rgba(60,72,88,.08)' }}>
+                <div
+                  className="card shadow-sm p-3"
+                  style={{
+                    borderRadius: 16,
+                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                  }}
+                >
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h5 className="card-title mb-0">Récolte #{recolte.id}</h5>
                     <div>
@@ -273,13 +354,28 @@ function ListeRecoltes() {
                   </div>
 
                   <div className="card-text">
-                    <p><strong>Produit:</strong> {recolte.nomProduit}</p>
-                    <p><strong>Quantité:</strong> {recolte.quantite} kg</p>
-                    <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ariary</p>
-                    <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
-                    <p><strong>Producteur:</strong> {recolte.producteur.nom}</p>
-                    <p><strong>Hash transaction:</strong> {recolte.hashTransaction?.slice(0,6)}...{recolte.hashTransaction?.slice(-4)}</p>
-                    
+                    <p>
+                      <strong>Produit:</strong> {recolte.nomProduit}
+                    </p>
+                    <p>
+                      <strong>Quantité:</strong> {recolte.quantite} kg
+                    </p>
+                    <p>
+                      <strong>Prix unitaire:</strong> {recolte.prixUnit} Ariary
+                    </p>
+                    <p>
+                      <strong>Date de récolte:</strong> {recolte.dateRecolte}
+                    </p>
+                    <p>
+                      <strong>Producteur:</strong> {recolte.producteur.nom}
+                    </p>
+                    <p>
+                      <strong>Hash transaction:</strong>&nbsp;
+                      <a href={URL_BLOCK_SCAN + recolte.hashTransaction} target="_blank">
+                        {recolte.hashTransaction?.slice(0,6)}...{recolte.hashTransaction?.slice(-4)}
+                      </a>
+                    </p>
+
                     {recolte.certificatPhytosanitaire && (
                       <p className="mt-2">
                         <strong>Certificat phytosanitaire:</strong>
@@ -343,7 +439,10 @@ function ListeRecoltes() {
 
         {recoltesAffichees.length < recoltesFiltres.length && (
           <div className="text-center mt-3">
-            <button className="btn btn-outline-success" onClick={() => setVisibleCount(visibleCount + 9)}>
+            <button
+              className="btn btn-outline-success"
+              onClick={() => setVisibleCount(visibleCount + 9)}
+            >
               Charger plus
             </button>
           </div>
@@ -352,11 +451,17 @@ function ListeRecoltes() {
 
       {/* Modal de commande */}
       {showModal && (
-        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Commander la récolte #{recolteSelectionnee?.id}</h5>
+                <h5 className="modal-title">
+                  Commander la récolte #{recolteSelectionnee?.id}
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -364,9 +469,14 @@ function ListeRecoltes() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p>Quantité disponible : <strong>{recolteSelectionnee?.quantite} kg</strong></p>
+                <p>
+                  Quantité disponible :{" "}
+                  <strong>{recolteSelectionnee?.quantite} kg</strong>
+                </p>
                 <div className="mb-3">
-                  <label htmlFor="quantiteCommande" className="form-label">Quantité à commander (kg)</label>
+                  <label htmlFor="quantiteCommande" className="form-label">
+                    Quantité à commander (kg)
+                  </label>
                   <input
                     type="number"
                     className="form-control"
@@ -393,7 +503,10 @@ function ListeRecoltes() {
                   onClick={() => handleCommander(recolteSelectionnee.id)}
                   disabled={btnLoading}
                 >
-                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)}&nbsp;Commander
+                  {btnLoading && (
+                    <span className="spinner-border spinner-border-sm text-light"></span>
+                  )}
+                  &nbsp;Commander
                 </button>
               </div>
             </div>
@@ -403,11 +516,17 @@ function ListeRecoltes() {
 
       {/* Modal de certification */}
       {showModalCertification && (
-        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Certifier la récolte #{recolteSelectionnee?.id}</h5>
+                <h5 className="modal-title">
+                  Certifier la récolte #{recolteSelectionnee?.id}
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -419,7 +538,9 @@ function ListeRecoltes() {
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
-                        <label htmlFor="certificat" className="form-label">Certificat phytosanitaire *</label>
+                        <label htmlFor="certificat" className="form-label">
+                          Certificat phytosanitaire *
+                        </label>
                         <input
                           type="file"
                           className="form-control"
@@ -431,7 +552,9 @@ function ListeRecoltes() {
                       </div>
 
                       <div className="mb-3">
-                        <label htmlFor="dateEmission" className="form-label">Date d'émission *</label>
+                        <label htmlFor="dateEmission" className="form-label">
+                          Date d'émission *
+                        </label>
                         <input
                           type="date"
                           className="form-control"
@@ -441,7 +564,9 @@ function ListeRecoltes() {
                       </div>
 
                       <div className="mb-3">
-                        <label htmlFor="dateExpiration" className="form-label">Date d'expiration *</label>
+                        <label htmlFor="dateExpiration" className="form-label">
+                          Date d'expiration *
+                        </label>
                         <input
                           type="date"
                           className="form-control"
@@ -453,7 +578,9 @@ function ListeRecoltes() {
 
                     <div className="col-md-6">
                       <div className="mb-3">
-                        <label htmlFor="dateInspection" className="form-label">Date d'inspection *</label>
+                        <label htmlFor="dateInspection" className="form-label">
+                          Date d'inspection *
+                        </label>
                         <input
                           type="date"
                           className="form-control"
@@ -463,7 +590,12 @@ function ListeRecoltes() {
                       </div>
 
                       <div className="mb-3">
-                        <label htmlFor="autoriteCertificatrice" className="form-label">Autorité certificatrice *</label>
+                        <label
+                          htmlFor="autoriteCertificatrice"
+                          className="form-label"
+                        >
+                          Autorité certificatrice *
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -473,7 +605,12 @@ function ListeRecoltes() {
                       </div>
 
                       <div className="mb-3">
-                        <label htmlFor="numeroCertificat" className="form-label">Numéro du certificat *</label>
+                        <label
+                          htmlFor="numeroCertificat"
+                          className="form-label"
+                        >
+                          Numéro du certificat *
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -483,7 +620,9 @@ function ListeRecoltes() {
                       </div>
 
                       <div className="mb-3">
-                        <label htmlFor="region" className="form-label">Région *</label>
+                        <label htmlFor="region" className="form-label">
+                          Région *
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -495,7 +634,9 @@ function ListeRecoltes() {
                   </div>
 
                   <div className="alert alert-info">
-                    <strong>Information:</strong> Le certificat sera automatiquement uploadé sur IPFS et la récolte sera certifiée avec traçabilité complète.
+                    <strong>Information:</strong> Le certificat sera
+                    automatiquement uploadé sur IPFS et la récolte sera
+                    certifiée avec traçabilité complète.
                   </div>
 
                   <div className="modal-footer">
@@ -523,11 +664,17 @@ function ListeRecoltes() {
 
       {/* Modal de modification de prix */}
       {showModalPrix && (
-        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Modifier le prix de la récolte #{recoltePrixSelectionnee?.id}</h5>
+                <h5 className="modal-title">
+                  Modifier le prix de la récolte #{recoltePrixSelectionnee?.id}
+                </h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -536,7 +683,9 @@ function ListeRecoltes() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label htmlFor="nouveauPrix" className="form-label">Nouveau prix unitaire (Ariary)</label>
+                  <label htmlFor="nouveauPrix" className="form-label">
+                    Nouveau prix unitaire (Ariary)
+                  </label>
                   <input
                     type="number"
                     className="form-control"
@@ -562,7 +711,10 @@ function ListeRecoltes() {
                   onClick={handleModifierPrix}
                   disabled={btnLoading}
                 >
-                  {btnLoading && (<span className="spinner-border spinner-border-sm text-light"></span>)}&nbsp;Modifier le prix
+                  {btnLoading && (
+                    <span className="spinner-border spinner-border-sm text-light"></span>
+                  )}
+                  &nbsp;Modifier le prix
                 </button>
               </div>
             </div>

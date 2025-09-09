@@ -1,5 +1,6 @@
 import { Handle, Position } from "reactflow";
 import { Leaf, GitBranch, Package } from "lucide-react";
+import { URL_BLOCK_SCAN } from "../../../utils/contract";
 
 const MerkleTreeNode = ({ data }) => {
   let Icon;
@@ -26,11 +27,36 @@ const MerkleTreeNode = ({ data }) => {
       <p style={{ fontSize: "0.75rem", color: "#777", margin: 0 }}>
         {data.label}
       </p>
-      <p style={{ fontSize: "0.90rem", color: "#555", margin: 0 }}>
-        <strong>{data.hash.slice(0, 6)}...{data.hash.slice(-4)}</strong>
-      </p>
-      <Handle type="source" position={Position.Bottom} style={{ background: "var(--madtx-green)" }} />
-      <Handle type="target" position={Position.Top} style={{ background: "var(--madtx-green)" }} />
+      {data.isLeaf ? (
+        <p style={{ fontSize: "0.90rem", color: "#555", margin: 0 }}>
+          <a
+            href={URL_BLOCK_SCAN + data.hash}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "underline" }}
+          >
+            <strong>
+              {data.hash.slice(0, 6)}...{data.hash.slice(-4)}
+            </strong>
+          </a>
+        </p>
+      ) : (
+        <p style={{ fontSize: "0.90rem", color: "#555", margin: 0 }}>
+          <strong>
+            {data.hash.slice(0, 6)}...{data.hash.slice(-4)}
+          </strong>
+        </p>
+      )}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "var(--madtx-green)" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "var(--madtx-green)" }}
+      />
     </div>
   );
 };

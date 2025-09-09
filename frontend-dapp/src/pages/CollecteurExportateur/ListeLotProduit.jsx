@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { getCollecteurExportateurContract } from "../../utils/contract";
+import {
+  getCollecteurExportateurContract,
+  URL_BLOCK_SCAN,
+} from "../../utils/contract";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -408,8 +411,14 @@ function ListeLotProduits() {
                             className="me-2 text-success"
                           />
                           <strong>Hash transaction:</strong>&nbsp;
-                          {produit.hashTransaction?.slice(0, 6)}...
-                          {produit.hashTransaction?.slice(-4)}
+                          <a
+                            href={URL_BLOCK_SCAN + produit.hashTransaction}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {produit.hashTransaction?.slice(0, 6)}...
+                            {produit.hashTransaction?.slice(-4)}
+                          </a>
                         </p>
                       )}
                   </div>
@@ -612,7 +621,9 @@ function ListeLotProduits() {
                       btnLoading
                     }
                   >
-                    {btnLoading ? "Confirmer la commande..." : "Confirmer la commande"}
+                    {btnLoading
+                      ? "Confirmer la commande..."
+                      : "Confirmer la commande"}
                   </button>
                 </div>
               </div>

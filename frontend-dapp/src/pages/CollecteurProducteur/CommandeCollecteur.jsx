@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCollecteurProducteurContract } from "../../utils/contract";
+import {
+  getCollecteurProducteurContract,
+  URL_BLOCK_SCAN,
+} from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import {
@@ -385,8 +388,14 @@ function CommandeCollecteur() {
                     {commande.statutTransport === 1 && (
                       <p>
                         <strong>Hash transaction:</strong>{" "}
-                        {commande.hashTransaction?.slice(0, 6)}...
-                        {commande.hashTransaction?.slice(-4)}
+                        <a
+                          href={URL_BLOCK_SCAN + commande.hashTransaction}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {commande.hashTransaction?.slice(0, 6)}...
+                          {commande.hashTransaction?.slice(-4)}
+                        </a>
                       </p>
                     )}
 

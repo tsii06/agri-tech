@@ -35,6 +35,9 @@ const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
 
 
 
+
+export const URL_BLOCK_SCAN = "https://amoy.polygonscan.com/tx/";
+
 export async function getProvider() {
   let accounts = [];
   if (window.ethereum) {

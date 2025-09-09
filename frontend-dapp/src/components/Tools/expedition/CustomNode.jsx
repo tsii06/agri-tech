@@ -12,6 +12,7 @@ import {
   TimerIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { URL_BLOCK_SCAN } from "../../../utils/contract";
 
 function CustomNode({ data }) {
   return (
@@ -82,11 +83,20 @@ export const ExpeditionNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash transaction:{" "}
-        <strong>
-          {data.hashTransaction
-            ? data.hashTransaction.slice(0, 6) + "..." + data.hashTransaction.slice(-4)
-            : "N/A"}
-        </strong>
+        <a
+          href={URL_BLOCK_SCAN + data.hashTransaction}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }} // Ajout du soulignement
+        >
+          <strong>
+            {data.hashTransaction
+              ? data.hashTransaction.slice(0, 6) +
+                "..." +
+                data.hashTransaction.slice(-4)
+              : "N/A"}
+          </strong>
+        </a>
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -143,13 +153,20 @@ export const ConditionNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash Transaction:{" "}
-        <strong>
-          {data.hashTransaction
-            ? data.hashTransaction.slice(0, 6) +
-              "..." +
-              data.hashTransaction.slice(-4)
-            : "N/A"}
-        </strong>
+        <a
+          href={URL_BLOCK_SCAN + data.hashTransaction}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }} // Ajout du soulignement
+        >
+          <strong>
+            {data.hashTransaction
+              ? data.hashTransaction.slice(0, 6) +
+                "..." +
+                data.hashTransaction.slice(-4)
+              : "N/A"}
+          </strong>
+        </a>
         {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
@@ -216,13 +233,20 @@ export const LotProduitNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash transaction:{" "}
-        <strong>
-          {data.hashTransaction
-            ? data.hashTransaction.slice(0, 6) +
-              "..." +
-              data.hashTransaction.slice(-4)
-            : "N/A"}
-        </strong>
+        <a
+          href={URL_BLOCK_SCAN + data.hashTransaction}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }} // Ajout du soulignement
+        >
+          <strong>
+            {data.hashTransaction
+              ? data.hashTransaction.slice(0, 6) +
+                "..." +
+                data.hashTransaction.slice(-4)
+              : "N/A"}
+          </strong>
+        </a>
         {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
@@ -292,13 +316,20 @@ export const RecolteNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash transaction:{" "}
-        <strong>
-          {data.hashTransaction
-            ? data.hashTransaction.slice(0, 6) +
-              "..." +
-              data.hashTransaction.slice(-4)
-            : "N/A"}
-        </strong>
+        <a
+          href={URL_BLOCK_SCAN + data.hashTransaction}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }} // Ajout du soulignement
+        >
+          <strong>
+            {data.hashTransaction
+              ? data.hashTransaction.slice(0, 6) +
+                "..." +
+                data.hashTransaction.slice(-4)
+              : "N/A"}
+          </strong>
+        </a>
         {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
@@ -368,13 +399,20 @@ export const ParcelleNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash transaction:{" "}
-        <strong>
-          {data.hashTransaction
-            ? data.hashTransaction.slice(0, 6) +
-              "..." +
-              data.hashTransaction.slice(-4)
-            : "N/A"}
-        </strong>
+        <a
+          href={URL_BLOCK_SCAN + data.hashTransaction}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "underline" }} // Ajout du soulignement
+        >
+          <strong>
+            {data.hashTransaction
+              ? data.hashTransaction.slice(0, 6) +
+                "..." +
+                data.hashTransaction.slice(-4)
+              : "N/A"}
+          </strong>
+        </a>
         {/* {data.hashMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
