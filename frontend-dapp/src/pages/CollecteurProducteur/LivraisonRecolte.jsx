@@ -436,7 +436,7 @@ function LivraisonRecolte() {
                 </p>
                 <p>
                   <Fingerprint size={16} className="me-2 text-success" />
-                  <strong>Hash merkle:</strong> {commande.hashMerkle?.slice(0,6)}...{commande.hashMerkle?.slice(-4)}
+                  <strong>Hash transaciton:</strong> {commande.hashTransaction?.slice(0,6)}...{commande.hashTransaction?.slice(-4)}
                 </p>
                 <p>
                   <Truck size={16} className="me-2 text-success" />

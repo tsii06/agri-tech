@@ -80,7 +80,8 @@ export const getConditionTransportCE = async (_idCommande) => {
   const conditionIpfs = await getFileFromPinata(conditionComplet.cid);
   conditionComplet = {
     ...conditionComplet,
-    ...conditionIpfs.data.items
+    ...conditionIpfs.data.items,
+    ...conditionIpfs?.keyvalues
   };
   return conditionComplet;
 };
