@@ -42,23 +42,14 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
   };
 
   // Enrichir depuis le fichier ipfs
-  try {
-    const res = await fetch(getIPFSURL(produitRaw.cid));
-    if (res.ok) {
-      const contentType = res.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        const ipfsData = await res.json();
-        const root = ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-        produitEnrichi.nom = root.nom || produitEnrichi.nom || "Produit";
-        produitEnrichi.ipfsTimestamp = ipfsData.timestamp || null;
-        produitEnrichi.ipfsVersion = ipfsData.version || null;
-      }
-    }
-    return produitEnrichi;
-  } catch (e) {
-    console.error("Erreur lors de la recuperation d'infos sur  un lot de produit : ", e);
-    return null;
+  const res = await getFileFromPinata(produitRaw.cid);
+  produitEnrichi = {
+    ...produitEnrichi,
+    ...res?.data?.items,
+    ...res?.keyvalues
   }
+  
+  return produitEnrichi;
 };
 
 /**

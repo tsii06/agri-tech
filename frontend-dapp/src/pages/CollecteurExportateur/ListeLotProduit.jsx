@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  getCollecteurExportateurContract,
-} from "../../utils/contract";
+import { getCollecteurExportateurContract } from "../../utils/contract";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -12,6 +10,7 @@ import {
   Search,
   ChevronDown,
   User,
+  Fingerprint,
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
@@ -54,8 +53,7 @@ function ListeLotProduits() {
 
         for (let i = 1; i <= compteurProduits; i++) {
           const lotProduit = await getLotProduitEnrichi(i, roles, account);
-          if (lotProduit)
-            produitsTemp.push(lotProduit);
+          if (lotProduit) produitsTemp.push(lotProduit);
         }
 
         produitsTemp.reverse();
@@ -134,7 +132,7 @@ function ListeLotProduits() {
       // Optionnel : rafraîchir la liste
       setState({});
       setError(false);
-      nav('/mes-commandes-exportateur');
+      nav("/mes-commandes-exportateur");
     } catch (error) {
       console.error("Erreur lors de la commande d'un produit :", error.message);
       setError(
@@ -386,7 +384,8 @@ function ListeLotProduits() {
                     </p>
                     <p>
                       <Hash size={16} className="me-2 text-success" />
-                      <strong>IDs Récoltes:</strong> {produit.idRecolte.join(", ")}
+                      <strong>IDs Récoltes:</strong>{" "}
+                      {produit.idRecolte.join(", ")}
                     </p>
                     <p>
                       <Package2 size={16} className="me-2 text-success" />
@@ -401,47 +400,18 @@ function ListeLotProduits() {
                       <strong>Collecteur:</strong>&nbsp;
                       {produit.collecteur.nom}
                     </p>
-
-                    {/* Informations IPFS et Merkle */}
-                    {produit.cid && (
-                      <div className="mt-2 p-2 bg-light rounded">
-                        <p className="mb-1 small">
-                          <Hash size={14} className="me-1 text-primary" />
-                          <strong>CID IPFS:</strong>
-                          <a
-                            href={getIPFSURL(produit.cid)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ms-2 text-decoration-none text-primary"
-                            title="Voir les données consolidées sur IPFS"
-                          >
-                            {produit.cid.substring(0, 10)}...
-                          </a>
+                    {produit.hashTransaction &&
+                      produit.hashTransaction !== "" && (
+                        <p>
+                          <Fingerprint
+                            size={16}
+                            className="me-2 text-success"
+                          />
+                          <strong>Hash transaction:</strong>&nbsp;
+                          {produit.hashTransaction?.slice(0, 6)}...
+                          {produit.hashTransaction?.slice(-4)}
                         </p>
-
-                        {produit.hashMerkle && (
-                          <p className="mb-1 small">
-                            <Hash size={14} className="me-1 text-warning" />
-                            <strong>Hash Merkle:</strong>
-                            <span
-                              className="ms-2 text-muted"
-                              title={produit.hashMerkle}
-                            >
-                              {produit.hashMerkle.substring(0, 10)}...
-                            </span>
-                          </p>
-                        )}
-
-                        {produit.ipfsTimestamp && (
-                          <p className="mb-1 small text-muted">
-                            <strong>Mise à jour IPFS:</strong>{" "}
-                            {new Date(
-                              produit.ipfsTimestamp
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                      )}
                   </div>
                   <div className="mt-3">
                     {/* Actions pour le collecteur */}
