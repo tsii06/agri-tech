@@ -18,6 +18,11 @@ export const uploadToIPFS = async (
       .keyvalues(metadata)
       .name(`${type}-${Date.now()}`);
 
+    if (res.is_duplicate) {
+      alert("Ce fichier a déjà été uploadé sur IPFS.");
+      throw new Error("Ce fichier a déjà été uploadé sur IPFS.");
+    }
+
     return {
       success: true,
       cid: res.cid,
@@ -96,7 +101,8 @@ export const uploadInspection = async (file, inspectionData) => {
     rapport: inspectionData.rapport,
     timestamp: Date.now().toString(),
   };
-  if (file !== null) return await uploadToIPFS(file, metadata, "inspection-parcelle");
+  if (file !== null)
+    return await uploadToIPFS(file, metadata, "inspection-parcelle");
   else return await uploadJsonToIpfs(inspectionData, "inspection", metadata);
 };
 
@@ -340,7 +346,7 @@ export const getFileFromPinata = async (_cid) => {
       "Erreur lors de la recuperation de fichier depuis pinata : ",
       error
     );
-    return;
+    return false;
   }
 };
 
@@ -369,4 +375,25 @@ export const getUrlDownloadFilePinata = async (_cid) => {
     return URL.createObjectURL(blob);
   }
   return "";
+};
+
+/**
+ * 
+ * @param {string} _cid 
+ * @param {object} _keyvalues 
+ * @returns 
+ */
+export const ajouterKeyValuesFileIpfs = async (_cid, _keyvalues) => {
+  try {
+    const idIpfs = (await myPinataSDK.files.public.list().cid(_cid)).files[0].id;
+    
+    const update = await myPinataSDK.files.public.update({
+      id: idIpfs,
+      keyvalues: _keyvalues
+    });
+    return update;
+  } catch (error) {
+    console.error("Ajout keyvalues sur ipfs : ", error);
+    throw new Error("Erreur ajout keyvalues : ", error);
+  }
 };

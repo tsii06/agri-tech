@@ -8,6 +8,7 @@ import {
   getIPFSURL,
 } from "../../utils/ipfsUtils";
 import { useUserContext } from "../../context/useContextt";
+import { createParcelle } from "../../utils/contrat/producteur";
 
 const defaultCenter = {
   lat: -18.8792,
@@ -63,14 +64,9 @@ function CreerParcelle() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    let hashCertificat = ""; // hash du certificat sur ipfs
-    let idCertificat = ""; // pour supprimer le certificat de ipfs si il y erreur lors de la creation de parcelle.
+    let cidCertificat = ""; // hash du certificat sur ipfs
 
     try {
-      const contract = await getContract();
-      let idNewParcelle = await contract.getCompteurParcelle();
-      idNewParcelle = Number(idNewParcelle) + 1;
-
       // UPLOADE CERTIFICAT PHYTOSANITAIRE
       if (!certificat) {
         throw new Error("Certificat phytosanitaire manquant");
@@ -82,7 +78,6 @@ function CreerParcelle() {
           region: region.current.value,
           autoriteCertificatrice: autoriteCertificatrice.current.value,
           adresseProducteur: account,
-          idParcelle: idNewParcelle.toString(),
           numeroCertificat: numero_certificat.current.value,
         };
 
@@ -95,45 +90,15 @@ function CreerParcelle() {
             upload.error || "Erreur lors de l'upload du certificat"
           );
         } else {
-          hashCertificat = upload.cid;
-          idCertificat = upload.id;
+          cidCertificat = upload.cid;
         }
       }
 
-      // Créer l'objet parcelle consolidé pour IPFS
-      const parcelleConsolidee = {
-        qualiteSemence: parcelleData.qualiteSemence,
-        methodeCulture: parcelleData.methodeCulture,
-        dateRecolte: parcelleData.dateRecolte,
-        location: {
-          lat: location.lat,
-          lng: location.lng,
-        },
-        certificat: hashCertificat,
-        photos: parcelleData.photos,
-        intrants: parcelleData.intrants,
-        inspections: parcelleData.inspections,
-        timestamp: Date.now(),
-      };
-
-      // Upload des données consolidées de la parcelle sur IPFS
-      const { uploadConsolidatedData } = await import("../../utils/ipfsUtils");
-      const parcelleUpload = await uploadConsolidatedData(
-        parcelleConsolidee,
-        "parcelle"
-      );
-
-      if (!parcelleUpload.success) {
-        throw new Error("Erreur lors de l'upload des données de la parcelle");
-      }
-
-      // CREATION PARCELLE avec le nouveau format
-      console.log("Creation parcelle sur blockchain...");
-      const tx = await contract.creerParcelle(parcelleUpload.cid);
-      await tx.wait();
-      console.clear();
-
-      navigate("/mes-parcelles");
+      const res = await createParcelle(parcelleData, location, cidCertificat);
+      if (!res) 
+        setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
+      else 
+        navigate("/mes-parcelles");
     } catch (error) {
       console.error("Erreur lors de la création de la parcelle:", error);
       setError(
@@ -141,10 +106,10 @@ function CreerParcelle() {
       );
 
       // supprimer le certificat uploader sur ipfs en cas d'erreur
-      if (idCertificat) {
-        const { deleteFromIPFS } = await import("../../utils/ipfsUtils");
-        await deleteFromIPFS(idCertificat);
-      }
+      // if (idCertificat) {
+      //   const { deleteFromIPFS } = await import("../../utils/ipfsUtils");
+      //   await deleteFromIPFS(idCertificat);
+      // }
     } finally {
       setLoading(false);
     }

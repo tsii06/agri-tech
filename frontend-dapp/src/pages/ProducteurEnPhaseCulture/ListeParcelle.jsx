@@ -50,6 +50,9 @@ function MesParcelles() {
           }
         }
 
+        // Ne pas afficher si il n y a pas de data off-chain
+        if (!parcelleRaw.dataOffChain) continue;
+
         parcellesPromises.push(parcelleRaw);
       }
 
