@@ -178,12 +178,6 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setCommandes(next);
     } catch (e) {
       console.error("Erreur lors de la validation de la commande:", e);
-      // setError(
-      //   e?.reason ||
-      //     e?.data?.message ||
-      //     e?.message ||
-      //     "Erreur lors de la validation de la commande"
-      // );
     }
   };
 
@@ -357,28 +351,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
               : "Mes Commandes Exportateur"}
           </h2>
 
-          {/* Statistiques IPFS */}
           <div className="row">
-            <div className="col-md-4">
-              <div className="d-flex align-items-center">
-                <Hash size={20} className="me-2 text-primary" />
-                <span className="small">
-                  <strong>{commandes.filter((c) => c.cid).length}</strong>{" "}
-                  commandes avec données IPFS
-                </span>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="d-flex align-items-center">
-                <Hash size={20} className="me-2 text-warning" />
-                <span className="small">
-                  <strong>
-                    {commandes.filter((c) => c.hashMerkle).length}
-                  </strong>{" "}
-                  commandes avec hash Merkle
-                </span>
-              </div>
-            </div>
             <div className="col-md-4">
               <div className="d-flex align-items-center">
                 <ShoppingCart size={20} className="me-2 text-success" />
@@ -492,63 +465,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       <strong>Status:</strong>{" "}
                       {getStatutProduit(commande.statutProduit)}
                     </p>
-
-                    {/* Informations IPFS et Merkle */}
-                    {commande.cid && (
-                      <div className="mt-2 p-2 bg-light rounded">
-                        <p className="mb-1 small">
-                          <Hash size={14} className="me-1 text-primary" />
-                          <strong>CID IPFS:</strong>
-                          <a
-                            href={getIPFSURL(commande.cid)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ms-2 text-decoration-none text-primary"
-                            title="Voir les données consolidées sur IPFS"
-                          >
-                            {commande.cid.substring(0, 10)}...
-                          </a>
-                        </p>
-
-                        {commande.hashMerkle && (
-                          <p className="mb-1 small">
-                            <Hash size={14} className="me-1 text-warning" />
-                            <strong>Hash Merkle:</strong>
-                            <span
-                              className="ms-2 text-muted"
-                              title={commande.hashMerkle}
-                            >
-                              {commande.hashMerkle.substring(0, 10)}...
-                            </span>
-                          </p>
-                        )}
-
-                        {commande.ipfsTimestamp && (
-                          <p className="mb-1 small text-muted">
-                            <strong>Mise à jour IPFS:</strong>{" "}
-                            {new Date(
-                              commande.ipfsTimestamp
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
-                  <div className="mt-2">
-                    {!isStockPage &&
-                      !commande.payer &&
-                      commande.statutProduit === 1 && (
-                        <button
-                          onClick={() => {
-                            setCommandeSelectionnee(commande);
-                            setShowModal(true);
-                          }}
-                          className="btn-agrichain"
-                        >
-                          Payer
-                        </button>
-                      )}
-
+                  <div>
                     {/* Lien vers liste de transporteur */}
                     {!commande.payer &&
                       !isStockPage &&
@@ -579,6 +497,18 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                         }}
                       >
                         Voir détails conditions
+                      </button>
+                    )}
+
+                    {!isStockPage && !commande.payer && commande.statutProduit === 1 && (
+                      <button
+                        onClick={() => {
+                          setCommandeSelectionnee(commande);
+                          setShowModal(true);
+                        }}
+                        className="btn-agrichain mt-2"
+                      >
+                        Payer
                       </button>
                     )}
 

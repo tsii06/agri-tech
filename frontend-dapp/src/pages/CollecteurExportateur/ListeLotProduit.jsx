@@ -612,7 +612,7 @@ function ListeLotProduits() {
                       btnLoading
                     }
                   >
-                    Confirmer la commande
+                    {btnLoading ? "Confirmer la commande..." : "Confirmer la commande"}
                   </button>
                 </div>
               </div>

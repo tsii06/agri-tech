@@ -138,6 +138,7 @@ function LivraisonRecolte() {
 
   const handleEnregistrerCondition = async (commandeId) => {
     setIsProcessing(true);
+    let cid = '';
     try {
       // 1) Créer les données de condition et uploader sur IPFS (JSON)
       const conditionData = {
@@ -158,6 +159,8 @@ function LivraisonRecolte() {
       if (!uploaded.success) {
         throw new Error("Echec upload IPFS des conditions");
       }
+      cid = uploaded.cid;
+      
       // 2) Enregistrer côté contrat (signature: (id, cid))
       const contract = await getCollecteurExportateurContract();
       const tx = await contract.enregistrerCondition(
@@ -165,6 +168,10 @@ function LivraisonRecolte() {
         uploaded.cid
       );
       await tx.wait();
+
+      // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
+      await ajouterKeyValuesFileIpfs(uploaded.cid, { hashTransaction: tx.hash });
+
       await chargerDetails();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
@@ -182,6 +189,9 @@ function LivraisonRecolte() {
       setError(
         "Erreur lors de la mise à jour du statut de transport (Produit). Veuillez réessayer plus tard."
       );
+      
+      // supprimer fichier ipfs si erreur
+      if (cid) deleteFromIPFSByCid(cid);
     } finally {
       setIsProcessing(false);
     }
@@ -452,7 +462,7 @@ function LivraisonRecolte() {
                         onClick={() => handleSubmitStatut(commande.id)}
                         disabled={btnLoading}
                       >
-                        Livrer
+                        {btnLoading ? "Livrer..." : "Livrer"}
                       </button>
                     )}
                   {commande.enregistrerCondition && (
