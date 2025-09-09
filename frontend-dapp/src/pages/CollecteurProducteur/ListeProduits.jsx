@@ -17,7 +17,14 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import { getIPFSURL, uploadLotProduit } from "../../utils/ipfsUtils";
+import {
+  ajouterKeyValuesFileIpfs,
+  deleteFromIPFSByCid,
+  getIPFSURL,
+  uploadLotProduit,
+} from "../../utils/ipfsUtils";
+import { getRecolte } from "../../utils/contrat/collecteurProducteur";
+import { getActeur } from "../../utils/contrat/gestionnaireActeurs";
 
 function ListeProduits() {
   const { address } = useParams();
@@ -69,12 +76,9 @@ function ListeProduits() {
           let produitEnrichi = {
             id: i,
             idRecolte: Number(produitRaw.idRecolte ?? 0),
-            nom: "",
             quantite: Number(produitRaw.quantite ?? 0),
             statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
-            dateRecolte: "",
-            certificatPhytosanitaire: "",
-            collecteur: collecteurAddr,
+            collecteur: collecteurAddr && collecteurAddr !== '' ? await getActeur(collecteurAddr) : null,
             hashMerkle: produitRaw.hashMerkle || "",
             enregistre: produitRaw.enregistre || 0,
           };
@@ -82,32 +86,17 @@ function ListeProduits() {
           // Enrichir depuis la récolte associée (prixUnit et CID JSON)
           try {
             if (produitEnrichi.idRecolte > 0) {
-              const recolteRaw = await cp.getRecolte(produitEnrichi.idRecolte);
+              const recolteRaw = await getRecolte(produitEnrichi.idRecolte);
               produitEnrichi.certificatPhytosanitaire =
                 recolteRaw.certificatPhytosanitaire?.toString?.() ||
                 recolteRaw.certificatPhytosanitaire ||
                 "";
               const recolteCid = recolteRaw.cid || "";
-              if (recolteCid) {
-                const response = await fetch(getIPFSURL(recolteCid));
-                if (response.ok) {
-                  const contentType =
-                    response.headers.get("content-type") || "";
-                  if (contentType.includes("application/json")) {
-                    const ipfsData = await response.json();
-                    const root =
-                      ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-                    produitEnrichi.nom =
-                      root.nomProduit || produitEnrichi.nom || "Produit";
-                    produitEnrichi.dateRecolte =
-                      root.dateRecolte || produitEnrichi.dateRecolte || "";
-                    produitEnrichi.ipfsTimestamp = ipfsData.timestamp || null;
-                    produitEnrichi.ipfsVersion = ipfsData.version || null;
-                    produitEnrichi.recolteHashMerkle =
-                      root.parcelleHashMerkle || "";
-                  }
-                }
-              }
+              produitEnrichi.nom = recolteRaw.nomProduit;
+              produitEnrichi.dateRecolte = recolteRaw.dateRecolte;
+              produitEnrichi.ipfsTimestamp = recolteRaw.timestamp || null;
+              produitEnrichi.ipfsVersion = recolteRaw.version || null;
+              produitEnrichi.recolteHashMerkle = recolteRaw.parcelleHashMerkle || "";
             }
           } catch (e) {
             // laisser valeurs par défaut
@@ -154,6 +143,8 @@ function ListeProduits() {
       alert("Veuillez entrer un prix valide pour le lot.");
       return;
     }
+    let cid = "";
+    setBtnLoading(true);
 
     try {
       const contract = await getCollecteurExportateurContract();
@@ -185,13 +176,24 @@ function ListeProduits() {
       );
       await tx.wait();
 
+      // ajouter le hash transaction dans les keyvalues du fichier ipfs lot produit
+      await ajouterKeyValuesFileIpfs(resUploadLot.cid, {
+        hashTransaction: tx.hash,
+      });
+
       alert("Lot créé avec succès !");
-      nav('/liste-lot-produits');
+      nav("/liste-lot-produits");
     } catch (error) {
       console.error("Erreur lors de la création du lot:", error);
+
+      // supprimer le fichier ipfs si erreur
+      if (cid !== "") deleteFromIPFSByCid(cid);
+
       alert(
         "Une erreur est survenue lors de la création du lot. Veuillez réessayer."
       );
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -297,11 +299,12 @@ function ListeProduits() {
             backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",
             borderRadius: "8px",
             padding: "0.75rem 1.25rem",
-            marginBottom: 16,
           }}
         >
           <h2 className="h5 mb-3">
-            {hasRole(roles, 3) ? "Stock du collecteur" : "Liste des stocks des collecteurs"}
+            {hasRole(roles, 3)
+              ? "Stock du collecteur"
+              : "Liste des stocks des collecteurs"}
           </h2>
 
           {/* Statistiques IPFS */}
@@ -342,6 +345,16 @@ function ListeProduits() {
               <div>{error}</div>
             </div>
           )}
+        </div>
+
+        <div className="text-center mb-3">
+          <button
+            className="btn btn-primary"
+            onClick={handleCreateLot}
+            disabled={selectedProducts.length === 0}
+          >
+            Créer un lot avec les produits sélectionnés
+          </button>
         </div>
 
         {isLoading ? (
@@ -412,9 +425,7 @@ function ListeProduits() {
                     </p>
                     <p>
                       <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>&nbsp;
-                      {produit.collecteur.slice(0, 6)}...
-                      {produit.collecteur.slice(-4)}
+                      <strong>Collecteur:</strong>&nbsp;{produit.collecteur?.nom}
                     </p>
                     <p>
                       <FileCheck2 size={16} className="me-2 text-success" />
@@ -475,15 +486,6 @@ function ListeProduits() {
             ))}
           </div>
         )}
-        <div className="text-center mt-3">
-          <button
-            className="btn btn-primary"
-            onClick={handleCreateLot}
-            disabled={selectedProducts.length === 0}
-          >
-            Créer un lot avec les produits sélectionnés
-          </button>
-        </div>
 
         {showLotModal && (
           <>
@@ -523,8 +525,9 @@ function ListeProduits() {
                       type="button"
                       className="btn btn-primary"
                       onClick={handleConfirmCreateLot}
+                      disabled={btnLoading}
                     >
-                      Confirmer
+                      {btnLoading ? "Confirmer..." : "Confirmer"}
                     </button>
                   </div>
                 </div>
