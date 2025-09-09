@@ -104,12 +104,6 @@ function CreerParcelle() {
       setError(
         "Impossible de créer la parcelle. Veuillez réessayer plus tard."
       );
-
-      // supprimer le certificat uploader sur ipfs en cas d'erreur
-      // if (idCertificat) {
-      //   const { deleteFromIPFS } = await import("../../utils/ipfsUtils");
-      //   await deleteFromIPFS(idCertificat);
-      // }
     } finally {
       setLoading(false);
     }

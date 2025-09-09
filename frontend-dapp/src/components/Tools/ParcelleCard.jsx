@@ -16,7 +16,7 @@ const ParcelleCard = ({
     dateRecolte,
     certificatPhytosanitaire,
     cid,
-    hashMerkle,
+    hashTransaction,
     photos = [],
     intrants = [],
     inspections = [],
@@ -70,7 +70,7 @@ const ParcelleCard = ({
   };
 
   const renderStatusBadge = () => {
-    if (cid && hashMerkle) {
+    if (cid && hashTransaction) {
       return (
         <span className="badge bg-success me-2">
           <Database size={12} className="me-1" />
@@ -141,7 +141,7 @@ const ParcelleCard = ({
 
         <p>
           <Fingerprint size={16} className="me-2 text-success" />
-          <strong>Hash merkle:</strong> {hashMerkle?.slice(0,6)}...{hashMerkle?.slice(-4)}
+          <strong>Hash transaction:</strong> {hashTransaction?.slice(0,6)}...{hashTransaction?.slice(-4)}
         </p>
 
         {/* Certificat phytosanitaire */}

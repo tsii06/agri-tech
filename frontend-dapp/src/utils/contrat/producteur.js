@@ -40,6 +40,7 @@ export const getParcelle = async (_idParcelle) => {
   return {
     ...parcelleComplet,
     ...parcelleIpfs?.data?.items,
+    ...parcelleIpfs?.keyvalues,
     dataOffChain: parcelleIpfs !== false, // pour savoir si il y a des dataOffChain
   };
 };
