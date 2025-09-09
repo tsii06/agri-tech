@@ -65,9 +65,11 @@ export const ExpeditionNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         RootMerkle:{" "}
-        {data.rootMerkle
-          ? data.rootMerkle.slice(0, 6) + "..." + data.rootMerkle.slice(-4)
-          : "N/A"}
+        <strong>
+          {data.rootMerkle
+            ? data.rootMerkle.slice(0, 6) + "..." + data.rootMerkle.slice(-4)
+            : "N/A"}
+        </strong>
         {/* {data.rootMerkle && (
           <button
             className="btn btn-link p-0 ms-2"
@@ -77,6 +79,14 @@ export const ExpeditionNode = ({ data }) => {
             {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
           </button>
         )} */}
+      </p>
+      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+        Hash transaction:{" "}
+        <strong>
+          {data.hashTransaction
+            ? data.hashTransaction.slice(0, 6) + "..." + data.hashTransaction.slice(-4)
+            : "N/A"}
+        </strong>
       </p>
       {/* Point de sortie (droite) */}
       <Handle
@@ -121,17 +131,23 @@ export const ConditionNode = ({ data }) => {
         {data.lieuDepart} - {data.destination}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        <strong><TimerIcon size={18} /> {data.dureeTransport || "Aucun détail disponible"} heures</strong>
+        <strong>
+          <TimerIcon size={18} />{" "}
+          {data.dureeTransport || "Aucun détail disponible"} heures
+        </strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        <ThermometerSnowflakeIcon size={14} /> {data.temperature || "Non spécifiée"} °C&nbsp;-&nbsp;
+        <ThermometerSnowflakeIcon size={14} />{" "}
+        {data.temperature || "Non spécifiée"} °C&nbsp;-&nbsp;
         <DropletsIcon size={14} /> {data.humidite || "Non spécifiée"} %
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        HashMerkle:{" "}
+        Hash Transaction:{" "}
         <strong>
-          {data.hashMerkle
-            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+          {data.hashTransaction
+            ? data.hashTransaction.slice(0, 6) +
+              "..." +
+              data.hashTransaction.slice(-4)
             : "N/A"}
         </strong>
         {/* {data.hashMerkle && (
@@ -199,10 +215,12 @@ export const LotProduitNode = ({ data }) => {
         Quantité: {data.quantite || "Non spécifiée"} kg
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        HashMerkle:{" "}
+        Hash transaction:{" "}
         <strong>
-          {data.hashMerkle
-            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+          {data.hashTransaction
+            ? data.hashTransaction.slice(0, 6) +
+              "..." +
+              data.hashTransaction.slice(-4)
             : "N/A"}
         </strong>
         {/* {data.hashMerkle && (
@@ -273,10 +291,12 @@ export const RecolteNode = ({ data }) => {
         Status: {data.certifie ? "Certifier" : "Non certifier"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        HashMerkle:{" "}
+        Hash transaction:{" "}
         <strong>
-          {data.hashMerkle
-            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+          {data.hashTransaction
+            ? data.hashTransaction.slice(0, 6) +
+              "..." +
+              data.hashTransaction.slice(-4)
             : "N/A"}
         </strong>
         {/* {data.hashMerkle && (
@@ -335,10 +355,10 @@ export const ParcelleNode = ({ data }) => {
         Parcelle&nbsp;#{data.id}
       </h3>
       <p style={{ fontSize: "1rem", color: "#555", margin: "5px 0" }}>
-        <span className="small" style={{color:"#777"}}>Producteur:</span>{" "}
-        {data.producteur
-          ? data.producteur.nom
-          : "Non spécifiée"}
+        <span className="small" style={{ color: "#777" }}>
+          Producteur:
+        </span>{" "}
+        {data.producteur ? data.producteur.nom : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Localisation:
@@ -347,10 +367,12 @@ export const ParcelleNode = ({ data }) => {
           : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        HashMerkle:{" "}
+        Hash transaction:{" "}
         <strong>
-          {data.hashMerkle
-            ? data.hashMerkle.slice(0, 6) + "..." + data.hashMerkle.slice(-4)
+          {data.hashTransaction
+            ? data.hashTransaction.slice(0, 6) +
+              "..." +
+              data.hashTransaction.slice(-4)
             : "N/A"}
         </strong>
         {/* {data.hashMerkle && (

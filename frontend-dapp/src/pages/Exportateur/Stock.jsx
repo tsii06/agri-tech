@@ -16,16 +16,19 @@ import {
   ChevronDown,
   Eye,
   Box,
+  Archive,
 } from "lucide-react";
 import { getIPFSURL } from "../../utils/ipfsUtils";
-import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
+import { getCommandeProduit, getConditionTransportCE, getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 import { ethers } from "ethers";
 import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
+import { useNavigate } from "react-router-dom";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const { account } = useUserContext();
@@ -43,6 +46,7 @@ function StockExportateur() {
     destination: "",
     typeTransport: "",
   });
+  const nav = useNavigate();
 
   const chargerCommandes = async () => {
     try {
@@ -60,21 +64,18 @@ function StockExportateur() {
       // Charger toutes les commandes
       const commandesTemp = [];
       for (let i = 1; i <= compteurCommandes; i++) {
-        const commandeRaw = await contract.getCommande(i);
+        const commandeRaw = await getCommandeProduit(i);
 
-        // Ne pas afficher les commandes non payer dans l'interface stock
-        if (!commandeRaw.payer) continue;
-
-        // Ne plus afficher les commandes deja expedier
-        if (commandeRaw.enregistre) continue;
+        // ne pas afficher les commandes deja enregistrer dans le stock ou non payer
+        if (commandeRaw.enregistre || !commandeRaw.payer) continue;
 
         // Normaliser adresses
         const exportateurAddr =
-          commandeRaw.exportateur?.toString?.() ||
+          commandeRaw.exportateur?.adresse.toString?.() ||
           commandeRaw.exportateur ||
           "";
         const collecteurAddr =
-          commandeRaw.collecteur?.toString?.() ||
+          commandeRaw.collecteur?.adresse.toString?.() ||
           commandeRaw.collecteur ||
           "";
         if (!exportateurAddr) continue;
@@ -89,40 +90,18 @@ function StockExportateur() {
               : {};
 
           let commandeEnrichie = {
-            id: Number(commandeRaw.id ?? i),
+            ...commandeRaw,
             idLotProduit: idLotProduitNum,
-            quantite: Number(commandeRaw.quantite ?? 0),
-            prix: Number(commandeRaw.prix ?? 0),
-            payer: Boolean(commandeRaw.payer),
-            statutTransport: Number(commandeRaw.statutTransport ?? 0),
-            statutProduit: Number(commandeRaw.statutProduit ?? 0),
-            collecteur: collecteurAddr,
-            exportateur: exportateurAddr,
-            transporteur: commandeRaw.transporteur.toString(),
             nomProduit: produit?.nom || "",
-            enregistre: commandeRaw.enregistre,
-            enregistrerCondition: commandeRaw.enregistrerCondition,
           };
-          console.log(commandeRaw.enregistre);
-          
 
           // Charger les condition de transport
           if (commandeRaw.enregistrerCondition) {
-            const conditions = await contract.getCondition(i);
-            const res = await fetch(getIPFSURL(conditions.cid));
-            if (res.ok) {
-              const ipfsData = await res.json();
-              const root =
-                ipfsData && ipfsData.items ? ipfsData.items : ipfsData;
-              commandeEnrichie = {
-                ...commandeEnrichie,
-                temperature: root.temperature,
-                humidite: root.humidite,
-                dureeTransport: root.dureeTransport,
-                lieuDepart: root.lieuDepart,
-                destination: root.destination,
-              };
-            }
+            const conditions = await getConditionTransportCE(i);
+            commandeEnrichie = {
+              ...commandeEnrichie,
+              ...conditions,
+            };
           }
 
           commandesTemp.push(commandeEnrichie);
@@ -134,7 +113,6 @@ function StockExportateur() {
       setCommandes(commandesTemp);
     } catch (error) {
       console.error("Erreur lors du chargement des commandes:", error);
-      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -230,14 +208,21 @@ function StockExportateur() {
       return;
     }
     // Annuler si les produits sont de types differents
-    const stockSelected = commandes.filter(el => selectedStocks.includes(el.id));
-    const IsStockSameType = stockSelected.every(el => el.nomProduit === stockSelected[0].nomProduit);
+    const stockSelected = commandes.filter((el) =>
+      selectedStocks.includes(el.id)
+    );
+    const IsStockSameType = stockSelected.every(
+      (el) => el.nomProduit === stockSelected[0].nomProduit
+    );
     if (!IsStockSameType) {
       alert("Veuillez choisir des produits de meme type.");
       return;
     }
     // ajouter nomProduit dans ShipmentDetail
-    setShipmentDetails(prev => ({...prev, nomProduit: stockSelected[0].nomProduit}));
+    setShipmentDetails((prev) => ({
+      ...prev,
+      nomProduit: stockSelected[0].nomProduit,
+    }));
     setShowShipmentModal(true);
   };
 
@@ -247,15 +232,37 @@ function StockExportateur() {
   };
 
   const handleSubmitShipment = async () => {
-    const { prixVente, dateExpedition, lieuDepart, destination, typeTransport, nomProduit } = shipmentDetails;
+    setBtnLoading(true);
+    const {
+      prixVente,
+      dateExpedition,
+      lieuDepart,
+      destination,
+      typeTransport,
+      nomProduit,
+    } = shipmentDetails;
 
-    if (!prixVente || !dateExpedition || !lieuDepart || !destination || !typeTransport) {
-      alert("Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre.");
+    if (
+      !prixVente ||
+      !dateExpedition ||
+      !lieuDepart ||
+      !destination ||
+      !typeTransport
+    ) {
+      alert(
+        "Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre."
+      );
       return;
     }
 
     // creer donnee article sur ipfs
-    const ipfsArticle = await uploadExpedition(nomProduit, dateExpedition, lieuDepart, destination, typeTransport);
+    const ipfsArticle = await uploadExpedition(
+      nomProduit,
+      dateExpedition,
+      lieuDepart,
+      destination,
+      typeTransport
+    );
 
     // creer article on-chain
     await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
@@ -270,6 +277,9 @@ function StockExportateur() {
       destination: "",
       typeTransport: "",
     });
+
+    setBtnLoading(false);
+    nav("/expeditions");
   };
 
   if (error) {
@@ -313,34 +323,9 @@ function StockExportateur() {
             backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",
             borderRadius: "8px",
             padding: "0.75rem 1.25rem",
-            marginBottom: 16,
           }}
         >
-          <h2 className="h5 mb-3">Stock exportateur</h2>
-
-          {/* Statistiques IPFS */}
-          <div className="row">
-            <div className="col-md-4">
-              <div className="d-flex align-items-center">
-                <Hash size={20} className="me-2 text-primary" />
-                <span className="small">
-                  <strong>{commandes.filter((c) => c.cid).length}</strong>{" "}
-                  commandes avec données IPFS
-                </span>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="d-flex align-items-center">
-                <Hash size={20} className="me-2 text-warning" />
-                <span className="small">
-                  <strong>
-                    {commandes.filter((c) => c.hashMerkle).length}
-                  </strong>{" "}
-                  commandes avec hash Merkle
-                </span>
-              </div>
-            </div>
-          </div>
+          <h2 className="h5">Stock exportateur</h2>
         </div>
 
         {isLoading ? (
@@ -416,18 +401,13 @@ function StockExportateur() {
                       <strong>Quantité:</strong> {commande.quantite} kg
                     </p>
                     <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}
-                      {commande.collecteur.slice(0, 6)}...
-                      {commande.collecteur.slice(-4)}
+                      <Archive size={16} className="me-2 text-success" />
+                      <strong>Collecteur:</strong>{" "}{commande.collecteur?.nom}
                     </p>
-                    {commande.transporteur !==
-                      ethers.ZeroAddress.toString() && (
+                    {commande.transporteur && (
                       <p>
                         <User size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}
-                        {commande.transporteur.slice(0, 6)}...
-                        {commande.transporteur.slice(-4)}
+                        <strong>Transporteur:</strong>{" "}{commande.transporteur?.nom}
                       </p>
                     )}
                     <p
@@ -684,8 +664,9 @@ function StockExportateur() {
                     type="button"
                     className="btn btn-primary"
                     onClick={handleSubmitShipment}
+                    disabled={btnLoading}
                   >
-                    Confirmer
+                    {btnLoading ? "Confirmer..." : "Confirmer"}
                   </button>
                 </div>
               </div>

@@ -33,20 +33,20 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     id: _id,
     idRecolte: [...new Set(idRecoltes)], // supprime les doublants s'il existe
     idCommandeRecoltes: idCommandeRecoltes.map(el => Number(el)),
-    nom: "",
     quantite: Number(produitRaw.quantite ?? 0),
     prixUnit: produitRaw.prix ?? 0,
-    collecteur: await getActeur(collecteurAddr),
+    collecteur: {...await getActeur(collecteurAddr), adresse: collecteurAddr},
     cid: produitRaw.cid,
     hashMerkle: produitRaw.hashMerkle || "",
   };
+  
 
   // Enrichir depuis le fichier ipfs
   const res = await getFileFromPinata(produitRaw.cid);
   produitEnrichi = {
-    ...produitEnrichi,
     ...res?.data?.items,
-    ...res?.keyvalues
+    ...res?.keyvalues,
+    ...produitEnrichi,
   }
   
   return produitEnrichi;

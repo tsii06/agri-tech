@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import {
   getCommandeProduit,
   getConditionTransportCE,
@@ -10,7 +9,7 @@ import {
   getExportateurClientContract,
   getProducteurContract,
 } from "../contract";
-import { getFileFromPinata } from "../ipfsUtils";
+import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
@@ -41,9 +40,18 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
       merkleRoot
     );
     await res.wait();
+
+    // ajouter hash transaction aux keyvalues du fichier sur ipfs
+    await ajouterKeyValuesFileIpfs(_cid, { hashTransaction: res.hash });
+    
     return res;
   } catch (error) {
     console.error("Creation d'une article : ", error);
+
+    // supprimer le fichier ipfs si erreur
+    if (_cid !== '') deleteFromIPFSByCid(_cid);
+  
+    throw new Error("Creation article.");
   }
 };
 
@@ -57,9 +65,9 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let hashTransportCE = [];
   for (let id of _idCommandeProduits) {
     try {
-      const conditions = await collecteurExportateur.getCondition(id);
+      const conditions = await getConditionTransportCE(id);
       if (conditions.id && conditions.id !== 0n)
-        hashTransportCE.push(conditions.hashMerkle.toString());
+        hashTransportCE.push(conditions.hashTransaction.toString());
     } catch (error) {
       console.error(
         "Recuperation des hashs de conditions de transport CE: ",
@@ -75,12 +83,12 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   for (let id of _idCommandeProduits) {
     try {
       const commande = await collecteurExportateur.getCommande(id);
-      const lotProduit = await collecteurExportateur.getLotProduit(
+      const lotProduit = await getLotProduitEnrichi(
         commande.idLotProduit
       );
       idCommandeRecoltes.push(...lotProduit.idCommandeRecoltes);
       idRecoltes.push(...lotProduit.idRecolte);
-      hashLotProduits.push(lotProduit.hashMerkle.toString());
+      hashLotProduits.push(lotProduit.hashTransaction.toString());
     } catch (error) {
       console.error("Recuperation des hashs des lot produits : ", error);
       return;
@@ -90,9 +98,9 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let hashTransportPC = [];
   for (let id of idCommandeRecoltes) {
     try {
-      const conditions = await collecteurProducteur.getConditionTransport(Number(id));
+      const conditions = await getConditionTransportPC(Number(id));
       if (conditions.id && conditions.id !== 0n)
-        hashTransportPC.push(conditions.hashMerkle.toString());
+        hashTransportPC.push(conditions.hashTransaction.toString());
     } catch (error) {
       console.error("Recuperation hash transport PC : ", error);
       return;
@@ -103,8 +111,8 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let idParcelles = [];
   for (let id of idRecoltes) {
     try {
-      const recolte = await collecteurProducteur.getRecolte(id);
-      hashRecoltes.push(recolte.hashMerkle.toString());
+      const recolte = await getRecolte(id);
+      hashRecoltes.push(recolte.hashTransaction.toString());
       idParcelles.push(...recolte.idParcelle);
     } catch (error) {
       console.error("Recuperation hashs recoltes : ", error);
@@ -115,8 +123,8 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let hashParcelles = [];
   for (let id of idParcelles) {
     try {
-      const parcelle = await producteurContrat.getParcelle(id);
-      hashParcelles.push(parcelle.hashMerkle.toString());
+      const parcelle = await getParcelle(id);
+      hashParcelles.push(parcelle.hashTransaction.toString());
     } catch (error) {
       console.error("Recuperation hashs parcelles : ", error);
       return;
@@ -169,6 +177,7 @@ export const getDetailsExpeditionByRef = async (_ref) => {
   expeditionComplet = {
     ...expeditionComplet,
     ...expeditionIpfs.data.items,
+    ...expeditionIpfs?.keyvalues,
   };
   return expeditionComplet;
 };

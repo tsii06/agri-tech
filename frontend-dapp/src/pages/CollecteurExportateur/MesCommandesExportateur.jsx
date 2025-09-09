@@ -29,7 +29,6 @@ import {
 function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -42,6 +41,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   const location = useLocation();
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [btnLoading, setBtnLoading] = useState(false);
 
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
@@ -119,6 +119,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   }, [account, userRole]);
 
   const handlePayer = async (commandeId) => {
+    setBtnLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
       const commande = commandes.find((c) => c.id === commandeId);
@@ -144,7 +145,8 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setShowModal(false);
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
-      setError(error.message);
+    } finally {
+      setBtnLoading(false);
     }
   };
 
@@ -245,18 +247,6 @@ function MesCommandesExportateur({ onlyPaid = false }) {
     return matchSearch && matchPaiement;
   });
   const commandesAffichees = commandesFiltres.slice(0, visibleCount);
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center text-red-600">
-            Erreur lors du chargement des commandes: {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container py-4">
@@ -551,62 +541,65 @@ function MesCommandesExportateur({ onlyPaid = false }) {
 
       {/* Modal de paiement */}
       {showModal && commandeSelectionnee && (
-        <div className="modal show d-block" tabIndex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Payer la commande</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">
-                    Produit: {commandeSelectionnee.nomProduit}
-                  </label>
-                  <p>
-                    <strong>Quantité:</strong> {commandeSelectionnee.quantite}{" "}
-                    kg
-                  </p>
-                  <p>
-                    <strong>Prix total:</strong> {commandeSelectionnee.prix} Ar
-                  </p>
+        <>
+          <div className="modal-backdrop fade show"></div> {/* Ajout de l'arrière-plan assombri */}
+          <div className="modal show d-block" tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Payer la commande</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowModal(false)}
+                  ></button>
                 </div>
-                <div className="mb-3">
-                  <label className="form-label">Mode de paiement</label>
-                  <select
-                    className="form-select"
-                    value={modePaiement}
-                    onChange={(e) => setModePaiement(Number(e.target.value))}
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Produit: {commandeSelectionnee.nomProduit}
+                    </label>
+                    <p>
+                      <strong>Quantité:</strong> {commandeSelectionnee.quantite} kg
+                    </p>
+                    <p>
+                      <strong>Prix total:</strong> {commandeSelectionnee.prix} Ar
+                    </p>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Mode de paiement</label>
+                    <select
+                      className="form-select"
+                      value={modePaiement}
+                      onChange={(e) => setModePaiement(Number(e.target.value))}
+                    >
+                      <option value={0}>Virement bancaire</option>
+                      <option value={1}>Cash</option>
+                      <option value={2}>Mobile Money</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
                   >
-                    <option value={0}>Virement bancaire</option>
-                    <option value={1}>Cash</option>
-                    <option value={2}>Mobile Money</option>
-                  </select>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handlePayer(commandeSelectionnee.id)}
+                    disabled={btnLoading}
+                  >
+                    {btnLoading ? "Confirmer le paiement..." : "Confirmer le paiement"}
+                  </button>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handlePayer(commandeSelectionnee.id)}
-                >
-                  Confirmer le paiement
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {commandesAffichees.length < commandesFiltres.length && (
