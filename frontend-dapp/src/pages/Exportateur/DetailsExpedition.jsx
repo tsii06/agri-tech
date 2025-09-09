@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllHashMerkle,
   getConditionsTransportExpedition,
@@ -48,6 +48,8 @@ const DetailsExpedition = ({}) => {
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
 
+  const nav = useNavigate();
+
   const chargerDetailsExpedition = async () => {
     setLoading(true);
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
@@ -90,7 +92,11 @@ const DetailsExpedition = ({}) => {
   };
 
   useEffect(() => {
-    chargerDetailsExpedition();
+    chargerDetailsExpedition()
+      .catch(e => {
+        alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+        nav("/espace-client");
+      });
   }, []);
 
   return (
