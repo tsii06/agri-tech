@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getCollecteurProducteurContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
-import {
-  Search,
-  ChevronDown,
-} from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import {
   getCommandeRecolte,
   getConditionTransportPC,
@@ -385,6 +382,14 @@ function CommandeCollecteur() {
                       {commande.transporteur?.nom || "N/A"}
                     </p>
 
+                    {commande.statutTransport === 1 && (
+                      <p>
+                        <strong>Hash transaction:</strong>{" "}
+                        {commande.hashTransaction?.slice(0, 6)}...
+                        {commande.hashTransaction?.slice(-4)}
+                      </p>
+                    )}
+
                     {commande.ipfsWarning && (
                       <p className="text-warning small mb-1">
                         {commande.ipfsWarning}
@@ -393,7 +398,7 @@ function CommandeCollecteur() {
 
                     {/* Statuts */}
                     <div className="mt-3">
-                      <div className="d-flex gap-2 mb-2">
+                      <div className="d-flex gap-2">
                         <span
                           className={`badge ${getColorStatutRecolte(
                             commande.statutRecolte
@@ -408,42 +413,8 @@ function CommandeCollecteur() {
                     </div>
                   </div>
 
-                  <div className="d-flex justify-content-between mt-3">
+                  <div className="d-flex justify-content-between">
                     {/* Actions selon le statut */}
-                    {/* afficher btn payer si la commande n'a pas encors ete payer et que la commande a ete valider */}
-                    {!commande.payer && commande.statutRecolte === 1 && (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                          setCommandeSelectionnee(commande);
-                          setShowModal(true);
-                        }}
-                      >
-                        Payer
-                      </button>
-                    )}
-
-                    {/* Afficher btn valider et rejeter si la commande a ete livrer avec success. */}
-                    {commande.statutRecolte === 0 &&
-                      commande.statutTransport === 1 && (
-                        <div className="d-flex gap-1">
-                          <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => validerCommande(commande.id, true)}
-                            disabled={btnLoading}
-                          >
-                            Valider
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => validerCommande(commande.id, false)}
-                            disabled={btnLoading}
-                          >
-                            Rejeter
-                          </button>
-                        </div>
-                      )}
-
                     {commandeErrors[commande.id] && (
                       <div
                         className="alert alert-danger mt-2 py-2 px-3"
@@ -454,7 +425,7 @@ function CommandeCollecteur() {
                     )}
                   </div>
                   {/* Lien vers liste de transporteur */}
-                  {!commande.payer && (
+                  {!commande.payer && commande.statutTransport !== 1 && (
                     <div className="mt-2">
                       <Link
                         to={`/liste-transporteur-commande-recolte/5/${commande.id}`}
@@ -480,6 +451,40 @@ function CommandeCollecteur() {
                         }}
                       >
                         Voir détails conditions
+                      </button>
+                    </div>
+                  )}
+                  {/* Afficher btn valider et rejeter si la commande a ete livrer avec success. */}
+                  {commande.statutRecolte === 0 &&
+                    commande.statutTransport === 1 && (
+                      <div className="d-flex gap-1 mt-2">
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => validerCommande(commande.id, true)}
+                          disabled={btnLoading}
+                        >
+                          Valider
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => validerCommande(commande.id, false)}
+                          disabled={btnLoading}
+                        >
+                          Rejeter
+                        </button>
+                      </div>
+                    )}
+                  {/* afficher btn payer si la commande n'a pas encors ete payer et que la commande a ete valider */}
+                  {!commande.payer && commande.statutRecolte === 1 && (
+                    <div className="d-flex mt-2">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          setCommandeSelectionnee(commande);
+                          setShowModal(true);
+                        }}
+                      >
+                        Payer
                       </button>
                     </div>
                   )}
