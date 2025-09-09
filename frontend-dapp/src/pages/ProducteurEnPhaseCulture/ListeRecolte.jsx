@@ -251,7 +251,7 @@ function ListeRecoltes() {
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h5 className="card-title mb-0">Récolte #{recolte.id}</h5>
                     <div>
-                      {recolte.cid && recolte.hashMerkle ? (
+                      {recolte.cid && recolte.hashTransaction ? (
                         <span className="badge bg-success me-1">
                           IPFS + Merkle
                         </span>
@@ -278,6 +278,7 @@ function ListeRecoltes() {
                     <p><strong>Prix unitaire:</strong> {recolte.prixUnit} Ariary</p>
                     <p><strong>Date de récolte:</strong> {recolte.dateRecolte}</p>
                     <p><strong>Producteur:</strong> {recolte.producteur.nom}</p>
+                    <p><strong>Hash transaction:</strong> {recolte.hashTransaction?.slice(0,6)}...{recolte.hashTransaction?.slice(-4)}</p>
                     
                     {recolte.certificatPhytosanitaire && (
                       <p className="mt-2">

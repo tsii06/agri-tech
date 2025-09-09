@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { getCollecteurProducteurContract } from "../contract";
 import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata, uploadConsolidatedData } from "../ipfsUtils";
 import { getActeur } from "./gestionnaireActeurs";
@@ -15,8 +16,7 @@ export const getCommandeRecolte = async (_idCommande) => {
 
     const producteurDetails = await getActeur(res.producteur.toString());
     const collecteurDetails = await getActeur(res.collecteur.toString());
-    const transporteurDetails =
-      (await getActeur(res.transporteur.toString())) || {};
+    const transporteurDetails = res.transporteur !== ethers.ZeroAddress ? await getActeur(res.transporteur.toString()):{};
 
     return {
       id: Number(res.id),
@@ -29,10 +29,7 @@ export const getCommandeRecolte = async (_idCommande) => {
       producteur: { ...producteurDetails, adresse: res.producteur.toString() },
       collecteur: { ...collecteurDetails, adresse: res.collecteur.toString() },
       enregistrerCondition: res.enregistrerCondition,
-      transporteur: {
-        ...transporteurDetails,
-        adresse: res.transporteur.toString(),
-      },
+      transporteur: { ...transporteurDetails, adresse: res.transporteur.toString() },
     };
   } catch (error) {
     console.log("Recuperation commande lot produit : ", error);
@@ -115,21 +112,18 @@ export const getRecolte = async (_idRecolte) => {
     const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
     // Format : jour mois année
     let dateRecolteFormat = "N/A";
-    if (
-      recolteIpfs.data.items.dateRecolte &&
-      recolteIpfs.data.items.dateRecolte !== ""
-    ) {
-      dateRecolteFormat = new Date(
-        recolteIpfs.data.items.dateRecolte
-      ).toLocaleDateString("fr-FR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+    if (recolteIpfs.data.items.dateRecolte && recolteIpfs.data.items.dateRecolte !== "") {
+      dateRecolteFormat = new Date(recolteIpfs.data.items.dateRecolte)
+        .toLocaleDateString("fr-FR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
     }
 
     return {
       ...recolteIpfs.data.items,
+      ...recolteIpfs?.keyvalues,
       ...recolteComplet,
       dateRecolte: dateRecolteFormat,
     };
