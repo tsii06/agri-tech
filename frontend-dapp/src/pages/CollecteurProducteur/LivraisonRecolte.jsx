@@ -3,7 +3,7 @@ import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
 } from "../../utils/contract";
-import { getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
+import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
 import { ShoppingCart, Hash, Package2, User, Truck, Fingerprint, Sprout, Package, ChevronUp, ChevronDown } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import {
@@ -218,6 +218,7 @@ function LivraisonRecolte() {
   // Handler pour enregistrer condition CommandeRecolte
   const handleEnregistrerConditionRecolte = async (commandeId) => {
     setIsProcessing(true);
+    let cid = '';
     try {
       // 1) Créer les données et uploader sur IPFS (JSON)
       const conditionData = {
@@ -237,6 +238,8 @@ function LivraisonRecolte() {
       if (!uploaded.success) {
         throw new Error("Echec upload IPFS des conditions");
       }
+      cid = uploaded.cid;
+
       // 2) Enregistrer côté contrat CP (signature: (id, cid))
       const contract = await getCollecteurProducteurContract();
       const tx = await contract.enregistrerCondition(
@@ -244,6 +247,10 @@ function LivraisonRecolte() {
         uploaded.cid
       );
       await tx.wait();
+
+      // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
+      await ajouterKeyValuesFileIpfs(uploaded.cid, { hashTransaction: tx.hash });
+      
       await chargerDetails();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
@@ -261,6 +268,9 @@ function LivraisonRecolte() {
       setError(
         "Erreur lors de l'enregistrement de la condition de transport (Récolte). Veuillez réessayer plus tard."
       );
+      
+      // supprimer fichier ipfs si erreur
+      if (cid) deleteFromIPFSByCid(cid);
     } finally {
       setIsProcessing(false);
     }
