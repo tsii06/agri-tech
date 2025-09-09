@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getCollecteurProducteurContract, getContract } from "../../utils/contract";
 import { uploadConsolidatedData } from "../../utils/ipfsUtils"; 
 import { useUserContext } from "../../context/useContextt";
+import { createRecolte } from "../../utils/contrat/collecteurProducteur";
+import { getParcelle } from "../../utils/contrat/producteur";
 
 function FaireRecolte() {
   const navigate = useNavigate();
@@ -27,8 +29,7 @@ function FaireRecolte() {
   const chargerParcelle = async () => {
     try {
       if (!id || isNaN(Number(id))) return;
-      const contract = await getContract();
-      const parcelleData = await contract.getParcelle(Number(id));
+      const parcelleData = await getParcelle(Number(id));
       setParcelle(parcelleData);
     } catch (error) {
       console.error("Erreur lors du chargement de la parcelle:", error);
@@ -50,36 +51,7 @@ function FaireRecolte() {
     setError(null);
 
     try {
-      // 1. Créer l'objet récolte consolidé pour IPFS
-      const recolteConsolidee = {
-        type: 'recolte',
-        parcelleId: parseInt(id),
-        nomProduit: recolteData.nomProduit,
-        quantite: parseInt(recolteData.quantite),
-        prix: parseInt(recolteData.prix),
-        dateRecolte: recolteData.dateRecolte,
-        producteur: account,
-        parcelleHashMerkle: parcelle?.hashMerkle || "",
-        timestamp: Date.now(),
-        version: "1.0"
-      };
-
-      // 2. Upload des données consolidées sur IPFS
-      const recolteUpload = await uploadConsolidatedData(recolteConsolidee, "recolte");
-      
-      if (!recolteUpload.success) {
-        throw new Error("Erreur lors de l'upload des données de récolte sur IPFS");
-      }
-
-      // 3. Créer la récolte avec le CID IPFS
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.ajoutRecolte(
-        [parseInt(id)], // Tableau de parcelles
-        parseInt(recolteData.quantite),
-        parseInt(recolteData.prix),
-        recolteUpload.cid // CID IPFS
-      );
-      await tx.wait();
+      await createRecolte(recolteData, parcelle);
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
@@ -118,11 +90,11 @@ function FaireRecolte() {
             <div className="row">
               <div className="col-md-6">
                 <p><strong>ID:</strong> {parcelle.id}</p>
-                <p><strong>Producteur:</strong> {parcelle.producteur}</p>
+                <p><strong>Producteur:</strong> {parcelle.producteur?.adresse}</p>
                 <p><strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}</p>
               </div>
               <div className="col-md-6">
-                <p><strong>Hash Merkle:</strong> {parcelle.hashMerkle || "Non calculé"}</p>
+                <p><strong>Hash transaction:</strong> {parcelle.hashTransaction || "Non calculé"}</p>
                 <p><strong>Statut:</strong> 
                   {parcelle.cid ? 
                     <span className="badge bg-success">Données consolidées</span> : 
