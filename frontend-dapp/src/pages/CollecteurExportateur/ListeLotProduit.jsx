@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import { getIPFSURL, uploadLotProduit } from "../../utils/ipfsUtils";
+import { deleteFromIPFSByCid, getIPFSURL, uploadLotProduit } from "../../utils/ipfsUtils";
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
 
 function ListeLotProduits() {
@@ -152,6 +152,7 @@ function ListeLotProduits() {
       alert("Veuillez entrer un prix valide pour le lot.");
       return;
     }
+    let cid = '';
 
     try {
       const contract = await getCollecteurExportateurContract();
@@ -180,6 +181,7 @@ function ListeLotProduits() {
         prix: lotPrix,
       };
       const resUploadLot = await uploadLotProduit(dataLot, account);
+      cid = resUploadLot.cid;
 
       const tx = await contract.ajouterLotProduit(
         selectedProducts,
@@ -197,6 +199,8 @@ function ListeLotProduits() {
       alert(
         "Une erreur est survenue lors de la création du lot. Veuillez réessayer."
       );
+      // suprimer le fichier sur ipfs si il y a erreur
+      if (cid !== '') deleteFromIPFSByCid(cid);
     }
   };
 
@@ -380,7 +384,7 @@ function ListeLotProduits() {
                   >
                     <Group size={36} />
                   </div>
-                  <h5 className="card-title text-center mb-3">{produit.nom}</h5>
+                  <h5 className="card-title text-center mb-3">{produit.nom} #{produit.id}</h5>
                   <div className="card-text small">
                     <p>
                       <Hash size={16} className="me-2 text-success" />

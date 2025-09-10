@@ -5,22 +5,16 @@ import {
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import {
-  ShoppingCart,
   Hash,
   Package2,
-  BadgeEuro,
   User,
   Truck,
   Wallet,
   Search,
-  ChevronDown,
-  Eye,
   Box,
   Archive,
 } from "lucide-react";
-import { getIPFSURL } from "../../utils/ipfsUtils";
 import { getCommandeProduit, getConditionTransportCE, getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
-import { ethers } from "ethers";
 import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
@@ -579,7 +573,7 @@ function StockExportateur() {
                 <div className="modal-body">
                   <div className="mb-3">
                     <label htmlFor="prixVente" className="form-label">
-                      Prix de vente
+                      Prix de vente (en $/kg)
                     </label>
                     <input
                       type="number"

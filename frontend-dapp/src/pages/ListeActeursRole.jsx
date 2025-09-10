@@ -82,7 +82,7 @@ export default function ListeActeursRole() {
       const tx = await contrat.choisirTransporteurCommandeRecolte(idCommandeR, addrTransporteur);
       tx.wait();
 
-      nav('/liste-collecteur-commande');
+      nav('/liste-collecteur-commande', { refresh: Date.now() });
     } catch (error) {
       console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
       alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");
@@ -98,7 +98,7 @@ export default function ListeActeursRole() {
       const tx = await contrat.choisirTransporteurCommandeProduit(idCommandeP, addrTransporteur);
       tx.wait();
 
-      nav('/mes-commandes-exportateur');
+      nav('/mes-commandes-exportateur', { refresh: Date.now() });
     } catch (error) {
       console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
       alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");

@@ -1,16 +1,40 @@
 import { useState, useEffect } from "react";
 import {
+  DEBUT_COMMANDE_LOT_PRODUIT,
+  DEBUT_COMMANDE_RECOLTE,
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
 } from "../../utils/contract";
-import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getIPFSURL, uploadConsolidatedData } from "../../utils/ipfsUtils";
-import { ShoppingCart, Hash, Package2, User, Truck, Fingerprint, Sprout, Package, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  ajouterKeyValuesFileIpfs,
+  deleteFromIPFSByCid,
+  getIPFSURL,
+  uploadConsolidatedData,
+} from "../../utils/ipfsUtils";
+import {
+  ShoppingCart,
+  Hash,
+  Package2,
+  User,
+  Truck,
+  Fingerprint,
+  Sprout,
+  Package,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import {
   getCommandeRecolte,
   getConditionTransportPC,
 } from "../../utils/contrat/collecteurProducteur";
-import { getCommandeProduit, getConditionTransportCE } from "../../utils/collecteurExporatateur";
+import {
+  getCommandeProduit,
+  getConditionTransportCE,
+} from "../../utils/collecteurExporatateur";
+
+const contractCP = await getCollecteurProducteurContract();
+const contract = await getCollecteurExportateurContract();
 
 function LivraisonRecolte() {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,19 +54,19 @@ function LivraisonRecolte() {
 
   const { account } = useUserContext();
 
-  const chargerDetails = async () => {
+  const chargerCommandeProduits = async () => {
     try {
-      const contract = await getCollecteurExportateurContract();
       // Charger toutes les commandes (CommandeProduit)
       const compteurCommandesRaw = await contract.getCompteurCommande();
       const compteurCommandes = Number(compteurCommandesRaw);
       let commandesTemp = [];
 
-      for (let i = compteurCommandes; i > 0; i--) {
+      for (let i = compteurCommandes; i >= DEBUT_COMMANDE_LOT_PRODUIT; i--) {
         const c = await getCommandeProduit(i);
 
         // si commande n'est pas au transporteur ne pas l'afficher
-        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase()) continue;
+        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase())
+          continue;
 
         // recuperer condition de transport si deja enregister
         let commandeEnrichie = {};
@@ -53,19 +77,24 @@ function LivraisonRecolte() {
             ...conditions,
           };
         } else {
-          commandeEnrichie = {...c};
+          commandeEnrichie = { ...c };
         }
 
         commandesTemp.push(commandeEnrichie);
       }
       setCommandes(commandesTemp);
+    } catch (error) {
+      console.error("Recuperation commande produit : ", error);
+    }
+  };
 
+  const chargerCommandeRecoltes = async () => {
+    try {
       // Charger les CommandeRecolte (CollecteurProducteur)
-      const contractCP = await getCollecteurProducteurContract();
       const compteurCommandesRecolte = await contractCP.getCompteurCommandes();
       const commandesRecolteTemp = [];
 
-      for (let i = compteurCommandesRecolte; i > 0 ; i--) {
+      for (let i = compteurCommandesRecolte; i >= DEBUT_COMMANDE_RECOLTE; i--) {
         const c = await getCommandeRecolte(i);
 
         // ignorer les commandes que le transporteur n'a pas access.
@@ -81,12 +110,21 @@ function LivraisonRecolte() {
             ...condition,
           };
         } else {
-          commandeRecolteEnrichie = {...c};
+          commandeRecolteEnrichie = { ...c };
         }
 
         commandesRecolteTemp.push(commandeRecolteEnrichie);
       }
       setCommandesRecolte(commandesRecolteTemp);
+    } catch (error) {
+      console.error("Recuperation commande produit : ", error);
+    }
+  };
+
+  const chargerDetails = async () => {
+    try {
+      await chargerCommandeProduits();
+      await chargerCommandeRecoltes();
     } catch (error) {
       setError(error.message);
     } finally {
@@ -119,7 +157,7 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
-      await chargerDetails();
+      await chargerCommandeProduits();
       alert("Statut de transport mis à jour avec succès !");
       setError(null);
     } catch (error) {
@@ -138,7 +176,7 @@ function LivraisonRecolte() {
 
   const handleEnregistrerCondition = async (commandeId) => {
     setIsProcessing(true);
-    let cid = '';
+    let cid = "";
     try {
       // 1) Créer les données de condition et uploader sur IPFS (JSON)
       const conditionData = {
@@ -160,7 +198,7 @@ function LivraisonRecolte() {
         throw new Error("Echec upload IPFS des conditions");
       }
       cid = uploaded.cid;
-      
+
       // 2) Enregistrer côté contrat (signature: (id, cid))
       const contract = await getCollecteurExportateurContract();
       const tx = await contract.enregistrerCondition(
@@ -170,9 +208,11 @@ function LivraisonRecolte() {
       await tx.wait();
 
       // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
-      await ajouterKeyValuesFileIpfs(uploaded.cid, { hashTransaction: tx.hash });
+      await ajouterKeyValuesFileIpfs(uploaded.cid, {
+        hashTransaction: tx.hash,
+      });
 
-      await chargerDetails();
+      await chargerCommandeProduits();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
@@ -189,7 +229,7 @@ function LivraisonRecolte() {
       setError(
         "Erreur lors de la mise à jour du statut de transport (Produit). Veuillez réessayer plus tard."
       );
-      
+
       // supprimer fichier ipfs si erreur
       if (cid) deleteFromIPFSByCid(cid);
     } finally {
@@ -208,7 +248,7 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
-      await chargerDetails();
+      await chargerCommandeRecoltes();
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setError(null);
     } catch (error) {
@@ -228,7 +268,7 @@ function LivraisonRecolte() {
   // Handler pour enregistrer condition CommandeRecolte
   const handleEnregistrerConditionRecolte = async (commandeId) => {
     setIsProcessing(true);
-    let cid = '';
+    let cid = "";
     try {
       // 1) Créer les données et uploader sur IPFS (JSON)
       const conditionData = {
@@ -259,9 +299,11 @@ function LivraisonRecolte() {
       await tx.wait();
 
       // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
-      await ajouterKeyValuesFileIpfs(uploaded.cid, { hashTransaction: tx.hash });
-      
-      await chargerDetails();
+      await ajouterKeyValuesFileIpfs(uploaded.cid, {
+        hashTransaction: tx.hash,
+      });
+
+      await chargerCommandeRecoltes();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
       setTemperature("");
@@ -278,7 +320,7 @@ function LivraisonRecolte() {
       setError(
         "Erreur lors de l'enregistrement de la condition de transport (Récolte). Veuillez réessayer plus tard."
       );
-      
+
       // supprimer fichier ipfs si erreur
       if (cid) deleteFromIPFSByCid(cid);
     } finally {
@@ -309,183 +351,199 @@ function LivraisonRecolte() {
       {/* LISTE DES COMMANDES SUR LES RECOLTES DES PRODUCTEURS */}
       <div className="card p-4 shadow-sm my-4">
         <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
-          <span><Sprout /> Liste des Commandes sur <strong>Récolte</strong></span>
+          <span>
+            <Sprout /> Liste des Commandes sur <strong>Récolte</strong>
+          </span>
           <button className="btn" onClick={toggleRecolte}>
             {isRecolteOpen ? <ChevronUp /> : <ChevronDown />}
           </button>
         </h2>
         <div
-          className={`row g-3 overflow-hidden transition-all ${isRecolteOpen ? "max-h-screen" : "max-h-0"}`}
+          className={`row g-3 overflow-hidden transition-all ${
+            isRecolteOpen ? "max-h-screen" : "max-h-0"
+          }`}
           style={{ transition: "max-height 0.5s ease-in-out" }}
         >
-          {isRecolteOpen && commandesRecolte.map((cmd) => (
-            <div key={cmd.id} className="col-md-4">
-              <div className="card shadow-sm p-3 mb-3">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h4 className="card-title my-2">
-                    Commande Récolte#{cmd.id}
-                  </h4>
-                </div>
+          {isRecolteOpen &&
+            commandesRecolte.map((cmd) => (
+              <div key={cmd.id} className="col-md-4">
+                <div className="card shadow-sm p-3 mb-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h4 className="card-title my-2">
+                      Commande Récolte#{cmd.id}
+                    </h4>
+                  </div>
 
-                <p>
-                  <Sprout size={16} className="me-2 text-success" />
-                  <strong>Récolte:</strong> #{cmd.idRecolte}
-                </p>
-                <p>
-                  <Package2 size={16} className="me-2 text-success" />
-                  <strong>Quantité:</strong> {cmd.quantite} kg
-                </p>
-                <p>
-                  <User size={16} className="me-2 text-success" />
-                  <strong>Producteur:</strong> {cmd.producteur?.nom || "N/A"}
-                </p>
-                <p>
-                  <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong> {cmd.collecteur?.nom || "N/A"}
-                </p>
-                <p>
-                  <Fingerprint size={16} className="me-2 text-success" />
-                  <strong>Hash transaction:</strong> {cmd.hashTransaction?.slice(0,6)}...{cmd.hashTransaction?.slice(-4)}
-                </p>
-                <p>
-                  <Truck size={16} className="me-2 text-success" />
-                  <strong>Transport:</strong>{" "}
-                  {getStatutTransportLabel(cmd.statutTransport)}
-                </p>
+                  <p>
+                    <Sprout size={16} className="me-2 text-success" />
+                    <strong>Récolte:</strong> #{cmd.idRecolte}
+                  </p>
+                  <p>
+                    <Package2 size={16} className="me-2 text-success" />
+                    <strong>Quantité:</strong> {cmd.quantite} kg
+                  </p>
+                  <p>
+                    <User size={16} className="me-2 text-success" />
+                    <strong>Producteur:</strong> {cmd.producteur?.nom || "N/A"}
+                  </p>
+                  <p>
+                    <User size={16} className="me-2 text-success" />
+                    <strong>Collecteur:</strong> {cmd.collecteur?.nom || "N/A"}
+                  </p>
+                  <p>
+                    <Fingerprint size={16} className="me-2 text-success" />
+                    <strong>Hash transaction:</strong>{" "}
+                    {cmd.hashTransaction?.slice(0, 6)}...
+                    {cmd.hashTransaction?.slice(-4)}
+                  </p>
+                  <p>
+                    <Truck size={16} className="me-2 text-success" />
+                    <strong>Transport:</strong>{" "}
+                    {getStatutTransportLabel(cmd.statutTransport)}
+                  </p>
 
-                <div className="d-flex gap-2 mt-3">
-                  {!cmd.enregistrerCondition && (
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => {
-                        setShowConditionModal(`recolte-${cmd.id}`);
-                      }}
-                    >
-                      Condition de transport
-                    </button>
-                  )}
-                  {cmd.statutTransport == 0 && cmd.enregistrerCondition && (
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => handleSubmitStatutRecolte(cmd.id)}
-                      disabled={btnLoading}
-                    >
-                      {btnLoading ? "Livraison..." : "Livrer"}
-                    </button>
-                  )}
-                  {cmd.enregistrerCondition && (
-                    <button
-                      className="btn btn-outline-success btn-sm"
-                      onClick={() => {
-                        setDetailsCondition({
-                          temperature: cmd.temperature,
-                          humidite: cmd.humidite,
-                          dureeTransport: cmd.dureeTransport,
-                          lieuDepart: cmd.lieuDepart,
-                          destination: cmd.destination,
-                        });
-                        setShowDetailsModal(true);
-                      }}
-                    >
-                      Voir détails conditions
-                    </button>
-                  )}
+                  <div className="d-flex gap-2 mt-3">
+                    {!cmd.enregistrerCondition && (
+                      <button
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => {
+                          setShowConditionModal(`recolte-${cmd.id}`);
+                        }}
+                      >
+                        Condition de transport
+                      </button>
+                    )}
+                    {cmd.statutTransport == 0 && cmd.enregistrerCondition && (
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => handleSubmitStatutRecolte(cmd.id)}
+                        disabled={btnLoading}
+                      >
+                        {btnLoading ? "Livraison..." : "Livrer"}
+                      </button>
+                    )}
+                    {cmd.enregistrerCondition && (
+                      <button
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => {
+                          setDetailsCondition({
+                            temperature: cmd.temperature,
+                            humidite: cmd.humidite,
+                            dureeTransport: cmd.dureeTransport,
+                            lieuDepart: cmd.lieuDepart,
+                            destination: cmd.destination,
+                          });
+                          setShowDetailsModal(true);
+                        }}
+                      >
+                        Voir détails conditions
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 
       {/* LISTE DES COMMANDES SUR LES PRODUITS DES COLLECTEURS */}
       <div className="card p-4 shadow-sm">
         <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
-          <span><Package /> Liste des Commandes sur <strong>Produit</strong></span>
+          <span>
+            <Package /> Liste des Commandes sur <strong>Produit</strong>
+          </span>
           <button className="btn" onClick={toggleProduit}>
             {isProduitOpen ? <ChevronUp /> : <ChevronDown />}
           </button>
         </h2>
         <div
-          className={`row g-3 overflow-hidden transition-all ${isProduitOpen ? "max-h-screen" : "max-h-0"}`}
+          className={`row g-3 overflow-hidden transition-all ${
+            isProduitOpen ? "max-h-screen" : "max-h-0"
+          }`}
           style={{ transition: "max-height 0.5s ease-in-out" }}
         >
-          {isProduitOpen && commandes.map((commande) => (
-            <div key={commande.id} className="col-md-4">
-              <div className="card shadow-sm p-3 mb-3">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <h4 className="card-title my-2">
-                    Commande Produit#{commande.id}
-                  </h4>
-                </div>
+          {isProduitOpen &&
+            commandes.map((commande) => (
+              <div key={commande.id} className="col-md-4">
+                <div className="card shadow-sm p-3 mb-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h4 className="card-title my-2">
+                      Commande Produit#{commande.id}
+                    </h4>
+                  </div>
 
-                <p>
-                  <Package size={16} className="me-2 text-success" />
-                  <strong>Produit:</strong> #{commande.idLotProduit}
-                </p>
-                <p>
-                  <Package2 size={16} className="me-2 text-success" />
-                  <strong>Quantité:</strong> {commande.quantite} kg
-                </p>
-                <p>
-                  <User size={16} className="me-2 text-success" />
-                  <strong>Collecteur:</strong>{" "} {commande.collecteur?.nom || "N/A"}
-                </p>
-                <p>
-                  <User size={16} className="me-2 text-success" />
-                  <strong>Exportateur:</strong>{" "} {commande.exportateur?.nom || "N/A"}
-                </p>
-                <p>
-                  <Fingerprint size={16} className="me-2 text-success" />
-                  <strong>Hash transaciton:</strong> {commande.hashTransaction?.slice(0,6)}...{commande.hashTransaction?.slice(-4)}
-                </p>
-                <p>
-                  <Truck size={16} className="me-2 text-success" />
-                  <strong>Transport:</strong>{" "}
-                  {getStatutTransportLabel(commande.statutTransport)}
-                </p>
+                  <p>
+                    <Package size={16} className="me-2 text-success" />
+                    <strong>Produit:</strong> #{commande.idLotProduit}
+                  </p>
+                  <p>
+                    <Package2 size={16} className="me-2 text-success" />
+                    <strong>Quantité:</strong> {commande.quantite} kg
+                  </p>
+                  <p>
+                    <User size={16} className="me-2 text-success" />
+                    <strong>Collecteur:</strong>{" "}
+                    {commande.collecteur?.nom || "N/A"}
+                  </p>
+                  <p>
+                    <User size={16} className="me-2 text-success" />
+                    <strong>Exportateur:</strong>{" "}
+                    {commande.exportateur?.nom || "N/A"}
+                  </p>
+                  <p>
+                    <Fingerprint size={16} className="me-2 text-success" />
+                    <strong>Hash transaciton:</strong>{" "}
+                    {commande.hashTransaction?.slice(0, 6)}...
+                    {commande.hashTransaction?.slice(-4)}
+                  </p>
+                  <p>
+                    <Truck size={16} className="me-2 text-success" />
+                    <strong>Transport:</strong>{" "}
+                    {getStatutTransportLabel(commande.statutTransport)}
+                  </p>
 
-                <div className="d-flex gap-2 mt-3">
-                  {!commande.enregistrerCondition && (
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => {
-                        setShowConditionModal(`produit-${commande.id}`);
-                      }}
-                    >
-                      Condition de transport
-                    </button>
-                  )}
-                  {commande.statutTransport == 0 &&
-                    commande.enregistrerCondition && (
+                  <div className="d-flex gap-2 mt-3">
+                    {!commande.enregistrerCondition && (
                       <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => handleSubmitStatut(commande.id)}
-                        disabled={btnLoading}
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => {
+                          setShowConditionModal(`produit-${commande.id}`);
+                        }}
                       >
-                        {btnLoading ? "Livrer..." : "Livrer"}
+                        Condition de transport
                       </button>
                     )}
-                  {commande.enregistrerCondition && (
-                    <button
-                      className="btn btn-outline-success btn-sm"
-                      onClick={() => {
-                        setDetailsCondition({
-                          temperature: commande.temperature,
-                          humidite: commande.humidite,
-                          dureeTransport: commande.dureeTransport,
-                          lieuDepart: commande.lieuDepart,
-                          destination: commande.destination,
-                        });
-                        setShowDetailsModal(true);
-                      }}
-                    >
-                      Voir détails conditions
-                    </button>
-                  )}
+                    {commande.statutTransport == 0 &&
+                      commande.enregistrerCondition && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => handleSubmitStatut(commande.id)}
+                          disabled={btnLoading}
+                        >
+                          {btnLoading ? "Livrer..." : "Livrer"}
+                        </button>
+                      )}
+                    {commande.enregistrerCondition && (
+                      <button
+                        className="btn btn-outline-success btn-sm"
+                        onClick={() => {
+                          setDetailsCondition({
+                            temperature: commande.temperature,
+                            humidite: commande.humidite,
+                            dureeTransport: commande.dureeTransport,
+                            lieuDepart: commande.lieuDepart,
+                            destination: commande.destination,
+                          });
+                          setShowDetailsModal(true);
+                        }}
+                      >
+                        Voir détails conditions
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   DEBUT_COMMANDE_RECOLTE,
   getCollecteurProducteurContract,
@@ -15,6 +15,7 @@ import {
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
@@ -95,7 +96,7 @@ function CommandeCollecteur() {
     setIsLoading(true);
 
     chargerCommandes();
-  }, [account, acteur]);
+  }, [account, acteur, location.state]); // Ajouter location.state comme dépendance pour réexécuter le useEffect
 
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);

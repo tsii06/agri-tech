@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  DEBUT_COMMANDE_LOT_PRODUIT,
   getCollecteurExportateurContract,
   getRoleOfAddress,
   URL_BLOCK_SCAN,
@@ -64,7 +65,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
 
         // Charger toutes les commandes
         const commandesTemp = [];
-        for (let i = 1; i <= compteurCommandes; i++) {
+        for (let i = DEBUT_COMMANDE_LOT_PRODUIT; i <= compteurCommandes; i++) {
           const commandeRaw = await getCommandeProduit(i);
 
           // Normaliser adresses
@@ -117,7 +118,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
     };
 
     chargerCommandes();
-  }, [account, userRole]);
+  }, [account, userRole, location.state]);
 
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
@@ -400,13 +401,11 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                       <Archive size={16} className="me-2 text-success" />
                       <strong>Collecteur:</strong> {commande.collecteur?.nom}
                     </p>
-                    {commande.transporteur && (
-                      <p>
-                        <LucideTruck size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}
-                        {commande.transporteur?.nom}
-                      </p>
-                    )}
+                    <p>
+                      <LucideTruck size={16} className="me-2 text-success" />
+                      <strong>Transporteur:</strong>{" "}
+                      {commande.transporteur?.nom || "N/A"}
+                    </p>
                     {commande.statutTransport === 1 && (
                       <p>
                         <Fingerprint size={16} className="me-2 text-success" />

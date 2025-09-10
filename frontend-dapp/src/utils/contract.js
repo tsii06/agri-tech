@@ -35,6 +35,7 @@ export const URL_BLOCK_SCAN = "https://amoy.polygonscan.com/tx/";
 export const DEBUT_PARCELLE = 4;
 export const DEBUT_RECOLTE = 4;
 export const DEBUT_COMMANDE_RECOLTE = 7;
+export const DEBUT_COMMANDE_LOT_PRODUIT = 3;
 export const DEBUT_LOT_PRODUIT = 3;
 export const DEBUT_EXPEDITION = 2;
 

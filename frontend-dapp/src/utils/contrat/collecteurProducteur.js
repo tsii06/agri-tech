@@ -141,6 +141,7 @@ export const getRecolte = async (_idRecolte) => {
 export const createRecolte = async (recolteData, parcelle) => {
   let cidRecolte = '';
   try {
+    const contratProcteur = await getCollecteurProducteurContract();
     // 1. Créer l'objet récolte consolidé pour IPFS
     const recolteConsolidee = {
       type: "recolte",
@@ -168,7 +169,7 @@ export const createRecolte = async (recolteData, parcelle) => {
     }
 
     // 3. Créer la récolte avec le CID IPFS
-    const tx = await contrat.ajoutRecolte(
+    const tx = await contratProcteur.ajoutRecolte(
       [parseInt(parcelle.id)], // Tableau de parcelles
       parseInt(recolteData.quantite),
       parseInt(recolteData.prix),

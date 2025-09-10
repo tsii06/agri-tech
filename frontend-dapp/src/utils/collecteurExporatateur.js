@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { getCollecteurExportateurContract } from "./contract";
 import { getActeur } from "./contrat/gestionnaireActeurs";
 import { getFileFromPinata, getIPFSURL } from "./ipfsUtils";
@@ -99,7 +100,7 @@ export const getCommandeProduit = async (_idCommande) => {
 
     const collecteurDetails = await getActeur(res.collecteur?.toString());
     const exportateurDetails = await getActeur(res.exportateur?.toString());
-    const transporteurDetails = await getActeur(res.transporteur?.toString());
+    const transporteurDetails = res.transporteur !== ethers.ZeroAddress ? await getActeur(res.transporteur.toString()):{};
 
     return {
       id: Number(res.id),
