@@ -55,6 +55,7 @@ function Header({ state, setAccount, setRole, setState }) {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const userAddress = await signer.getAddress();
+        localStorage.setItem("madtx_user_address", userAddress);
         setAccountLocal(userAddress);
         setAccount && setAccount(userAddress);
         await verifierActeur(userAddress);
@@ -97,6 +98,7 @@ function Header({ state, setAccount, setRole, setState }) {
     setAccount && setAccount(null);
     setRole && setRole(null);
     sessionStorage.setItem("madtx-logout", "1");
+    sessionStorage.removeItem("madtx_user_address");
     window.location.href = "/";
   };
 

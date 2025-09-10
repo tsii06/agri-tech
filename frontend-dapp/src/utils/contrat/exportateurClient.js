@@ -5,9 +5,7 @@ import {
 } from "../collecteurExporatateur";
 import {
   getCollecteurExportateurContract,
-  getCollecteurProducteurContract,
   getExportateurClientContract,
-  getProducteurContract,
 } from "../contract";
 import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata } from "../ipfsUtils";
 import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
@@ -16,8 +14,6 @@ import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
-const collecteurProducteur = await getCollecteurProducteurContract();
-const producteurContrat = await getProducteurContract();
 
 /**
  *
@@ -67,7 +63,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
     try {
       const conditions = await getConditionTransportCE(id);
       if (conditions.id && conditions.id !== 0n)
-        hashTransportCE.push(conditions.hashTransaction.toString());
+        hashTransportCE.push(conditions.hashTransaction?.toString());
     } catch (error) {
       console.error(
         "Recuperation des hashs de conditions de transport CE: ",
@@ -88,7 +84,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
       );
       idCommandeRecoltes.push(...lotProduit.idCommandeRecoltes);
       idRecoltes.push(...lotProduit.idRecolte);
-      hashLotProduits.push(lotProduit.hashTransaction.toString());
+      hashLotProduits.push(lotProduit.hashTransaction?.toString());
     } catch (error) {
       console.error("Recuperation des hashs des lot produits : ", error);
       return;
@@ -100,7 +96,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
     try {
       const conditions = await getConditionTransportPC(Number(id));
       if (conditions.id && conditions.id !== 0n)
-        hashTransportPC.push(conditions.hashTransaction.toString());
+        hashTransportPC.push(conditions.hashTransaction?.toString());
     } catch (error) {
       console.error("Recuperation hash transport PC : ", error);
       return;
@@ -112,7 +108,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   for (let id of idRecoltes) {
     try {
       const recolte = await getRecolte(id);
-      hashRecoltes.push(recolte.hashTransaction.toString());
+      hashRecoltes.push(recolte.hashTransaction?.toString());
       idParcelles.push(...recolte.idParcelle);
     } catch (error) {
       console.error("Recuperation hashs recoltes : ", error);
@@ -124,7 +120,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   for (let id of idParcelles) {
     try {
       const parcelle = await getParcelle(id);
-      hashParcelles.push(parcelle.hashTransaction.toString());
+      hashParcelles.push(parcelle.hashTransaction?.toString());
     } catch (error) {
       console.error("Recuperation hashs parcelles : ", error);
       return;
