@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  DEBUT_LOT_PRODUIT,
   getCollecteurExportateurContract,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
@@ -54,7 +55,7 @@ function ListeLotProduits() {
         const compteurProduits = Number(compteurProduitsRaw);
         const produitsTemp = [];
 
-        for (let i = 1; i <= compteurProduits; i++) {
+        for (let i = DEBUT_LOT_PRODUIT; i <= compteurProduits; i++) {
           const lotProduit = await getLotProduitEnrichi(i, roles, account);
           if (lotProduit) produitsTemp.push(lotProduit);
         }

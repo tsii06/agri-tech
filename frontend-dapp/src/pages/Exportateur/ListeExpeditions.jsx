@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getExportateurClientContract } from "../../utils/contract";
+import { DEBUT_EXPEDITION, getExportateurClientContract } from "../../utils/contract";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 
 export default function ListeExpeditions() {
@@ -16,7 +16,7 @@ export default function ListeExpeditions() {
         const contract = await getExportateurClientContract();
         const count = Number(await contract.compteurExpeditions());
         const items = [];
-        for (let i = 1; i <= count; i++) {
+        for (let i = DEBUT_EXPEDITION; i <= count; i++) {
           try {
             const exp = await contract.getExpedition(i);
             if (exp && exp.id && Number(exp.id) > 0) {

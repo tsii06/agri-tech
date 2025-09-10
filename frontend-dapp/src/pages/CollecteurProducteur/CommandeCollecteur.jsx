@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  DEBUT_COMMANDE_RECOLTE,
   getCollecteurProducteurContract,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
@@ -41,7 +42,7 @@ function CommandeCollecteur() {
       const compteurCommandes = Number(compteurCommandesRaw);
       const commandesTemp = [];
 
-      for (let i = 1; i <= compteurCommandes; i++) {
+      for (let i = DEBUT_COMMANDE_RECOLTE; i <= compteurCommandes; i++) {
         const commandeRaw = await getCommandeRecolte(i);
         // Filtrer par collecteur connecté
         const collecteurAddr =

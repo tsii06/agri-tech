@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { getContract } from "../../utils/contract";
+import { DEBUT_PARCELLE, getContract } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from '../../context/useContextt';
 import { Search, ChevronDown } from "lucide-react";
-import { getIPFSURL } from "../../utils/ipfsUtils";
 import { hasRole } from "../../utils/roles";
 import { getParcelle } from "../../utils/contrat/producteur";
 
@@ -40,7 +39,7 @@ function MesParcelles() {
 
       const parcellesPromises = [];
       
-      for (let i = 1; i <= compteurParcelles; i++) {
+      for (let i = DEBUT_PARCELLE; i <= compteurParcelles; i++) {
         const parcelleRaw = await getParcelle(i);
 
         // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)

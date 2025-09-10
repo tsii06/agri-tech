@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getCollecteurProducteurContract, URL_BLOCK_SCAN } from "../../utils/contract";
+import { DEBUT_RECOLTE, getCollecteurProducteurContract, URL_BLOCK_SCAN } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
@@ -48,7 +48,7 @@ function ListeRecoltes() {
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
 
-      for (let i = 1; i <= compteurRecoltes; i++) {
+      for (let i = DEBUT_RECOLTE; i <= compteurRecoltes; i++) {
         const recolteRaw = await getRecolte(i);
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
