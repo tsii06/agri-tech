@@ -39,6 +39,8 @@ export const DEBUT_COMMANDE_LOT_PRODUIT = 3;
 export const DEBUT_LOT_PRODUIT = 3;
 export const DEBUT_EXPEDITION = 2;
 
+export const EXCLUDE_EXPEDITION = ["EXP-17570788211"];
+
 export async function getProvider() {
   let accounts = [];
   if (window.ethereum) {

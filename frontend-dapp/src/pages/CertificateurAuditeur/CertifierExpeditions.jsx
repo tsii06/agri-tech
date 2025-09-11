@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getExportateurClientContract } from "../../utils/contract";
-import { getIPFSURL } from "../../utils/ipfsUtils";
+import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
 import { ethers } from "ethers";
 import { uploadToIPFS } from "../../utils/ipfsUtils";
 
@@ -74,6 +74,7 @@ export default function CertifierExpeditions() {
     e.preventDefault();
     setBtnLoading(true);
     setMessage("");
+    let cid = '';
     try {
       if (
         !certificat ||
@@ -100,6 +101,7 @@ export default function CertifierExpeditions() {
         type: "certificat-expedition",
         ...metadata,
       }, "certificat-expedition");
+      cid = upload.cid;
 
       if (!upload?.success || !upload?.cid) {
         throw new Error(upload?.error || "Echec d'upload IPFS");
@@ -121,6 +123,8 @@ export default function CertifierExpeditions() {
       setMessage(
         "Erreur lors de la certification: " + (error?.message || error)
       );
+      // supprimer le fichier ipfs si erreur
+      if (cid !== '') deleteFromIPFSByCid(cid);
     }
     setBtnLoading(false);
   };

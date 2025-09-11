@@ -24,6 +24,7 @@ import LotProduitDetails from "../../components/Tools/expedition/LotProduitDetai
 import LogistiqueDetails from "../../components/Tools/expedition/LogistiqueDetails";
 import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkleTree";
 import { getIPFSURL } from "../../utils/ipfsUtils";
+import { EXCLUDE_EXPEDITION } from "../../utils/contract";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -52,6 +53,12 @@ const DetailsExpedition = ({}) => {
 
   const chargerDetailsExpedition = async () => {
     setLoading(true);
+    // renvoyer si le ref appartient a l'exclusion
+    if (reference && EXCLUDE_EXPEDITION.includes(reference)) {
+      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+      nav("/espace-client");
+      return;
+    }
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
     const hashesMerkle = await getAllHashMerkle(
       detailsExpedition.idCommandeProduit
@@ -92,11 +99,10 @@ const DetailsExpedition = ({}) => {
   };
 
   useEffect(() => {
-    chargerDetailsExpedition()
-      .catch(e => {
-        alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
-        nav("/espace-client");
-      });
+    chargerDetailsExpedition().catch((e) => {
+      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+      nav("/espace-client");
+    });
   }, []);
 
   return (
@@ -199,7 +205,9 @@ const DetailsExpedition = ({}) => {
                   </p>
                 </div>
                 <div className="col-md-6 mb-3 text-end">
-                  <label className="text-muted">Certificat Phytosanitaire</label>
+                  <label className="text-muted">
+                    Certificat Phytosanitaire
+                  </label>
                   <p className="card-text fw-bold">
                     {expedition.cidCertificat ? (
                       <a
@@ -263,7 +271,8 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showLogistique && isLoadingLogistique) chargerConditionsTransport();
+                  if (!showLogistique && isLoadingLogistique)
+                    chargerConditionsTransport();
                   setShowLogistique(!showLogistique);
                 }}
                 onMouseEnter={(e) =>
@@ -408,7 +417,8 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
-                  if (!showParcelleProduction && isLoadingParcelles) chargerParcelles();
+                  if (!showParcelleProduction && isLoadingParcelles)
+                    chargerParcelles();
                   setShowParcelleProduction(!showParcelleProduction);
                 }}
                 onMouseEnter={(e) =>
@@ -502,4 +512,4 @@ export default DetailsExpedition;
       transform: rotate(360deg);
     }
   }
-`}</style>
+`}</style>;
