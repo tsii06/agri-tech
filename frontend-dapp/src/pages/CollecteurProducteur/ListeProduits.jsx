@@ -168,6 +168,7 @@ function ListeProduits() {
           .map((p) => p.certificatPhytosanitaire),
       };
       const resUploadLot = await uploadLotProduit(dataLot, account);
+      cid = resUploadLot.cid;
 
       const tx = await contract.ajouterLotProduit(
         selectedProducts,

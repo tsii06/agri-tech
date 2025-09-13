@@ -14,10 +14,15 @@ import {
   Box,
   Archive,
 } from "lucide-react";
-import { getCommandeProduit, getConditionTransportCE, getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
+import {
+  getCommandeProduit,
+  getConditionTransportCE,
+  getLotProduitEnrichi,
+} from "../../utils/collecteurExporatateur";
 import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
+import { deleteFromIPFSByCid } from "../../utils/ipfsUtils";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -227,53 +232,62 @@ function StockExportateur() {
 
   const handleSubmitShipment = async () => {
     setBtnLoading(true);
-    const {
-      prixVente,
-      dateExpedition,
-      lieuDepart,
-      destination,
-      typeTransport,
-      nomProduit,
-    } = shipmentDetails;
+    let cid = '';
 
-    if (
-      !prixVente ||
-      !dateExpedition ||
-      !lieuDepart ||
-      !destination ||
-      !typeTransport
-    ) {
-      alert(
-        "Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre."
+    try {
+      const {
+        prixVente,
+        dateExpedition,
+        lieuDepart,
+        destination,
+        typeTransport,
+        nomProduit,
+      } = shipmentDetails;
+
+      if (
+        !prixVente ||
+        !dateExpedition ||
+        !lieuDepart ||
+        !destination ||
+        !typeTransport
+      ) {
+        alert(
+          "Tous les champs sont obligatoires. Veuillez les remplir avant de soumettre."
+        );
+        return;
+      }
+
+      // creer donnee article sur ipfs
+      const ipfsArticle = await uploadExpedition(
+        nomProduit,
+        dateExpedition,
+        lieuDepart,
+        destination,
+        typeTransport
       );
-      return;
+      cid = ipfsArticle.cid;
+
+      // creer article on-chain
+      await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
+
+      await chargerCommandes();
+      setShowShipmentModal(false);
+      setSelectedStocks([]);
+      setShipmentDetails({
+        prixVente: "",
+        dateExpedition: "",
+        lieuDepart: "",
+        destination: "",
+        typeTransport: "",
+      });
+      nav("/expeditions");
+    } catch (error) {
+      console.error("Creation expedition : ", error);
+      if (cid !== '') deleteFromIPFSByCid(cid);
+    } finally {
+      setBtnLoading(false);
     }
 
-    // creer donnee article sur ipfs
-    const ipfsArticle = await uploadExpedition(
-      nomProduit,
-      dateExpedition,
-      lieuDepart,
-      destination,
-      typeTransport
-    );
-
-    // creer article on-chain
-    await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
-
-    await chargerCommandes();
-    setShowShipmentModal(false);
-    setSelectedStocks([]);
-    setShipmentDetails({
-      prixVente: "",
-      dateExpedition: "",
-      lieuDepart: "",
-      destination: "",
-      typeTransport: "",
-    });
-
-    setBtnLoading(false);
-    nav("/expeditions");
   };
 
   if (error) {
@@ -396,12 +410,13 @@ function StockExportateur() {
                     </p>
                     <p>
                       <Archive size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}{commande.collecteur?.nom}
+                      <strong>Collecteur:</strong> {commande.collecteur?.nom}
                     </p>
                     {commande.transporteur && (
                       <p>
                         <User size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}{commande.transporteur?.nom}
+                        <strong>Transporteur:</strong>{" "}
+                        {commande.transporteur?.nom}
                       </p>
                     )}
                     <p

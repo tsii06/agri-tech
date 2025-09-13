@@ -1,5 +1,18 @@
 import { ethers } from "ethers";
 
+// export const USE_CHAIN_ID = 1337n;
+// export const USE_NETWORK = {
+//   chainId: "0x539", // 1337 en hexadécimal
+//   chainName: "Localhost",
+//   nativeCurrency: {
+//     name: "ETH",
+//     symbol: "ETH",
+//     decimals: 18,
+//   },
+//   rpcUrls: ["http://localhost:8545"],
+//   blockExplorerUrls: [""],
+// };
+
 export const USE_CHAIN_ID = 80002n;
 export const USE_NETWORK = {
   chainId: "0x13882", // 80002 en hexadécimal

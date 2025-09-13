@@ -32,14 +32,21 @@ const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
 
 
 export const URL_BLOCK_SCAN = "https://amoy.polygonscan.com/tx/";
+// export const DEBUT_PARCELLE = 1;
+// export const DEBUT_RECOLTE = 1;
+// export const DEBUT_COMMANDE_RECOLTE = 1;
+// export const DEBUT_COMMANDE_LOT_PRODUIT = 1;
+// export const DEBUT_LOT_PRODUIT = 1;
+// export const DEBUT_EXPEDITION = 1;
+
 export const DEBUT_PARCELLE = 4;
 export const DEBUT_RECOLTE = 4;
-export const DEBUT_COMMANDE_RECOLTE = 7;
-export const DEBUT_COMMANDE_LOT_PRODUIT = 3;
-export const DEBUT_LOT_PRODUIT = 3;
-export const DEBUT_EXPEDITION = 2;
+export const DEBUT_COMMANDE_RECOLTE = 10;
+export const DEBUT_COMMANDE_LOT_PRODUIT = 7;
+export const DEBUT_LOT_PRODUIT = 5;
+export const DEBUT_EXPEDITION = 4;
 
-export const EXCLUDE_EXPEDITION = ["EXP-17570788211"];
+export const EXCLUDE_EXPEDITION = ["EXP-17570788211", "EXP-17575277782", "EXP-17576898483"];
 
 export async function getProvider() {
   let accounts = [];
