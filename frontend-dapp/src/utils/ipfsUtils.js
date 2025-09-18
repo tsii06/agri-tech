@@ -88,6 +88,85 @@ export const uploadIntrant = async (intrantData) => {
 };
 
 /**
+ * Ajoute/Met à jour un intrant (avec dateAjout) sur la parcelle (master consolidé)
+ */
+export const addIntrantToParcelleMaster = async (parcelle, intrant, dateAjoutISO) => {
+  // Charger master existant
+  let master = await getMasterFromCid(parcelle?.cid);
+  if (!master || typeof master !== 'object') master = {};
+
+  const newIntrant = {
+    ...intrant,
+    dateAjout: dateAjoutISO || new Date().toISOString().slice(0, 10),
+  };
+
+  const list = Array.isArray(master.intrants) ? master.intrants : [];
+  const merged = [...list, newIntrant];
+
+  // Ré-upload consolidé et mise à jour de la parcelle
+  return await updateCidParcelle(parcelle, merged, "intrants");
+};
+
+/**
+ * Enrichit une récolte (objet master) avec saison dynamique et intrantsUtilises
+ * @param {Object} recolte - Objet récolte
+ * @param {Object} parcelle - Objet parcelle
+ * @returns {Promise<Object>} Récolte enrichie avec données IPFS
+ */
+export const enrichRecolteWithSeasonAndInputs = async (recolte, parcelle) => {
+  try {
+    // Récupérer les intrants de la parcelle
+    let intrantsParcelle = [];
+    let dateRecoltePrecedente = null;
+    let numeroRecolte = 1;
+    
+    try {
+      const masterParcelle = await getMasterFromCid(parcelle?.cid);
+      intrantsParcelle = Array.isArray(masterParcelle?.intrants) ? masterParcelle.intrants : [];
+      
+      // Calculer le numéro de récolte et la date précédente
+      const { getRecoltesParParcelle, getDateRecoltePrecedente } = await import('./contrat/collecteurProducteur');
+      const recoltesExistantes = await getRecoltesParParcelle(parcelle.id);
+      numeroRecolte = await calculateNumeroRecolte(parcelle.id, recolte.dateRecolte, recoltesExistantes);
+      dateRecoltePrecedente = await getDateRecoltePrecedente(parcelle.id, recolte.dateRecolte);
+    } catch (error) {
+      console.warn('Erreur récupération données parcelle:', error);
+    }
+    
+    // Calculer la saison dynamique
+    const saison = computeSeasonFromDate(
+      recolte?.dateRecolte, 
+      dateRecoltePrecedente, 
+      intrantsParcelle, 
+      parcelle?.id,
+      numeroRecolte
+    );
+    
+    // Filtrer les intrants selon la nouvelle règle
+    const intrantsUtilises = filterIntrantsForHarvest(
+      intrantsParcelle, 
+      recolte?.dateRecolte, 
+      dateRecoltePrecedente
+    );
+    
+    const enriched = {
+      ...(recolte || {}),
+      saison,
+      intrantsUtilises,
+      dateRecoltePrecedente,
+      numeroRecolte,
+      timestamp: Date.now(),
+      version: "2.1", // Version avec saison dynamique
+    };
+    
+    return await uploadConsolidatedData(enriched, "recolte");
+  } catch (error) {
+    console.error('Erreur enrichissement récolte:', error);
+    throw error;
+  }
+};
+
+/**
  * Upload des inspections sur IPFS
  * @param {File} file - Le fichier d'inspection
  * @param {Object} inspectionData - Les données de l'inspection
@@ -157,6 +236,210 @@ export const getIPFSURL = (
 ) => {
   if (!cid) return "";
   return `${gateway}/ipfs/${cid}`;
+};
+
+/**
+ * Récupère le JSON "master" depuis un CID IPFS (retourne l'objet racine items si présent)
+ */
+export const getMasterFromCid = async (cid) => {
+  if (!cid) return {};
+  try {
+    const resp = await fetch(getIPFSURL(cid));
+    if (!resp.ok) return {};
+    const json = await resp.json();
+    return json && json.items ? json.items : json;
+  } catch (e) {
+    console.error("Erreur getMasterFromCid:", e);
+    return {};
+  }
+};
+
+/**
+ * Calcule la saison dynamique basée sur la période de culture d'une parcelle
+ * @param {string} dateRecolte - Date de récolte (fin de culture) 
+ * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente (ou null pour première récolte)
+ * @param {Array} intrants - Liste des intrants de la parcelle pour déterminer le début de culture
+ * @param {number} idParcelle - ID de la parcelle
+ * @param {number} numeroRecolte - Numéro de la récolte pour cette parcelle (séquentiel)
+ * @returns {Object|null} Objet saison avec période de culture réelle
+ */
+export const computeSeasonFromDate = (dateRecolte, dateRecoltePrecedente = null, intrants = [], idParcelle = null, numeroRecolte = 1) => {
+  if (!dateRecolte) return null;
+  
+  const dateFinCulture = new Date(dateRecolte);
+  if (Number.isNaN(dateFinCulture.getTime())) return null;
+  
+  const year = dateFinCulture.getUTCFullYear();
+  
+  // 1. Déterminer le début de culture
+  let dateDebutCulture;
+  
+  if (dateRecoltePrecedente) {
+    // Pour les récoltes suivantes: début = jour après la récolte précédente
+    const datePrecedente = new Date(dateRecoltePrecedente);
+    dateDebutCulture = new Date(datePrecedente.getTime() + 24 * 60 * 60 * 1000); // +1 jour
+  } else {
+    // Pour la première récolte: chercher le premier intrant ajouté
+    const intrantsAvecDate = intrants.filter(i => i.dateAjout || i.timestamp);
+    if (intrantsAvecDate.length > 0) {
+      // Trouver le plus ancien intrant
+      const datesIntrants = intrantsAvecDate.map(i => {
+        return i.dateAjout ? new Date(i.dateAjout).getTime() : Number(i.timestamp);
+      }).filter(d => !isNaN(d));
+      
+      if (datesIntrants.length > 0) {
+        const premierIntrant = Math.min(...datesIntrants);
+        dateDebutCulture = new Date(premierIntrant);
+      } else {
+        // Fallback: début d'année si aucun intrant trouvé
+        dateDebutCulture = new Date(Date.UTC(year, 0, 1));
+      }
+    } else {
+      // Fallback: début d'année si aucun intrant
+      dateDebutCulture = new Date(Date.UTC(year, 0, 1));
+    }
+  }
+  
+  // 2. Calculer la durée de culture en jours
+  const dureeCultureMs = dateFinCulture.getTime() - dateDebutCulture.getTime();
+  const dureeCultureJours = Math.ceil(dureeCultureMs / (24 * 60 * 60 * 1000));
+  
+  // 3. Créer l'identifiant de saison : Année + Numéro de récolte
+  const identifiantSaison = `${year}-R${numeroRecolte}`;
+  const nomSaison = idParcelle ? 
+    `Culture ${identifiantSaison} (Parcelle ${idParcelle})` : 
+    `Culture ${identifiantSaison}`;
+  
+  return {
+    nom: nomSaison,
+    identifiant: identifiantSaison,
+    annee: year,
+    numeroRecolte: numeroRecolte,
+    parcelle: idParcelle,
+    dateDebut: dateDebutCulture.toISOString().slice(0, 10),
+    dateFin: dateFinCulture.toISOString().slice(0, 10),
+    dureeCultureJours: dureeCultureJours,
+    typeSaison: 'dynamique', // Pour différencier de l'ancien système H1/H2
+    premierIntrant: dateRecoltePrecedente ? null : dateDebutCulture.toISOString().slice(0, 10)
+  };
+};
+
+/**
+ * Filtre les intrants d'une parcelle qui tombent dans la fenêtre de la saison dynamique
+ * @param {Array} intrants - Liste des intrants
+ * @param {Object} saison - Objet saison avec dateDebut et dateFin
+ * @returns {Array} Intrants filtrés dans la période de culture
+ */
+export const filterIntrantsForSeason = (intrants = [], saison) => {
+  if (!Array.isArray(intrants) || !saison) return [];
+  const start = new Date(saison.dateDebut).getTime();
+  const end = new Date(saison.dateFin).getTime();
+  return intrants.filter((it) => {
+    // priorité dateAjout (YYYY-MM-DD), fallback sur timestamp (ms)
+    const t = it.dateAjout ? new Date(it.dateAjout).getTime() : (it.timestamp ? Number(it.timestamp) : NaN);
+    return Number.isFinite(t) && t >= start && t <= end;
+  });
+};
+
+/**
+ * Calcule le numéro de récolte pour une parcelle donnée
+ * @param {number} idParcelle - ID de la parcelle
+ * @param {string} dateRecolteActuelle - Date de la récolte actuelle
+ * @param {Array} recoltesExistantes - Liste des récoltes existantes de la parcelle (optionnel)
+ * @returns {Promise<number>} Numéro de récolte (1, 2, 3, etc.)
+ */
+export const calculateNumeroRecolte = async (idParcelle, dateRecolteActuelle, recoltesExistantes = null) => {
+  try {
+    // Si les récoltes existantes ne sont pas fournies, les récupérer
+    if (!recoltesExistantes) {
+      // Import dynamique pour éviter la dépendance circulaire
+      const { getRecoltesParParcelle } = await import('./contrat/collecteurProducteur');
+      recoltesExistantes = await getRecoltesParParcelle(idParcelle);
+    }
+    
+    // Filtrer les récoltes antérieures à la date actuelle
+    const dateActuelle = new Date(dateRecolteActuelle).getTime();
+    const recoltesAnterieures = recoltesExistantes.filter(r => {
+      const dateRecolte = new Date(r.dateRecolte).getTime();
+      return dateRecolte < dateActuelle;
+    });
+    
+    // Le numéro de récolte = nombre de récoltes antérieures + 1
+    return recoltesAnterieures.length + 1;
+  } catch (error) {
+    console.warn('Erreur calcul numéro récolte:', error);
+    return 1; // Fallback: première récolte
+  }
+};
+
+/**
+ * Filtre les intrants pour une récolte spécifique selon la règle :
+ * - Intrants appliqués APRÈS la date de la récolte précédente
+ * - ET AVANT ou À la date de récolte actuelle
+ * @param {Array} intrants - Liste des intrants de la parcelle
+ * @param {string} dateRecolteActuelle - Date de la récolte actuelle (YYYY-MM-DD)
+ * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente (YYYY-MM-DD) ou null
+ * @returns {Array} Liste des intrants filtrés
+ */
+export const filterIntrantsForHarvest = (intrants = [], dateRecolteActuelle, dateRecoltePrecedente = null) => {
+  if (!Array.isArray(intrants) || !dateRecolteActuelle) return [];
+  
+  const dateActuelle = new Date(dateRecolteActuelle).getTime();
+  const datePrecedente = dateRecoltePrecedente ? new Date(dateRecoltePrecedente).getTime() : 0;
+  
+  if (isNaN(dateActuelle)) {
+    console.warn('Date de récolte actuelle invalide:', dateRecolteActuelle);
+    return [];
+  }
+  
+  return intrants.filter((intrant) => {
+    // Récupérer la date d'ajout de l'intrant
+    const dateIntrant = intrant.dateAjout ? new Date(intrant.dateAjout).getTime() : 
+                       (intrant.timestamp ? Number(intrant.timestamp) : NaN);
+    
+    if (!Number.isFinite(dateIntrant)) {
+      console.warn('Date d\'intrant invalide:', intrant);
+      return false;
+    }
+    
+    // Règle: intrant appliqué APRÈS la récolte précédente ET AVANT/À la récolte actuelle
+    const apresRecoltePrecedente = dateIntrant > datePrecedente;
+    const avantRecolteActuelle = dateIntrant <= dateActuelle;
+    
+    const valide = apresRecoltePrecedente && avantRecolteActuelle;
+    
+    // Log pour debug détaillé
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔍 Intrant ${intrant.nom || intrant.type}: ${intrant.dateAjout} - ` +
+        `Après ${dateRecoltePrecedente || 'début'}: ${apresRecoltePrecedente}, ` +
+        `Avant/à ${dateRecolteActuelle}: ${avantRecolteActuelle} => ${valide ? '✅' : '❌'}`);
+    }
+    
+    return valide;
+  });
+};
+
+/**
+ * Valide si un intrant respecte la règle d'association pour une récolte donnée
+ * @param {Object} intrant - L'intrant à valider
+ * @param {string} dateRecolteActuelle - Date de la récolte actuelle
+ * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente ou null
+ * @returns {boolean} true si l'intrant respecte la règle
+ */
+export const validateIntrantForHarvest = (intrant, dateRecolteActuelle, dateRecoltePrecedente = null) => {
+  if (!intrant || !dateRecolteActuelle) return false;
+  
+  const dateIntrant = intrant.dateAjout ? new Date(intrant.dateAjout).getTime() : 
+                     (intrant.timestamp ? Number(intrant.timestamp) : NaN);
+  
+  if (!Number.isFinite(dateIntrant)) return false;
+  
+  const dateActuelle = new Date(dateRecolteActuelle).getTime();
+  const datePrecedente = dateRecoltePrecedente ? new Date(dateRecoltePrecedente).getTime() : 0;
+  
+  if (isNaN(dateActuelle)) return false;
+  
+  return dateIntrant > datePrecedente && dateIntrant <= dateActuelle;
 };
 
 /**

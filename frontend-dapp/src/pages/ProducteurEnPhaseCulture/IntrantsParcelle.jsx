@@ -10,6 +10,7 @@ import {
   updateCidParcelle,
   getMetadataFromPinata,
   uploadToIPFS,
+  addIntrantToParcelleMaster
 } from "../../utils/ipfsUtils";
 import myPinataSDK from "../../utils/pinata";
 
@@ -23,6 +24,7 @@ function IntrantsParcelle() {
     categorie: "",
     nom: "",
     quantite: "",
+    dateAjout: ""
   });
   const { roles, account } = useUserContext();
   const [certificat, setCertificat] = useState(null);
@@ -118,21 +120,18 @@ function IntrantsParcelle() {
         const intrantData = {
           cid: resIntrant.cid,
           timestamp: Date.now(),
+          dateAjout: formData.dateAjout || new Date().toISOString().slice(0, 10),
           ...intrantDataDetail.data.items,
         };
 
-        // 2. Ajouter la nouvelle intrant à la liste existante
-        const nouvellesIntrants = [...intrants, intrantData];
-
-        // mettre a jour la nouvelle cid relier au parcelle
-        const masterUpload = await updateCidParcelle(
-          parcelle,
-          nouvellesIntrants,
-          "intrants"
-        );
+        // 2. Ajouter l'intrant dans le master de la parcelle (avec dateAjout)
+        const masterUpload = await addIntrantToParcelleMaster(parcelle, intrantData, intrantData.dateAjout);
 
         // 7. Mettre à jour l'état local
-        setIntrants(nouvellesIntrants);
+        setIntrants([...
+          intrants,
+          intrantData
+        ]);
         setParcelle({
           id: parcelle.id,
           producteur: parcelle.producteur,
@@ -387,6 +386,19 @@ function IntrantsParcelle() {
                       <option value="semence">Semence</option>
                       <option value="autre">Autre</option>
                     </select>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label htmlFor="dateAjout" className="form-label">Date d'ajout</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      id="dateAjout"
+                      name="dateAjout"
+                      value={formData.dateAjout}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
               </div>

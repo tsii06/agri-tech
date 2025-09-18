@@ -1,30 +1,30 @@
 import { ethers } from "ethers";
 
-// export const USE_CHAIN_ID = 1337n;
-// export const USE_NETWORK = {
-//   chainId: "0x539", // 1337 en hexadécimal
-//   chainName: "Localhost",
-//   nativeCurrency: {
-//     name: "ETH",
-//     symbol: "ETH",
-//     decimals: 18,
-//   },
-//   rpcUrls: ["http://localhost:8545"],
-//   blockExplorerUrls: [""],
-// };
-
-export const USE_CHAIN_ID = 80002n;
+export const USE_CHAIN_ID = 1337n;
 export const USE_NETWORK = {
-  chainId: "0x13882", // 80002 en hexadécimal
-  chainName: "Amoy",
+  chainId: "0x539", // 1337 en hexadécimal
+  chainName: "Localhost",
   nativeCurrency: {
-    name: "POL",
-    symbol: "POL",
+    name: "ETH",
+    symbol: "ETH",
     decimals: 18,
   },
-  rpcUrls: ["https://rpc-amoy.polygon.technology/"],
-  blockExplorerUrls: ["https://amoy.polygonscan.com/"],
+  rpcUrls: ["http://localhost:8545"],
+  blockExplorerUrls: [""],
 };
+
+// export const USE_CHAIN_ID = 80002n;
+// export const USE_NETWORK = {
+//   chainId: "0x13882", // 80002 en hexadécimal
+//   chainName: "Amoy",
+//   nativeCurrency: {
+//     name: "POL",
+//     symbol: "POL",
+//     decimals: 18,
+//   },
+//   rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+//   blockExplorerUrls: ["https://amoy.polygonscan.com/"],
+// };
 
 export async function checkNetwork() {
   if (typeof window.ethereum !== "undefined") {

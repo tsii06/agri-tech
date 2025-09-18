@@ -9,6 +9,7 @@ import {
   getIPFSURL,
 } from "../../utils/ipfsUtils";
 import { getRecolte } from "../../utils/contrat/collecteurProducteur";
+import IntrantsDisplay from "../../components/Tools/IntrantsDisplay";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -21,6 +22,7 @@ function ListeRecoltes() {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
+  const [saisonFiltre, setSaisonFiltre] = useState("all");
   const [visibleCount, setVisibleCount] = useState(9);
   // Pour certification
   const [showModalCertification, setShowModalCertification] = useState(false);
@@ -47,9 +49,29 @@ function ListeRecoltes() {
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
+      
+      console.log("🌾 Début chargement récoltes, compteur:", Number(compteurRecoltes));
 
       for (let i = DEBUT_RECOLTE; i <= compteurRecoltes; i++) {
         const recolteRaw = await getRecolte(i);
+        
+        console.log(`🌾 Récolte ${i}:`, {
+          nomProduit: recolteRaw.nomProduit,
+          saison: recolteRaw.saison?.nom,
+          identifiantSaison: recolteRaw.saison?.identifiant,
+          numeroRecolte: recolteRaw.numeroRecolte || 'Non défini',
+          typeSaison: recolteRaw.saison?.typeSaison || 'legacy',
+          dureeCulture: recolteRaw.saison?.dureeCultureJours || 'Non calculé',
+          intrantsCount: recolteRaw.intrantsUtilises?.length || 0,
+          intrantsSource: recolteRaw.intrantsSource || 'UNKNOWN',
+          dateRecolte: recolteRaw.dateRecolteOriginal,
+          dateRecoltePrecedente: recolteRaw.dateRecoltePrecedente || 'Première récolte',
+          periodeIntrants: recolteRaw.dateRecoltePrecedente ? 
+            `${recolteRaw.dateRecoltePrecedente} → ${recolteRaw.dateRecolteOriginal}` :
+            `Début → ${recolteRaw.dateRecolteOriginal}`,
+          ipfsStored: recolteRaw.intrantsSource === 'IPFS_STORED' ? '📦 Stocké IPFS' : '🔄 Calcul dynamique'
+        });
+        
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
           if (roles.includes(0))
@@ -70,8 +92,10 @@ function ListeRecoltes() {
         recoltesTemp.push(recolteRaw);
       }
       recoltesTemp.reverse();
+      console.log(`✅ ${recoltesTemp.length} récoltes chargées avec nouveau système de saison dynamique`);
       setRecoltes(recoltesTemp);
     } catch (error) {
+      console.error("❌ Erreur chargement récoltes:", error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -198,7 +222,7 @@ function ListeRecoltes() {
     }
   };
 
-  // Filtrage recoltes selon recherche et statut
+  // Filtrage recoltes selon recherche, statut et type de saison
   const recoltesFiltres = recoltes.filter((recolte) => {
     const searchLower = search.toLowerCase();
     const matchSearch =
@@ -209,7 +233,11 @@ function ListeRecoltes() {
       statutFiltre === "all" ||
       (statutFiltre === "certifie" && recolte.certifie) ||
       (statutFiltre === "noncertifie" && !recolte.certifie);
-    return matchSearch && matchStatut;
+    const matchSaison =
+      saisonFiltre === "all" ||
+      (saisonFiltre === "dynamique" && recolte.saison?.typeSaison === "dynamique") ||
+      (saisonFiltre === "legacy" && (recolte.saison?.periode === "H1" || recolte.saison?.periode === "H2"));
+    return matchSearch && matchStatut && matchSaison;
   });
   const recoltesAffichees = recoltesFiltres.slice(0, visibleCount);
 
@@ -244,45 +272,91 @@ function ListeRecoltes() {
               style={{ borderRadius: "0 8px 8px 0" }}
             />
           </div>
-          <div className="dropdown">
-            <button
-              className="btn btn-outline-success dropdown-toggle d-flex align-items-center"
-              type="button"
-              id="dropdownStatut"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <ChevronDown size={16} className="me-1" />
-              {statutFiltre === "all" && "Toutes les récoltes"}
-              {statutFiltre === "certifie" && "Certifiées"}
-              {statutFiltre === "noncertifie" && "Non certifiées"}
-            </button>
-            <ul className="dropdown-menu" aria-labelledby="dropdownStatut">
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("all")}
-                >
-                  Toutes les récoltes
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("certifie")}
-                >
-                  Certifiées
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("noncertifie")}
-                >
-                  Non certifiées
-                </button>
-              </li>
-            </ul>
+          
+          <div className="d-flex gap-2">
+            {/* Filtre par statut */}
+            <div className="dropdown">
+              <button
+                className="btn btn-outline-success dropdown-toggle d-flex align-items-center"
+                type="button"
+                id="dropdownStatut"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <ChevronDown size={16} className="me-1" />
+                {statutFiltre === "all" && "Toutes les récoltes"}
+                {statutFiltre === "certifie" && "Certifiées"}
+                {statutFiltre === "noncertifie" && "Non certifiées"}
+              </button>
+              <ul className="dropdown-menu" aria-labelledby="dropdownStatut">
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setStatutFiltre("all")}
+                  >
+                    Toutes les récoltes
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setStatutFiltre("certifie")}
+                  >
+                    Certifiées
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setStatutFiltre("noncertifie")}
+                  >
+                    Non certifiées
+                  </button>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Filtre par type de saison */}
+            <div className="dropdown">
+              <button
+                className="btn btn-outline-info dropdown-toggle d-flex align-items-center"
+                type="button"
+                id="dropdownSaison"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <ChevronDown size={16} className="me-1" />
+                {saisonFiltre === "all" && "Toutes cultures"}
+                {saisonFiltre === "dynamique" && "Cultures dynamiques"}
+                {saisonFiltre === "legacy" && "Anciens systèmes"}
+              </button>
+              <ul className="dropdown-menu" aria-labelledby="dropdownSaison">
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setSaisonFiltre("all")}
+                  >
+                    Toutes cultures
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setSaisonFiltre("dynamique")}
+                  >
+                    Cultures dynamiques (nouveau système)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => setSaisonFiltre("legacy")}
+                  >
+                    Anciens systèmes (H1/H2)
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -306,9 +380,23 @@ function ListeRecoltes() {
                 IPFS,
                 {recoltes.filter((r) => !r.cid).length} récoltes sans données
                 IPFS
+                {recoltes.filter((r) => r.saison).length > 0 && (
+                  <>
+                    {" | "}
+                    {recoltes.filter((r) => r.saison?.typeSaison === "dynamique").length} cultures dynamiques,{" "}
+                    {recoltes.filter((r) => r.saison?.periode === "H1" || r.saison?.periode === "H2").length} anciennes saisons
+                  </>
+                )}
               </>
             )}
           </p>
+          <div className="mt-2">
+            <small className="text-info">
+              🌿 <strong>Nouvelle logique de saison :</strong> Chaque culture est définie par la période du premier intrant jusqu'à la récolte, avec un numéro séquentiel par parcelle.
+              <span className="badge bg-success ms-1">✓ Dynamique</span>
+              <span className="badge bg-warning text-dark ms-1">⚠️ Ancien système</span>
+            </small>
+          </div>
         </div>
 
         {/* LISTE DES RECOLTES */}
@@ -345,6 +433,23 @@ function ListeRecoltes() {
                           Données non consolidées
                         </span>
                       )}
+                      {/* Indicateur source des intrants */}
+                      {recolte.intrantsSource === 'IPFS_STORED' && (
+                        <span 
+                          className="badge bg-info me-1"
+                          title="Intrants stockés directement dans IPFS pour cette récolte"
+                        >
+                          📦 Intrants IPFS
+                        </span>
+                      )}
+                      {recolte.intrantsSource === 'DYNAMIC_CALC' && (
+                        <span 
+                          className="badge bg-light text-dark me-1"
+                          title="Intrants calculés dynamiquement à partir des parcelles"
+                        >
+                          🔄 Calcul dynamique
+                        </span>
+                      )}
                       {recolte.certifie ? (
                         <span className="badge bg-success">Certifiée</span>
                       ) : (
@@ -366,6 +471,33 @@ function ListeRecoltes() {
                     <p>
                       <strong>Date de récolte:</strong> {recolte.dateRecolte}
                     </p>
+                    
+                    {/* Afficher la saison dynamique */}
+                    {recolte.saison && (
+                      <p>
+                        <strong>Culture:</strong> 
+                        <span className="badge bg-info text-dark ms-2">
+                          {recolte.saison.nom}
+                          {recolte.numeroRecolte && (
+                            <span className="ms-1">(Récolte #{recolte.numeroRecolte})</span>
+                          )}
+                        </span>
+                        {recolte.saison.dureeCultureJours && (
+                          <small className="text-muted ms-2">
+                            ({recolte.saison.dureeCultureJours} jours de culture)
+                          </small>
+                        )}
+                      </p>
+                    )}
+                    
+                    {/* Afficher les intrants utilisés avec le composant dédié */}
+                    <IntrantsDisplay 
+                      intrants={recolte.intrantsUtilises} 
+                      maxVisible={3}
+                      dateRecolte={recolte.dateRecolteOriginal}
+                      dateRecoltePrecedente={recolte.dateRecoltePrecedente}
+                    />
+                    
                     <p>
                       <strong>Producteur:</strong> {recolte.producteur.nom}
                     </p>

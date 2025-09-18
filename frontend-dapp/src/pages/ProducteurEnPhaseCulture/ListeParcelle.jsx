@@ -31,34 +31,67 @@ function MesParcelles() {
       const compteurParcellesRaw = await contract.getCompteurParcelle();
       const compteurParcelles = Number(compteurParcellesRaw);
 
+      console.log("🔍 Debug: Compteur parcelles:", compteurParcelles);
+      console.log("🔍 Debug: DEBUT_PARCELLE:", DEBUT_PARCELLE);
+      console.log("🔍 Debug: Account connecté:", account);
+      console.log("🔍 Debug: Rôles utilisateur:", roles);
+
       if (compteurParcelles === 0) {
+        console.log("⚠️ Aucune parcelle trouvée sur la blockchain");
         setParcelles([]);
         setLoading(false);
         return;
       }
 
       const parcellesPromises = [];
+      const parcellesDebug = [];
       
+      // Utiliser DEBUT_PARCELLE comme point de départ
       for (let i = DEBUT_PARCELLE; i <= compteurParcelles; i++) {
-        const parcelleRaw = await getParcelle(i);
+        try {
+          const parcelleRaw = await getParcelle(i);
+          console.log(`🔍 Debug: Parcelle ${i}:`, {
+            id: parcelleRaw.id,
+            producteur: parcelleRaw.producteur?.adresse,
+            cid: parcelleRaw.cid,
+            dataOffChain: parcelleRaw.dataOffChain
+          });
 
-        // Afficher uniquement les parcelles de l'adresse connectée (route MesParcelles)
-        if(hasRole(roles, 0)) {
-          if (parcelleRaw.producteur.adresse?.toLowerCase() !== account.toLowerCase()) {
+          parcellesDebug.push({
+            id: i,
+            producteur: parcelleRaw.producteur?.adresse,
+            isMyParcel: parcelleRaw.producteur?.adresse?.toLowerCase() === account?.toLowerCase(),
+            hasOffChainData: parcelleRaw.dataOffChain,
+            userHasRole0: hasRole(roles, 0)
+          });
+
+          // Vérifier si on doit filtrer par propriétaire
+          if(hasRole(roles, 0)) {
+            if (parcelleRaw.producteur?.adresse?.toLowerCase() !== account?.toLowerCase()) {
+              console.log(`⏭️ Parcelle ${i} ignorée: pas le bon propriétaire`);
+              continue;
+            }
+          }
+
+          // Ne pas afficher si il n y a pas de data off-chain
+          if (!parcelleRaw.dataOffChain) {
+            console.log(`⏭️ Parcelle ${i} ignorée: pas de données off-chain`);
             continue;
           }
+
+          parcellesPromises.push(parcelleRaw);
+        } catch (error) {
+          console.error(`❌ Erreur lors du chargement de la parcelle ${i}:`, error);
         }
-
-        // Ne pas afficher si il n y a pas de data off-chain
-        if (!parcelleRaw.dataOffChain) continue;
-
-        parcellesPromises.push(parcelleRaw);
       }
+
+      console.log("🔍 Debug: Résumé des parcelles:", parcellesDebug);
+      console.log(`✅ ${parcellesPromises.length} parcelles ajoutées à la liste`);
 
       setParcelles(parcellesPromises);
       setError(null);
     } catch (error) {
-      console.error("Erreur détaillée:", error);
+      console.error("❌ Erreur détaillée:", error);
       setError("Impossible de charger les parcelles. Veuillez réessayer plus tard.");
     } finally {
       setLoading(false);
@@ -142,6 +175,13 @@ function MesParcelles() {
               <li><button className="dropdown-item" onClick={() => setCertifFiltre('sans')}>Sans certificat</button></li>
             </ul>
           </div>
+          <button 
+            className="btn btn-primary"
+            onClick={chargerParcelles}
+            disabled={loading}
+          >
+            🔄 Actualiser
+          </button>
         </div>
         
         <div className="">

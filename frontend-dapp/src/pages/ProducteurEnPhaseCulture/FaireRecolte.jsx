@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCollecteurProducteurContract, getContract } from "../../utils/contract";
-import { uploadConsolidatedData } from "../../utils/ipfsUtils"; 
+import { uploadConsolidatedData, enrichRecolteWithSeasonAndInputs, getMasterFromCid } from "../../utils/ipfsUtils"; 
 import { useUserContext } from "../../context/useContextt";
 import { createRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getParcelle } from "../../utils/contrat/producteur";
@@ -51,7 +51,14 @@ function FaireRecolte() {
     setError(null);
 
     try {
+      // 1) Crée la récolte on-chain + consolidation existante
       await createRecolte(recolteData, parcelle);
+
+      // 2) Enrichir la récolte côté IPFS (saison + intrantsUtilises à partir de la parcelle)
+      const enrichedUpload = await enrichRecolteWithSeasonAndInputs({
+        ...recolteData,
+        idParcelles: [Number(parcelle.id)],
+      }, parcelle);
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
@@ -124,7 +131,6 @@ function FaireRecolte() {
             onChange={handleInputChange}
           >
             <option value="">Sélectionnez un produit</option>
-            <option value="Vanille">Vanille</option>
             <option value="Girofle">Girofle</option>
             <option value="Poivre noir">Poivre noir</option>
             <option value="Cacao">Cacao</option>
