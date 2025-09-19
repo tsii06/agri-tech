@@ -559,8 +559,9 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
     if (parcelle && parcelle.cid) {
       const resp = await getFileFromPinata(parcelle.cid);
       keyvalues = resp.keyvalues;
-      if (resp.ok) {
-        const json = await resp.json();
+  
+      if (resp.data) {
+        const json = resp.data;
         master = json && json.items ? json.items : json;
       }
     }

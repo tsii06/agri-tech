@@ -28,14 +28,15 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
 
   // convertir en array
   const idCommandeRecoltes = Object.values(produitRaw.idCommandeRecoltes);
-  const idRecoltes = Object.values(produitRaw.idRecolte);
+  let idRecoltes = Object.values(produitRaw.idRecolte);
+  idRecoltes = [...new Set(idRecoltes)]; // supprime les doublants s'il existe
 
   let produitEnrichi = {
     id: _id,
-    idRecolte: [...new Set(idRecoltes)], // supprime les doublants s'il existe
+    idRecolte: idRecoltes.map(el => Number(el)),
     idCommandeRecoltes: idCommandeRecoltes.map(el => Number(el)),
     quantite: Number(produitRaw.quantite ?? 0),
-    prixUnit: produitRaw.prix ?? 0,
+    prixUnit: Number(produitRaw.prix) ?? 0,
     collecteur: {...await getActeur(collecteurAddr), adresse: collecteurAddr},
     cid: produitRaw.cid,
     hashMerkle: produitRaw.hashMerkle || "",

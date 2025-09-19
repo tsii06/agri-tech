@@ -57,6 +57,8 @@ function ListeLotProduits() {
 
         for (let i = DEBUT_LOT_PRODUIT; i <= compteurProduits; i++) {
           const lotProduit = await getLotProduitEnrichi(i, roles, account);
+          console.log("Lot produit enrichi : ", lotProduit);
+          
           if (lotProduit) produitsTemp.push(lotProduit);
         }
 
