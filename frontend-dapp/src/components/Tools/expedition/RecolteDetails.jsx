@@ -1,19 +1,22 @@
 import { Sprout, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getUrlDownloadFilePinata } from "../../../utils/ipfsUtils";
+import IntrantsDisplay from "../IntrantsDisplay";
 
 const RecolteDetails = ({ recolte }) => {
   const [pdfDownload, setPdfDownload] = useState("");
 
   const chargerPdfDownload = async () => {
-    const url = await getUrlDownloadFilePinata(recolte.certificatPhytosanitaire);
+    const url = await getUrlDownloadFilePinata(
+      recolte.certificatPhytosanitaire
+    );
     setPdfDownload(url);
   };
 
   useEffect(() => {
     chargerPdfDownload();
   }, []);
-  
+
   return (
     <div
       className="card shadow-sm p-4 bg-light border-bottom border-4"
@@ -34,14 +37,27 @@ const RecolteDetails = ({ recolte }) => {
             )}
           </p>
         </div>
+        {/* Producteur details */}
         <div className="col-md-6 mb-3">
-          <label className="text-muted mb-2"><User size={18} /> Producteur</label>
+          <label className="text-muted mb-2">
+            <User size={18} /> Producteur
+          </label>
           <p className="card-text fw-bold">
             {recolte.producteur.nom || "N/A"} <br />
             <span className="text-muted small">
               {recolte.producteur.adresseOfficielle || "N/A"}
             </span>
           </p>
+        </div>
+        {/* Intrants utiliser */}
+        <div className="col-md-6 mb-3">
+          {/* Afficher les intrants utilisés avec le composant dédié */}
+          <IntrantsDisplay
+            intrants={recolte.intrantsUtilises}
+            maxVisible={3}
+            dateRecolte={recolte.dateRecolteOriginal}
+            dateRecoltePrecedente={recolte.dateRecoltePrecedente}
+          />
         </div>
         <hr />
         <div className="col-md-12 d-flex justify-content-between">
