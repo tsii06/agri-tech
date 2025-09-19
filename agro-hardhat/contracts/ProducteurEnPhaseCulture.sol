@@ -77,7 +77,7 @@ contract ProducteurEnPhaseCulture {
     }
 
     // Fonction modifiée pour utiliser CID IPFS au lieu d'ajouter des intrants individuels
-    function mettreAJourIntrantsParcelle(uint32 _idParcelle, string memory _cidIntrants) public seulementFournisseur seulementActeurAutorise {
+    function mettreAJourIntrantsParcelle(uint32 _idParcelle, string memory _cidIntrants) public seulementActeurAutorise {
         require(_idParcelle <= compteurParcelles, "Parcelle non existant.");
         parcelles[_idParcelle].cid = _cidIntrants;
     }

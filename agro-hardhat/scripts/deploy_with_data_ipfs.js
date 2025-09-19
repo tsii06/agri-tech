@@ -187,7 +187,7 @@ async function main() {
 
     // Creation d'une parcelle de test pour le producteur
     console.log("Création d'une parcelle de test pour le producteur...");
-    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiauodjvzyssqilid4j2stn5fp5tj7ecm5uhig3f72ut75tgmoz5ku");
+    await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreig3ws5reyaj3qh457evbish6oprycw6ky2zfnljphzh5vtfrpbwsi");
     await producteurEnPhaseCultureProxy.connect(await ethers.getSigner(producteurAddress)).creerParcelle("bafkreiaav5bzfi52qrzj4sjhqihket6d453coam4de5j2gplgoxmche2sy");
 
     // Ajout recolte

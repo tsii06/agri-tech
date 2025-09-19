@@ -51,6 +51,13 @@ const ParcelleCard = ({
           Photos ({photos.length})
         </Link>,
         <Link
+          key="intrants-fournisseur"
+          to={`/parcelle/${id}/intrants`}
+          className="btn btn-link"
+        >
+          Intrants ({intrants.length})
+        </Link>,
+        <Link
           key="recolter"
           to={`/parcelle/${id}/faire-recolte`}
           className="btn btn-link"
