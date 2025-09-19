@@ -145,26 +145,6 @@ function CreerParcelle() {
             </div>
 
             <div className="mb-3">
-              <label htmlFor="methodeCulture" className="form-label">
-                Méthode de culture
-              </label>
-              <select
-                className="form-control"
-                required
-                id="methodeCulture"
-                name="methodeCulture"
-                value={parcelleData.methodeCulture}
-                onChange={handleInputChange}
-              >
-                <option value=""></option>
-                <option value="Traditionnelle">Traditionnelle</option>
-                <option value="Agroforesterie">Agroforesterie</option>
-                <option value="Biologique">Biologique</option>
-                <option value="Culture raisonnée">Culture raisonnée</option>
-              </select>
-            </div>
-
-            <div className="mb-3">
               <label htmlFor="dateRecolte" className="form-label">
                 Date de récolte prévue
               </label>
