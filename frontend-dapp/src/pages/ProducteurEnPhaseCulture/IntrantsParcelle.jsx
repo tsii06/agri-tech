@@ -10,7 +10,7 @@ import {
   updateCidParcelle,
   getMetadataFromPinata,
   uploadToIPFS,
-  addIntrantToParcelleMaster
+  addIntrantToParcelleMaster,
 } from "../../utils/ipfsUtils";
 import myPinataSDK from "../../utils/pinata";
 
@@ -24,7 +24,7 @@ function IntrantsParcelle() {
     categorie: "",
     nom: "",
     quantite: "",
-    dateAjout: ""
+    dateAjout: "",
   });
   const { roles, account } = useUserContext();
   const [certificat, setCertificat] = useState(null);
@@ -120,18 +120,20 @@ function IntrantsParcelle() {
         const intrantData = {
           cid: resIntrant.cid,
           timestamp: Date.now(),
-          dateAjout: formData.dateAjout || new Date().toISOString().slice(0, 10),
+          dateAjout:
+            formData.dateAjout || new Date().toISOString().slice(0, 10),
           ...intrantDataDetail.data.items,
         };
 
         // 2. Ajouter l'intrant dans le master de la parcelle (avec dateAjout)
-        const masterUpload = await addIntrantToParcelleMaster(parcelle, intrantData, intrantData.dateAjout);
+        const masterUpload = await addIntrantToParcelleMaster(
+          parcelle,
+          intrantData,
+          intrantData.dateAjout
+        );
 
         // 7. Mettre à jour l'état local
-        setIntrants([...
-          intrants,
-          intrantData
-        ]);
+        setIntrants([...intrants, intrantData]);
         setParcelle({
           id: parcelle.id,
           producteur: parcelle.producteur,
@@ -233,9 +235,11 @@ function IntrantsParcelle() {
             <p>
               <strong>Quantité:</strong> {intrant.quantite}
             </p>
-            <p>
-              <strong>Fournisseur:</strong> {intrant.fournisseur}
-            </p>
+            {account.toLowerCase() !== intrant.fournisseur.toLowerCase() && (
+              <p>
+                <strong>Fournisseur:</strong> {intrant.fournisseur}
+              </p>
+            )}
             <p>
               <strong>CID IPFS:</strong> {intrant.cid || "Non disponible"}
             </p>
@@ -327,102 +331,105 @@ function IntrantsParcelle() {
       )}
 
       {/* Formulaire d'ajout d'intrant */}
-      {hasRole(roles, 1) || hasRole(roles, 0) && (
-        <div className="card mb-4">
-          <div className="card-header">
-            <h5>Ajouter un intrant</h5>
-          </div>
-          <div className="card-body">
-            <form onSubmit={ajouterIntrant}>
-              <div className="row">
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label htmlFor="nom" className="form-label">
-                      Nom de l'intrant
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="nom"
-                      name="nom"
-                      value={formData.nom}
-                      onChange={handleChange}
-                      required
-                    />
+      {hasRole(roles, 1) ||
+        (hasRole(roles, 0) && (
+          <div className="card mb-4">
+            <div className="card-header">
+              <h5>Ajouter un intrant</h5>
+            </div>
+            <div className="card-body">
+              <form onSubmit={ajouterIntrant}>
+                <div className="row">
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <label htmlFor="nom" className="form-label">
+                        Nom de l'intrant
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="nom"
+                        name="nom"
+                        value={formData.nom}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <label htmlFor="quantite" className="form-label">
+                        Quantité
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        id="quantite"
+                        name="quantite"
+                        value={formData.quantite}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <label htmlFor="categorie" className="form-label">
+                        Catégorie
+                      </label>
+                      <select
+                        className="form-select"
+                        id="categorie"
+                        name="categorie"
+                        value={formData.categorie}
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="">Sélectionner...</option>
+                        <option value="engrais">Engrais</option>
+                        <option value="pesticide">Pesticide</option>
+                        <option value="semence">Semence</option>
+                        <option value="autre">Autre</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="mb-3">
+                      <label htmlFor="dateAjout" className="form-label">
+                        Date d'ajout
+                      </label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        id="dateAjout"
+                        name="dateAjout"
+                        value={formData.dateAjout}
+                        onChange={handleChange}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label htmlFor="quantite" className="form-label">
-                      Quantité
-                    </label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      id="quantite"
-                      name="quantite"
-                      value={formData.quantite}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label htmlFor="categorie" className="form-label">
-                      Catégorie
-                    </label>
-                    <select
-                      className="form-select"
-                      id="categorie"
-                      name="categorie"
-                      value={formData.categorie}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Sélectionner...</option>
-                      <option value="engrais">Engrais</option>
-                      <option value="pesticide">Pesticide</option>
-                      <option value="semence">Semence</option>
-                      <option value="autre">Autre</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="mb-3">
-                    <label htmlFor="dateAjout" className="form-label">Date d'ajout</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      id="dateAjout"
-                      name="dateAjout"
-                      value={formData.dateAjout}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={ajoutEnCours}
-              >
-                {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={ajoutEnCours}
+                >
+                  {ajoutEnCours ? "Ajout en cours..." : "Ajouter l'intrant"}
+                </button>
+              </form>
 
-            {message && (
-              <div
-                className={`alert mt-3 ${
-                  message.includes("succès") ? "alert-success" : "alert-info"
-                }`}
-              >
-                {message}
-              </div>
-            )}
+              {message && (
+                <div
+                  className={`alert mt-3 ${
+                    message.includes("succès") ? "alert-success" : "alert-info"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
 
       {/* Liste des intrants */}
       <div className="card">
