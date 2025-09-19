@@ -27,6 +27,7 @@ import {
   getConditionTransportCE,
   getLotProduitEnrichi,
 } from "../../utils/collecteurExporatateur";
+import { getIPFSURL } from "../../utils/ipfsUtils";
 
 function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
@@ -472,8 +473,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                         className="btn btn-outline-success btn-sm w-100"
                         onClick={() => {
                           setDetailsCondition({
-                            temperature: commande.temperature,
-                            humidite: commande.humidite,
+                            temperature: commande.temperature || null, 
+                            humidite: commande.humidite || null,
+                            cidRapportTransport: commande.cidRapportTransport || null,
                             dureeTransport: commande.dureeTransport,
                             lieuDepart: commande.lieuDepart,
                             destination: commande.destination,
@@ -649,14 +651,31 @@ function MesCommandesExportateur({ onlyPaid = false }) {
                   ></button>
                 </div>
                 <div className="modal-body">
-                  <p>
-                    <strong>Température :</strong>{" "}
-                    {detailsCondition.temperature || "N/A"} °C
-                  </p>
-                  <p>
-                    <strong>Humidité :</strong>{" "}
-                    {detailsCondition.humidite || "N/A"} %
-                  </p>
+                  {detailsCondition.cidRapportTransport ? (
+                    <p>
+                      <strong>Rapport de transport :</strong>&nbsp;
+                      <a
+                        href={getIPFSURL(detailsCondition.cidRapportTransport)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {detailsCondition.cidRapportTransport?.slice(0, 6)}...
+                        {detailsCondition.cidRapportTransport?.slice(-4)}
+                      </a>
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        <strong>Température :</strong>{" "}
+                        {detailsCondition.temperature || "N/A"} °C
+                      </p>
+                      <p>
+                        <strong>Humidité :</strong>{" "}
+                        {detailsCondition.humidite || "N/A"} %
+                      </p>
+                    </>
+                  )}
+
                   <p>
                     <strong>Durée de transport :</strong>{" "}
                     {detailsCondition.dureeTransport || "N/A"} heures

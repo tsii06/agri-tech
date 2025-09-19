@@ -22,7 +22,7 @@ import {
 import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
-import { deleteFromIPFSByCid } from "../../utils/ipfsUtils";
+import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -232,7 +232,7 @@ function StockExportateur() {
 
   const handleSubmitShipment = async () => {
     setBtnLoading(true);
-    let cid = '';
+    let cid = "";
 
     try {
       const {
@@ -283,11 +283,10 @@ function StockExportateur() {
       nav("/expeditions");
     } catch (error) {
       console.error("Creation expedition : ", error);
-      if (cid !== '') deleteFromIPFSByCid(cid);
+      if (cid !== "") deleteFromIPFSByCid(cid);
     } finally {
       setBtnLoading(false);
     }
-
   };
 
   if (error) {
@@ -457,8 +456,10 @@ function StockExportateur() {
                         className="btn btn-outline-success btn-sm w-100"
                         onClick={() => {
                           setDetailsCondition({
-                            temperature: commande.temperature,
-                            humidite: commande.humidite,
+                            temperature: commande.temperature || null,
+                            humidite: commande.humidite || null,
+                            cidRapportTransport:
+                              commande.cidRapportTransport || null,
                             dureeTransport: commande.dureeTransport,
                             lieuDepart: commande.lieuDepart,
                             destination: commande.destination,
@@ -530,14 +531,31 @@ function StockExportateur() {
                   ></button>
                 </div>
                 <div className="modal-body">
-                  <p>
-                    <strong>Température :</strong>{" "}
-                    {detailsCondition.temperature || "N/A"} °C
-                  </p>
-                  <p>
-                    <strong>Humidité :</strong>{" "}
-                    {detailsCondition.humidite || "N/A"} %
-                  </p>
+                  {detailsCondition.cidRapportTransport ? (
+                    <p>
+                      <strong>Rapport de transport :</strong>&nbsp;
+                      <a
+                        href={getIPFSURL(detailsCondition.cidRapportTransport)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {detailsCondition.cidRapportTransport?.slice(0, 6)}...
+                        {detailsCondition.cidRapportTransport?.slice(-4)}
+                      </a>
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        <strong>Température :</strong>{" "}
+                        {detailsCondition.temperature || "N/A"} °C
+                      </p>
+                      <p>
+                        <strong>Humidité :</strong>{" "}
+                        {detailsCondition.humidite || "N/A"} %
+                      </p>
+                    </>
+                  )}
+
                   <p>
                     <strong>Durée de transport :</strong>{" "}
                     {detailsCondition.dureeTransport || "N/A"} heures

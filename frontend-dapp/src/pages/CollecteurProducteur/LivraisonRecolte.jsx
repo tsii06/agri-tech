@@ -10,10 +10,9 @@ import {
   deleteFromIPFSByCid,
   getIPFSURL,
   uploadConsolidatedData,
+  uploadToIPFS,
 } from "../../utils/ipfsUtils";
 import {
-  ShoppingCart,
-  Hash,
   Package2,
   User,
   Truck,
@@ -51,6 +50,7 @@ function LivraisonRecolte() {
   const [commandesRecolte, setCommandesRecolte] = useState([]);
   const [error, setError] = useState(null);
   const [detailsCondition, setDetailsCondition] = useState({});
+  const [rapportTransport, setRapportTransport] = useState(null);
 
   const { account } = useUserContext();
 
@@ -175,24 +175,45 @@ function LivraisonRecolte() {
   };
 
   const handleEnregistrerCondition = async (commandeId) => {
+    // Vérification des champs requis
+    if (
+      !dureeTransport ||
+      !lieuDepart ||
+      !destination ||
+      rapportTransport === null
+    ) {
+      alert(
+        "Veuillez remplir tous les champs obligatoires avant de continuer."
+      );
+      return;
+    }
+
     setIsProcessing(true);
     let cid = "";
+    let cidRapportTransport = "";
     try {
+      // Uploader le rapport de transport
+      const uploadRapportTransport = await uploadToIPFS(
+        rapportTransport,
+        {},
+        "rapport-transport-produit"
+      );
+      cidRapportTransport = uploadRapportTransport.cid;
+
       // 1) Créer les données de condition et uploader sur IPFS (JSON)
       const conditionData = {
         type: "condition-transport-produit",
         commandeId: Number(commandeId),
-        temperature: temperature || null,
-        humidite: humidite || null,
         dureeTransport: dureeTransport || null,
         lieuDepart: lieuDepart || null,
         destination: destination || null,
+        cidRapportTransport: uploadRapportTransport.cid,
         timestamp: Date.now(),
         version: "1.0",
       };
       const uploaded = await uploadConsolidatedData(
         conditionData,
-        "conditions-transport"
+        "conditions-transport-produit"
       );
       if (!uploaded.success) {
         throw new Error("Echec upload IPFS des conditions");
@@ -232,6 +253,7 @@ function LivraisonRecolte() {
 
       // supprimer fichier ipfs si erreur
       if (cid) deleteFromIPFSByCid(cid);
+      if (cidRapportTransport !== "") deleteFromIPFSByCid(cidRapportTransport);
     } finally {
       setIsProcessing(false);
     }
@@ -267,23 +289,44 @@ function LivraisonRecolte() {
 
   // Handler pour enregistrer condition CommandeRecolte
   const handleEnregistrerConditionRecolte = async (commandeId) => {
+    // Vérification des champs requis
+    if (
+      !dureeTransport ||
+      !lieuDepart ||
+      !destination ||
+      rapportTransport === null
+    ) {
+      alert(
+        "Veuillez remplir tous les champs obligatoires avant de continuer."
+      );
+      return;
+    }
+
     setIsProcessing(true);
     let cid = "";
+    let cidRapportTransport = "";
     try {
+      // Uploader le rapport de transport
+      const uploadRapportTransport = await uploadToIPFS(
+        rapportTransport,
+        {},
+        "rapport-transport-recolte"
+      );
+      cidRapportTransport = uploadRapportTransport.cid;
+
       // 1) Créer les données et uploader sur IPFS (JSON)
       const conditionData = {
         type: "condition-transport-recolte",
-        temperature: temperature || null,
-        humidite: humidite || null,
         dureeTransport: dureeTransport || null,
         lieuDepart: lieuDepart || null,
         destination: destination || null,
+        cidRapportTransport: uploadRapportTransport.cid,
         timestamp: Date.now(),
         version: "1.0",
       };
       const uploaded = await uploadConsolidatedData(
         conditionData,
-        "conditions-transport"
+        "conditions-transport-recolte"
       );
       if (!uploaded.success) {
         throw new Error("Echec upload IPFS des conditions");
@@ -322,7 +365,8 @@ function LivraisonRecolte() {
       );
 
       // supprimer fichier ipfs si erreur
-      if (cid) deleteFromIPFSByCid(cid);
+      if (cid !== "") deleteFromIPFSByCid(cid);
+      if (cidRapportTransport !== "") deleteFromIPFSByCid(cidRapportTransport);
     } finally {
       setIsProcessing(false);
     }
@@ -427,8 +471,9 @@ function LivraisonRecolte() {
                         className="btn btn-outline-success btn-sm"
                         onClick={() => {
                           setDetailsCondition({
-                            temperature: cmd.temperature,
-                            humidite: cmd.humidite,
+                            temperature: cmd.temperature || null, 
+                            humidite: cmd.humidite || null,
+                            cidRapportTransport: cmd.cidRapportTransport || null,
                             dureeTransport: cmd.dureeTransport,
                             lieuDepart: cmd.lieuDepart,
                             destination: cmd.destination,
@@ -528,8 +573,9 @@ function LivraisonRecolte() {
                         className="btn btn-outline-success btn-sm"
                         onClick={() => {
                           setDetailsCondition({
-                            temperature: commande.temperature,
-                            humidite: commande.humidite,
+                            temperature: commande.temperature || null, 
+                            humidite: commande.humidite || null,
+                            cidRapportTransport: commande.cidRapportTransport || null,
                             dureeTransport: commande.dureeTransport,
                             lieuDepart: commande.lieuDepart,
                             destination: commande.destination,
@@ -568,32 +614,15 @@ function LivraisonRecolte() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label htmlFor="temperature" className="form-label">
-                    Température (°C)
+                  <label htmlFor="rapportTransport" className="form-label">
+                    Rapport de transport
                   </label>
                   <input
-                    type="number"
+                    type="file"
                     className="form-control"
-                    id="temperature"
-                    value={temperature}
-                    onChange={(e) => setTemperature(e.target.value)}
-                    step="0.1"
-                    placeholder="25.5"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="humidite" className="form-label">
-                    Humidité (%)
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="humidite"
-                    value={humidite}
-                    onChange={(e) => setHumidite(e.target.value)}
-                    min="0"
-                    max="100"
-                    placeholder="60"
+                    id="rapportTransport"
+                    onChange={(e) => setRapportTransport(e.target.files[0])}
+                    accept=".pdf,.doc,.docx"
                   />
                 </div>
                 <div className="mb-3">
@@ -693,14 +722,31 @@ function LivraisonRecolte() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p>
-                  <strong>Température :</strong>{" "}
-                  {detailsCondition.temperature || "N/A"} °C
-                </p>
-                <p>
-                  <strong>Humidité :</strong>{" "}
-                  {detailsCondition.humidite || "N/A"} %
-                </p>
+                {detailsCondition.cidRapportTransport ? (
+                  <p>
+                    <strong>Rapport de transport :</strong>&nbsp;
+                    <a
+                      href={getIPFSURL(detailsCondition.cidRapportTransport)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {detailsCondition.cidRapportTransport?.slice(0, 6)}...
+                      {detailsCondition.cidRapportTransport?.slice(-4)}
+                    </a>
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Température :</strong>{" "}
+                      {detailsCondition.temperature || "N/A"} °C
+                    </p>
+                    <p>
+                      <strong>Humidité :</strong>{" "}
+                      {detailsCondition.humidite || "N/A"} %
+                    </p>
+                  </>
+                )}
+
                 <p>
                   <strong>Durée de transport :</strong>{" "}
                   {detailsCondition.dureeTransport || "N/A"} heures
