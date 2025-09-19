@@ -497,6 +497,7 @@ export const createRecolte = async (recolteData, parcelle) => {
         description:
           "Intrants appliqués après récolte précédente et avant/à récolte actuelle",
       },
+      cidCalendrierCultural: recolteData.cidCalendrierCultural,
       timestamp: Date.now(),
       version: "2.1", // Version améliorée avec saison dynamique
     };

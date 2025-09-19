@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getCollecteurProducteurContract, getContract } from "../../utils/contract";
-import { uploadConsolidatedData, enrichRecolteWithSeasonAndInputs, getMasterFromCid } from "../../utils/ipfsUtils"; 
+import {
+  uploadConsolidatedData,
+  enrichRecolteWithSeasonAndInputs,
+  getMasterFromCid,
+  uploadToIPFS,
+  deleteFromIPFSByCid,
+} from "../../utils/ipfsUtils";
 import { useUserContext } from "../../context/useContextt";
 import { createRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getParcelle } from "../../utils/contrat/producteur";
@@ -15,8 +20,9 @@ function FaireRecolte() {
     nomProduit: "",
     quantite: "",
     prix: "",
-    dateRecolte: ""
+    dateRecolte: "",
   });
+  const [calendrierCultural, setCalendrierCultural] = useState(null);
 
   // recupere l'id du parcelle
   const { id } = useParams();
@@ -39,9 +45,9 @@ function FaireRecolte() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setRecolteData(prev => ({
+    setRecolteData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -49,10 +55,26 @@ function FaireRecolte() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    let cidCalendrierCultural = '';
 
     try {
+      // Uploader la calendrier cultural
+      if (!calendrierCultural) {
+        throw new Error("Calendrier cultural manquant");
+      } else {
+        const upload = await uploadToIPFS(calendrierCultural, {}, "calendrier-cultural");
+
+        if (!upload.success) {
+          throw new Error(
+            upload.error || "Erreur lors de l'upload du calendrier cultural"
+          );
+        } else {
+          cidCalendrierCultural = upload.cid;
+        }
+      }
+
       // 1) Crée la récolte on-chain + consolidation existante
-      await createRecolte(recolteData, parcelle);
+      await createRecolte({...recolteData, cidCalendrierCultural: cidCalendrierCultural}, parcelle);
 
       // 2) Enrichir la récolte côté IPFS (saison + intrantsUtilises à partir de la parcelle)
       // const enrichedUpload = await enrichRecolteWithSeasonAndInputs({
@@ -62,10 +84,13 @@ function FaireRecolte() {
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
-
     } catch (error) {
       console.error("Erreur lors de l'enregistrement de la récolte:", error);
-      setError("Impossible d'enregistrer la récolte. Veuillez réessayer plus tard.");
+      setError(
+        "Impossible d'enregistrer la récolte. Veuillez réessayer plus tard."
+      );
+      // supprimer calendrier cultural si erreur
+      if (cidCalendrierCultural !== '') deleteFromIPFSByCid(cidCalendrierCultural);
     } finally {
       setLoading(false);
     }
@@ -96,17 +121,32 @@ function FaireRecolte() {
           <div className="card-body">
             <div className="row">
               <div className="col-md-6">
-                <p><strong>ID:</strong> {parcelle.id}</p>
-                <p><strong>Producteur:</strong> {parcelle.producteur?.adresse}</p>
-                <p><strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}</p>
+                <p>
+                  <strong>ID:</strong> {parcelle.id}
+                </p>
+                <p>
+                  <strong>Producteur:</strong> {parcelle.producteur?.adresse}
+                </p>
+                <p>
+                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                </p>
               </div>
               <div className="col-md-6">
-                <p><strong>Hash transaction:</strong> {parcelle.hashTransaction || "Non calculé"}</p>
-                <p><strong>Statut:</strong> 
-                  {parcelle.cid ? 
-                    <span className="badge bg-success">Données consolidées</span> : 
-                    <span className="badge bg-warning">Données non consolidées</span>
-                  }
+                <p>
+                  <strong>Hash transaction:</strong>{" "}
+                  {parcelle.hashTransaction || "Non calculé"}
+                </p>
+                <p>
+                  <strong>Statut:</strong>
+                  {parcelle.cid ? (
+                    <span className="badge bg-success">
+                      Données consolidées
+                    </span>
+                  ) : (
+                    <span className="badge bg-warning">
+                      Données non consolidées
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -115,7 +155,10 @@ function FaireRecolte() {
       )}
 
       {error && (
-        <div className="alert alert-danger d-flex align-items-center" role="alert">
+        <div
+          className="alert alert-danger d-flex align-items-center"
+          role="alert"
+        >
           <div>{error}</div>
         </div>
       )}
@@ -123,9 +166,9 @@ function FaireRecolte() {
       <form className="card shadow-sm p-4" onSubmit={handleSubmit}>
         <div className="mb-3">
           <label className="form-label">Nom du produit</label>
-          <select 
-            className="form-control" 
-            required 
+          <select
+            className="form-control"
+            required
             name="nomProduit"
             value={recolteData.nomProduit}
             onChange={handleInputChange}
@@ -141,10 +184,10 @@ function FaireRecolte() {
 
         <div className="mb-3">
           <label className="form-label">Quantité de produit (kg)</label>
-          <input 
-            type="number" 
-            className="form-control" 
-            required 
+          <input
+            type="number"
+            className="form-control"
+            required
             name="quantite"
             value={recolteData.quantite}
             onChange={handleInputChange}
@@ -155,10 +198,10 @@ function FaireRecolte() {
 
         <div className="mb-3">
           <label className="form-label">Prix unitaire (Ariary/kg)</label>
-          <input 
-            type="number" 
-            className="form-control" 
-            required 
+          <input
+            type="number"
+            className="form-control"
+            required
             name="prix"
             value={recolteData.prix}
             onChange={handleInputChange}
@@ -168,23 +211,41 @@ function FaireRecolte() {
 
         <div className="mb-3">
           <label className="form-label">Date de récolte</label>
-          <input 
-            type="date" 
-            className="form-control" 
-            required 
+          <input
+            type="date"
+            className="form-control"
+            required
             name="dateRecolte"
             value={recolteData.dateRecolte}
             onChange={handleInputChange}
           />
         </div>
 
+        <div className="mb-3">
+          <label htmlFor="calendrierCultural" className="form-label">
+            Calendrier cultural
+          </label>
+          <input
+            type="file"
+            className="form-control"
+            id="calendrierCultural"
+            onChange={(e) => setCalendrierCultural(e.target.files[0])}
+            accept=".pdf,.doc,.docx"
+            required
+          />
+        </div>
+
         <div className="alert alert-info">
-          <strong>Information:</strong> Cette récolte sera automatiquement enregistrée sur IPFS avec un hash Merkle pour assurer la traçabilité complète du produit.
+          <strong>Information:</strong> Cette récolte sera automatiquement
+          enregistrée sur IPFS avec un hash Merkle pour assurer la traçabilité
+          complète du produit.
         </div>
 
         <button
           disabled={loading}
-          className={`btn w-100 mt-3 ${loading ? "btn-secondary disabled" : "btn-primary"}`}
+          className={`btn w-100 mt-3 ${
+            loading ? "btn-secondary disabled" : "btn-primary"
+          }`}
         >
           {loading ? "Enregistrement en cours..." : "Enregistrer la récolte"}
         </button>

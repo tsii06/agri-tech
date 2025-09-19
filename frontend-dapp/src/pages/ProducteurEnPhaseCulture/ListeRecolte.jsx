@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { DEBUT_RECOLTE, getCollecteurProducteurContract, URL_BLOCK_SCAN } from "../../utils/contract";
+import {
+  DEBUT_RECOLTE,
+  getCollecteurProducteurContract,
+  URL_BLOCK_SCAN,
+} from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
@@ -49,29 +53,36 @@ function ListeRecoltes() {
       // Obtenir le nombre total de récoltes
       const compteurRecoltes = await contract.compteurRecoltes();
       const recoltesTemp = [];
-      
-      console.log("🌾 Début chargement récoltes, compteur:", Number(compteurRecoltes));
+
+      console.log(
+        "🌾 Début chargement récoltes, compteur:",
+        Number(compteurRecoltes)
+      );
 
       for (let i = DEBUT_RECOLTE; i <= compteurRecoltes; i++) {
         const recolteRaw = await getRecolte(i);
-        
+
         console.log(`🌾 Récolte ${i}:`, {
           nomProduit: recolteRaw.nomProduit,
           saison: recolteRaw.saison?.nom,
           identifiantSaison: recolteRaw.saison?.identifiant,
-          numeroRecolte: recolteRaw.numeroRecolte || 'Non défini',
-          typeSaison: recolteRaw.saison?.typeSaison || 'legacy',
-          dureeCulture: recolteRaw.saison?.dureeCultureJours || 'Non calculé',
+          numeroRecolte: recolteRaw.numeroRecolte || "Non défini",
+          typeSaison: recolteRaw.saison?.typeSaison || "legacy",
+          dureeCulture: recolteRaw.saison?.dureeCultureJours || "Non calculé",
           intrantsCount: recolteRaw.intrantsUtilises?.length || 0,
-          intrantsSource: recolteRaw.intrantsSource || 'UNKNOWN',
+          intrantsSource: recolteRaw.intrantsSource || "UNKNOWN",
           dateRecolte: recolteRaw.dateRecolteOriginal,
-          dateRecoltePrecedente: recolteRaw.dateRecoltePrecedente || 'Première récolte',
-          periodeIntrants: recolteRaw.dateRecoltePrecedente ? 
-            `${recolteRaw.dateRecoltePrecedente} → ${recolteRaw.dateRecolteOriginal}` :
-            `Début → ${recolteRaw.dateRecolteOriginal}`,
-          ipfsStored: recolteRaw.intrantsSource === 'IPFS_STORED' ? '📦 Stocké IPFS' : '🔄 Calcul dynamique'
+          dateRecoltePrecedente:
+            recolteRaw.dateRecoltePrecedente || "Première récolte",
+          periodeIntrants: recolteRaw.dateRecoltePrecedente
+            ? `${recolteRaw.dateRecoltePrecedente} → ${recolteRaw.dateRecolteOriginal}`
+            : `Début → ${recolteRaw.dateRecolteOriginal}`,
+          ipfsStored:
+            recolteRaw.intrantsSource === "IPFS_STORED"
+              ? "📦 Stocké IPFS"
+              : "🔄 Calcul dynamique",
         });
-        
+
         // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
         if (!roles.includes(3))
           if (roles.includes(0))
@@ -92,7 +103,9 @@ function ListeRecoltes() {
         recoltesTemp.push(recolteRaw);
       }
       recoltesTemp.reverse();
-      console.log(`✅ ${recoltesTemp.length} récoltes chargées avec nouveau système de saison dynamique`);
+      console.log(
+        `✅ ${recoltesTemp.length} récoltes chargées avec nouveau système de saison dynamique`
+      );
       setRecoltes(recoltesTemp);
     } catch (error) {
       console.error("❌ Erreur chargement récoltes:", error);
@@ -235,8 +248,10 @@ function ListeRecoltes() {
       (statutFiltre === "noncertifie" && !recolte.certifie);
     const matchSaison =
       saisonFiltre === "all" ||
-      (saisonFiltre === "dynamique" && recolte.saison?.typeSaison === "dynamique") ||
-      (saisonFiltre === "legacy" && (recolte.saison?.periode === "H1" || recolte.saison?.periode === "H2"));
+      (saisonFiltre === "dynamique" &&
+        recolte.saison?.typeSaison === "dynamique") ||
+      (saisonFiltre === "legacy" &&
+        (recolte.saison?.periode === "H1" || recolte.saison?.periode === "H2"));
     return matchSearch && matchStatut && matchSaison;
   });
   const recoltesAffichees = recoltesFiltres.slice(0, visibleCount);
@@ -272,7 +287,7 @@ function ListeRecoltes() {
               style={{ borderRadius: "0 8px 8px 0" }}
             />
           </div>
-          
+
           <div className="d-flex gap-2">
             {/* Filtre par statut */}
             <div className="dropdown">
@@ -315,7 +330,7 @@ function ListeRecoltes() {
                 </li>
               </ul>
             </div>
-            
+
             {/* Filtre par type de saison */}
             <div className="dropdown">
               <button
@@ -383,8 +398,20 @@ function ListeRecoltes() {
                 {recoltes.filter((r) => r.saison).length > 0 && (
                   <>
                     {" | "}
-                    {recoltes.filter((r) => r.saison?.typeSaison === "dynamique").length} cultures dynamiques,{" "}
-                    {recoltes.filter((r) => r.saison?.periode === "H1" || r.saison?.periode === "H2").length} anciennes saisons
+                    {
+                      recoltes.filter(
+                        (r) => r.saison?.typeSaison === "dynamique"
+                      ).length
+                    }{" "}
+                    cultures dynamiques,{" "}
+                    {
+                      recoltes.filter(
+                        (r) =>
+                          r.saison?.periode === "H1" ||
+                          r.saison?.periode === "H2"
+                      ).length
+                    }{" "}
+                    anciennes saisons
                   </>
                 )}
               </>
@@ -392,9 +419,13 @@ function ListeRecoltes() {
           </p>
           <div className="mt-2">
             <small className="text-info">
-              🌿 <strong>Nouvelle logique de saison :</strong> Chaque culture est définie par la période du premier intrant jusqu'à la récolte, avec un numéro séquentiel par parcelle.
+              🌿 <strong>Nouvelle logique de saison :</strong> Chaque culture
+              est définie par la période du premier intrant jusqu'à la récolte,
+              avec un numéro séquentiel par parcelle.
               <span className="badge bg-success ms-1">✓ Dynamique</span>
-              <span className="badge bg-warning text-dark ms-1">⚠️ Ancien système</span>
+              <span className="badge bg-warning text-dark ms-1">
+                ⚠️ Ancien système
+              </span>
             </small>
           </div>
         </div>
@@ -434,16 +465,16 @@ function ListeRecoltes() {
                         </span>
                       )}
                       {/* Indicateur source des intrants */}
-                      {recolte.intrantsSource === 'IPFS_STORED' && (
-                        <span 
+                      {recolte.intrantsSource === "IPFS_STORED" && (
+                        <span
                           className="badge bg-info me-1"
                           title="Intrants stockés directement dans IPFS pour cette récolte"
                         >
                           📦 Intrants IPFS
                         </span>
                       )}
-                      {recolte.intrantsSource === 'DYNAMIC_CALC' && (
-                        <span 
+                      {recolte.intrantsSource === "DYNAMIC_CALC" && (
+                        <span
                           className="badge bg-light text-dark me-1"
                           title="Intrants calculés dynamiquement à partir des parcelles"
                         >
@@ -471,42 +502,63 @@ function ListeRecoltes() {
                     <p>
                       <strong>Date de récolte:</strong> {recolte.dateRecolte}
                     </p>
-                    
+
                     {/* Afficher la saison dynamique */}
                     {recolte.saison && (
                       <p>
-                        <strong>Culture:</strong> 
+                        <strong>Culture:</strong>
                         <span className="badge bg-info text-dark ms-2">
                           {recolte.saison.nom}
                           {recolte.numeroRecolte && (
-                            <span className="ms-1">(Récolte #{recolte.numeroRecolte})</span>
+                            <span className="ms-1">
+                              (Récolte #{recolte.numeroRecolte})
+                            </span>
                           )}
                         </span>
                         {recolte.saison.dureeCultureJours && (
                           <small className="text-muted ms-2">
-                            ({recolte.saison.dureeCultureJours} jours de culture)
+                            ({recolte.saison.dureeCultureJours} jours de
+                            culture)
                           </small>
                         )}
                       </p>
                     )}
-                    
+
                     {/* Afficher les intrants utilisés avec le composant dédié */}
-                    <IntrantsDisplay 
-                      intrants={recolte.intrantsUtilises} 
+                    <IntrantsDisplay
+                      intrants={recolte.intrantsUtilises}
                       maxVisible={3}
                       dateRecolte={recolte.dateRecolteOriginal}
                       dateRecoltePrecedente={recolte.dateRecoltePrecedente}
                     />
-                    
+
                     <p>
                       <strong>Producteur:</strong> {recolte.producteur.nom}
                     </p>
                     <p>
                       <strong>Hash transaction:</strong>&nbsp;
-                      <a href={URL_BLOCK_SCAN + recolte.hashTransaction} target="_blank">
-                        {recolte.hashTransaction?.slice(0,6)}...{recolte.hashTransaction?.slice(-4)}
+                      <a
+                        href={URL_BLOCK_SCAN + recolte.hashTransaction}
+                        target="_blank"
+                      >
+                        {recolte.hashTransaction?.slice(0, 6)}...
+                        {recolte.hashTransaction?.slice(-4)}
                       </a>
                     </p>
+
+                    {recolte.cidCalendrierCultural && (
+                      <p>
+                        <strong>Calendrier cultural:</strong>{" "}
+                        <a
+                          href={getIPFSURL(recolte.cidCalendrierCultural)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ms-2 text-decoration-none text-success"
+                        >
+                          {recolte.cidCalendrierCultural?.slice(0, 6)}...{recolte.cidCalendrierCultural?.slice(-4)}
+                        </a>
+                      </p>
+                    )}
 
                     {recolte.certificatPhytosanitaire && (
                       <p className="mt-2">
@@ -517,7 +569,7 @@ function ListeRecoltes() {
                           rel="noopener noreferrer"
                           className="ms-2 text-decoration-none text-success"
                         >
-                          Voir ici
+                          {recolte.certificatPhytosanitaire?.slice(0, 6)}...{recolte.certificatPhytosanitaire?.slice(-4)}
                         </a>
                       </p>
                     )}
