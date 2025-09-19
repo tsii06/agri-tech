@@ -1,4 +1,4 @@
-import { Leaf, MapPin, Sprout } from "lucide-react";
+import { Badge, BadgeCheck, Leaf, MapPin, Medal, Sprout } from "lucide-react";
 import React from "react";
 import { getIPFSURL } from "../../../utils/ipfsUtils";
 
@@ -25,11 +25,16 @@ const ParcelleDetails = ({ parcelle }) => {
         </h6>
         <p>
           <span className="text-muted small">Géolocalisation:</span> <br />
-          {parcelle.location && parcelle.location.lat && parcelle.location.lng ? (
+          {parcelle.location &&
+          parcelle.location.lat &&
+          parcelle.location.lng ? (
             <button
               className="btn btn-link p-0 ms-2"
               onClick={handleMapRedirect}
-              style={{ textDecoration: "underline", color: "var(--madtx-green)" }}
+              style={{
+                textDecoration: "underline",
+                color: "var(--madtx-green)",
+              }}
             >
               {`${parcelle.location.lat.toFixed(
                 4
@@ -40,15 +45,33 @@ const ParcelleDetails = ({ parcelle }) => {
           )}
         </p>
         <p className="small">
-          <strong><Sprout size={18} color="var(--madtx-green)" /> Semences:</strong> {parcelle.qualiteSemence}
+          <strong>
+            <Sprout size={18} color="var(--madtx-green)" /> Semences:
+          </strong>{" "}
+          {parcelle.qualiteSemence}
         </p>
         <p className="small">
-          <strong><Leaf size={18} color="var(--madtx-green)" /> Méthode:</strong> {parcelle.methodeCulture}
+          <strong>
+            <BadgeCheck size={18} color="var(--madtx-green)" /> Certificat:
+          </strong>
+          &nbsp;
+          <a
+            href={getIPFSURL(parcelle.certificat)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline-success btn-sm"
+          >
+            Certificat phytosanitaire
+          </a>
         </p>
       </div>
       <div style={{ flexShrink: 0, marginLeft: "16px" }}>
         <img
-          src={parcelle.photos.length > 0 ? getIPFSURL(parcelle.photos[0].cid) : "https://via.placeholder.com/100"}
+          src={
+            parcelle.photos.length > 0
+              ? getIPFSURL(parcelle.photos[0].cid)
+              : "https://via.placeholder.com/100"
+          }
           alt="Parcelle"
           style={{
             width: "100px",

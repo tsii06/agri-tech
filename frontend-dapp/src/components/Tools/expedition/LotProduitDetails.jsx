@@ -17,7 +17,7 @@ const LotProduitDetails = ({ lotProduit }) => {
           </p>
         </div>
         <div className="col-md-6 mb-3 text-end">
-          <label className="text-muted">Quantité</label>
+          <label className="text-muted">Quantité actuel</label>
           <p className="card-text fw-bold">
             {lotProduit.quantite ? `${lotProduit.quantite} kg` : "N/A"}
           </p>
