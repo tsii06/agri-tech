@@ -554,9 +554,11 @@ export const uploadLotProduit = async (_data, _account) => {
 export const updateCidParcelle = async (parcelle, newData, _type) => {
   // 3. Charger l'état consolidé actuel de la parcelle (master), le mettre à jour avec les nouvelles data
   let master = {};
+  let keyvalues = {};
   try {
     if (parcelle && parcelle.cid) {
-      const resp = await fetch(getIPFSURL(parcelle.cid));
+      const resp = await getFileFromPinata(parcelle.cid);
+      keyvalues = resp.keyvalues;
       if (resp.ok) {
         const json = await resp.json();
         master = json && json.items ? json.items : json;
@@ -577,7 +579,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
   };
 
   // 4. Upload du master consolidé mis à jour (type parcelle)
-  const masterUpload = await uploadConsolidatedData(masterMisAJour, "parcelle");
+  const masterUpload = await uploadConsolidatedData(masterMisAJour, "parcelle", keyvalues);
   if (!masterUpload.success) {
     throw new Error(
       "Erreur lors de l'upload des données de parcelle consolidées"
