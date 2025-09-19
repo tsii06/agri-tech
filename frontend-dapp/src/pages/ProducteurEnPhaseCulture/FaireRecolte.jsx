@@ -55,10 +55,10 @@ function FaireRecolte() {
       await createRecolte(recolteData, parcelle);
 
       // 2) Enrichir la récolte côté IPFS (saison + intrantsUtilises à partir de la parcelle)
-      const enrichedUpload = await enrichRecolteWithSeasonAndInputs({
-        ...recolteData,
-        idParcelles: [Number(parcelle.id)],
-      }, parcelle);
+      // const enrichedUpload = await enrichRecolteWithSeasonAndInputs({
+      //   ...recolteData,
+      //   idParcelles: [Number(parcelle.id)],
+      // }, parcelle);
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
