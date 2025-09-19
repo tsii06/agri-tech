@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { URL_BLOCK_SCAN } from "../../../utils/contract";
+import { getIPFSURL } from "../../../utils/ipfsUtils";
 
 function CustomNode({ data }) {
   return (
@@ -66,7 +67,7 @@ export const ExpeditionNode = ({ data }) => {
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         RootMerkle:{" "}
-        <strong>
+        <strong style={{ fontSize: "1rem" }}>
           {data.rootMerkle
             ? data.rootMerkle.slice(0, 6) + "..." + data.rootMerkle.slice(-4)
             : "N/A"}
@@ -87,7 +88,7 @@ export const ExpeditionNode = ({ data }) => {
           href={URL_BLOCK_SCAN + data.hashTransaction}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }} // Ajout du soulignement
+          style={{ textDecoration: "underline", fontSize: "1.2rem" }} // Ajout du soulignement
         >
           <strong>
             {data.hashTransaction
@@ -147,17 +148,13 @@ export const ConditionNode = ({ data }) => {
         </strong>
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        <ThermometerSnowflakeIcon size={14} />{" "}
-        {data.temperature || "Non spécifiée"} °C&nbsp;-&nbsp;
-        <DropletsIcon size={14} /> {data.humidite || "Non spécifiée"} %
-      </p>
-      <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash Transaction:{" "}
         <a
           href={URL_BLOCK_SCAN + data.hashTransaction}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }} // Ajout du soulignement
+          className="text-primary"
+          style={{ textDecoration: "underline", fontSize: "1.2rem" }} // Ajout du soulignement
         >
           <strong>
             {data.hashTransaction
@@ -177,6 +174,24 @@ export const ConditionNode = ({ data }) => {
           </button>
         )} */}
       </p>
+      {data.cidRapportTransport ? (
+        <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+          <a
+            href={getIPFSURL(data.cidRapportTransport)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline-primary btn-sm"
+          >
+            Voir rapport
+          </a>
+        </p>
+      ) : (
+        <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
+          <ThermometerSnowflakeIcon size={14} />{" "}
+          {data.temperature || "Non spécifiée"} °C&nbsp;-&nbsp;
+          <DropletsIcon size={14} /> {data.humidite || "Non spécifiée"} %
+        </p>
+      )}
       {/* Point de sortie (droite) */}
       <Handle
         type="source"
@@ -229,7 +244,7 @@ export const LotProduitNode = ({ data }) => {
         Collecteur: {data.collecteur ? data.collecteur.nom : "Non spécifiée"}
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
-        Quantité: {data.quantite || "Non spécifiée"} kg
+        Quantité actuel: {data.quantite || "Non spécifiée"} kg
       </p>
       <p style={{ fontSize: "0.85rem", color: "#777", margin: "5px 0" }}>
         Hash transaction:{" "}
@@ -237,7 +252,7 @@ export const LotProduitNode = ({ data }) => {
           href={URL_BLOCK_SCAN + data.hashTransaction}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }} // Ajout du soulignement
+          style={{ textDecoration: "underline", fontSize: "1.2rem" }} // Ajout du soulignement
         >
           <strong>
             {data.hashTransaction
@@ -320,7 +335,7 @@ export const RecolteNode = ({ data }) => {
           href={URL_BLOCK_SCAN + data.hashTransaction}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }} // Ajout du soulignement
+          style={{ textDecoration: "underline", fontSize: "1.2rem" }} // Ajout du soulignement
         >
           <strong>
             {data.hashTransaction
@@ -403,7 +418,7 @@ export const ParcelleNode = ({ data }) => {
           href={URL_BLOCK_SCAN + data.hashTransaction}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }} // Ajout du soulignement
+          style={{ textDecoration: "underline", fontSize: "1.2rem" }} // Ajout du soulignement
         >
           <strong>
             {data.hashTransaction

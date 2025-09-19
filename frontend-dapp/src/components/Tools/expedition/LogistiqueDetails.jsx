@@ -1,5 +1,15 @@
-import { Droplet, DropletOff, DropletsIcon, Thermometer, ThermometerIcon, ThermometerSnowflake, ThermometerSnowflakeIcon, ThermometerSun } from "lucide-react";
+import {
+  Droplet,
+  DropletOff,
+  DropletsIcon,
+  Thermometer,
+  ThermometerIcon,
+  ThermometerSnowflake,
+  ThermometerSnowflakeIcon,
+  ThermometerSun,
+} from "lucide-react";
 import React from "react";
+import { getIPFSURL } from "../../../utils/ipfsUtils";
 
 const LogistiqueDetails = ({ condition }) => {
   const isTransportCE = condition.type.includes("produit");
@@ -13,15 +23,37 @@ const LogistiqueDetails = ({ condition }) => {
         style={{ width: "100%", margin: "0 auto" }}
       >
         <div>
-          <p className="small mb-0">
-            <span className="text-muted"><ThermometerSnowflakeIcon size={16} /> Température:</span> {condition.temperature || "N/A"} °C <br />
-            <span className="text-muted"><DropletsIcon size={16} /> Humidité:</span> {condition.humidite || "N/A"} %
-          </p>
+          {condition.cidRapportTransport ? (
+            <>
+              <span className="text-muted">Rapport de transport</span> <br />
+              <a
+                href={getIPFSURL(condition.cidRapportTransport)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline-success btn-sm"
+              >
+                Voir rapport
+              </a>
+            </>
+          ) : (
+            <>
+              <span className="text-muted">
+                <ThermometerSnowflakeIcon size={16} /> Température:
+              </span>{" "}
+              {condition.temperature || "N/A"} °C <br />
+              <span className="text-muted">
+                <DropletsIcon size={16} /> Humidité:
+              </span>{" "}
+              {condition.humidite || "N/A"} %
+            </>
+          )}
         </div>
         <div>
           <p className="small mb-0">
-            <span className="text-muted">Depart:</span> {condition.lieuDepart || "N/A"} <br />
-            <span className="text-muted">Destination:</span> {condition.destination || "N/A"}
+            <span className="text-muted">Depart:</span>{" "}
+            {condition.lieuDepart || "N/A"} <br />
+            <span className="text-muted">Destination:</span>{" "}
+            {condition.destination || "N/A"}
           </p>
         </div>
         <div>
