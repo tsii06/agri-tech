@@ -28,6 +28,7 @@ const CollecteurExportateur_PROXY_ADDRESS =
 const EXPORTATEUR_CLIENT_ADDRESS = "0xdc0500D7013bA9e8aa20374cCc8894b9c391Ec09";
 // const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
 const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
+const RPC_PROVIDER_WS = "wss://polygon-amoy-bor-rpc.publicnode.com";
 
 
 
@@ -50,10 +51,15 @@ export const DEBUT_EXPEDITION = 4;
 
 export const EXCLUDE_EXPEDITION = ["EXP-17570788211", "EXP-17575277782", "EXP-17576898483"];
 
-export async function getProvider() {
+export async function getProvider(isRead = false) {
   let accounts = [];
   if (window.ethereum) {
     accounts = await window.ethereum.request({ method: "eth_accounts" });
+  }
+
+  if (isRead) {
+    const providerClient = new ethers.WebSocketProvider(RPC_PROVIDER_WS);
+    return providerClient;
   }
 
   if (accounts && accounts.length > 0) {
@@ -105,9 +111,9 @@ export async function getCollecteurExportateurContract() {
   }
 }
 
-export async function getCollecteurProducteurContract() {
+export async function getCollecteurProducteurContract(isRead = false) {
   try {
-    const provider = await getProvider();
+    const provider = await getProvider(isRead);
     // const signer = await provider.getSigner();
     return new ethers.Contract(
       CollecteurProducteur_PROXY_ADDRESS,

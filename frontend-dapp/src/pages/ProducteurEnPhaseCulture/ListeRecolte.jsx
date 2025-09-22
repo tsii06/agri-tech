@@ -7,11 +7,16 @@ import {
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
-import { uploadCertificatPhytosanitaire } from "../../utils/ipfsUtils";
 import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 import RecolteCard from "../../components/Tools/RecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
+import {
+  deleteFromIPFSByCid,
+  uploadCertificatPhytosanitaire,
+} from "../../utils/ipfsUtils";
+
+const contratRead = await getCollecteurProducteurContract(true);
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -25,7 +30,6 @@ function ListeRecoltes() {
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [saisonFiltre, setSaisonFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
   // Pour certification
   const [showModalCertification, setShowModalCertification] = useState(false);
   const [certificat, setCertificat] = useState(null);
@@ -40,7 +44,7 @@ function ListeRecoltes() {
   const [showModalPrix, setShowModalPrix] = useState(false);
   const [recoltePrixSelectionnee, setRecoltePrixSelectionnee] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
-  const [dernierRecolteCharger, setDernierRecolteCharger] = useState(0);
+  const [dernierRecolteCharger, setDernierRecolteCharger] = useState(() => 0);
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
@@ -48,11 +52,10 @@ function ListeRecoltes() {
   const chargerRecoltes = async () => {
     setIsLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
       const compteurRecoltes =
         dernierRecolteCharger !== 0
           ? dernierRecolteCharger
-          : await contract.compteurRecoltes();
+          : await contratRead.compteurRecoltes();
 
       console.log(
         "🌾 Début chargement récoltes, compteur:",
@@ -115,12 +118,14 @@ function ListeRecoltes() {
       setIsLoading(false);
       return;
     }
+
     chargerRecoltes();
   }, [address, account]);
 
   const handleCertifier = async (event) => {
     event.preventDefault();
     setBtnLoading(true);
+    let cid = "";
 
     try {
       // Créer les données du certificat
@@ -147,6 +152,7 @@ function ListeRecoltes() {
       if (!certificatUpload.success) {
         throw new Error("Erreur lors de l'upload du certificat sur IPFS");
       }
+      cid = certificatUpload.cid;
 
       // Certifier la récolte avec le CID du certificat
       const contract = await getCollecteurProducteurContract();
@@ -156,9 +162,17 @@ function ListeRecoltes() {
       );
       await tx.wait();
 
-      await chargerRecoltes();
-      alert("Récolte certifiée avec succès !");
+      // maj liste recoltes
+      setRecoltes((prev) =>
+        prev.map((recolte) =>
+          recolte.id === recolteSelectionnee.id
+            ? { ...recolte, certifie: true, certificatPhytosanitaire: certificatUpload.cid }
+            : recolte
+        )
+      );
+
       setShowModalCertification(false);
+      alert("Récolte certifiée avec succès !");
     } catch (error) {
       console.error("Erreur lors de la certification:", error);
       setError(
@@ -167,6 +181,8 @@ function ListeRecoltes() {
       alert(
         "Erreur lors de la certification de la récolte. Veuillez réessayer."
       );
+      // supprimer certificat si erruer
+      if (cid !== "") deleteFromIPFSByCid(cid);
     } finally {
       setBtnLoading(false);
     }
@@ -219,7 +235,16 @@ function ListeRecoltes() {
         nouveauPrix
       );
       await tx.wait();
-      await chargerRecoltes();
+
+      // maj liste recoltes
+      setRecoltes((prev) =>
+        prev.map((recolte) =>
+          recolte.id === recoltePrixSelectionnee.id
+            ? { ...recolte, prixUnit: nouveauPrix }
+            : recolte
+        )
+      );
+
       setShowModalPrix(false);
       alert("Prix modifié avec succès !");
     } catch (error) {
@@ -249,7 +274,6 @@ function ListeRecoltes() {
         (recolte.saison?.periode === "H1" || recolte.saison?.periode === "H2"));
     return matchSearch && matchStatut && matchSaison;
   });
-  const recoltesAffichees = recoltesFiltres.slice(0, visibleCount);
 
   if (!account && !address) {
     return (
@@ -277,7 +301,6 @@ function ListeRecoltes() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
@@ -429,7 +452,7 @@ function ListeRecoltes() {
         {recoltes.length > 0 || isLoading ? (
           <div className="row g-3">
             <AnimatePresence>
-              {recoltesAffichees.map((recolte, index) => (
+              {recoltesFiltres.map((recolte, index) => (
                 <motion.div
                   key={`recolte-${recolte.id}-${index}`}
                   className="col-md-4"

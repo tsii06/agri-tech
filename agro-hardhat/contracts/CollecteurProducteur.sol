@@ -71,20 +71,17 @@ contract CollecteurProducteur {
         _;
     }
     // ================================== evenements =================================================
-    event ConditionEnregistree(
-        uint32 indexed idProduit,
-        string cid,
-        uint timestamp,
-        address transporteur
-    );
+    event ConditionEnregistree(uint32 indexed idCommandeRecolte,string cid);
     event ValidationCommandeRecolte(uint32 indexed idCommande, bool status);
+    event CertifierRecolte(uint32 indexed idRecolte, string cidCertificat);
+    event ModifierPrix(uint32 indexed idRecolte, uint32 newPrix);
     // ================================== initialiser =================================================
     function initialiser(
         address _addrCE,
         address _gestionnaireActeurs,
         address _producteurEnPhaseCulture
     ) public {
-        require(!initialised, "Contrat deja initialiser !");
+        if(initialised) revert();
         moduleCE = ICollecteurExportateur(_addrCE);
         gestionnaireActeurs = GestionnaireActeurs(_gestionnaireActeurs);
         producteurEnPhaseCulture = IProducteur(_producteurEnPhaseCulture);
@@ -153,10 +150,12 @@ contract CollecteurProducteur {
         uint32 _idRecolte,
         string memory _certificat
     ) public seulementCertificateur recolteExistant(_idRecolte) {
-        require(bytes(_certificat).length != 0, "Certificat vide");
+        if (bytes(_certificat).length == 0) revert();
 
         recoltes[_idRecolte].certifie = true;
         recoltes[_idRecolte].certificatPhytosanitaire = _certificat;
+
+        emit CertifierRecolte(_idRecolte, _certificat);
     }
     function modifierPrixRecolte(
         uint32 idRecolte,
@@ -164,6 +163,8 @@ contract CollecteurProducteur {
     ) public seulementProducteur recolteExistant(idRecolte) {
         if (recoltes[idRecolte].producteur != msg.sender) revert();
         recoltes[idRecolte].prixUnit = newPrix;
+
+        emit ModifierPrix(idRecolte, newPrix);
     }
     /*
     ici les fonctions pour les commandes
@@ -322,9 +323,7 @@ contract CollecteurProducteur {
         );
         emit ConditionEnregistree(
             _idCommande,
-            _cid,
-            block.timestamp,
-            msg.sender
+            _cid
         );
     }
     // ====================================== getter et setter =============================================
