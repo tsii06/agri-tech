@@ -184,12 +184,26 @@ export const getDateRecoltePrecedente = async (
     return null;
   }
 };
-export const getRecolte = async (_idRecolte) => {
+
+/**
+ *
+ * @param {number} _idRecolte
+ * @returns {object}
+ */
+export const getRecolte = async (_idRecolte, _roles = [], _account = '') => {
   let recolteComplet = {};
 
   // recuperer info on-chain
   try {
     const recolteOnChain = await contrat.getRecolte(_idRecolte);
+
+    // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
+    if (!_roles.includes(3) && _account !== '')
+      if (_roles.includes(0))
+        if (
+          recolteOnChain.producteur?.toLowerCase() !== _account.toLowerCase()
+        )
+          return { isProprietaire: false };
 
     // convertir array
     const idParcelles = Object.values(recolteOnChain.idParcelle);
@@ -398,9 +412,10 @@ export const getRecolte = async (_idRecolte) => {
       intrantsSource: recolteIpfs?.data?.items?.intrantsUtilises
         ? "IPFS_STORED"
         : "DYNAMIC_CALC", // Indicateur de source
+      isProprietaire: true,
     };
   } else {
-    return recolteComplet;
+    return { ...recolteComplet, isProprietaire:true };
   }
 };
 
@@ -417,7 +432,7 @@ export const createRecolte = async (recolteData, parcelle) => {
   let dateRecoltePrecedente = null;
   let numeroRecolte = 1;
   let intrantsParcelle = [];
-  
+
   try {
     const contratProcteur = await getCollecteurProducteurContract();
 
@@ -503,10 +518,7 @@ export const createRecolte = async (recolteData, parcelle) => {
     };
 
     // 3. Upload des données consolidées sur IPFS
-    recolteUpload = await uploadConsolidatedData(
-      recolteConsolidee,
-      "recolte"
-    );
+    recolteUpload = await uploadConsolidatedData(recolteConsolidee, "recolte");
     cidRecolte = recolteUpload.cid;
     if (!recolteUpload.success) {
       throw new Error(
