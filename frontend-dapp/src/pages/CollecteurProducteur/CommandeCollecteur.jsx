@@ -12,7 +12,10 @@ import {
   getConditionTransportPC,
   getRecolte,
 } from "../../utils/contrat/collecteurProducteur";
-import { getIPFSURL } from "../../utils/ipfsUtils";
+import { getFileFromPinata, getIPFSURL } from "../../utils/ipfsUtils";
+import Skeleton from "react-loading-skeleton";
+import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
+import { AnimatePresence, motion } from "framer-motion";
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
@@ -21,8 +24,6 @@ function CommandeCollecteur() {
   const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [acteur, setActeur] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
   const [search, setSearch] = useState("");
   const [paiementFiltre, setPaiementFiltre] = useState("all");
@@ -32,51 +33,76 @@ function CommandeCollecteur() {
   const [commandeErrors, setCommandeErrors] = useState({});
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0); 
 
-  const { account } = useUserContext();
+  const { roles, account } = useUserContext();
 
   const chargerCommandes = async () => {
+    setIsLoading(true);
     try {
       setError(null);
       setWarnings([]);
       const contract = await getCollecteurProducteurContract();
-      const compteurCommandesRaw = await contract.compteurCommandes();
+      const compteurCommandesRaw = dernierCommandeCharger!==0 ? dernierCommandeCharger : await contract.compteurCommandes();
       const compteurCommandes = Number(compteurCommandesRaw);
-      const commandesTemp = [];
 
-      for (let i = DEBUT_COMMANDE_RECOLTE; i <= compteurCommandes; i++) {
-        const commandeRaw = await getCommandeRecolte(i);
+      let nbrCommandeCharger = 9;
+      let i;
+
+      for (
+        i = compteurCommandes;
+        i >= DEBUT_COMMANDE_RECOLTE && nbrCommandeCharger > 0;
+        i--
+      ) {
+        const commandeRaw = await getCommandeRecolte(i, roles, account);
+
         // Filtrer par collecteur connecté
-        const collecteurAddr =
-          commandeRaw.collecteur.adresse?.toString?.() || "";
-        if (
-          collecteurAddr &&
-          collecteurAddr.toLowerCase() === account.toLowerCase()
-        ) {
-          // recuperer condition de transport s'il y en a
-          let commande = {};
-          if (commandeRaw.enregistrerCondition) {
-            const conditions = await getConditionTransportPC(i);
-            commande = {
-              ...conditions,
-            };
-          }
-          // recuperer le nom du produit
-          const recolteOnChain = await getRecolte(commandeRaw.idRecolte);
+        if (!commandeRaw.isProprietaire) continue;
 
+        // recuperer condition de transport s'il y en a
+        let commande = {};
+        if (commandeRaw.enregistrerCondition) {
+          const conditions = await getConditionTransportPC(i);
           commande = {
-            ...commande,
-            ...commandeRaw,
-            nomProduit: recolteOnChain.nomProduit,
+            ...conditions,
           };
-
-          commandesTemp.push(commande);
         }
+
+        // recuperation date recolte
+        const recolteOnChain = await contract.getRecolte(commandeRaw.idRecolte);
+        const recolteIpfs = await getFileFromPinata(recolteOnChain.cid);
+        // Format : jour mois année
+        let dateRecolteFormat = "N/A";
+        const dateRecolteOriginal = recolteIpfs?.data?.items?.dateRecolte;
+        if (dateRecolteOriginal && dateRecolteOriginal !== "") {
+          dateRecolteFormat = new Date(dateRecolteOriginal).toLocaleDateString(
+            "fr-FR",
+            {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }
+          );
+        }
+
+        // recuperer le nom du produit
+        const nomProduit = recolteIpfs?.data?.items?.nomProduit;
+
+        commande = {
+          ...commande,
+          ...commandeRaw,
+          nomProduit: nomProduit,
+          dateRecolte: dateRecolteFormat,
+        };
+
+        setCommandes((prev) => [...prev, commande]);
+        nbrCommandeCharger--;
       }
+      setDernierCommandeCharger(i);
 
       setActeur(acteur);
-      commandesTemp.reverse();
-      setCommandes(commandesTemp);
     } catch (error) {
       console.error(error.message);
     } finally {
@@ -94,7 +120,6 @@ function CommandeCollecteur() {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
 
     chargerCommandes();
   }, [account, acteur, location.state]); // Ajouter location.state comme dépendance pour réexécuter le useEffect
@@ -168,39 +193,6 @@ function CommandeCollecteur() {
     return payer ? "Payé" : "Non payé";
   };
 
-  const getStatutTransport = (statut) => {
-    switch (statut) {
-      case 0:
-        return "En cours";
-      case 1:
-        return "Livré";
-      default:
-        return "Inconnu";
-    }
-  };
-
-  const getStatutRecolte = (status) => {
-    switch (status) {
-      case 0:
-        return "En attente";
-      case 1:
-        return "Validé";
-      case 2:
-        return "Rejeté";
-    }
-  };
-
-  const getColorStatutRecolte = (status) => {
-    switch (status) {
-      case 0:
-        return "bg-warning";
-      case 1:
-        return "bg-success";
-      case 2:
-        return "bg-danger";
-    }
-  };
-
   // Filtrage commandes selon recherche et paiement
   const commandesFiltres = commandes.filter((commande) => {
     const searchLower = search.toLowerCase();
@@ -230,15 +222,6 @@ function CommandeCollecteur() {
     return (
       <div className="container py-4 text-center text-muted">
         Veuillez connecter votre wallet pour voir vos commandes.
-      </div>
-    );
-  }
-  if (isLoading) {
-    return (
-      <div className="container py-4 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Chargement...</span>
-        </div>
       </div>
     );
   }
@@ -344,176 +327,50 @@ function CommandeCollecteur() {
         </div>
 
         {/* LISTE DES COMMANDES */}
-        {commandes.length > 0 ? (
+        {commandes.length > 0 || isLoading ? (
           <div className="row g-3">
-            {commandesAffichees.map((commande, index) => (
-              <div
-                key={`commande-${commande?.id ?? "na"}-${index}`}
-                className="col-md-4"
-              >
-                <div
-                  className="card shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
+            <AnimatePresence>
+              {commandesAffichees.map((commande, index) => (
+                <motion.div
+                  key={`commande-${commande?.id ?? "na"}-${index}`}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h5 className="card-title mb-4">Commande #{commande.id}</h5>
-                  </div>
-
-                  <div className="card-text">
-                    <p>
-                      <strong>Produit:</strong> {commande.nomProduit}
-                    </p>
-                    <p>
-                      <strong>Récolte:</strong> #{commande.idRecolte}
-                    </p>
-                    <p>
-                      <strong>Quantité:</strong> {commande.quantite} kg
-                    </p>
-                    <p>
-                      <strong>Prix:</strong> {commande.prix} Ariary
-                    </p>
-                    <p>
-                      <strong>Date recolte :</strong> {commande.dateRecolte}
-                    </p>
-                    <p>
-                      <strong>Producteur:</strong>{" "}
-                      {commande.producteur?.nom || "N/A"}
-                    </p>
-
-                    <p>
-                      <strong>Transporteur:</strong>{" "}
-                      {commande.transporteur?.nom || "N/A"}
-                    </p>
-
-                    {commande.statutTransport === 1 && (
-                      <p>
-                        <strong>Hash transaction:</strong>{" "}
-                        <a
-                          href={URL_BLOCK_SCAN + commande.hashTransaction}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {commande.hashTransaction?.slice(0, 6)}...
-                          {commande.hashTransaction?.slice(-4)}
-                        </a>
-                      </p>
-                    )}
-
-                    {commande.ipfsWarning && (
-                      <p className="text-warning small mb-1">
-                        {commande.ipfsWarning}
-                      </p>
-                    )}
-
-                    {/* Statuts */}
-                    <div className="mt-3">
-                      <div className="d-flex gap-2">
-                        <span
-                          className={`badge ${getColorStatutRecolte(
-                            commande.statutRecolte
-                          )}`}
-                        >
-                          {getStatutRecolte(commande.statutRecolte)}
-                        </span>
-                        <span className="badge bg-info">
-                          {getStatutTransport(commande.statutTransport)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="d-flex justify-content-between">
-                    {/* Actions selon le statut */}
-                    {commandeErrors[commande.id] && (
-                      <div
-                        className="alert alert-danger mt-2 py-2 px-3"
-                        role="alert"
-                      >
-                        {commandeErrors[commande.id]}
-                      </div>
-                    )}
-                  </div>
-                  {/* Lien vers liste de transporteur */}
-                  {!commande.payer && commande.statutTransport !== 1 && (
-                    <div className="mt-2">
-                      <Link
-                        to={`/liste-transporteur-commande-recolte/5/${commande.id}`}
-                        className="btn btn-outline-secondary btn-sm w-100"
-                      >
-                        Choisir transporteur
-                      </Link>
-                    </div>
-                  )}
-                  {commande.enregistrerCondition && (
-                    <div className="mt-2">
-                      <button
-                        className="btn btn-outline-success btn-sm w-100"
-                        onClick={() => {
-                          setDetailsCondition({
-                            temperature: commande.temperature || null, 
-                            humidite: commande.humidite || null,
-                            cidRapportTransport: commande.cidRapportTransport || null,
-                            dureeTransport: commande.dureeTransport,
-                            lieuDepart: commande.lieuDepart,
-                            destination: commande.destination,
-                          });
-                          setShowDetailsModal(true);
-                        }}
-                      >
-                        Voir détails conditions
-                      </button>
-                    </div>
-                  )}
-                  {/* Afficher btn valider et rejeter si la commande a ete livrer avec success. */}
-                  {commande.statutRecolte === 0 &&
-                    commande.statutTransport === 1 && (
-                      <div className="d-flex gap-1 mt-2">
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => validerCommande(commande.id, true)}
-                          disabled={btnLoading}
-                        >
-                          Valider
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => validerCommande(commande.id, false)}
-                          disabled={btnLoading}
-                        >
-                          Rejeter
-                        </button>
-                      </div>
-                    )}
-                  {/* afficher btn payer si la commande n'a pas encors ete payer et que la commande a ete valider */}
-                  {!commande.payer && commande.statutRecolte === 1 && (
-                    <div className="d-flex mt-2">
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                          setCommandeSelectionnee(commande);
-                          setShowModal(true);
-                        }}
-                      >
-                        Payer
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  <CommandeRecolteCard
+                    commande={commande}
+                    roles={roles}
+                    commandeErrors={commandeErrors}
+                    validerCommande={validerCommande}
+                    setDetailsCondition={setDetailsCondition}
+                    setShowDetailsModal={setShowDetailsModal}
+                    setCommandeSelectionnee={setCommandeSelectionnee}
+                    setShowModal={setShowModal}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
               </div>
-            ))}
+            )}
           </div>
         ) : (
           <div className="text-center text-muted">Aucune commande trouvée.</div>
         )}
 
-        {commandesAffichees.length < commandesFiltres.length && (
+        {/* Btn pour charger plus de recoltes */}
+        {dernierCommandeCharger >= DEBUT_COMMANDE_RECOLTE && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"
-              onClick={() => setVisibleCount(visibleCount + 9)}
+              onClick={chargerCommandes}
             >
               Charger plus
             </button>

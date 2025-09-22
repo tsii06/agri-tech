@@ -49,7 +49,10 @@ function ListeRecoltes() {
     setIsLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const compteurRecoltes = dernierRecolteCharger!==0 ? dernierRecolteCharger : await contract.compteurRecoltes();
+      const compteurRecoltes =
+        dernierRecolteCharger !== 0
+          ? dernierRecolteCharger
+          : await contract.compteurRecoltes();
 
       console.log(
         "🌾 Début chargement récoltes, compteur:",
@@ -59,7 +62,11 @@ function ListeRecoltes() {
       let nbrRecolteCharger = 9;
       let i;
 
-      for (i = compteurRecoltes; i >= DEBUT_RECOLTE && nbrRecolteCharger > 0 ; i--) {
+      for (
+        i = compteurRecoltes;
+        i >= DEBUT_RECOLTE && nbrRecolteCharger > 0;
+        i--
+      ) {
         // Filtre les recoltes si 'address' est definie dans l'url
         let recolteRaw;
         if (address !== undefined)
@@ -95,7 +102,9 @@ function ListeRecoltes() {
       setDernierRecolteCharger(i);
     } catch (error) {
       console.error("❌ Erreur chargement récoltes:", error);
-      setError("Erreur lors du chargement des recoltes. Veuillez reessayer plus tard.");
+      setError(
+        "Erreur lors du chargement des recoltes. Veuillez reessayer plus tard."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -418,8 +427,8 @@ function ListeRecoltes() {
 
         {/* LISTE DES RECOLTES */}
         {recoltes.length > 0 || isLoading ? (
-          <AnimatePresence>
-            <div className="row g-3">
+          <div className="row g-3">
+            <AnimatePresence>
               {recoltesAffichees.map((recolte, index) => (
                 <motion.div
                   key={`recolte-${recolte.id}-${index}`}
@@ -479,20 +488,28 @@ function ListeRecoltes() {
                   </div>
                 </motion.div>
               ))}
-              {/* Skeleton de chargement */}
-              {isLoading && (
-                <div className="col-md-4">
-                  <Skeleton width={'100%'} height={'100%'} style={{ minHeight:200 }} />
-                </div>
-              )}
+            </AnimatePresence>
+            {/* Skeleton de chargement */}
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          !isLoading && (
+            <div className="text-center text-muted">
+              Aucune récolte trouvée.
             </div>
-          </AnimatePresence>
-        ) : !isLoading && (
-          <div className="text-center text-muted">Aucune récolte trouvée.</div>
+          )
         )}
 
         {/* Btn pour charger plus de recoltes */}
-        {dernierRecolteCharger > DEBUT_RECOLTE && (
+        {dernierRecolteCharger >= DEBUT_RECOLTE && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"

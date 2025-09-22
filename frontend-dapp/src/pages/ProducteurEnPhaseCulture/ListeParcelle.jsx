@@ -307,7 +307,7 @@ function MesParcelles() {
           </AnimatePresence>
 
           {/* Charger les autres parcelles si il en reste */}
-          {dernierParcelleCharger > DEBUT_PARCELLE && (
+          {dernierParcelleCharger >= DEBUT_PARCELLE && (
             <div className="text-center mt-3">
               <button
                 className="btn btn-outline-success"

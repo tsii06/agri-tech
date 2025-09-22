@@ -13,17 +13,24 @@ import {
 } from "../ipfsUtils";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
+import { hasRole } from "../roles";
 
 const contrat = await getCollecteurProducteurContract();
 
 /**
  *
  * @param {number} _idCommande
+ * @param {Array} _roles
+ * @param {string} _account
  * @returns
  */
-export const getCommandeRecolte = async (_idCommande) => {
+export const getCommandeRecolte = async (_idCommande, _roles=[], _account='') => {
   try {
     const res = await contrat.getCommande(_idCommande);
+
+    if (_roles.length > 0 && hasRole(_roles, 3) && _account !== '')
+      if (res?.collecteur.toString().toLowerCase() !== _account.toLowerCase()) 
+        return { isProprietaire: false};
 
     const producteurDetails = await getActeur(res.producteur.toString());
     const collecteurDetails = await getActeur(res.collecteur.toString());
@@ -47,6 +54,7 @@ export const getCommandeRecolte = async (_idCommande) => {
         ...transporteurDetails,
         adresse: res.transporteur.toString(),
       },
+      isProprietaire: true,
     };
   } catch (error) {
     console.log("Recuperation commande lot produit : ", error);
