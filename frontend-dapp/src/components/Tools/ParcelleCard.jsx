@@ -164,11 +164,6 @@ const ParcelleCard = ({
         </p>
 
         <p>
-          <BadgeCheck size={16} className="me-2 text-success" />
-          <strong>Méthode de culture:</strong> {methodeCulture}
-        </p>
-
-        <p>
           <MapPin size={16} className="me-2 text-success" />
           <strong>Localisation:</strong>
           {location && location.lat && location.lng
