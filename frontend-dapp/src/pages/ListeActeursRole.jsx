@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
-import { getCollecteurExportateurContract, getCollecteurProducteurContract, getGestionnaireActeursContract } from "../utils/contract";
+import {
+  getCollecteurExportateurContract,
+  getCollecteurProducteurContract,
+  getGestionnaireActeursContract,
+} from "../utils/contract";
 import {
   User,
   Mail,
@@ -14,6 +18,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { hasRole } from "../utils/roles";
+import Skeleton from "react-loading-skeleton";
+import { AnimatePresence, motion } from "framer-motion";
 
 const ROLE_LABELS = [
   "Producteur", // 0
@@ -31,8 +37,12 @@ export default function ListeActeursRole() {
 
   const { role, idCommandeRecolte, idCommandeProduit } = useParams();
   const roleUrl = role ? parseInt(role, 10) : null;
-  const idCommandeR = idCommandeRecolte ? parseInt(idCommandeRecolte, 10) : null;
-  const idCommandeP = idCommandeProduit ? parseInt(idCommandeProduit, 10) : null;
+  const idCommandeR = idCommandeRecolte
+    ? parseInt(idCommandeRecolte, 10)
+    : null;
+  const idCommandeP = idCommandeProduit
+    ? parseInt(idCommandeProduit, 10)
+    : null;
 
   const [acteurs, setActeurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +53,8 @@ export default function ListeActeursRole() {
   const [visibleCount, setVisibleCount] = useState(9);
   const [btnLoading, setBtnLoading] = useState(false);
   const nav = useNavigate();
+  const [listeAddr, setListeAddr] = useState([]);
+  const [dernierActeurCharger, setDernierActeurCharger] = useState(() => -1);
 
   // Détermine le rôle cible à afficher selon les rôles utilisateur
   let roleCible = null;
@@ -66,26 +78,31 @@ export default function ListeActeursRole() {
     // si c'est pour le choix d'un transporteur pour une commande recolte
     if (idCommandeR !== null)
       titre = `Choisir transporteur pour la commande recolte #${idCommandeR}`;
-    
     // si c'est pour le choix d'un transporteur pour une commande recolte
     else if (idCommandeP !== null)
       titre = `Choisir transporteur pour la commande produit #${idCommandeP}`;
-
-    else
-      titre = `Liste des ${ROLE_LABELS[roleUrl]}s`;
+    else titre = `Liste des ${ROLE_LABELS[roleUrl]}s`;
   }
 
   const handleChoisirTransporteurCommandeRecolte = async (addrTransporteur) => {
     setBtnLoading(true);
     try {
       const contrat = await getCollecteurProducteurContract();
-      const tx = await contrat.choisirTransporteurCommandeRecolte(idCommandeR, addrTransporteur);
+      const tx = await contrat.choisirTransporteurCommandeRecolte(
+        idCommandeR,
+        addrTransporteur
+      );
       tx.wait();
 
-      nav('/liste-collecteur-commande', { refresh: Date.now() });
+      nav("/liste-collecteur-commande", { refresh: Date.now() });
     } catch (error) {
-      console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
-      alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");
+      console.error(
+        "Erreur lors du choix de transporteur pour la commande recolte : ",
+        error
+      );
+      alert(
+        "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
+      );
     } finally {
       setBtnLoading(false);
     }
@@ -95,15 +112,67 @@ export default function ListeActeursRole() {
     setBtnLoading(true);
     try {
       const contrat = await getCollecteurExportateurContract();
-      const tx = await contrat.choisirTransporteurCommandeProduit(idCommandeP, addrTransporteur);
+      const tx = await contrat.choisirTransporteurCommandeProduit(
+        idCommandeP,
+        addrTransporteur
+      );
       tx.wait();
 
-      nav('/mes-commandes-exportateur', { refresh: Date.now() });
+      nav("/mes-commandes-exportateur", { refresh: Date.now() });
     } catch (error) {
-      console.error("Erreur lors du choix de transporteur pour la commande recolte : ", error);
-      alert("Erreur lors du choix de transporteur. Veuillez reessayer plus tard.");
+      console.error(
+        "Erreur lors du choix de transporteur pour la commande recolte : ",
+        error
+      );
+      alert(
+        "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
+      );
     } finally {
       setBtnLoading(false);
+    }
+  };
+
+  const chargerActeurs = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const contract = await getGestionnaireActeursContract();
+      const addresses = await contract.getActeursByRole(roleCible);
+
+      let nbrActeurCharger = 9;
+      let i = dernierActeurCharger >= 0 ? dernierActeurCharger : addresses.length - 1;
+
+      for (i; i >= 0 && nbrActeurCharger > 0; i--) {
+        try {
+          const details = await contract.getDetailsActeur(addresses[i]);
+          const detailsObject = {
+            adresse: addresses[i],
+            nom: details[4],
+            email: details[7],
+            telephone: details[8],
+            actif: details[2],
+            role: Number(details[1]),
+            idBlockchain: details[0],
+          };
+          setActeurs((prev) => [...prev, detailsObject]);
+          nbrActeurCharger--;
+        } catch (e) {
+          console.error(
+            "Erreur lors de la recuperation de details acteurs : ",
+            e
+          );
+        }
+      }
+      setDernierActeurCharger(i);
+    } catch (error) {
+      console.error("Recuperation liste acteur : ", error);
+
+      setError(
+        "Erreur lors du chargement : " +
+          (error?.reason || error?.message || error)
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,39 +181,8 @@ export default function ListeActeursRole() {
       setLoading(false);
       return;
     }
-    setLoading(true);
-    setError("");
-    getGestionnaireActeursContract()
-      .then(async (contract) => {
-        const addresses = await contract.getActeursByRole(roleCible);
-        const detailsList = [];
-        for (let addr of addresses) {
-          try {
-            const details = await contract.getDetailsActeur(addr);
-            detailsList.push({
-              adresse: addr,
-              nom: details[4],
-              email: details[7],
-              telephone: details[8],
-              actif: details[2],
-              role: Number(details[1]),
-              idBlockchain: details[0],
-            });
-          } catch (e) {
-            console.error(
-              "Erreur lors de la recuperation de details acteurs : ",
-              e
-            );
-          }
-        }
-        setActeurs(detailsList);
-      })
-      .catch((err) =>
-        setError(
-          "Erreur lors du chargement : " + (err?.reason || err?.message || err)
-        )
-      )
-      .finally(() => setLoading(false));
+    setActeurs([]);
+    chargerActeurs();
   }, [roleCible]);
 
   // Filtrage acteurs selon recherche et statut
@@ -248,104 +286,142 @@ export default function ListeActeursRole() {
         >
           <h2 className="h5 mb-0">{titre}</h2>
         </div>
-        {loading ? (
-          <div>Chargement...</div>
+        {acteurs.length > 0 || loading ? (
+          <div className="row">
+            <AnimatePresence>
+              {acteursAffiches.map((acteur) => (
+                <motion.div
+                  className="col-md-4 mb-3"
+                  key={acteur.adresse}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div
+                    className="card shadow-sm"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
+                  >
+                    <div
+                      className="d-flex justify-content-center align-items-center mb-2"
+                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                    >
+                      <User size={36} />
+                    </div>
+                    <div className="card-body">
+                      <h5 className="card-title text-center mb-3">
+                        {acteur.nom}
+                      </h5>
+                      <p>
+                        <KeyRound size={16} className="me-2 text-success" />
+                        <strong>ID Blockchain:</strong> {acteur.idBlockchain}
+                      </p>
+                      <p>
+                        <UserCheck size={16} className="me-2 text-success" />
+                        <strong>Rôle:</strong> {ROLE_LABELS[acteur.role]}
+                      </p>
+                      <p>
+                        <Mail size={16} className="me-2 text-success" />
+                        <strong>Email:</strong> {acteur.email}
+                      </p>
+                      <p>
+                        <Phone size={16} className="me-2 text-success" />
+                        <strong>Téléphone:</strong> {acteur.telephone}
+                      </p>
+                      <p>
+                        <strong>Adresse:</strong> {acteur.adresse}
+                      </p>
+                      <p
+                        className="fw-semibold d-flex align-items-center"
+                        style={{ gap: 6 }}
+                      >
+                        {acteur.actif ? (
+                          <BadgeCheck size={16} className="me-1 text-success" />
+                        ) : (
+                          <BadgeX size={16} className="me-1 text-danger" />
+                        )}
+                        <strong>Actif:</strong> {acteur.actif ? "Oui" : "Non"}
+                      </p>
+
+                      {/* Bouton d'action */}
+                      {/* Si choisir un transporteur pour une commande */}
+                      {roleUrl === 5 ? (
+                        <button
+                          className="btn-agrichain"
+                          onClick={() => {
+                            if (idCommandeR !== null)
+                              return handleChoisirTransporteurCommandeRecolte(
+                                acteur.adresse
+                              );
+                            else if (idCommandeP !== null)
+                              return handleChoisirTransporteurCommandeProduit(
+                                acteur.adresse
+                              );
+                          }}
+                          disabled={btnLoading}
+                        >
+                          {btnLoading && (
+                            <span className="spinner-border spinner-border-sm"></span>
+                          )}
+                          &nbsp;Choisir
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-agrichain"
+                          onClick={() => {
+                            if (hasRole(roles, 6)) {
+                              navigate(`/listeproduit/${acteur.adresse}`);
+                            } else if (hasRole(roles, 3)) {
+                              navigate(`/listerecolte/${acteur.adresse}`);
+                            }
+                          }}
+                        >
+                          {boutonLabel}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Indicateur de chargement */}
+            {loading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
+              </div>
+            )}
+
+            {/* Btn pour charger plus de recoltes */}
+            {dernierActeurCharger >= 0 && (
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-success"
+                  onClick={chargerActeurs}
+                >
+                  Charger plus
+                </button>
+              </div>
+            )}
+          </div>
         ) : error ? (
           <div className="alert alert-danger">{error}</div>
         ) : acteurs.length === 0 ? (
           <div className="text-center text-muted">
             Aucun acteur ne correspond à la recherche ou au filtre.
           </div>
-        ) : acteursFiltres.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucun acteur ne correspond à la recherche ou au filtre.
-          </div>
         ) : (
-          <div className="row">
-            {acteursAffiches.map((acteur) => (
-              <div className="col-md-4 mb-3" key={acteur.adresse}>
-                <div
-                  className="card shadow-sm"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
-                >
-                  <div
-                    className="d-flex justify-content-center align-items-center mb-2"
-                    style={{ fontSize: 32, color: "#4d7c0f" }}
-                  >
-                    <User size={36} />
-                  </div>
-                  <div className="card-body">
-                    <h5 className="card-title text-center mb-3">
-                      {acteur.nom}
-                    </h5>
-                    <p>
-                      <KeyRound size={16} className="me-2 text-success" />
-                      <strong>ID Blockchain:</strong> {acteur.idBlockchain}
-                    </p>
-                    <p>
-                      <UserCheck size={16} className="me-2 text-success" />
-                      <strong>Rôle:</strong> {ROLE_LABELS[acteur.role]}
-                    </p>
-                    <p>
-                      <Mail size={16} className="me-2 text-success" />
-                      <strong>Email:</strong> {acteur.email}
-                    </p>
-                    <p>
-                      <Phone size={16} className="me-2 text-success" />
-                      <strong>Téléphone:</strong> {acteur.telephone}
-                    </p>
-                    <p>
-                      <strong>Adresse:</strong> {acteur.adresse}
-                    </p>
-                    <p
-                      className="fw-semibold d-flex align-items-center"
-                      style={{ gap: 6 }}
-                    >
-                      {acteur.actif ? (
-                        <BadgeCheck size={16} className="me-1 text-success" />
-                      ) : (
-                        <BadgeX size={16} className="me-1 text-danger" />
-                      )}
-                      <strong>Actif:</strong> {acteur.actif ? "Oui" : "Non"}
-                    </p>
-
-                    {/* Bouton d'action */}
-                    {/* Si choisir un transporteur pour une commande */}
-                    {roleUrl === 5 ? (
-                      <button
-                        className="btn-agrichain"
-                        onClick={() => {
-                          if (idCommandeR !== null)
-                            return handleChoisirTransporteurCommandeRecolte(acteur.adresse);
-                          else if (idCommandeP !== null)
-                            return handleChoisirTransporteurCommandeProduit(acteur.adresse);
-                        }}
-                        disabled={btnLoading}
-                      >
-                        {btnLoading && <span className="spinner-border spinner-border-sm"></span>}&nbsp;Choisir
-                      </button>
-                    ) : (
-                      <button
-                        className="btn-agrichain"
-                        onClick={() => {
-                          if (hasRole(roles, 6)) {
-                            navigate(`/listeproduit/${acteur.adresse}`);
-                          } else if (hasRole(roles, 3)) {
-                            navigate(`/listerecolte/${acteur.adresse}`);
-                          }
-                        }}
-                      >
-                        {boutonLabel}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          acteursFiltres.length === 0 && (
+            <div className="text-center text-muted">
+              Aucun acteur ne correspond à la recherche ou au filtre.
+            </div>
+          )
         )}
       </div>
       {acteursAffiches.length < acteursFiltres.length && (

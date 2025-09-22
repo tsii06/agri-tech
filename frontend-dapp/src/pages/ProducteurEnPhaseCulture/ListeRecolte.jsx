@@ -16,8 +16,6 @@ import {
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
 
-const contratRead = await getCollecteurProducteurContract(true);
-
 function ListeRecoltes() {
   const { address } = useParams();
   const navigate = useNavigate();
@@ -52,10 +50,11 @@ function ListeRecoltes() {
   const chargerRecoltes = async () => {
     setIsLoading(true);
     try {
+      const contract = await getCollecteurProducteurContract();
       const compteurRecoltes =
         dernierRecolteCharger !== 0
           ? dernierRecolteCharger
-          : await contratRead.compteurRecoltes();
+          : await contract.compteurRecoltes();
 
       console.log(
         "🌾 Début chargement récoltes, compteur:",
