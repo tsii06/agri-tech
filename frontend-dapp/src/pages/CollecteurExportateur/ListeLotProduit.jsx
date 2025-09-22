@@ -18,8 +18,14 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import { deleteFromIPFSByCid, getIPFSURL, uploadLotProduit } from "../../utils/ipfsUtils";
+import {
+  deleteFromIPFSByCid,
+  getIPFSURL,
+  uploadLotProduit,
+} from "../../utils/ipfsUtils";
 import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
+import Skeleton from "react-loading-skeleton";
+import { AnimatePresence, motion } from "framer-motion";
 
 function ListeLotProduits() {
   const { address } = useParams();
@@ -40,38 +46,54 @@ function ListeLotProduits() {
   const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
   const nav = useNavigate();
+  const [dernierLotProduitCharger, setDernierLotProduitCharger] = useState(
+    () => 0
+  );
+
+  const chargerProduits = async () => {
+    setIsLoading(true);
+    try {
+      const contract = await getCollecteurExportateurContract();
+
+      // Obtenir le nombre total de produits
+      const compteurProduitsRaw =
+        dernierLotProduitCharger !== 0
+          ? dernierLotProduitCharger
+          : await contract.compteurLotProduits();
+      const compteurProduits = Number(compteurProduitsRaw);
+
+      let nbrLotProduitCharger = 9;
+      let i;
+
+      for (
+        i = compteurProduits;
+        i >= DEBUT_LOT_PRODUIT && nbrLotProduitCharger > 0;
+        i--
+      ) {
+        const lotProduit = await getLotProduitEnrichi(i, roles, account);
+        console.log("Lot produit enrichi : ", lotProduit);
+
+        if (lotProduit) {
+          setProduits((prev) => [...prev, lotProduit]);
+          nbrLotProduitCharger--;
+        }
+      }
+      setDernierLotProduitCharger(i);
+
+      setError(false);
+    } catch (error) {
+      console.error("Erreur lors du chargement des produits:", error);
+      setError("Erreur lors du chargement des produits");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!account && !address) {
       setIsLoading(false);
       return;
     }
-    const chargerProduits = async () => {
-      try {
-        const contract = await getCollecteurExportateurContract();
-
-        // Obtenir le nombre total de produits
-        const compteurProduitsRaw = await contract.compteurLotProduits();
-        const compteurProduits = Number(compteurProduitsRaw);
-        const produitsTemp = [];
-
-        for (let i = DEBUT_LOT_PRODUIT; i <= compteurProduits; i++) {
-          const lotProduit = await getLotProduitEnrichi(i, roles, account);
-          console.log("Lot produit enrichi : ", lotProduit);
-          
-          if (lotProduit) produitsTemp.push(lotProduit);
-        }
-
-        produitsTemp.reverse();
-        setProduits(produitsTemp);
-        setError(false);
-      } catch (error) {
-        console.error("Erreur lors du chargement des produits:", error);
-        setError("Erreur lors du chargement des produits");
-      } finally {
-        setIsLoading(false);
-      }
-    };
     chargerProduits();
   }, [address, account, _, roles]);
 
@@ -154,7 +176,7 @@ function ListeLotProduits() {
       alert("Veuillez entrer un prix valide pour le lot.");
       return;
     }
-    let cid = '';
+    let cid = "";
 
     try {
       const contract = await getCollecteurExportateurContract();
@@ -202,7 +224,7 @@ function ListeLotProduits() {
         "Une erreur est survenue lors de la création du lot. Veuillez réessayer."
       );
       // suprimer le fichier sur ipfs si il y a erreur
-      if (cid !== '') deleteFromIPFSByCid(cid);
+      if (cid !== "") deleteFromIPFSByCid(cid);
     }
   };
 
@@ -354,112 +376,141 @@ function ListeLotProduits() {
           )}
         </div>
 
-        {isLoading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Chargement...</span>
-            </div>
+        {produits.length > 0 || isLoading ? (
+          /* Affichage des lots de produits */
+          <div className="row g-3">
+            <AnimatePresence>
+              {produitsAffiches.map((produit) => (
+                <motion.div
+                  key={produit.id}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div
+                    className="card border shadow-sm p-3"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
+                  >
+                    <div
+                      className="d-flex justify-content-center align-items-center mb-2"
+                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                    >
+                      <Group size={36} />
+                    </div>
+                    <h5 className="card-title text-center mb-3">
+                      {produit.nom} #{produit.id}
+                    </h5>
+                    <div className="card-text small">
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Lot Produit:</strong> {produit.id}
+                      </p>
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>IDs Récoltes:</strong>{" "}
+                        {produit.idRecolte.join(", ")}
+                      </p>
+                      <p>
+                        <Package2 size={16} className="me-2 text-success" />
+                        <strong>Quantité:</strong> {produit.quantite} kg
+                      </p>
+                      <p>
+                        <BadgeEuro size={16} className="me-2 text-success" />
+                        <strong>Prix unitaire:</strong> {produit.prixUnit} Ar
+                      </p>
+                      <p>
+                        <User size={16} className="me-2 text-success" />
+                        <strong>Collecteur:</strong>&nbsp;
+                        {produit.collecteur.nom}
+                      </p>
+                      {produit.hashTransaction &&
+                        produit.hashTransaction !== "" && (
+                          <p>
+                            <Fingerprint
+                              size={16}
+                              className="me-2 text-success"
+                            />
+                            <strong>Hash transaction:</strong>&nbsp;
+                            <a
+                              href={URL_BLOCK_SCAN + produit.hashTransaction}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {produit.hashTransaction?.slice(0, 6)}...
+                              {produit.hashTransaction?.slice(-4)}
+                            </a>
+                          </p>
+                        )}
+                    </div>
+                    <div className="mt-3">
+                      {/* Actions pour le collecteur */}
+                      {hasRole(roles, 3) && (
+                        <button
+                          onClick={() => {
+                            setProduitSelectionne(produit);
+                            setNouveauPrix(produit.prixUnit);
+                            setShowModal(true);
+                          }}
+                          className="btn btn-agrichain"
+                        >
+                          Modifier le prix
+                        </button>
+                      )}
+                      {/* Actions pour le exportateur */}
+                      {hasRole(roles, 6) && (
+                        <button
+                          onClick={() => {
+                            setProduitSelectionne(produit);
+                            setShowModal("commander");
+                          }}
+                          className="btn-agrichain"
+                        >
+                          Commander
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
+              </div>
+            )}
+
+            {/* Btn pour charger plus de recoltes */}
+            {dernierLotProduitCharger >= DEBUT_LOT_PRODUIT && (
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-success"
+                  onClick={chargerProduits}
+                >
+                  Charger plus
+                </button>
+              </div>
+            )}
           </div>
         ) : produits.length === 0 ? (
           <div className="text-center text-muted">
             Vous n&apos;avez pas encore de produits.
           </div>
-        ) : produitsFiltres.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucun produit ne correspond à la recherche ou au filtre.
-          </div>
         ) : (
-          /* Affichage des lots de produits */
-          <div className="row g-3">
-            {produitsAffiches.map((produit) => (
-              <div key={produit.id} className="col-md-4">
-                <div
-                  className="card border shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
-                >
-                  <div
-                    className="d-flex justify-content-center align-items-center mb-2"
-                    style={{ fontSize: 32, color: "#4d7c0f" }}
-                  >
-                    <Group size={36} />
-                  </div>
-                  <h5 className="card-title text-center mb-3">{produit.nom} #{produit.id}</h5>
-                  <div className="card-text small">
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Lot Produit:</strong> {produit.id}
-                    </p>
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>IDs Récoltes:</strong>{" "}
-                      {produit.idRecolte.join(", ")}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {produit.quantite} kg
-                    </p>
-                    <p>
-                      <BadgeEuro size={16} className="me-2 text-success" />
-                      <strong>Prix unitaire:</strong> {produit.prixUnit} Ar
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>&nbsp;
-                      {produit.collecteur.nom}
-                    </p>
-                    {produit.hashTransaction &&
-                      produit.hashTransaction !== "" && (
-                        <p>
-                          <Fingerprint
-                            size={16}
-                            className="me-2 text-success"
-                          />
-                          <strong>Hash transaction:</strong>&nbsp;
-                          <a
-                            href={URL_BLOCK_SCAN + produit.hashTransaction}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {produit.hashTransaction?.slice(0, 6)}...
-                            {produit.hashTransaction?.slice(-4)}
-                          </a>
-                        </p>
-                      )}
-                  </div>
-                  <div className="mt-3">
-                    {/* Actions pour le collecteur */}
-                    {hasRole(roles, 3) && (
-                      <button
-                        onClick={() => {
-                          setProduitSelectionne(produit);
-                          setNouveauPrix(produit.prixUnit);
-                          setShowModal(true);
-                        }}
-                        className="btn btn-agrichain"
-                      >
-                        Modifier le prix
-                      </button>
-                    )}
-                    {/* Actions pour le exportateur */}
-                    {hasRole(roles, 6) && (
-                      <button
-                        onClick={() => {
-                          setProduitSelectionne(produit);
-                          setShowModal("commander");
-                        }}
-                        className="btn-agrichain"
-                      >
-                        Commander
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          produitsFiltres.length === 0 && (
+            <div className="text-center text-muted">
+              Aucun produit ne correspond à la recherche ou au filtre.
+            </div>
+          )
         )}
 
         {showLotModal && (

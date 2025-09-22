@@ -351,6 +351,8 @@ function CommandeCollecteur() {
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Indicateur de chargement */}
             {isLoading && (
               <div className="col-md-4">
                 <Skeleton
