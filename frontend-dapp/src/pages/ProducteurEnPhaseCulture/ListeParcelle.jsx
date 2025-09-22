@@ -6,6 +6,7 @@ import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
 import { getParcelle } from "../../utils/contrat/producteur";
 import { motion, AnimatePresence } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
@@ -29,14 +30,17 @@ function MesParcelles() {
 
   const chargerParcelles = async (e) => {
     let _dernierParcelleCharger = dernierParcelleCharger;
-    if (e?.target.value === 'actualiser') {
+    if (e?.target.value === "actualiser") {
       setParcelles([]);
       _dernierParcelleCharger = 0;
     }
     setLoading(true);
     try {
       const contract = await getContract();
-      const compteurParcellesRaw = _dernierParcelleCharger !== 0 ? _dernierParcelleCharger : await contract.getCompteurParcelle();
+      const compteurParcellesRaw =
+        _dernierParcelleCharger !== 0
+          ? _dernierParcelleCharger
+          : await contract.getCompteurParcelle();
       const compteurParcelles = Number(compteurParcellesRaw);
 
       console.log("🔍 Debug: Compteur parcelles:", compteurParcelles);
@@ -56,7 +60,11 @@ function MesParcelles() {
       let i;
 
       // Utiliser DEBUT_PARCELLE comme point de départ
-      for (i = compteurParcelles; i >= DEBUT_PARCELLE && nbrParcelleCharger > 0 ; i--) {
+      for (
+        i = compteurParcelles;
+        i >= DEBUT_PARCELLE && nbrParcelleCharger > 0;
+        i--
+      ) {
         try {
           const parcelleRaw = await getParcelle(i, roles, account);
 
@@ -67,8 +75,7 @@ function MesParcelles() {
           }
 
           // Vérifier si on doit filtrer par propriétaire
-          if (!parcelleRaw.isProprietaire)
-            continue;
+          if (!parcelleRaw.isProprietaire) continue;
 
           nbrParcelleCharger--;
 
@@ -88,7 +95,6 @@ function MesParcelles() {
             hasOffChainData: parcelleRaw.dataOffChain,
             userHasRole0: hasRole(roles, 0),
           });
-
 
           setParcelles((prev) => [...prev, parcelleRaw]);
         } catch (error) {
@@ -225,7 +231,7 @@ function MesParcelles() {
             className="btn btn-primary"
             onClick={chargerParcelles}
             disabled={loading}
-            value={'actualiser'}
+            value={"actualiser"}
           >
             🔄 Actualiser
           </button>
@@ -255,7 +261,7 @@ function MesParcelles() {
 
           {/* LISTE DES PARCELLES */}
           <AnimatePresence>
-            {parcelles.length > 0 ? (
+            {parcelles.length > 0 || loading ? (
               <div className="row g-3">
                 {parcellesAffichees.map((parcelle, index) => (
                   <motion.div
@@ -268,6 +274,16 @@ function MesParcelles() {
                     <ParcelleCard parcelle={parcelle} userRole={roles} />
                   </motion.div>
                 ))}
+                {/* Skeleton de chargement */}
+                {loading && (
+                  <div className="col-md-4">
+                    <Skeleton
+                      width={"100%"}
+                      height={"100%"}
+                      style={{ minHeight: 200 }}
+                    />
+                  </div>
+                )}
               </div>
             ) : parcellesFiltres.length === 0 ? (
               <div className="text-center text-muted">
@@ -289,15 +305,6 @@ function MesParcelles() {
               </div>
             )}
           </AnimatePresence>
-
-          {/* Indicateur de chargement */}
-          {loading && (
-            <div className="text-center mt-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Chargement...</span>
-              </div>
-            </div>
-          )}
 
           {/* Charger les autres parcelles si il en reste */}
           {dernierParcelleCharger > DEBUT_PARCELLE && (
