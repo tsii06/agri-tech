@@ -53,9 +53,9 @@ function MesParcelles() {
 
       const parcellesDebug = [];
       let nbrParcelleCharger = 9;
+      let i;
 
       // Utiliser DEBUT_PARCELLE comme point de départ
-      let i;
       for (i = compteurParcelles; i >= DEBUT_PARCELLE && nbrParcelleCharger > 0 ; i--) {
         try {
           const parcelleRaw = await getParcelle(i, roles, account);

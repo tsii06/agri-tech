@@ -7,11 +7,11 @@ import {
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
-import {
-  uploadCertificatPhytosanitaire,
-} from "../../utils/ipfsUtils";
+import { uploadCertificatPhytosanitaire } from "../../utils/ipfsUtils";
 import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 import RecolteCard from "../../components/Tools/RecolteCard";
+import { AnimatePresence, motion } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -40,22 +40,26 @@ function ListeRecoltes() {
   const [showModalPrix, setShowModalPrix] = useState(false);
   const [recoltePrixSelectionnee, setRecoltePrixSelectionnee] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
+  const [dernierRecolteCharger, setDernierRecolteCharger] = useState(0);
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
   const chargerRecoltes = async () => {
+    setIsLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const compteurRecoltes = await contract.compteurRecoltes();
-      const recoltesTemp = [];
+      const compteurRecoltes = dernierRecolteCharger!==0 ? dernierRecolteCharger : await contract.compteurRecoltes();
 
       console.log(
         "🌾 Début chargement récoltes, compteur:",
         Number(compteurRecoltes)
       );
 
-      for (let i = compteurRecoltes; i >= DEBUT_RECOLTE; i--) {
+      let nbrRecolteCharger = 9;
+      let i;
+
+      for (i = compteurRecoltes; i >= DEBUT_RECOLTE && nbrRecolteCharger > 0 ; i--) {
         // Filtre les recoltes si 'address' est definie dans l'url
         let recolteRaw;
         if (address !== undefined)
@@ -86,13 +90,12 @@ function ListeRecoltes() {
         });
 
         setRecoltes((prev) => [...prev, recolteRaw]);
+        nbrRecolteCharger--;
       }
-      console.log(
-        `✅ ${recoltesTemp.length} récoltes chargées avec nouveau système de saison dynamique`
-      );
+      setDernierRecolteCharger(i);
     } catch (error) {
       console.error("❌ Erreur chargement récoltes:", error);
-      setError(error.message);
+      setError("Erreur lors du chargement des recoltes. Veuillez reessayer plus tard.");
     } finally {
       setIsLoading(false);
     }
@@ -414,85 +417,89 @@ function ListeRecoltes() {
         </div>
 
         {/* LISTE DES RECOLTES */}
-        {recoltes.length > 0 ? (
-          <div className="row g-3">
-            {recoltesAffichees.map((recolte, index) => (
-              <div
-                key={`recolte-${recolte.id}-${index}`}
-                className="col-md-4"
-              >
-                <div
-                  className="card shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
+        {recoltes.length > 0 || isLoading ? (
+          <AnimatePresence>
+            <div className="row g-3">
+              {recoltesAffichees.map((recolte, index) => (
+                <motion.div
+                  key={`recolte-${recolte.id}-${index}`}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  <RecolteCard recolte={recolte} />
+                  <div
+                    className="card shadow-sm p-3"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
+                  >
+                    <RecolteCard recolte={recolte} />
 
-                  {/* Btn pour chaque roles */}
-                  <div className="d-flex justify-content-between mt-3">
-                    {/* Actions selon le rôle */}
-                    {hasRole(roles, 3) && recolte.certifie && (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                          setRecolteSelectionnee(recolte);
-                          setShowModal(true);
-                        }}
-                      >
-                        Commander
-                      </button>
-                    )}
+                    {/* Btn pour chaque roles */}
+                    <div className="d-flex justify-content-between mt-3">
+                      {/* Actions selon le rôle */}
+                      {hasRole(roles, 3) && recolte.certifie && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            setRecolteSelectionnee(recolte);
+                            setShowModal(true);
+                          }}
+                        >
+                          Commander
+                        </button>
+                      )}
 
-                    {hasRole(roles, 2) && !recolte.certifie && (
-                      <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => {
-                          setRecolteSelectionnee(recolte);
-                          setShowModalCertification(true);
-                        }}
-                      >
-                        Certifier
-                      </button>
-                    )}
+                      {hasRole(roles, 2) && !recolte.certifie && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => {
+                            setRecolteSelectionnee(recolte);
+                            setShowModalCertification(true);
+                          }}
+                        >
+                          Certifier
+                        </button>
+                      )}
 
-                    {hasRole(roles, 0) && (
-                      <button
-                        className="btn btn-agrichain"
-                        onClick={() => {
-                          setRecoltePrixSelectionnee(recolte);
-                          setShowModalPrix(true);
-                        }}
-                      >
-                        Modifier le prix
-                      </button>
-                    )}
+                      {hasRole(roles, 0) && (
+                        <button
+                          className="btn btn-agrichain"
+                          onClick={() => {
+                            setRecoltePrixSelectionnee(recolte);
+                            setShowModalPrix(true);
+                          }}
+                        >
+                          Modifier le prix
+                        </button>
+                      )}
+                    </div>
                   </div>
+                </motion.div>
+              ))}
+              {/* Skeleton de chargement */}
+              {isLoading && (
+                <div className="col-md-4">
+                  <Skeleton width={'100%'} height={'100%'} style={{ minHeight:200 }} />
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
+              )}
+            </div>
+          </AnimatePresence>
+        ) : !isLoading && (
           <div className="text-center text-muted">Aucune récolte trouvée.</div>
         )}
 
-        {recoltesAffichees.length < recoltesFiltres.length && (
+        {/* Btn pour charger plus de recoltes */}
+        {dernierRecolteCharger > DEBUT_RECOLTE && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"
-              onClick={() => setVisibleCount(visibleCount + 9)}
+              onClick={chargerRecoltes}
             >
               Charger plus
             </button>
-          </div>
-        )}
-        {/* Indicateur de chargement */}
-        {isLoading && (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Chargement...</span>
-            </div>
           </div>
         )}
       </div>
