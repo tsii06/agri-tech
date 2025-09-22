@@ -50,27 +50,32 @@ function ListeLotProduits() {
     () => 0
   );
 
-  const chargerProduits = async () => {
+  const chargerProduits = async (_dernierLotProduitCharger = dernierLotProduitCharger) => {
     setIsLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
 
       // Obtenir le nombre total de produits
       const compteurProduitsRaw =
-        dernierLotProduitCharger !== 0
-          ? dernierLotProduitCharger
+        _dernierLotProduitCharger !== 0
+          ? _dernierLotProduitCharger
           : await contract.compteurLotProduits();
       const compteurProduits = Number(compteurProduitsRaw);
 
       let nbrLotProduitCharger = 9;
       let i;
+      let lotProduit;
 
       for (
         i = compteurProduits;
         i >= DEBUT_LOT_PRODUIT && nbrLotProduitCharger > 0;
         i--
       ) {
-        const lotProduit = await getLotProduitEnrichi(i, roles, account);
+        if (address !== undefined)
+          lotProduit = await getLotProduitEnrichi(i, [3], address);
+        else
+          lotProduit = await getLotProduitEnrichi(i, roles, account);
+
         console.log("Lot produit enrichi : ", lotProduit);
 
         if (lotProduit) {
@@ -94,7 +99,8 @@ function ListeLotProduits() {
       setIsLoading(false);
       return;
     }
-    chargerProduits();
+    setProduits([]);
+    chargerProduits(0);
   }, [address, account, _, roles]);
 
   const handleModifierPrix = async (produitId) => {

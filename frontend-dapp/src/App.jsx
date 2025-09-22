@@ -252,6 +252,10 @@ function AppLayout({
                   element={<ListeLotProduits />}
                 />
                 <Route
+                  path="liste-lot-produits/:address"
+                  element={<ListeLotProduits />}
+                />
+                <Route
                   path="liste-collecteur-commande"
                   element={<CommandeCollecteur />}
                 />

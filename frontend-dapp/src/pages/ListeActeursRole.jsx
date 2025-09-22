@@ -372,7 +372,7 @@ export default function ListeActeursRole() {
                           className="btn-agrichain"
                           onClick={() => {
                             if (hasRole(roles, 6)) {
-                              navigate(`/listeproduit/${acteur.adresse}`);
+                              navigate(`/liste-lot-produits/${acteur.adresse}`);
                             } else if (hasRole(roles, 3)) {
                               navigate(`/listerecolte/${acteur.adresse}`);
                             }
