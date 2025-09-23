@@ -103,6 +103,9 @@ export default function ListeActeursRole() {
       alert(
         "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
       );
+      setError(
+        "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
+      );
     } finally {
       setBtnLoading(false);
     }
@@ -127,6 +130,9 @@ export default function ListeActeursRole() {
       alert(
         "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
       );
+      setError(
+        "Erreur lors du choix de transporteur. Veuillez reessayer plus tard."
+      );
     } finally {
       setBtnLoading(false);
     }
@@ -140,7 +146,8 @@ export default function ListeActeursRole() {
       const addresses = await contract.getActeursByRole(roleCible);
 
       let nbrActeurCharger = 9;
-      let i = dernierActeurCharger >= 0 ? dernierActeurCharger : addresses.length - 1;
+      let i =
+        dernierActeurCharger >= 0 ? dernierActeurCharger : addresses.length - 1;
 
       for (i; i >= 0 && nbrActeurCharger > 0; i--) {
         try {
@@ -167,10 +174,7 @@ export default function ListeActeursRole() {
     } catch (error) {
       console.error("Recuperation liste acteur : ", error);
 
-      setError(
-        "Erreur lors du chargement : " +
-          (error?.reason || error?.message || error)
-      );
+      setError("Erreur lors du chargement les acteurs. Veuillez reessayer.");
     } finally {
       setLoading(false);
     }
@@ -286,6 +290,8 @@ export default function ListeActeursRole() {
         >
           <h2 className="h5 mb-0">{titre}</h2>
         </div>
+
+        {/* Liste des acteurs */}
         {acteurs.length > 0 || loading ? (
           <div className="row">
             <AnimatePresence>
@@ -410,8 +416,6 @@ export default function ListeActeursRole() {
               </div>
             )}
           </div>
-        ) : error ? (
-          <div className="alert alert-danger">{error}</div>
         ) : acteurs.length === 0 ? (
           <div className="text-center text-muted">
             Aucun acteur ne correspond à la recherche ou au filtre.
@@ -423,6 +427,8 @@ export default function ListeActeursRole() {
             </div>
           )
         )}
+
+        {error && <div className="alert alert-danger mt-5">{error}</div>}
       </div>
       {acteursAffiches.length < acteursFiltres.length && (
         <div className="text-center mt-3">

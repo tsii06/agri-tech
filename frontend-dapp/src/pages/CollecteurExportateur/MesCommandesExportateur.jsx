@@ -28,6 +28,8 @@ import {
   getLotProduitEnrichi,
 } from "../../utils/collecteurExporatateur";
 import { getIPFSURL } from "../../utils/ipfsUtils";
+import { AnimatePresence, motion } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
 
 function MesCommandesExportateur({ onlyPaid = false }) {
   const [commandes, setCommandes] = useState([]);
@@ -45,81 +47,87 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
+  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
 
+  const chargerCommandes = async () => {
+    setIsLoading(true);
+    try {
+      const contract = await getCollecteurExportateurContract();
+      let role = userRole;
+      if (!role) {
+        role = await getRoleOfAddress(account);
+        setUserRole(role);
+      }
+
+      // Obtenir le nombre total de commandes ou le prochain commande charger
+      const compteurCommandesRaw =
+        dernierCommandeCharger !== 0
+          ? dernierCommandeCharger
+          : await contract.getCompteurCommande();
+      const compteurCommandes = Number(compteurCommandesRaw);
+
+      let nbrCommandeCharger = 9;
+      let i;
+
+      // Charger toutes les commandes
+      for (
+        i = compteurCommandes;
+        i >= DEBUT_COMMANDE_LOT_PRODUIT && nbrCommandeCharger > 0;
+        i--
+      ) {
+        const commandeRaw = await getCommandeProduit(i);
+
+        // Normaliser adresses
+        const exportateurAddr =
+          commandeRaw.exportateur?.adresse.toString?.() ||
+          commandeRaw.exportateur ||
+          "";
+        if (!exportateurAddr) continue;
+
+        // Vérifier si la commande appartient à l'exportateur connecté
+        if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
+          // Normaliser types primitifs
+          const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+          const produit =
+            idLotProduitNum > 0
+              ? await getLotProduitEnrichi(idLotProduitNum)
+              : {};
+
+          let commandeEnrichie = {
+            ...commandeRaw,
+            idLotProduit: idLotProduitNum,
+            nomProduit: produit?.nom || "",
+          };
+
+          // Charger les condition de transport
+          if (commandeRaw.enregistrerCondition) {
+            const conditions = await getConditionTransportCE(i);
+            commandeEnrichie = {
+              ...commandeEnrichie,
+              ...conditions,
+            };
+          }
+
+          setCommandes((prev) => [...prev, commandeEnrichie]);
+          nbrCommandeCharger--;
+        }
+      }
+      setDernierCommandeCharger(i);
+    } catch (error) {
+      console.error("Erreur lors du chargement des commandes:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!account) return;
-    const chargerCommandes = async () => {
-      try {
-        const contract = await getCollecteurExportateurContract();
-        let role = userRole;
-        if (!role) {
-          role = await getRoleOfAddress(account);
-          setUserRole(role);
-        }
-
-        // Obtenir le nombre total de commandes
-        const compteurCommandesRaw = await contract.getCompteurCommande();
-        const compteurCommandes = Number(compteurCommandesRaw);
-
-        // Charger toutes les commandes
-        const commandesTemp = [];
-        for (let i = DEBUT_COMMANDE_LOT_PRODUIT; i <= compteurCommandes; i++) {
-          const commandeRaw = await getCommandeProduit(i);
-
-          // Normaliser adresses
-          const exportateurAddr =
-            commandeRaw.exportateur?.adresse.toString?.() ||
-            commandeRaw.exportateur ||
-            "";
-          const collecteurAddr =
-            commandeRaw.collecteur?.adresse.toString?.() ||
-            commandeRaw.collecteur ||
-            "";
-          if (!exportateurAddr) continue;
-
-          // Vérifier si la commande appartient à l'exportateur connecté
-          if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
-            // Normaliser types primitifs
-            const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
-            const produit =
-              idLotProduitNum > 0
-                ? await getLotProduitEnrichi(idLotProduitNum)
-                : {};
-
-            let commandeEnrichie = {
-              ...commandeRaw,
-              idLotProduit: idLotProduitNum,
-              nomProduit: produit?.nom || "",
-            };
-
-            // Charger les condition de transport
-            if (commandeRaw.enregistrerCondition) {
-              const conditions = await getConditionTransportCE(i);
-              commandeEnrichie = {
-                ...commandeEnrichie,
-                ...conditions,
-              };
-            }
-
-            commandesTemp.push(commandeEnrichie);
-          }
-        }
-
-        // Inverser le tri des commandes pour que les plus récentes soient en premier
-        commandesTemp.reverse();
-        setCommandes(commandesTemp);
-      } catch (error) {
-        console.error("Erreur lors du chargement des commandes:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
     chargerCommandes();
-  }, [account, userRole, location.state]);
+  }, [account, location.state]);
 
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
@@ -346,207 +354,238 @@ function MesCommandesExportateur({ onlyPaid = false }) {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Chargement...</span>
-            </div>
+        {commandes.length > 0 || isLoading ? (
+          /* LISTE DES COMMANDES */
+          <div className="row g-3">
+            <AnimatePresence>
+              {commandesAffichees.map((commande) => (
+                <motion.div
+                  key={commande.id}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div
+                    className="card border shadow-sm p-3"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
+                  >
+                    <div
+                      className="d-flex justify-content-center align-items-center mb-2"
+                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                    >
+                      <ShoppingCart size={36} />
+                    </div>
+                    <h5 className="card-title text-center mb-3">
+                      {commande.nomProduit}
+                    </h5>
+                    <div className="card-text small">
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Commande:</strong> {commande.id}
+                      </p>
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Lot Produit:</strong> {commande.idLotProduit}
+                      </p>
+                      <p>
+                        <Package2 size={16} className="me-2 text-success" />
+                        <strong>Quantité:</strong> {commande.quantite} kg
+                      </p>
+                      <p>
+                        <BadgeEuro size={16} className="me-2 text-success" />
+                        <strong>Prix:</strong> {commande.prix} Ar
+                      </p>
+                      <p>
+                        <Archive size={16} className="me-2 text-success" />
+                        <strong>Collecteur:</strong> {commande.collecteur?.nom}
+                      </p>
+                      <p>
+                        <LucideTruck size={16} className="me-2 text-success" />
+                        <strong>Transporteur:</strong>{" "}
+                        {commande.transporteur?.nom || "N/A"}
+                      </p>
+                      {commande.statutTransport === 1 && (
+                        <p>
+                          <Fingerprint
+                            size={16}
+                            className="me-2 text-success"
+                          />
+                          <strong>Hash transaction:</strong>{" "}
+                          <a
+                            href={URL_BLOCK_SCAN + commande.hashTransaction}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {commande.hashTransaction?.slice(0, 6)}...
+                            {commande.hashTransaction?.slice(-4)}
+                          </a>
+                        </p>
+                      )}
+                      <p
+                        className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(
+                          commande.payer
+                        )}`}
+                        style={{ gap: 6 }}
+                      >
+                        <Wallet size={16} className="me-1" />
+                        <strong>Paiement:</strong>{" "}
+                        {getStatutPaiement(commande.payer)}
+                      </p>
+                      <p
+                        className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(
+                          commande.statutTransport
+                        )}`}
+                        style={{ gap: 6 }}
+                      >
+                        <Truck size={16} className="me-1" />
+                        <strong>Transport:</strong>{" "}
+                        {getStatutTransport(commande.statutTransport)}
+                      </p>
+                      <p
+                        className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(
+                          commande.statutProduit
+                        )}`}
+                        style={{ gap: 6 }}
+                      >
+                        <Box size={16} className="me-1" />
+                        <strong>Status:</strong>{" "}
+                        {getStatutProduit(commande.statutProduit)}
+                      </p>
+                    </div>
+                    <div>
+                      {/* Lien vers liste de transporteur */}
+                      {!commande.payer &&
+                        !isStockPage &&
+                        commande.statutTransport !== 1 && (
+                          <div className="mt-2">
+                            <Link
+                              to={`/liste-transporteur-commande-produit/5/${commande.id}`}
+                              className="btn btn-outline-secondary btn-sm w-100"
+                            >
+                              Choisir transporteur
+                            </Link>
+                          </div>
+                        )}
+
+                      {/* Btn pour afficher les conditions transport */}
+                      {commande.enregistrerCondition && (
+                        <button
+                          className="btn btn-outline-success btn-sm w-100"
+                          onClick={() => {
+                            setDetailsCondition({
+                              temperature: commande.temperature || null,
+                              humidite: commande.humidite || null,
+                              cidRapportTransport:
+                                commande.cidRapportTransport || null,
+                              dureeTransport: commande.dureeTransport,
+                              lieuDepart: commande.lieuDepart,
+                              destination: commande.destination,
+                            });
+                            setShowDetailsModal(true);
+                          }}
+                        >
+                          Voir détails conditions
+                        </button>
+                      )}
+
+                      {!isStockPage &&
+                        !commande.payer &&
+                        commande.statutProduit === 1 && (
+                          <button
+                            onClick={() => {
+                              setCommandeSelectionnee(commande);
+                              setShowModal(true);
+                            }}
+                            className="btn-agrichain mt-2"
+                          >
+                            Payer
+                          </button>
+                        )}
+
+                      {!isStockPage &&
+                        Number(commande.statutTransport) === 1 &&
+                        Number(commande.statutProduit) !== 1 && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => handleValiderCommande(commande.id)}
+                              className="btn btn-success btn-sm"
+                            >
+                              Valider la commande
+                            </button>
+                          </div>
+                        )}
+                      {isStockPage && commande.payer && (
+                        <Link
+                          to={`/stock/${commande.id}`}
+                          className="btn btn-primary btn-sm d-flex align-items-center gap-1 mt-2"
+                        >
+                          <Eye size={16} />
+                          Voir détails
+                        </Link>
+                      )}
+                    </div>
+                    {expandedId === commande.id && commande.ipfsRoot && (
+                      <div className="mt-3">
+                        <div
+                          className="alert alert-secondary"
+                          role="alert"
+                          style={{ whiteSpace: "pre-wrap" }}
+                        >
+                          <div className="mb-2">
+                            <strong>Type:</strong>{" "}
+                            {commande.ipfsType || "inconnu"}
+                          </div>
+                          <pre
+                            className="mb-0"
+                            style={{ maxHeight: 240, overflow: "auto" }}
+                          >
+                            {JSON.stringify(commande.ipfsRoot, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
+              </div>
+            )}
+
+            {/* Btn pour charger plus de recoltes */}
+            {dernierCommandeCharger >= DEBUT_COMMANDE_LOT_PRODUIT && (
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-success"
+                  onClick={chargerCommandes}
+                >
+                  Charger plus
+                </button>
+              </div>
+            )}
           </div>
         ) : commandes.length === 0 ? (
           <div className="text-center text-muted">
             Vous n&apos;avez pas encore passé de commandes.
           </div>
-        ) : commandesFiltres.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucune commande ne correspond à la recherche ou au filtre.
-          </div>
         ) : (
-          /* LISTE DES COMMANDES */
-          <div className="row g-3">
-            {commandesAffichees.map((commande) => (
-              <div key={commande.id} className="col-md-4">
-                <div
-                  className="card border shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
-                >
-                  <div
-                    className="d-flex justify-content-center align-items-center mb-2"
-                    style={{ fontSize: 32, color: "#4d7c0f" }}
-                  >
-                    <ShoppingCart size={36} />
-                  </div>
-                  <h5 className="card-title text-center mb-3">
-                    {commande.nomProduit}
-                  </h5>
-                  <div className="card-text small">
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Commande:</strong> {commande.id}
-                    </p>
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Lot Produit:</strong> {commande.idLotProduit}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {commande.quantite} kg
-                    </p>
-                    <p>
-                      <BadgeEuro size={16} className="me-2 text-success" />
-                      <strong>Prix:</strong> {commande.prix} Ar
-                    </p>
-                    <p>
-                      <Archive size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong> {commande.collecteur?.nom}
-                    </p>
-                    <p>
-                      <LucideTruck size={16} className="me-2 text-success" />
-                      <strong>Transporteur:</strong>{" "}
-                      {commande.transporteur?.nom || "N/A"}
-                    </p>
-                    {commande.statutTransport === 1 && (
-                      <p>
-                        <Fingerprint size={16} className="me-2 text-success" />
-                        <strong>Hash transaction:</strong>{" "}
-                        <a
-                          href={URL_BLOCK_SCAN + commande.hashTransaction}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {commande.hashTransaction?.slice(0, 6)}...
-                          {commande.hashTransaction?.slice(-4)}
-                        </a>
-                      </p>
-                    )}
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(
-                        commande.payer
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Wallet size={16} className="me-1" />
-                      <strong>Paiement:</strong>{" "}
-                      {getStatutPaiement(commande.payer)}
-                    </p>
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(
-                        commande.statutTransport
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Truck size={16} className="me-1" />
-                      <strong>Transport:</strong>{" "}
-                      {getStatutTransport(commande.statutTransport)}
-                    </p>
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(
-                        commande.statutProduit
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Box size={16} className="me-1" />
-                      <strong>Status:</strong>{" "}
-                      {getStatutProduit(commande.statutProduit)}
-                    </p>
-                  </div>
-                  <div>
-                    {/* Lien vers liste de transporteur */}
-                    {!commande.payer &&
-                      !isStockPage &&
-                      commande.statutTransport !== 1 && (
-                        <div className="mt-2">
-                          <Link
-                            to={`/liste-transporteur-commande-produit/5/${commande.id}`}
-                            className="btn btn-outline-secondary btn-sm w-100"
-                          >
-                            Choisir transporteur
-                          </Link>
-                        </div>
-                      )}
-
-                    {/* Btn pour afficher les conditions transport */}
-                    {commande.enregistrerCondition && (
-                      <button
-                        className="btn btn-outline-success btn-sm w-100"
-                        onClick={() => {
-                          setDetailsCondition({
-                            temperature: commande.temperature || null, 
-                            humidite: commande.humidite || null,
-                            cidRapportTransport: commande.cidRapportTransport || null,
-                            dureeTransport: commande.dureeTransport,
-                            lieuDepart: commande.lieuDepart,
-                            destination: commande.destination,
-                          });
-                          setShowDetailsModal(true);
-                        }}
-                      >
-                        Voir détails conditions
-                      </button>
-                    )}
-
-                    {!isStockPage &&
-                      !commande.payer &&
-                      commande.statutProduit === 1 && (
-                        <button
-                          onClick={() => {
-                            setCommandeSelectionnee(commande);
-                            setShowModal(true);
-                          }}
-                          className="btn-agrichain mt-2"
-                        >
-                          Payer
-                        </button>
-                      )}
-
-                    {!isStockPage &&
-                      Number(commande.statutTransport) === 1 &&
-                      Number(commande.statutProduit) !== 1 && (
-                        <div className="mt-2">
-                          <button
-                            onClick={() => handleValiderCommande(commande.id)}
-                            className="btn btn-success btn-sm"
-                          >
-                            Valider la commande
-                          </button>
-                        </div>
-                      )}
-                    {isStockPage && commande.payer && (
-                      <Link
-                        to={`/stock/${commande.id}`}
-                        className="btn btn-primary btn-sm d-flex align-items-center gap-1 mt-2"
-                      >
-                        <Eye size={16} />
-                        Voir détails
-                      </Link>
-                    )}
-                  </div>
-                  {expandedId === commande.id && commande.ipfsRoot && (
-                    <div className="mt-3">
-                      <div
-                        className="alert alert-secondary"
-                        role="alert"
-                        style={{ whiteSpace: "pre-wrap" }}
-                      >
-                        <div className="mb-2">
-                          <strong>Type:</strong>{" "}
-                          {commande.ipfsType || "inconnu"}
-                        </div>
-                        <pre
-                          className="mb-0"
-                          style={{ maxHeight: 240, overflow: "auto" }}
-                        >
-                          {JSON.stringify(commande.ipfsRoot, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          commandesFiltres.length === 0 && (
+            <div className="text-center text-muted">
+              Aucune commande ne correspond à la recherche ou au filtre.
+            </div>
+          )
         )}
       </div>
 

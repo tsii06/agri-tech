@@ -63,8 +63,9 @@ function LivraisonRecolte() {
 
   const { account } = useUserContext();
 
-  const chargerCommandeProduits = async () => {
+  const chargerCommandeProduits = async (reset = false) => {
     setIsLoadingProduit(true);
+
     try {
       // Charger toutes les commandes (CommandeProduit)
       const compteurCommandesRaw =
@@ -99,7 +100,12 @@ function LivraisonRecolte() {
           commandeEnrichie = { ...c };
         }
 
-        setCommandes((prev) => [...prev, commandeEnrichie]);
+        if (!reset)
+          setCommandes((prev) => [...prev, commandeEnrichie]);
+        else {
+          setCommandes([commandeEnrichie]);
+          reset = false;
+        }
         nbrCommandeProduitCharger--;
       }
       setDernierCommandeProduitCharger(i);
@@ -110,7 +116,7 @@ function LivraisonRecolte() {
     }
   };
 
-  const chargerCommandeRecoltes = async () => {
+  const chargerCommandeRecoltes = async (reset = false) => {
     setIsLoadingRecolte(true);
     try {
       // Charger les CommandeRecolte (CollecteurProducteur)
@@ -145,7 +151,12 @@ function LivraisonRecolte() {
           commandeRecolteEnrichie = { ...c };
         }
 
-        setCommandesRecolte((prev) => [...prev, commandeRecolteEnrichie]);
+        if (!reset)
+          setCommandesRecolte((prev) => [...prev, commandeRecolteEnrichie]);
+        else {
+          setCommandesRecolte([commandeRecolteEnrichie]);
+          reset = false;
+        }
         nbrCommandeRecolteCharger--;
       }
       setDernierCommandeRecolteCharger(i);
@@ -157,8 +168,8 @@ function LivraisonRecolte() {
   };
 
   useEffect(() => {
-    chargerCommandeProduits();
-    chargerCommandeRecoltes();
+    chargerCommandeProduits(true);
+    chargerCommandeRecoltes(true);
   }, []);
 
   const getStatutTransportLabel = (statutCode) => {
@@ -182,8 +193,8 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
-      await chargerCommandeProduits();
       alert("Statut de transport mis à jour avec succès !");
+      await chargerCommandeProduits(true);
       setError(null);
     } catch (error) {
       console.error(
@@ -258,9 +269,9 @@ function LivraisonRecolte() {
         hashTransaction: tx.hash,
       });
 
-      await chargerCommandeProduits();
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
+      await chargerCommandeProduits(true);
       setTemperature("");
       setHumidite("");
       setDureeTransport("");
@@ -295,7 +306,7 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
-      await chargerCommandeRecoltes();
+      await chargerCommandeRecoltes(true);
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setError(null);
     } catch (error) {
@@ -371,9 +382,9 @@ function LivraisonRecolte() {
         hashTransaction: tx.hash,
       });
 
-      await chargerCommandeRecoltes();
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
+      await chargerCommandeRecoltes(true);
       setTemperature("");
       setHumidite("");
       setDureeTransport("");

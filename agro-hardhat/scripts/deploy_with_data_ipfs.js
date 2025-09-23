@@ -278,7 +278,7 @@ async function main() {
     
     // ajouter expedition
     console.log("Ajout d'une expédition pour la commande du lot produit...");
-    await exportateurClientProxy.connect(await ethers.getSigner(transporteurAddress)).ajouterExpedition([1], 125, "bafkreic365qmpwizri2n36lu23xde3rppmjt2dtbwhqr75gocewqgs3v5a", "0xa29a63c8da3fd08c80f1d275a673410296dd093935b3bb8676b9d512c9453cea");
+    await exportateurClientProxy.connect(await ethers.getSigner(exportateurAddress)).ajouterExpedition([1], 125, "bafkreic365qmpwizri2n36lu23xde3rppmjt2dtbwhqr75gocewqgs3v5a", "0xa29a63c8da3fd08c80f1d275a673410296dd093935b3bb8676b9d512c9453cea");
 
     console.log("Déploiement terminé avec succès!");
 }
