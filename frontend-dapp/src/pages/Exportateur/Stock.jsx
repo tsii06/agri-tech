@@ -114,16 +114,18 @@ function StockExportateur() {
           }
 
           if (reset) {
-            setCommandes([commandeEnrichie]); 
+            setCommandes([commandeEnrichie]);
             reset = false;
-          } else
-            setCommandes((prev) => [...prev, commandeEnrichie]);
+          } else setCommandes((prev) => [...prev, commandeEnrichie]);
           nbrCommandeCharger--;
         }
       }
       setDernierCommandeCharger(i);
     } catch (error) {
       console.error("Erreur lors du chargement des commandes:", error);
+      setError(
+        "Erreur lors du chargement des stocks. Veuillez reessayer plus tard."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -268,6 +270,17 @@ function StockExportateur() {
             />
           </div>
         </div>
+
+        {/* Affichage erreur */}
+        {error && (
+          <div
+            className="alert alert-danger d-flex align-items-center"
+            role="alert"
+          >
+            <div>{error}</div>
+          </div>
+        )}
+
         <div
           style={{
             backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",

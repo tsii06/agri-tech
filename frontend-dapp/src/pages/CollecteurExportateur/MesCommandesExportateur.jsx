@@ -48,6 +48,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
   const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
+  const [error, setError] = useState(null);
 
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
@@ -118,6 +119,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setDernierCommandeCharger(i);
     } catch (error) {
       console.error("Erreur lors du chargement des commandes:", error);
+      setError(
+        "Erreur lors du chargement des commandes. Veuillez reessayer plus tard"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -156,6 +160,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setShowModal(false);
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
+      setError(
+        "Erreur lors du paiement du commande. Veuillez reessayer plus tard"
+      );
     } finally {
       setBtnLoading(false);
     }
@@ -176,6 +183,9 @@ function MesCommandesExportateur({ onlyPaid = false }) {
       setCommandes(next);
     } catch (e) {
       console.error("Erreur lors de la validation de la commande:", e);
+      setError(
+        "Erreur lors de la validation du commandes. Veuillez reessayer plus tard"
+      );
     }
   };
 
@@ -323,6 +333,17 @@ function MesCommandesExportateur({ onlyPaid = false }) {
             </ul>
           </div>
         </div>
+
+        {/* Affichage erreur */}
+        {error && (
+          <div
+            className="alert alert-danger d-flex align-items-center"
+            role="alert"
+          >
+            <div>{error}</div>
+          </div>
+        )}
+
         <div
           style={{
             backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",
@@ -655,17 +676,6 @@ function MesCommandesExportateur({ onlyPaid = false }) {
             </div>
           </div>
         </>
-      )}
-
-      {commandesAffichees.length < commandesFiltres.length && (
-        <div className="text-center mt-3">
-          <button
-            className="btn-agrichain-outline"
-            onClick={() => setVisibleCount(visibleCount + 9)}
-          >
-            Charger plus
-          </button>
-        </div>
       )}
 
       {/* Modal pour afficher les détails des conditions de transport */}

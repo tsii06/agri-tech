@@ -7,47 +7,47 @@ import ExportateurClient from "../abi/ExportateurClient.json";
 
 // Adresses des contrats déployés sur le réseau local
 // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
-const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853";
-const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
-const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82";
-const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
+// const PRODUCTEUR_PROXY_ADDRESS = "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+// const CollecteurExportateur_PROXY_ADDRESS = "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853";
+// const CollecteurProducteur_PROXY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
+// const GESTIONNAIRE_ACTEURS_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+// const EXPORTATEUR_CLIENT_ADDRESS = "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82";
+// const RPC_PROVIDER_CLIENT = "http://127.0.0.1:8545";
 
 
 
 // // Adresses des contrats déployés sur le réseau amoy
-// // Ces adresses sont obtenues après le déploiement avec le script deploy.js
-// const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2";
-// const CollecteurProducteur_PROXY_ADDRESS =
-//   "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
-// const GESTIONNAIRE_ACTEURS_ADDRESS =
-//   "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff";
-// const CollecteurExportateur_PROXY_ADDRESS =
-//   "0x1CBF67931463D5f38fb5855140eA2b302C059243";
-// const EXPORTATEUR_CLIENT_ADDRESS = "0xdc0500D7013bA9e8aa20374cCc8894b9c391Ec09";
-// // const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
-// const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
-// const RPC_PROVIDER_WS = "wss://polygon-amoy-bor-rpc.publicnode.com";
+// Ces adresses sont obtenues après le déploiement avec le script deploy.js
+const PRODUCTEUR_PROXY_ADDRESS = "0x9D56945eC5659Eb1DD1E2d92312Bd3E31225f8a2";
+const CollecteurProducteur_PROXY_ADDRESS =
+  "0x9f5B608263FC08906caC646007B6d59Fe4A5f8dF";
+const GESTIONNAIRE_ACTEURS_ADDRESS =
+  "0x0E1fEf3288bC967878e79FE3c88c0cfD4EE2c5Ff";
+const CollecteurExportateur_PROXY_ADDRESS =
+  "0x1CBF67931463D5f38fb5855140eA2b302C059243";
+const EXPORTATEUR_CLIENT_ADDRESS = "0xdc0500D7013bA9e8aa20374cCc8894b9c391Ec09";
+// const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
+const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
+const RPC_PROVIDER_WS = "wss://polygon-amoy-bor-rpc.publicnode.com";
 
 
 
 export const URL_BLOCK_SCAN = "https://amoy.polygonscan.com/tx/";
 // Constantes pour le debug - commencer à partir de 1 pour voir toutes les parcelles
-export const DEBUT_PARCELLE = 1;
-export const DEBUT_RECOLTE = 1;
-export const DEBUT_COMMANDE_RECOLTE = 1;
-export const DEBUT_COMMANDE_LOT_PRODUIT = 1;
-export const DEBUT_LOT_PRODUIT = 1;
-export const DEBUT_EXPEDITION = 1;
+// export const DEBUT_PARCELLE = 1;
+// export const DEBUT_RECOLTE = 1;
+// export const DEBUT_COMMANDE_RECOLTE = 1;
+// export const DEBUT_COMMANDE_LOT_PRODUIT = 1;
+// export const DEBUT_LOT_PRODUIT = 1;
+// export const DEBUT_EXPEDITION = 1;
 
 // Anciennes valeurs (remettre si nécessaire)
-// export const DEBUT_PARCELLE = 4;
-// export const DEBUT_RECOLTE = 4;
-// export const DEBUT_COMMANDE_RECOLTE = 10;
-// export const DEBUT_COMMANDE_LOT_PRODUIT = 7;
-// export const DEBUT_LOT_PRODUIT = 5;
-// export const DEBUT_EXPEDITION = 4;
+export const DEBUT_PARCELLE = 4;
+export const DEBUT_RECOLTE = 4;
+export const DEBUT_COMMANDE_RECOLTE = 10;
+export const DEBUT_COMMANDE_LOT_PRODUIT = 7;
+export const DEBUT_LOT_PRODUIT = 5;
+export const DEBUT_EXPEDITION = 4;
 
 export const EXCLUDE_EXPEDITION = ["EXP-17570788211", "EXP-17575277782", "EXP-17576898483"];
 
