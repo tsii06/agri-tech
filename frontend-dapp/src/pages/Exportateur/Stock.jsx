@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import {
+  DEBUT_COMMANDE_LOT_PRODUIT,
   getCollecteurExportateurContract,
   getRoleOfAddress,
+  URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import {
   Hash,
   Package2,
-  User,
-  Truck,
-  Wallet,
   Search,
-  Box,
   Archive,
+  ShoppingCart,
+  LucideTruck,
+  Fingerprint,
 } from "lucide-react";
 import {
   getCommandeProduit,
@@ -23,6 +24,8 @@ import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
 import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
+import { AnimatePresence, motion } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
 
 function StockExportateur() {
   const [commandes, setCommandes] = useState([]);
@@ -46,8 +49,10 @@ function StockExportateur() {
     typeTransport: "",
   });
   const nav = useNavigate();
+  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
-  const chargerCommandes = async () => {
+  const chargerCommandes = async (reset = false) => {
+    setIsLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
       let role = userRole;
@@ -56,13 +61,22 @@ function StockExportateur() {
         setUserRole(role);
       }
 
-      // Obtenir le nombre total de commandes
-      const compteurCommandesRaw = await contract.getCompteurCommande();
+      // Obtenir le nombre total de commandes ou le prochain commande charger
+      const compteurCommandesRaw =
+        dernierCommandeCharger !== 0
+          ? dernierCommandeCharger
+          : await contract.getCompteurCommande();
       const compteurCommandes = Number(compteurCommandesRaw);
 
+      let nbrCommandeCharger = 9;
+      let i;
+
       // Charger toutes les commandes
-      const commandesTemp = [];
-      for (let i = 1; i <= compteurCommandes; i++) {
+      for (
+        i = compteurCommandes;
+        i >= DEBUT_COMMANDE_LOT_PRODUIT && nbrCommandeCharger > 0;
+        i--
+      ) {
         const commandeRaw = await getCommandeProduit(i);
 
         // ne pas afficher les commandes deja enregistrer dans le stock ou non payer
@@ -72,10 +86,6 @@ function StockExportateur() {
         const exportateurAddr =
           commandeRaw.exportateur?.adresse.toString?.() ||
           commandeRaw.exportateur ||
-          "";
-        const collecteurAddr =
-          commandeRaw.collecteur?.adresse.toString?.() ||
-          commandeRaw.collecteur ||
           "";
         if (!exportateurAddr) continue;
 
@@ -103,13 +113,15 @@ function StockExportateur() {
             };
           }
 
-          commandesTemp.push(commandeEnrichie);
+          if (reset) {
+            setCommandes([commandeEnrichie]); 
+            reset = false;
+          } else
+            setCommandes((prev) => [...prev, commandeEnrichie]);
+          nbrCommandeCharger--;
         }
       }
-
-      // Inverser le tri des commandes pour que les plus récentes soient en premier
-      commandesTemp.reverse();
-      setCommandes(commandesTemp);
+      setDernierCommandeCharger(i);
     } catch (error) {
       console.error("Erreur lors du chargement des commandes:", error);
     } finally {
@@ -119,64 +131,8 @@ function StockExportateur() {
 
   useEffect(() => {
     if (!account) return;
-    chargerCommandes();
-  }, [account, userRole]);
-
-  const getStatutPaiement = (payer) => {
-    return payer ? "Payé" : "Non payé";
-  };
-
-  const getStatutPaiementColor = (payer) => {
-    return payer ? "text-success" : "text-warning";
-  };
-
-  const getStatutTransport = (statut) => {
-    switch (Number(statut)) {
-      case 0:
-        return "En cours";
-      case 1:
-        return "Livré";
-      default:
-        return "Inconnu";
-    }
-  };
-
-  const getStatutProduit = (statut) => {
-    switch (Number(statut)) {
-      case 0:
-        return "En attente";
-      case 1:
-        return "Valider";
-      case 2:
-        return "Rejeter";
-      default:
-        return "Inconnu";
-    }
-  };
-
-  const getStatutTransportColor = (statut) => {
-    switch (Number(statut)) {
-      case 0:
-        return "text-secondary";
-      case 1:
-        return "text-success";
-      default:
-        return "text-info";
-    }
-  };
-
-  const getStatutProduitColor = (statut) => {
-    switch (Number(statut)) {
-      case 0:
-        return "text-secondary";
-      case 1:
-        return "text-success";
-      case 2:
-        return "text-danger";
-      default:
-        return "text-info";
-    }
-  };
+    chargerCommandes(true);
+  }, [account]);
 
   // Filtrage commandes selon recherche et paiement
   const commandesFiltres = commandes.filter((commande) => {
@@ -270,7 +226,6 @@ function StockExportateur() {
       // creer article on-chain
       await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
 
-      await chargerCommandes();
       setShowShipmentModal(false);
       setSelectedStocks([]);
       setShipmentDetails({
@@ -288,18 +243,6 @@ function StockExportateur() {
       setBtnLoading(false);
     }
   };
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center text-red-600">
-            Erreur lors du chargement des commandes: {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container py-4">
@@ -335,21 +278,7 @@ function StockExportateur() {
           <h2 className="h5">Stock exportateur</h2>
         </div>
 
-        {isLoading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Chargement...</span>
-            </div>
-          </div>
-        ) : commandes.length === 0 ? (
-          <div className="text-center text-muted">
-            Vous n&apos;avez pas encore passé de commandes.
-          </div>
-        ) : commandesFiltres.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucune commande ne correspond à la recherche ou au filtre.
-          </div>
-        ) : (
+        {commandes.length > 0 || isLoading ? (
           /* LISTE DES COMMANDES */
           <div className="row g-3">
             <div className="d-flex justify-content-center">
@@ -361,153 +290,168 @@ function StockExportateur() {
                 Créer un lot d'expédition
               </button>
             </div>
-            {commandesAffichees.map((commande) => (
-              <div key={commande.id} className="col-md-4">
-                <div
-                  className="card border shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
+            <AnimatePresence>
+              {commandesAffichees.map((commande) => (
+                <motion.div
+                  key={commande.id}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`checkbox-${commande.id}`}
-                      checked={selectedStocks.includes(commande.id)}
-                      onChange={() => handleCheckboxChange(commande.id)}
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor={`checkbox-${commande.id}`}
-                    >
-                      Sélectionner
-                    </label>
-                  </div>
                   <div
-                    className="d-flex justify-content-center align-items-center mb-2"
-                    style={{ fontSize: 32, color: "#4d7c0f" }}
+                    className="card border shadow-sm p-3"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
                   >
-                    <Box size={36} />
-                  </div>
-                  <h5 className="card-title text-center mb-3">
-                    {commande.nomProduit}
-                  </h5>
-                  <div className="card-text small">
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Commande:</strong> {commande.id}
-                    </p>
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Lot Produit:</strong> {commande.idLotProduit}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {commande.quantite} kg
-                    </p>
-                    <p>
-                      <Archive size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong> {commande.collecteur?.nom}
-                    </p>
-                    {commande.transporteur && (
-                      <p>
-                        <User size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}
-                        {commande.transporteur?.nom}
-                      </p>
-                    )}
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutPaiementColor(
-                        commande.payer
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Wallet size={16} className="me-1" />
-                      <strong>Paiement:</strong>{" "}
-                      {getStatutPaiement(commande.payer)}
-                    </p>
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutTransportColor(
-                        commande.statutTransport
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Truck size={16} className="me-1" />
-                      <strong>Transport:</strong>{" "}
-                      {getStatutTransport(commande.statutTransport)}
-                    </p>
-                    <p
-                      className={`fw-semibold d-flex align-items-center ${getStatutProduitColor(
-                        commande.statutProduit
-                      )}`}
-                      style={{ gap: 6 }}
-                    >
-                      <Box size={16} className="me-1" />
-                      <strong>Status:</strong>{" "}
-                      {getStatutProduit(commande.statutProduit)}
-                    </p>
-                  </div>
-                  <div className="mt-2">
-                    {/* Btn pour afficher les conditions transport */}
-                    {commande.enregistrerCondition && (
-                      <button
-                        className="btn btn-outline-success btn-sm w-100"
-                        onClick={() => {
-                          setDetailsCondition({
-                            temperature: commande.temperature || null,
-                            humidite: commande.humidite || null,
-                            cidRapportTransport:
-                              commande.cidRapportTransport || null,
-                            dureeTransport: commande.dureeTransport,
-                            lieuDepart: commande.lieuDepart,
-                            destination: commande.destination,
-                          });
-                          setShowDetailsModal(true);
-                        }}
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`checkbox-${commande.id}`}
+                        checked={selectedStocks.includes(commande.id)}
+                        onChange={() => handleCheckboxChange(commande.id)}
+                      />
+                      <label
+                        className="form-check-label"
+                        htmlFor={`checkbox-${commande.id}`}
                       >
-                        Voir détails conditions
-                      </button>
-                    )}
-                  </div>
-                  {expandedId === commande.id && commande.ipfsRoot && (
-                    <div className="mt-3">
-                      <div
-                        className="alert alert-secondary"
-                        role="alert"
-                        style={{ whiteSpace: "pre-wrap" }}
-                      >
-                        <div className="mb-2">
-                          <strong>Type:</strong>{" "}
-                          {commande.ipfsType || "inconnu"}
-                        </div>
-                        <pre
-                          className="mb-0"
-                          style={{ maxHeight: 240, overflow: "auto" }}
-                        >
-                          {JSON.stringify(commande.ipfsRoot, null, 2)}
-                        </pre>
-                      </div>
+                        Sélectionner
+                      </label>
                     </div>
-                  )}
-                </div>
+                    <div
+                      className="d-flex justify-content-center align-items-center mb-2"
+                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                    >
+                      <ShoppingCart size={36} />
+                    </div>
+                    <h5 className="card-title text-center mb-3">
+                      {commande.nomProduit}
+                    </h5>
+                    <div className="card-text small">
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Commande:</strong> {commande.id}
+                      </p>
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Lot Produit:</strong> {commande.idLotProduit}
+                      </p>
+                      <p>
+                        <Package2 size={16} className="me-2 text-success" />
+                        <strong>Quantité:</strong> {commande.quantite} kg
+                      </p>
+                      <p>
+                        <Archive size={16} className="me-2 text-success" />
+                        <strong>Collecteur:</strong> {commande.collecteur?.nom}
+                      </p>
+                      <p>
+                        <LucideTruck size={16} className="me-2 text-success" />
+                        <strong>Transporteur:</strong>{" "}
+                        {commande.transporteur?.nom || "N/A"}
+                      </p>
+                      {commande.statutTransport === 1 && (
+                        <p>
+                          <Fingerprint
+                            size={16}
+                            className="me-2 text-success"
+                          />
+                          <strong>Hash transaction:</strong>{" "}
+                          <a
+                            href={URL_BLOCK_SCAN + commande.hashTransaction}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {commande.hashTransaction?.slice(0, 6)}...
+                            {commande.hashTransaction?.slice(-4)}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      {/* Btn pour afficher les conditions transport */}
+                      {commande.enregistrerCondition && (
+                        <button
+                          className="btn btn-outline-success btn-sm w-100"
+                          onClick={() => {
+                            setDetailsCondition({
+                              temperature: commande.temperature || null,
+                              humidite: commande.humidite || null,
+                              cidRapportTransport:
+                                commande.cidRapportTransport || null,
+                              dureeTransport: commande.dureeTransport,
+                              lieuDepart: commande.lieuDepart,
+                              destination: commande.destination,
+                            });
+                            setShowDetailsModal(true);
+                          }}
+                        >
+                          Voir détails conditions
+                        </button>
+                      )}
+                    </div>
+                    {expandedId === commande.id && commande.ipfsRoot && (
+                      <div className="mt-3">
+                        <div
+                          className="alert alert-secondary"
+                          role="alert"
+                          style={{ whiteSpace: "pre-wrap" }}
+                        >
+                          <div className="mb-2">
+                            <strong>Type:</strong>{" "}
+                            {commande.ipfsType || "inconnu"}
+                          </div>
+                          <pre
+                            className="mb-0"
+                            style={{ maxHeight: 240, overflow: "auto" }}
+                          >
+                            {JSON.stringify(commande.ipfsRoot, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
               </div>
-            ))}
+            )}
+
+            {/* Btn pour charger plus de recoltes */}
+            {dernierCommandeCharger >= DEBUT_COMMANDE_LOT_PRODUIT && (
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-success"
+                  onClick={() => chargerCommandes(false)}
+                >
+                  Charger plus
+                </button>
+              </div>
+            )}
           </div>
+        ) : commandes.length === 0 ? (
+          <div className="text-center text-muted">
+            Vous n&apos;avez pas encore passé de commandes.
+          </div>
+        ) : (
+          commandesFiltres.length === 0 && (
+            <div className="text-center text-muted">
+              Aucune commande ne correspond à la recherche ou au filtre.
+            </div>
+          )
         )}
       </div>
-
-      {commandesAffichees.length < commandesFiltres.length && (
-        <div className="text-center mt-3">
-          <button
-            className="btn-agrichain-outline"
-            onClick={() => setVisibleCount(visibleCount + 9)}
-          >
-            Charger plus
-          </button>
-        </div>
-      )}
 
       {/* Modal pour afficher les détails des conditions de transport */}
       {showDetailsModal && (
