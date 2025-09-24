@@ -107,7 +107,7 @@ export const getAllHashMerkle = async (_idCommandeProduits) => {
   let idParcelles = [];
   for (let id of idRecoltes) {
     try {
-      const recolte = await getRecolte(id);
+      const recolte = await getRecolte(id, [], '', true);
       hashRecoltes.push(recolte.hashTransaction?.toString());
       idParcelles.push(...recolte.idParcelle);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllHashMerkle,
@@ -33,7 +33,7 @@ const DetailsExpedition = ({}) => {
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState([]);
-  const [allHashesMerkle, setAllHashesMerkle] = useState([]);
+  const [allHashesMerkle, setAllHashesMerkle] = useState(["0x1"]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -48,6 +48,7 @@ const DetailsExpedition = ({}) => {
   const [isLoadingProduits, setIsLoadingProduits] = useState(true);
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
+  const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
 
   const nav = useNavigate();
 
@@ -60,12 +61,18 @@ const DetailsExpedition = ({}) => {
       return;
     }
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
-    const hashesMerkle = await getAllHashMerkle(
-      detailsExpedition.idCommandeProduit
-    );
+    // const hashesMerkle = await getAllHashMerkle(
+    //   detailsExpedition.idCommandeProduit
+    // );
     setExpedition(detailsExpedition);
-    setAllHashesMerkle(hashesMerkle);
+    // setAllHashesMerkle(hashesMerkle);
     setLoading(false);
+  };
+
+  const chargerAllHashesMerkle = async () => {
+    const hashesMerkle = await getAllHashMerkle(expedition.idCommandeProduit);
+    setAllHashesMerkle(hashesMerkle);
+    setIsLoadingArbreMerkle(false);
   };
 
   const chargerParcelles = async () => {
@@ -463,6 +470,8 @@ const DetailsExpedition = ({}) => {
                   transition: "background-color 0.3s ease",
                 }}
                 onClick={() => {
+                  if (!showArbreMerkle && isLoadingArbreMerkle)
+                    chargerAllHashesMerkle();
                   setShowArbreMerkle(!showArbreMerkle);
                 }}
                 onMouseEnter={(e) =>
@@ -482,7 +491,37 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                <VisualiserMerkleTree hashes={allHashesMerkle} />
+                {isLoadingArbreMerkle ? (
+                  <div
+                    className="d-flex justify-content-center align-items-center"
+                    style={{ height: "400px" }}
+                  >
+                    <div className="custom-spinner"></div>
+                    <style>
+                      {`
+                        .custom-spinner {
+                          width: 40px;
+                          height: 40px;
+                          border: 4px solid rgba(0, 0, 0, 0.1);
+                          border-top: 4px solid #007bff;
+                          border-radius: 50%;
+                          animation: spin 1s linear infinite;
+                        }
+
+                        @keyframes spin {
+                          0% {
+                            transform: rotate(0deg);
+                          }
+                          100% {
+                            transform: rotate(360deg);
+                          }
+                        }
+                      `}
+                    </style>
+                  </div>
+                ) : (
+                  <VisualiserMerkleTree hashes={allHashesMerkle} />
+                )}
               </div>
             </div>
           </div>

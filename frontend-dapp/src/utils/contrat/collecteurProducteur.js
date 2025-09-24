@@ -198,7 +198,7 @@ export const getDateRecoltePrecedente = async (
  * @param {number} _idRecolte
  * @returns {object}
  */
-export const getRecolte = async (_idRecolte, _roles = [], _account = '') => {
+export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHashTransaction = false) => {
   let recolteComplet = {};
 
   // recuperer info on-chain
@@ -242,6 +242,10 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '') => {
   // recuperation info off-chain
   if (recolteComplet.cid && recolteComplet.cid !== "") {
     const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
+
+    // Si pour recuperation de hash transaction
+    if (forHashTransaction) return {...recolteComplet, ...recolteIpfs?.keyvalues};
+    
     // Format : jour mois année
     let dateRecolteFormat = "N/A";
     const dateRecolteOriginal = recolteIpfs?.data?.items?.dateRecolte;
