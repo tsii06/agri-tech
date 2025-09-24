@@ -35,17 +35,20 @@ function CommandeCollecteur() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0); 
+  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
   const { roles, account } = useUserContext();
 
-  const chargerCommandes = async () => {
+  const chargerCommandes = async (reset = false) => {
     setIsLoading(true);
     try {
       setError(null);
       setWarnings([]);
       const contract = await getCollecteurProducteurContract();
-      const compteurCommandesRaw = dernierCommandeCharger!==0 ? dernierCommandeCharger : await contract.compteurCommandes();
+      const compteurCommandesRaw =
+        dernierCommandeCharger !== 0
+          ? dernierCommandeCharger
+          : await contract.compteurCommandes();
       const compteurCommandes = Number(compteurCommandesRaw);
 
       let nbrCommandeCharger = 9;
@@ -97,7 +100,10 @@ function CommandeCollecteur() {
           dateRecolte: dateRecolteFormat,
         };
 
-        setCommandes((prev) => [...prev, commande]);
+        if (reset) {
+          setCommandes((prev) => [commande]);
+          reset = false;
+        } else setCommandes((prev) => [...prev, commande]);
         nbrCommandeCharger--;
       }
       setDernierCommandeCharger(i);
@@ -121,7 +127,7 @@ function CommandeCollecteur() {
       return;
     }
 
-    chargerCommandes();
+    chargerCommandes(true);
   }, [account, acteur, location.state]); // Ajouter location.state comme dépendance pour réexécuter le useEffect
 
   const handlePayer = async (commandeId) => {
@@ -170,7 +176,16 @@ function CommandeCollecteur() {
       const contract = await getCollecteurProducteurContract();
       const tx = await contract.validerCommandeRecolte(_idCommande, _valide);
       await tx.wait();
-      await chargerCommandes();
+
+      // maj local
+      setCommandes((prev) =>
+        prev.map((cmd) =>
+          cmd.id == _idCommande
+            ? { ...cmd, statutRecolte: _valide ? 1 : 2 }
+            : cmd
+        )
+      );
+
       // Nettoyer l'erreur associée le cas échéant
       setCommandeErrors((prev) => {
         const next = { ...prev };
