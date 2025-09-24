@@ -23,6 +23,15 @@ const CommandeRecolteCard = ({
     }
   };
 
+  const getColorStatutTransport = (status) => {
+    switch (status) {
+      case 0:
+        return "bg-warning";
+      case 1:
+        return "bg-success";
+    }
+  };
+
   const getStatutRecolte = (status) => {
     switch (status) {
       case 0:
@@ -109,7 +118,7 @@ const CommandeRecolteCard = ({
             >
               {getStatutRecolte(commande.statutRecolte)}
             </span>
-            <span className="badge bg-info">
+            <span className={`badge ${getColorStatutTransport(commande.statutTransport)}`}>
               {getStatutTransport(commande.statutTransport)}
             </span>
           </div>
