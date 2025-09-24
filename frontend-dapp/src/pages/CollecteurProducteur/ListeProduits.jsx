@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  DEBUT_PRODUIT,
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
 } from "../../utils/contract";
@@ -25,6 +26,8 @@ import {
 } from "../../utils/ipfsUtils";
 import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getActeur } from "../../utils/contrat/gestionnaireActeurs";
+import Skeleton from "react-loading-skeleton";
+import { AnimatePresence, motion } from "framer-motion";
 
 function ListeProduits() {
   const { address } = useParams();
@@ -41,81 +44,100 @@ function ListeProduits() {
   const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
   const nav = useNavigate();
+  const [dernierProduitCharger, setDernierProduitCharger] = useState(() => 0);
+
+  const chargerProduits = async (reset = false) => {
+    setIsLoading(true);
+    try {
+      const contract = await getCollecteurExportateurContract();
+      const cp = await getCollecteurProducteurContract();
+      // Filtrage STABLE: on filtre uniquement si un address est fourni dans l'URL
+      const cible = address ? address.toLowerCase() : null;
+
+      // Obtenir le nombre total de produits
+      const compteurProduitsRaw =
+        dernierProduitCharger !== 0
+          ? dernierProduitCharger
+          : await contract.getCompteurProduit();
+      const compteurProduits = Number(compteurProduitsRaw);
+
+      let nbrProduitCharger = 9; 
+      let i;
+
+      for (
+        i = compteurProduits;
+        i >= DEBUT_PRODUIT && nbrProduitCharger > 0;
+        i--
+      ) {
+        const produitRaw = await contract.getProduit(i);
+        const collecteurAddr =
+          produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
+        // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
+        if (
+          hasRole(roles, 3) &&
+          produitRaw.collecteur.toLowerCase() !== account.toLowerCase()
+        )
+          continue;
+
+        // ne plus afficher les produits enregistrer
+        if (produitRaw.enregistre) continue;
+
+        let produitEnrichi = {
+          id: i,
+          idRecolte: Number(produitRaw.idRecolte ?? 0),
+          quantite: Number(produitRaw.quantite ?? 0),
+          statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
+          collecteur:
+            collecteurAddr && collecteurAddr !== ""
+              ? await getActeur(collecteurAddr)
+              : null,
+          hashMerkle: produitRaw.hashMerkle || "",
+          enregistre: produitRaw.enregistre || 0,
+        };
+
+        // Enrichir depuis la récolte associée (prixUnit et CID JSON)
+        try {
+          if (produitEnrichi.idRecolte > 0) {
+            const recolteRaw = await getRecolte(produitEnrichi.idRecolte);
+            produitEnrichi.certificatPhytosanitaire =
+              recolteRaw.certificatPhytosanitaire?.toString?.() ||
+              recolteRaw.certificatPhytosanitaire ||
+              "";
+            const recolteCid = recolteRaw.cid || "";
+            produitEnrichi.nom = recolteRaw.nomProduit;
+            produitEnrichi.dateRecolte = recolteRaw.dateRecolte;
+            produitEnrichi.ipfsTimestamp = recolteRaw.timestamp || null;
+            produitEnrichi.ipfsVersion = recolteRaw.version || null;
+            produitEnrichi.recolteHashMerkle =
+              recolteRaw.parcelleHashMerkle || "";
+          }
+        } catch (e) {
+          // laisser valeurs par défaut
+        }
+
+        if (reset === true) {
+          setProduits([produitEnrichi]);
+          reset = false;
+        } else setProduits((prev) => [...prev, produitEnrichi]);
+        nbrProduitCharger--;
+      }
+      setDernierProduitCharger(i);
+
+      setError(false);
+    } catch (error) {
+      console.error("Erreur lors du chargement des produits:", error);
+      setError("Erreur lors du chargement des produits");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!account && !address) {
       setIsLoading(false);
       return;
     }
-    const chargerProduits = async () => {
-      try {
-        const contract = await getCollecteurExportateurContract();
-        const cp = await getCollecteurProducteurContract();
-        // Filtrage STABLE: on filtre uniquement si un address est fourni dans l'URL
-        const cible = address ? address.toLowerCase() : null;
-
-        // Obtenir le nombre total de produits
-        const compteurProduitsRaw = await contract.getCompteurProduit();
-        const compteurProduits = Number(compteurProduitsRaw);
-        const produitsTemp = [];
-
-        for (let i = 1; i <= compteurProduits; i++) {
-          const produitRaw = await contract.getProduit(i);
-          const collecteurAddr =
-            produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
-          // Appliquer le filtre UNIQUEMENT si une adresse cible est fournie dans l'URL
-          if (
-            hasRole(roles, 3) &&
-            produitRaw.collecteur.toLowerCase() !== account.toLowerCase()
-          )
-            continue;
-
-          // ne plus afficher les produits enregistrer
-          if (produitRaw.enregistre) continue;
-
-          let produitEnrichi = {
-            id: i,
-            idRecolte: Number(produitRaw.idRecolte ?? 0),
-            quantite: Number(produitRaw.quantite ?? 0),
-            statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
-            collecteur: collecteurAddr && collecteurAddr !== '' ? await getActeur(collecteurAddr) : null,
-            hashMerkle: produitRaw.hashMerkle || "",
-            enregistre: produitRaw.enregistre || 0,
-          };
-
-          // Enrichir depuis la récolte associée (prixUnit et CID JSON)
-          try {
-            if (produitEnrichi.idRecolte > 0) {
-              const recolteRaw = await getRecolte(produitEnrichi.idRecolte);
-              produitEnrichi.certificatPhytosanitaire =
-                recolteRaw.certificatPhytosanitaire?.toString?.() ||
-                recolteRaw.certificatPhytosanitaire ||
-                "";
-              const recolteCid = recolteRaw.cid || "";
-              produitEnrichi.nom = recolteRaw.nomProduit;
-              produitEnrichi.dateRecolte = recolteRaw.dateRecolte;
-              produitEnrichi.ipfsTimestamp = recolteRaw.timestamp || null;
-              produitEnrichi.ipfsVersion = recolteRaw.version || null;
-              produitEnrichi.recolteHashMerkle = recolteRaw.parcelleHashMerkle || "";
-            }
-          } catch (e) {
-            // laisser valeurs par défaut
-          }
-
-          produitsTemp.push(produitEnrichi);
-        }
-
-        produitsTemp.reverse();
-        setProduits(produitsTemp);
-        setError(false);
-      } catch (error) {
-        console.error("Erreur lors du chargement des produits:", error);
-        setError("Erreur lors du chargement des produits");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    chargerProduits();
+    chargerProduits(true);
   }, [address, account, roles]);
 
   const handleCheckboxChange = (produitId, produitNom) => {
@@ -358,134 +380,164 @@ function ListeProduits() {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Chargement...</span>
-            </div>
+        {produits.length > 0 || isLoading ? (
+          <div className="row g-3">
+            <AnimatePresence>
+              {produitsAffiches.map((produit) => (
+                <motion.div
+                  key={produit.id}
+                  className="col-md-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div
+                    className="card border shadow-sm p-3"
+                    style={{
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                    }}
+                  >
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`checkbox-${produit.id}`}
+                        checked={selectedProducts.includes(produit.id)}
+                        onChange={() =>
+                          handleCheckboxChange(produit.id, produit.nom)
+                        }
+                      />
+                      <label
+                        className="form-check-label"
+                        htmlFor={`checkbox-${produit.id}`}
+                      >
+                        Sélectionner
+                      </label>
+                    </div>
+                    <div
+                      className="d-flex justify-content-center align-items-center mb-2"
+                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                    >
+                      <Box size={36} />
+                    </div>
+                    <h5 className="card-title text-center mb-3">
+                      {produit.nom}
+                    </h5>
+                    <div className="card-text small">
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Produit:</strong> {produit.id}
+                      </p>
+                      <p>
+                        <Hash size={16} className="me-2 text-success" />
+                        <strong>ID Récolte:</strong> {produit.idRecolte}
+                      </p>
+                      <p>
+                        <Package2 size={16} className="me-2 text-success" />
+                        <strong>Quantité:</strong> {produit.quantite} kg
+                      </p>
+                      <p>
+                        <Calendar size={16} className="me-2 text-success" />
+                        <strong>Date de récolte:</strong> {produit.dateRecolte}
+                      </p>
+                      <p>
+                        <User size={16} className="me-2 text-success" />
+                        <strong>Collecteur:</strong>&nbsp;
+                        {produit.collecteur?.nom}
+                      </p>
+                      <p>
+                        <FileCheck2 size={16} className="me-2 text-success" />
+                        <strong>Certificat phytosanitaire:</strong>
+                        <a
+                          href={`https://gateway.pinata.cloud/ipfs/${produit.certificatPhytosanitaire}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ms-2 text-decoration-none text-success"
+                        >
+                          Voir ici
+                        </a>
+                      </p>
+
+                      {/* Informations IPFS et Merkle */}
+                      {produit.cid && (
+                        <div className="mt-2 p-2 bg-light rounded">
+                          <p className="mb-1 small">
+                            <Hash size={14} className="me-1 text-primary" />
+                            <strong>CID IPFS:</strong>
+                            <a
+                              href={getIPFSURL(produit.cid)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ms-2 text-decoration-none text-primary"
+                              title="Voir les données consolidées sur IPFS"
+                            >
+                              {produit.cid.substring(0, 10)}...
+                            </a>
+                          </p>
+
+                          {produit.hashMerkle && (
+                            <p className="mb-1 small">
+                              <Hash size={14} className="me-1 text-warning" />
+                              <strong>Hash Merkle:</strong>
+                              <span
+                                className="ms-2 text-muted"
+                                title={produit.hashMerkle}
+                              >
+                                {produit.hashMerkle.substring(0, 10)}...
+                              </span>
+                            </p>
+                          )}
+
+                          {produit.ipfsTimestamp && (
+                            <p className="mb-1 small text-muted">
+                              <strong>Mise à jour IPFS:</strong>{" "}
+                              {new Date(
+                                produit.ipfsTimestamp
+                              ).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <div className="col-md-4">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 200 }}
+                />
+              </div>
+            )}
+
+            {/* Btn pour charger plus de recoltes */}
+            {dernierProduitCharger >= DEBUT_PRODUIT && (
+              <div className="text-center mt-3">
+                <button
+                  className="btn btn-outline-success"
+                  onClick={() => chargerProduits()}
+                >
+                  Charger plus
+                </button>
+              </div>
+            )}
           </div>
         ) : produits.length === 0 ? (
           <div className="text-center text-muted">
             Vous n&apos;avez pas encore de produits.
           </div>
-        ) : produitsFiltres.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucun produit ne correspond à la recherche ou au filtre.
-          </div>
         ) : (
-          <div className="row g-3">
-            {produitsAffiches.map((produit) => (
-              <div key={produit.id} className="col-md-4">
-                <div
-                  className="card border shadow-sm p-3"
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                  }}
-                >
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`checkbox-${produit.id}`}
-                      checked={selectedProducts.includes(produit.id)}
-                      onChange={() =>
-                        handleCheckboxChange(produit.id, produit.nom)
-                      }
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor={`checkbox-${produit.id}`}
-                    >
-                      Sélectionner
-                    </label>
-                  </div>
-                  <div
-                    className="d-flex justify-content-center align-items-center mb-2"
-                    style={{ fontSize: 32, color: "#4d7c0f" }}
-                  >
-                    <Box size={36} />
-                  </div>
-                  <h5 className="card-title text-center mb-3">{produit.nom}</h5>
-                  <div className="card-text small">
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Produit:</strong> {produit.id}
-                    </p>
-                    <p>
-                      <Hash size={16} className="me-2 text-success" />
-                      <strong>ID Récolte:</strong> {produit.idRecolte}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {produit.quantite} kg
-                    </p>
-                    <p>
-                      <Calendar size={16} className="me-2 text-success" />
-                      <strong>Date de récolte:</strong> {produit.dateRecolte}
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>&nbsp;{produit.collecteur?.nom}
-                    </p>
-                    <p>
-                      <FileCheck2 size={16} className="me-2 text-success" />
-                      <strong>Certificat phytosanitaire:</strong>
-                      <a
-                        href={`https://gateway.pinata.cloud/ipfs/${produit.certificatPhytosanitaire}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ms-2 text-decoration-none text-success"
-                      >
-                        Voir ici
-                      </a>
-                    </p>
-
-                    {/* Informations IPFS et Merkle */}
-                    {produit.cid && (
-                      <div className="mt-2 p-2 bg-light rounded">
-                        <p className="mb-1 small">
-                          <Hash size={14} className="me-1 text-primary" />
-                          <strong>CID IPFS:</strong>
-                          <a
-                            href={getIPFSURL(produit.cid)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ms-2 text-decoration-none text-primary"
-                            title="Voir les données consolidées sur IPFS"
-                          >
-                            {produit.cid.substring(0, 10)}...
-                          </a>
-                        </p>
-
-                        {produit.hashMerkle && (
-                          <p className="mb-1 small">
-                            <Hash size={14} className="me-1 text-warning" />
-                            <strong>Hash Merkle:</strong>
-                            <span
-                              className="ms-2 text-muted"
-                              title={produit.hashMerkle}
-                            >
-                              {produit.hashMerkle.substring(0, 10)}...
-                            </span>
-                          </p>
-                        )}
-
-                        {produit.ipfsTimestamp && (
-                          <p className="mb-1 small text-muted">
-                            <strong>Mise à jour IPFS:</strong>{" "}
-                            {new Date(
-                              produit.ipfsTimestamp
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          produitsFiltres.length === 0 && (
+            <div className="text-center text-muted">
+              Aucun produit ne correspond à la recherche ou au filtre.
+            </div>
+          )
         )}
 
         {showLotModal && (
