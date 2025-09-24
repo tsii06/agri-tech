@@ -347,6 +347,7 @@ function CommandeCollecteur() {
                     setShowDetailsModal={setShowDetailsModal}
                     setCommandeSelectionnee={setCommandeSelectionnee}
                     setShowModal={setShowModal}
+                    btnLoading={btnLoading}
                   />
                 </motion.div>
               ))}

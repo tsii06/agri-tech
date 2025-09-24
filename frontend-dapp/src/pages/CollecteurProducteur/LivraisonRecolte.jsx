@@ -100,8 +100,7 @@ function LivraisonRecolte() {
           commandeEnrichie = { ...c };
         }
 
-        if (!reset)
-          setCommandes((prev) => [...prev, commandeEnrichie]);
+        if (!reset) setCommandes((prev) => [...prev, commandeEnrichie]);
         else {
           setCommandes([commandeEnrichie]);
           reset = false;
@@ -193,8 +192,15 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
+
+      // maj local
+      setCommandesRecolte((prev) =>
+        prev.map((cmd) =>
+          cmd.id === commandeId ? { ...cmd, statutTransport: 1 } : cmd
+        )
+      );
+
       alert("Statut de transport mis à jour avec succès !");
-      await chargerCommandeProduits(true);
       setError(null);
     } catch (error) {
       console.error(
@@ -269,9 +275,26 @@ function LivraisonRecolte() {
         hashTransaction: tx.hash,
       });
 
+      // maj local
+      setCommandes((prev) =>
+        prev.map((cmd) =>
+          cmd.id == commandeId
+            ? {
+                ...cmd,
+                enregistrerCondition: true,
+                cidRapportTransport: uploadRapportTransport.cid,
+                dureeTransport: dureeTransport,
+                lieuDepart: lieuDepart,
+                destination: destination,
+                hashTransaction: tx.hash,
+              }
+            : cmd
+        )
+      );
+
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
-      await chargerCommandeProduits(true);
+      // await chargerCommandeProduits(true);
       setTemperature("");
       setHumidite("");
       setDureeTransport("");
@@ -301,12 +324,16 @@ function LivraisonRecolte() {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.mettreAJourStatutTransport(
-        Number(commandeId),
-        1
-      );
+      const tx = await contract.mettreAJourStatutTransport(commandeId, 1);
       await tx.wait();
-      await chargerCommandeRecoltes(true);
+
+      // maj local
+      setCommandesRecolte((prev) =>
+        prev.map((cmd) =>
+          cmd.id === commandeId ? { ...cmd, statutTransport: 1 } : cmd
+        )
+      );
+
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setError(null);
     } catch (error) {
@@ -371,10 +398,7 @@ function LivraisonRecolte() {
 
       // 2) Enregistrer côté contrat CP (signature: (id, cid))
       const contract = await getCollecteurProducteurContract();
-      const tx = await contract.enregistrerCondition(
-        Number(commandeId),
-        uploaded.cid
-      );
+      const tx = await contract.enregistrerCondition(commandeId, uploaded.cid);
       await tx.wait();
 
       // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
@@ -382,14 +406,29 @@ function LivraisonRecolte() {
         hashTransaction: tx.hash,
       });
 
+      // maj local
+      setCommandesRecolte((prev) =>
+        prev.map((cmd) =>
+          cmd.id == commandeId
+            ? {
+                ...cmd,
+                enregistrerCondition: true,
+                cidRapportTransport: uploadRapportTransport.cid,
+                dureeTransport: dureeTransport,
+                lieuDepart: lieuDepart,
+                destination: destination,
+                hashTransaction: tx.hash,
+              }
+            : cmd
+        )
+      );
+
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);
-      await chargerCommandeRecoltes(true);
-      setTemperature("");
-      setHumidite("");
       setDureeTransport("");
       setLieuDepart("");
       setDestination("");
+      setRapportTransport(null);
       setError(null);
     } catch (error) {
       console.error(
@@ -494,15 +533,16 @@ function LivraisonRecolte() {
                           Condition de transport
                         </button>
                       )}
-                      {cmd.statutTransport == 0 && cmd.enregistrerCondition && (
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleSubmitStatutRecolte(cmd.id)}
-                          disabled={btnLoading}
-                        >
-                          {btnLoading ? "Livraison..." : "Livrer"}
-                        </button>
-                      )}
+                      {cmd.statutTransport === 0 &&
+                        cmd.enregistrerCondition && (
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => handleSubmitStatutRecolte(cmd.id)}
+                            disabled={btnLoading}
+                          >
+                            {btnLoading ? "Livraison..." : "Livrer"}
+                          </button>
+                        )}
                       {cmd.enregistrerCondition && (
                         <button
                           className="btn btn-outline-success btn-sm"
@@ -777,13 +817,13 @@ function LivraisonRecolte() {
                         "recolte-",
                         ""
                       );
-                      handleEnregistrerConditionRecolte(commandeId);
+                      handleEnregistrerConditionRecolte(Number(commandeId));
                     } else {
                       const commandeId = showConditionModal.replace(
                         "produit-",
                         ""
                       );
-                      handleEnregistrerCondition(commandeId);
+                      handleEnregistrerCondition(Number(commandeId));
                     }
                   }}
                   disabled={isProcessing}

@@ -51,13 +51,13 @@ export const DEBUT_EXPEDITION = 1;
 
 export const EXCLUDE_EXPEDITION = ["EXP-17570788211", "EXP-17575277782", "EXP-17576898483"];
 
-export async function getProvider() {
+export async function getProvider(read = false) {
   let accounts = [];
   if (window.ethereum) {
     accounts = await window.ethereum.request({ method: "eth_accounts" });
   }
 
-  if (accounts && accounts.length > 0) {
+  if (accounts && accounts.length > 0 && !read) {
     const providerActeur = new ethers.BrowserProvider(window.ethereum, "any");
     await providerActeur.ready;
     // await providerActeur.getBlockNumber();
@@ -106,9 +106,9 @@ export async function getCollecteurExportateurContract() {
   }
 }
 
-export async function getCollecteurProducteurContract() {
+export async function getCollecteurProducteurContract(read = false) {
   try {
-    const provider = await getProvider();
+    const provider = await getProvider(read);
     // const signer = await provider.getSigner();
     return new ethers.Contract(
       CollecteurProducteur_PROXY_ADDRESS,

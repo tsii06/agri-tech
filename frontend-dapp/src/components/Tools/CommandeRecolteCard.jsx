@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { URL_BLOCK_SCAN } from "../../utils/contract";
 import { hasRole } from "../../utils/roles";
+import { useState } from "react";
 
 const CommandeRecolteCard = ({
   commande,
@@ -11,6 +12,7 @@ const CommandeRecolteCard = ({
   setShowDetailsModal = () => {},
   setCommandeSelectionnee = () => {},
   setShowModal = () => {},
+  btnLoading = false
 }) => {
   const getColorStatutRecolte = (status) => {
     switch (status) {
