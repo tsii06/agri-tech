@@ -47,12 +47,12 @@ function ListeRecoltes() {
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
-  const chargerRecoltes = async () => {
+  const chargerRecoltes = async (reset = false) => {
     setIsLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
       const compteurRecoltes =
-        dernierRecolteCharger !== 0
+        dernierRecolteCharger !== 0 && reset !== true
           ? dernierRecolteCharger
           : await contract.compteurRecoltes();
 
@@ -98,7 +98,11 @@ function ListeRecoltes() {
               : "🔄 Calcul dynamique",
         });
 
-        setRecoltes((prev) => [...prev, recolteRaw]);
+        if (reset === true) {
+          setRecoltes([recolteRaw]);
+          reset = false;
+        } else
+          setRecoltes((prev) => [...prev, recolteRaw]);
         nbrRecolteCharger--;
       }
       setDernierRecolteCharger(i);
@@ -117,8 +121,10 @@ function ListeRecoltes() {
       setIsLoading(false);
       return;
     }
+    console.log("Chargement initial.");
+    
 
-    chargerRecoltes();
+    chargerRecoltes(true);
   }, [address, account]);
 
   const handleCertifier = async (event) => {

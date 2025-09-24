@@ -56,7 +56,7 @@ function ListeProduits() {
 
       // Obtenir le nombre total de produits
       const compteurProduitsRaw =
-        dernierProduitCharger !== 0
+        dernierProduitCharger !== 0 && reset !== true
           ? dernierProduitCharger
           : await contract.getCompteurProduit();
       const compteurProduits = Number(compteurProduitsRaw);

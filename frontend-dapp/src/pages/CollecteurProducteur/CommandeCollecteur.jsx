@@ -46,7 +46,7 @@ function CommandeCollecteur() {
       setWarnings([]);
       const contract = await getCollecteurProducteurContract();
       const compteurCommandesRaw =
-        dernierCommandeCharger !== 0
+        dernierCommandeCharger !== 0 && reset !== true
           ? dernierCommandeCharger
           : await contract.compteurCommandes();
       const compteurCommandes = Number(compteurCommandesRaw);
@@ -100,7 +100,7 @@ function CommandeCollecteur() {
           dateRecolte: dateRecolteFormat,
         };
 
-        if (reset) {
+        if (reset === true) {
           setCommandes((prev) => [commande]);
           reset = false;
         } else setCommandes((prev) => [...prev, commande]);

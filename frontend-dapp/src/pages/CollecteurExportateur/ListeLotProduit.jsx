@@ -50,15 +50,15 @@ function ListeLotProduits() {
     () => 0
   );
 
-  const chargerProduits = async (_dernierLotProduitCharger = dernierLotProduitCharger) => {
+  const chargerProduits = async (reset = false) => {
     setIsLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
 
       // Obtenir le nombre total de produits
       const compteurProduitsRaw =
-        _dernierLotProduitCharger !== 0
-          ? _dernierLotProduitCharger
+        dernierLotProduitCharger !== 0 && reset !== true
+          ? dernierLotProduitCharger
           : await contract.compteurLotProduits();
       const compteurProduits = Number(compteurProduitsRaw);
 
@@ -79,7 +79,11 @@ function ListeLotProduits() {
         console.log("Lot produit enrichi : ", lotProduit);
 
         if (lotProduit) {
-          setProduits((prev) => [...prev, lotProduit]);
+          if (reset === true) {
+            setProduits([lotProduit]);
+            reset = false;
+          } else
+            setProduits((prev) => [...prev, lotProduit]);
           nbrLotProduitCharger--;
         }
       }
@@ -100,7 +104,7 @@ function ListeLotProduits() {
       return;
     }
     setProduits([]);
-    chargerProduits(0);
+    chargerProduits(true);
   }, [address, account, _, roles]);
 
   const handleModifierPrix = async (produitId) => {

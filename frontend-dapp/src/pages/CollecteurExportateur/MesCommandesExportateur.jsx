@@ -53,7 +53,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
 
-  const chargerCommandes = async () => {
+  const chargerCommandes = async (reset = false) => {
     setIsLoading(true);
     try {
       const contract = await getCollecteurExportateurContract();
@@ -65,7 +65,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
 
       // Obtenir le nombre total de commandes ou le prochain commande charger
       const compteurCommandesRaw =
-        dernierCommandeCharger !== 0
+        dernierCommandeCharger !== 0 && reset !== true
           ? dernierCommandeCharger
           : await contract.getCompteurCommande();
       const compteurCommandes = Number(compteurCommandesRaw);
@@ -112,7 +112,11 @@ function MesCommandesExportateur({ onlyPaid = false }) {
             };
           }
 
-          setCommandes((prev) => [...prev, commandeEnrichie]);
+          if (reset === true) {
+            setCommandes([commandeEnrichie]);
+            reset = false;
+          } else
+            setCommandes((prev) => [...prev, commandeEnrichie]);
           nbrCommandeCharger--;
         }
       }
@@ -130,7 +134,7 @@ function MesCommandesExportateur({ onlyPaid = false }) {
   useEffect(() => {
     if (!account) return;
 
-    chargerCommandes();
+    chargerCommandes(true);
   }, [account, location.state]);
 
   const handlePayer = async (commandeId) => {
