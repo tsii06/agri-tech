@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllHashMerkle,
@@ -25,6 +25,7 @@ import LogistiqueDetails from "../../components/Tools/expedition/LogistiqueDetai
 import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkleTree";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { EXCLUDE_EXPEDITION } from "../../utils/contract";
+import QRCode from "react-qr-code";
 
 const DetailsExpedition = ({}) => {
   const { reference } = useParams();
@@ -49,6 +50,7 @@ const DetailsExpedition = ({}) => {
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
+  const location = window.location;
 
   const nav = useNavigate();
 
@@ -61,11 +63,7 @@ const DetailsExpedition = ({}) => {
       return;
     }
     const detailsExpedition = await getDetailsExpeditionByRef(reference);
-    // const hashesMerkle = await getAllHashMerkle(
-    //   detailsExpedition.idCommandeProduit
-    // );
     setExpedition(detailsExpedition);
-    // setAllHashesMerkle(hashesMerkle);
     setLoading(false);
   };
 
@@ -144,11 +142,8 @@ const DetailsExpedition = ({}) => {
                     {expedition.ref || "N/A"}
                   </p>
                 </div>
-                <div className="col-md-6 mb-3 text-end">
-                  <label className="text-muted">Quantité</label>
-                  <p className="card-text fw-bold">
-                    {expedition.quantite || "N/A"} kg
-                  </p>
+                <div className="col-md-6 text-end">
+                  <QRCode value={location.protocol + '//' + location.host + '/client-detail-expedition/' + expedition.ref} size={100} />
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="text-muted">Produit</label>
@@ -156,18 +151,12 @@ const DetailsExpedition = ({}) => {
                     {expedition.nomProduit || "N/A"}
                   </p>
                 </div>
-                <div className="col-md-6 mb-3 text-end">
+                {/* Espace vide */}
+                <div className="col-md-6"></div>
+                <div className="col-md-6 mb-3">
                   <label className="text-muted">Prix</label>
                   <p className="card-text fw-bold">
                     {expedition.prix || "N/A"} €
-                  </p>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="text-muted">Exportateur</label>
-                  <p className="card-text fw-bold">
-                    {expedition.exportateur
-                      ? expedition.exportateur.nom
-                      : "N/A"}
                   </p>
                 </div>
                 <div className="col-md-6 mb-3 text-end">
@@ -190,6 +179,20 @@ const DetailsExpedition = ({}) => {
                         {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
                       </button>
                     )} */}
+                  </p>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="text-muted">Quantité</label>
+                  <p className="card-text fw-bold">
+                    {expedition.quantite || "N/A"} kg
+                  </p>
+                </div>
+                <div className="col-md-6 mb-3 text-end">
+                  <label className="text-muted">Exportateur</label>
+                  <p className="card-text fw-bold">
+                    {expedition.exportateur
+                      ? expedition.exportateur.nom
+                      : "N/A"}
                   </p>
                 </div>
                 <hr />
