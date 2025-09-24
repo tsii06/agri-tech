@@ -50,6 +50,7 @@ const DetailsExpedition = ({}) => {
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
+  const [isLoadingProcess, setIsLoadingProcess] = useState(true);
   const location = window.location;
 
   const nav = useNavigate();
@@ -247,7 +248,11 @@ const DetailsExpedition = ({}) => {
                   cursor: "pointer",
                   transition: "background-color 0.3s ease",
                 }}
-                onClick={() => setShowProcess(!showProcess)}
+                onClick={() => {
+                  if (!showProcess && isLoadingProcess)
+                    setIsLoadingProcess(false);
+                  setShowProcess(!showProcess)
+                }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = "#f8f9fa")
                 }
@@ -265,7 +270,7 @@ const DetailsExpedition = ({}) => {
                   transition: "max-height 0.5s ease-in-out",
                 }}
               >
-                <ProcessusExpedition expedition={expedition} />
+                {!isLoadingProcess && <ProcessusExpedition expedition={expedition} />}
               </div>
             </div>
 
