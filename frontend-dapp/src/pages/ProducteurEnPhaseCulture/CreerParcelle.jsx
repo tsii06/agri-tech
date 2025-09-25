@@ -1,13 +1,10 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getContract } from "../../utils/contract";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   uploadCertificatPhytosanitaire,
-  getIPFSURL,
 } from "../../utils/ipfsUtils";
-import { useUserContext } from "../../context/useContextt";
 import { createParcelle } from "../../utils/contrat/producteur";
 
 const defaultCenter = {
@@ -43,14 +40,6 @@ function CreerParcelle() {
 
   // pour le certificat
   const [certificat, setCertificat] = useState(null);
-  const dateEmission = useRef(null);
-  const dateExpiration = useRef(null);
-  const region = useRef(null);
-  const autoriteCertificatrice = useRef(null);
-  const numero_certificat = useRef(null);
-
-  // adresse de l'user
-  const { account } = useUserContext();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,19 +60,12 @@ function CreerParcelle() {
       if (!certificat) {
         throw new Error("Certificat phytosanitaire manquant");
       } else {
-        // uploader d'abord le certificat
-        const certificatData = {
-          dateEmission: dateEmission.current.value,
-          dateExpiration: dateExpiration.current.value,
-          region: region.current.value,
-          autoriteCertificatrice: autoriteCertificatrice.current.value,
-          adresseProducteur: account,
-          numeroCertificat: numero_certificat.current.value,
-        };
 
         const upload = await uploadCertificatPhytosanitaire(
           certificat,
-          certificatData
+          {
+            timestamp: Date.now()
+          }
         );
         if (!upload.success) {
           throw new Error(
@@ -193,7 +175,7 @@ function CreerParcelle() {
           </div>
           <div className="card-body">
             <div className="row">
-              <div className="col-md-6">
+              <div className="col-md-12">
                 <div className="mb-3">
                   <label htmlFor="certificat" className="form-label">
                     Fichier du certificat
@@ -204,71 +186,6 @@ function CreerParcelle() {
                     id="certificat"
                     onChange={(e) => setCertificat(e.target.files[0])}
                     accept=".pdf,.doc,.docx"
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="dateEmission" className="form-label">
-                    Date d'émission
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    ref={dateEmission}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="dateExpiration" className="form-label">
-                    Date d'expiration
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    ref={dateExpiration}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label htmlFor="region" className="form-label">
-                    Région
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    ref={region}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label
-                    htmlFor="autoriteCertificatrice"
-                    className="form-label"
-                  >
-                    Autorité certificatrice
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    ref={autoriteCertificatrice}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="numero_certificat" className="form-label">
-                    Numéro du certificat
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    ref={numero_certificat}
                     required
                   />
                 </div>

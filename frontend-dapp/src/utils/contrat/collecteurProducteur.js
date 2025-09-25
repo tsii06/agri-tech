@@ -24,13 +24,17 @@ const contrat = await getCollecteurProducteurContract();
  * @param {string} _account
  * @returns
  */
-export const getCommandeRecolte = async (_idCommande, _roles=[], _account='') => {
+export const getCommandeRecolte = async (
+  _idCommande,
+  _roles = [],
+  _account = ""
+) => {
   try {
     const res = await contrat.getCommande(_idCommande);
 
-    if (_roles.length > 0 && hasRole(_roles, 3) && _account !== '')
-      if (res?.collecteur.toString().toLowerCase() !== _account.toLowerCase()) 
-        return { isProprietaire: false};
+    if (_roles.length > 0 && hasRole(_roles, 3) && _account !== "")
+      if (res?.collecteur.toString().toLowerCase() !== _account.toLowerCase())
+        return { isProprietaire: false };
 
     const producteurDetails = await getActeur(res.producteur.toString());
     const collecteurDetails = await getActeur(res.collecteur.toString());
@@ -198,7 +202,12 @@ export const getDateRecoltePrecedente = async (
  * @param {number} _idRecolte
  * @returns {object}
  */
-export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHashTransaction = false) => {
+export const getRecolte = async (
+  _idRecolte,
+  _roles = [],
+  _account = "",
+  forHashTransaction = false
+) => {
   let recolteComplet = {};
 
   // recuperer info on-chain
@@ -206,11 +215,9 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHash
     const recolteOnChain = await contrat.getRecolte(_idRecolte);
 
     // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
-    if (!_roles.includes(3) && _account !== '')
+    if (!_roles.includes(3) && _account !== "")
       if (_roles.includes(0))
-        if (
-          recolteOnChain.producteur?.toLowerCase() !== _account.toLowerCase()
-        )
+        if (recolteOnChain.producteur?.toLowerCase() !== _account.toLowerCase())
           return { isProprietaire: false };
 
     // convertir array
@@ -244,8 +251,9 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHash
     const recolteIpfs = await getFileFromPinata(recolteComplet.cid);
 
     // Si pour recuperation de hash transaction
-    if (forHashTransaction) return {...recolteComplet, ...recolteIpfs?.keyvalues};
-    
+    if (forHashTransaction)
+      return { ...recolteComplet, ...recolteIpfs?.keyvalues };
+
     // Format : jour mois année
     let dateRecolteFormat = "N/A";
     const dateRecolteOriginal = recolteIpfs?.data?.items?.dateRecolte;
@@ -259,58 +267,6 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHash
           day: "numeric",
         }
       );
-    }
-
-    // Calculer la saison basée sur la date de récolte avec logique dynamique
-    let saison = null;
-    let numeroRecolte = 1;
-
-    try {
-      // Récupérer les intrants de la première parcelle pour calculer la saison
-      const premiereParcelle = recolteComplet.idParcelle[0];
-      const parcelle = await getParcelle(premiereParcelle);
-      let intrantsParcelle = [];
-
-      if (parcelle && parcelle.cid) {
-        const masterParcelle = await getMasterFromCid(parcelle.cid);
-        intrantsParcelle = Array.isArray(masterParcelle?.intrants)
-          ? masterParcelle.intrants
-          : [];
-      }
-
-      // Calculer le numéro de récolte
-      const recoltesExistantes = await getRecoltesParParcelle(premiereParcelle);
-      numeroRecolte = await calculateNumeroRecolte(
-        premiereParcelle,
-        dateRecolteOriginal,
-        recoltesExistantes
-      );
-
-      // Calculer la date de récolte précédente
-      const dateRecoltePrecedente = await getDateRecoltePrecedente(
-        premiereParcelle,
-        dateRecolteOriginal
-      );
-
-      // Calculer la saison dynamique
-      saison = computeSeasonFromDate(
-        dateRecolteOriginal,
-        dateRecoltePrecedente,
-        intrantsParcelle,
-        premiereParcelle,
-        numeroRecolte
-      );
-    } catch (saisonError) {
-      console.warn("Erreur calcul saison dynamique:", saisonError);
-      // Fallback vers ancien système si erreur
-      const year = new Date(dateRecolteOriginal).getUTCFullYear();
-      saison = {
-        nom: `Culture ${year}-R${numeroRecolte}`,
-        identifiant: `${year}-R${numeroRecolte}`,
-        annee: year,
-        numeroRecolte: numeroRecolte,
-        typeSaison: "fallback",
-      };
     }
 
     // 🌿 PRIORISER les intrants stockés dans IPFS (nouvelles récoltes)
@@ -335,68 +291,35 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHash
           version: recolteIpfs.data.items.version || "2.0",
         }
       );
-    } else {
+
+      return {
+        ...recolteIpfs.data.items,
+        ...recolteIpfs?.keyvalues,
+        ...recolteComplet,
+        dateRecolte: dateRecolteFormat,
+        dateRecolteOriginal: dateRecolteOriginal, // Garder la date originale pour les calculs
+        dateRecoltePrecedente: dateRecoltePrecedente, // Date de la récolte précédente
+        intrantsSource: recolteIpfs?.data?.items?.intrantsUtilises
+          ? "IPFS_STORED"
+          : "DYNAMIC_CALC", // Indicateur de source
+        isProprietaire: true,
+      };
+    }
+    // Pour les anciennes recoltes
+    else {
       // Fallback: calcul dynamique pour les anciennes récoltes (version 1.0)
       console.log(
         `🔄 Calcul dynamique des intrants pour récolte ${recolteComplet.id} (version 1.0)`
       );
 
-      try {
-        // Pour chaque parcelle associée à cette récolte
-        for (const idParcelle of recolteComplet.idParcelle) {
-          try {
-            const parcelle = await getParcelle(idParcelle);
-            if (parcelle && parcelle.cid) {
-              const masterParcelle = await getMasterFromCid(parcelle.cid);
-              const intrantsParcelle = Array.isArray(masterParcelle?.intrants)
-                ? masterParcelle.intrants
-                : [];
+      // Calculer la saison basée sur la date de récolte avec logique dynamique
+      let [saison, numeroRecolte] = await getSaisonEtNumRecolte(
+        recolteComplet,
+        dateRecolteOriginal
+      );
 
-              // Trouver la date de la récolte précédente pour cette parcelle
-              if (!dateRecoltePrecedente) {
-                dateRecoltePrecedente = await getDateRecoltePrecedente(
-                  idParcelle,
-                  dateRecolteOriginal
-                );
-              }
-
-              console.log(
-                `🌿 Parcelle ${idParcelle} - Récolte actuelle: ${dateRecolteOriginal}, Précédente: ${
-                  dateRecoltePrecedente || "Aucune"
-                }`
-              );
-
-              // Filtrer les intrants selon la nouvelle règle
-              const intrantsFilters = filterIntrantsForHarvest(
-                intrantsParcelle,
-                dateRecolteOriginal,
-                dateRecoltePrecedente
-              );
-
-              console.log(
-                `🌿 ${intrantsFilters.length} intrants validés pour la parcelle ${idParcelle}`
-              );
-              intrantsUtilises.push(...intrantsFilters);
-            }
-          } catch (parcelleError) {
-            console.warn(
-              `Erreur récupération parcelle ${idParcelle}:`,
-              parcelleError
-            );
-          }
-        }
-
-        // Supprimer les doublons d'intrants si plusieurs parcelles ont les mêmes
-        intrantsUtilises = intrantsUtilises.filter(
-          (intrant, index, self) =>
-            index ===
-            self.findIndex(
-              (i) => i.nom === intrant.nom && i.dateAjout === intrant.dateAjout
-            )
-        );
-      } catch (intrantsError) {
-        console.warn("Erreur récupération intrants:", intrantsError);
-      }
+      // Recuperer les intrants utiliser
+      [intrantsUtilises, dateRecoltePrecedente] = await getIntrantUtiliseEtDateRecoltePrecedent(recolteComplet, dateRecolteOriginal);
 
       // Pour la première parcelle, récupérer la date de récolte précédente pour l'affichage
       if (!dateRecoltePrecedente && recolteComplet.idParcelle.length > 0) {
@@ -405,29 +328,25 @@ export const getRecolte = async (_idRecolte, _roles = [], _account = '', forHash
           dateRecolteOriginal
         );
       }
+
+      return {
+        ...recolteIpfs.data.items,
+        ...recolteIpfs?.keyvalues,
+        ...recolteComplet,
+        dateRecolte: dateRecolteFormat,
+        dateRecolteOriginal: dateRecolteOriginal, // Garder la date originale pour les calculs
+        dateRecoltePrecedente: dateRecoltePrecedente, // Date de la récolte précédente
+        saison: saison,
+        numeroRecolte: numeroRecolte, // Ajouter le numéro de récolte
+        intrantsUtilises: intrantsUtilises,
+        intrantsSource: recolteIpfs?.data?.items?.intrantsUtilises
+          ? "IPFS_STORED"
+          : "DYNAMIC_CALC", // Indicateur de source
+        isProprietaire: true,
+      };
     }
-
-    console.log(
-      `✅ ${intrantsUtilises.length} intrants finaux pour la récolte ${recolteComplet.id}`
-    );
-
-    return {
-      ...recolteIpfs.data.items,
-      ...recolteIpfs?.keyvalues,
-      ...recolteComplet,
-      dateRecolte: dateRecolteFormat,
-      dateRecolteOriginal: dateRecolteOriginal, // Garder la date originale pour les calculs
-      dateRecoltePrecedente: dateRecoltePrecedente, // Date de la récolte précédente
-      saison: saison,
-      numeroRecolte: numeroRecolte, // Ajouter le numéro de récolte
-      intrantsUtilises: intrantsUtilises,
-      intrantsSource: recolteIpfs?.data?.items?.intrantsUtilises
-        ? "IPFS_STORED"
-        : "DYNAMIC_CALC", // Indicateur de source
-      isProprietaire: true,
-    };
   } else {
-    return { ...recolteComplet, isProprietaire:true };
+    return { ...recolteComplet, isProprietaire: true };
   }
 };
 
@@ -569,5 +488,133 @@ export const createRecolte = async (recolteData, parcelle) => {
   } catch (error) {
     console.error("Ajout keyvalues a fichier recolte sur ipfs :", error);
     throw error;
+  }
+};
+
+/**
+ *
+ * @param {object} recolteComplet
+ * @param {string} dateRecolteOriginal
+ * @returns {Array}
+ */
+const getSaisonEtNumRecolte = async (recolteComplet, dateRecolteOriginal) => {
+  try {
+    // Récupérer les intrants de la première parcelle pour calculer la saison
+    const premiereParcelle = recolteComplet.idParcelle[0];
+    const parcelle = await getParcelle(premiereParcelle);
+    let intrantsParcelle = [];
+
+    if (parcelle && parcelle.cid) {
+      const masterParcelle = await getMasterFromCid(parcelle.cid);
+      intrantsParcelle = Array.isArray(masterParcelle?.intrants)
+        ? masterParcelle.intrants
+        : [];
+    }
+
+    // Calculer le numéro de récolte
+    const recoltesExistantes = await getRecoltesParParcelle(premiereParcelle);
+    let numeroRecolte = await calculateNumeroRecolte(
+      premiereParcelle,
+      dateRecolteOriginal,
+      recoltesExistantes
+    );
+
+    // Calculer la date de récolte précédente
+    const dateRecoltePrecedente = await getDateRecoltePrecedente(
+      premiereParcelle,
+      dateRecolteOriginal
+    );
+
+    // Calculer la saison dynamique
+    let saison = computeSeasonFromDate(
+      dateRecolteOriginal,
+      dateRecoltePrecedente,
+      intrantsParcelle,
+      premiereParcelle,
+      numeroRecolte
+    );
+
+    return [saison, numeroRecolte];
+  } catch (saisonError) {
+    console.warn("Erreur calcul saison dynamique:", saisonError);
+    // Fallback vers ancien système si erreur
+    const year = new Date(dateRecolteOriginal).getUTCFullYear();
+    let saison = {
+      nom: `Culture ${year}-R${1}`,
+      identifiant: `${year}-R${1}`,
+      annee: year,
+      numeroRecolte: 1,
+      typeSaison: "fallback",
+    };
+
+    return [saison, 1];
+  }
+};
+
+/**
+ * 
+ * @param {object} recolteComplet 
+ * @param {string} dateRecolteOriginal 
+ * @returns {Array}
+ */
+const getIntrantUtiliseEtDateRecoltePrecedent = async (recolteComplet, dateRecolteOriginal) => {
+  try {
+    let intrantsUtilises = [];
+    let dateRecoltePrecedente = null;
+
+    // Pour chaque parcelle associée à cette récolte
+    for (const idParcelle of recolteComplet.idParcelle) {
+      try {
+        const parcelle = await getParcelle(idParcelle);
+        if (parcelle && parcelle.cid) {
+          const masterParcelle = await getMasterFromCid(parcelle.cid);
+          const intrantsParcelle = Array.isArray(masterParcelle?.intrants)
+            ? masterParcelle.intrants
+            : [];
+
+          // Trouver la date de la récolte précédente pour cette parcelle
+          dateRecoltePrecedente = await getDateRecoltePrecedente(
+            idParcelle,
+            dateRecolteOriginal
+          );
+
+          console.log(
+            `🌿 Parcelle ${idParcelle} - Récolte actuelle: ${dateRecolteOriginal}, Précédente: ${
+              dateRecoltePrecedente || "Aucune"
+            }`
+          );
+
+          // Filtrer les intrants selon la nouvelle règle
+          const intrantsFilters = filterIntrantsForHarvest(
+            intrantsParcelle,
+            dateRecolteOriginal,
+            dateRecoltePrecedente
+          );
+
+          console.log(
+            `🌿 ${intrantsFilters.length} intrants validés pour la parcelle ${idParcelle}`
+          );
+          intrantsUtilises.push(...intrantsFilters);
+        }
+      } catch (parcelleError) {
+        console.warn(
+          `Erreur récupération parcelle ${idParcelle}:`,
+          parcelleError
+        );
+      }
+    }
+
+    // Supprimer les doublons d'intrants si plusieurs parcelles ont les mêmes
+    intrantsUtilises = intrantsUtilises.filter(
+      (intrant, index, self) =>
+        index ===
+        self.findIndex(
+          (i) => i.nom === intrant.nom && i.dateAjout === intrant.dateAjout
+        )
+    );
+
+    return [intrantsUtilises, dateRecoltePrecedente];
+  } catch (intrantsError) {
+    console.warn("Erreur récupération intrants:", intrantsError);
   }
 };

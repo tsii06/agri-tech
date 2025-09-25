@@ -90,10 +90,14 @@ export const uploadIntrant = async (intrantData) => {
 /**
  * Ajoute/Met à jour un intrant (avec dateAjout) sur la parcelle (master consolidé)
  */
-export const addIntrantToParcelleMaster = async (parcelle, intrant, dateAjoutISO) => {
+export const addIntrantToParcelleMaster = async (
+  parcelle,
+  intrant,
+  dateAjoutISO
+) => {
   // Charger master existant
   let master = await getMasterFromCid(parcelle?.cid);
-  if (!master || typeof master !== 'object') master = {};
+  if (!master || typeof master !== "object") master = {};
 
   const newIntrant = {
     ...intrant,
@@ -119,36 +123,47 @@ export const enrichRecolteWithSeasonAndInputs = async (recolte, parcelle) => {
     let intrantsParcelle = [];
     let dateRecoltePrecedente = null;
     let numeroRecolte = 1;
-    
+
     try {
       const masterParcelle = await getMasterFromCid(parcelle?.cid);
-      intrantsParcelle = Array.isArray(masterParcelle?.intrants) ? masterParcelle.intrants : [];
-      
+      intrantsParcelle = Array.isArray(masterParcelle?.intrants)
+        ? masterParcelle.intrants
+        : [];
+
       // Calculer le numéro de récolte et la date précédente
-      const { getRecoltesParParcelle, getDateRecoltePrecedente } = await import('./contrat/collecteurProducteur');
+      const { getRecoltesParParcelle, getDateRecoltePrecedente } = await import(
+        "./contrat/collecteurProducteur"
+      );
       const recoltesExistantes = await getRecoltesParParcelle(parcelle.id);
-      numeroRecolte = await calculateNumeroRecolte(parcelle.id, recolte.dateRecolte, recoltesExistantes);
-      dateRecoltePrecedente = await getDateRecoltePrecedente(parcelle.id, recolte.dateRecolte);
+      numeroRecolte = await calculateNumeroRecolte(
+        parcelle.id,
+        recolte.dateRecolte,
+        recoltesExistantes
+      );
+      dateRecoltePrecedente = await getDateRecoltePrecedente(
+        parcelle.id,
+        recolte.dateRecolte
+      );
     } catch (error) {
-      console.warn('Erreur récupération données parcelle:', error);
+      console.warn("Erreur récupération données parcelle:", error);
     }
-    
+
     // Calculer la saison dynamique
     const saison = computeSeasonFromDate(
-      recolte?.dateRecolte, 
-      dateRecoltePrecedente, 
-      intrantsParcelle, 
+      recolte?.dateRecolte,
+      dateRecoltePrecedente,
+      intrantsParcelle,
       parcelle?.id,
       numeroRecolte
     );
-    
+
     // Filtrer les intrants selon la nouvelle règle
     const intrantsUtilises = filterIntrantsForHarvest(
-      intrantsParcelle, 
-      recolte?.dateRecolte, 
+      intrantsParcelle,
+      recolte?.dateRecolte,
       dateRecoltePrecedente
     );
-    
+
     const enriched = {
       ...(recolte || {}),
       saison,
@@ -158,10 +173,10 @@ export const enrichRecolteWithSeasonAndInputs = async (recolte, parcelle) => {
       timestamp: Date.now(),
       version: "2.1", // Version avec saison dynamique
     };
-    
+
     return await uploadConsolidatedData(enriched, "recolte");
   } catch (error) {
-    console.error('Erreur enrichissement récolte:', error);
+    console.error("Erreur enrichissement récolte:", error);
     throw error;
   }
 };
@@ -212,17 +227,22 @@ export const uploadConditionTransport = async (file, conditionData) => {
 export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
   const metadata = {
     type: "certificat-phytosanitaire",
-    dateEmission: certificatData.dateEmission.toString(),
-    dateExpiration: certificatData.dateExpiration.toString(),
-    region: certificatData.region.toString(),
-    autoriteCertificatrice: certificatData.autoriteCertificatrice.toString(),
-    adresseProducteur: certificatData.adresseProducteur.toString(),
-    idParcelle: certificatData.idParcelle?.toString(),
-    numeroCertificat: certificatData.numeroCertificat.toString(),
-    timestamp: Date.now().toString(),
+    ...certificatData
   };
-  return await uploadToIPFS(file, metadata, "certificat-phytosanitaire");
+  return await uploadToIPFS(file, stringifyAll(metadata), "certificat-phytosanitaire");
 };
+// Fonction récursive pour tout transformer en string
+function stringifyAll(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(stringifyAll);
+  } else if (obj !== null && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, stringifyAll(v)])
+    );
+  } else {
+    return String(obj);
+  }
+}
 
 /**
  * Récupère l'URL IPFS à partir d'un CID
@@ -256,37 +276,47 @@ export const getMasterFromCid = async (cid) => {
 
 /**
  * Calcule la saison dynamique basée sur la période de culture d'une parcelle
- * @param {string} dateRecolte - Date de récolte (fin de culture) 
+ * @param {string} dateRecolte - Date de récolte (fin de culture)
  * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente (ou null pour première récolte)
  * @param {Array} intrants - Liste des intrants de la parcelle pour déterminer le début de culture
  * @param {number} idParcelle - ID de la parcelle
  * @param {number} numeroRecolte - Numéro de la récolte pour cette parcelle (séquentiel)
  * @returns {Object|null} Objet saison avec période de culture réelle
  */
-export const computeSeasonFromDate = (dateRecolte, dateRecoltePrecedente = null, intrants = [], idParcelle = null, numeroRecolte = 1) => {
+export const computeSeasonFromDate = (
+  dateRecolte,
+  dateRecoltePrecedente = null,
+  intrants = [],
+  idParcelle = null,
+  numeroRecolte = 1
+) => {
   if (!dateRecolte) return null;
-  
+
   const dateFinCulture = new Date(dateRecolte);
   if (Number.isNaN(dateFinCulture.getTime())) return null;
-  
+
   const year = dateFinCulture.getUTCFullYear();
-  
+
   // 1. Déterminer le début de culture
   let dateDebutCulture;
-  
+
   if (dateRecoltePrecedente) {
     // Pour les récoltes suivantes: début = jour après la récolte précédente
     const datePrecedente = new Date(dateRecoltePrecedente);
     dateDebutCulture = new Date(datePrecedente.getTime() + 24 * 60 * 60 * 1000); // +1 jour
   } else {
     // Pour la première récolte: chercher le premier intrant ajouté
-    const intrantsAvecDate = intrants.filter(i => i.dateAjout || i.timestamp);
+    const intrantsAvecDate = intrants.filter((i) => i.dateAjout || i.timestamp);
     if (intrantsAvecDate.length > 0) {
       // Trouver le plus ancien intrant
-      const datesIntrants = intrantsAvecDate.map(i => {
-        return i.dateAjout ? new Date(i.dateAjout).getTime() : Number(i.timestamp);
-      }).filter(d => !isNaN(d));
-      
+      const datesIntrants = intrantsAvecDate
+        .map((i) => {
+          return i.dateAjout
+            ? new Date(i.dateAjout).getTime()
+            : Number(i.timestamp);
+        })
+        .filter((d) => !isNaN(d));
+
       if (datesIntrants.length > 0) {
         const premierIntrant = Math.min(...datesIntrants);
         dateDebutCulture = new Date(premierIntrant);
@@ -299,17 +329,17 @@ export const computeSeasonFromDate = (dateRecolte, dateRecoltePrecedente = null,
       dateDebutCulture = new Date(Date.UTC(year, 0, 1));
     }
   }
-  
+
   // 2. Calculer la durée de culture en jours
   const dureeCultureMs = dateFinCulture.getTime() - dateDebutCulture.getTime();
   const dureeCultureJours = Math.ceil(dureeCultureMs / (24 * 60 * 60 * 1000));
-  
+
   // 3. Créer l'identifiant de saison : Année + Numéro de récolte
   const identifiantSaison = `${year}-R${numeroRecolte}`;
-  const nomSaison = idParcelle ? 
-    `Culture ${identifiantSaison} (Parcelle ${idParcelle})` : 
-    `Culture ${identifiantSaison}`;
-  
+  const nomSaison = idParcelle
+    ? `Culture ${identifiantSaison} (Parcelle ${idParcelle})`
+    : `Culture ${identifiantSaison}`;
+
   return {
     nom: nomSaison,
     identifiant: identifiantSaison,
@@ -319,8 +349,10 @@ export const computeSeasonFromDate = (dateRecolte, dateRecoltePrecedente = null,
     dateDebut: dateDebutCulture.toISOString().slice(0, 10),
     dateFin: dateFinCulture.toISOString().slice(0, 10),
     dureeCultureJours: dureeCultureJours,
-    typeSaison: 'dynamique', // Pour différencier de l'ancien système H1/H2
-    premierIntrant: dateRecoltePrecedente ? null : dateDebutCulture.toISOString().slice(0, 10)
+    typeSaison: "dynamique", // Pour différencier de l'ancien système H1/H2
+    premierIntrant: dateRecoltePrecedente
+      ? null
+      : dateDebutCulture.toISOString().slice(0, 10),
   };
 };
 
@@ -336,7 +368,11 @@ export const filterIntrantsForSeason = (intrants = [], saison) => {
   const end = new Date(saison.dateFin).getTime();
   return intrants.filter((it) => {
     // priorité dateAjout (YYYY-MM-DD), fallback sur timestamp (ms)
-    const t = it.dateAjout ? new Date(it.dateAjout).getTime() : (it.timestamp ? Number(it.timestamp) : NaN);
+    const t = it.dateAjout
+      ? new Date(it.dateAjout).getTime()
+      : it.timestamp
+      ? Number(it.timestamp)
+      : NaN;
     return Number.isFinite(t) && t >= start && t <= end;
   });
 };
@@ -348,26 +384,32 @@ export const filterIntrantsForSeason = (intrants = [], saison) => {
  * @param {Array} recoltesExistantes - Liste des récoltes existantes de la parcelle (optionnel)
  * @returns {Promise<number>} Numéro de récolte (1, 2, 3, etc.)
  */
-export const calculateNumeroRecolte = async (idParcelle, dateRecolteActuelle, recoltesExistantes = null) => {
+export const calculateNumeroRecolte = async (
+  idParcelle,
+  dateRecolteActuelle,
+  recoltesExistantes = null
+) => {
   try {
     // Si les récoltes existantes ne sont pas fournies, les récupérer
     if (!recoltesExistantes) {
       // Import dynamique pour éviter la dépendance circulaire
-      const { getRecoltesParParcelle } = await import('./contrat/collecteurProducteur');
+      const { getRecoltesParParcelle } = await import(
+        "./contrat/collecteurProducteur"
+      );
       recoltesExistantes = await getRecoltesParParcelle(idParcelle);
     }
-    
+
     // Filtrer les récoltes antérieures à la date actuelle
     const dateActuelle = new Date(dateRecolteActuelle).getTime();
-    const recoltesAnterieures = recoltesExistantes.filter(r => {
+    const recoltesAnterieures = recoltesExistantes.filter((r) => {
       const dateRecolte = new Date(r.dateRecolte).getTime();
       return dateRecolte < dateActuelle;
     });
-    
+
     // Le numéro de récolte = nombre de récoltes antérieures + 1
     return recoltesAnterieures.length + 1;
   } catch (error) {
-    console.warn('Erreur calcul numéro récolte:', error);
+    console.warn("Erreur calcul numéro récolte:", error);
     return 1; // Fallback: première récolte
   }
 };
@@ -381,40 +423,55 @@ export const calculateNumeroRecolte = async (idParcelle, dateRecolteActuelle, re
  * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente (YYYY-MM-DD) ou null
  * @returns {Array} Liste des intrants filtrés
  */
-export const filterIntrantsForHarvest = (intrants = [], dateRecolteActuelle, dateRecoltePrecedente = null) => {
+export const filterIntrantsForHarvest = (
+  intrants = [],
+  dateRecolteActuelle,
+  dateRecoltePrecedente = null
+) => {
   if (!Array.isArray(intrants) || !dateRecolteActuelle) return [];
-  
+
   const dateActuelle = new Date(dateRecolteActuelle).getTime();
-  const datePrecedente = dateRecoltePrecedente ? new Date(dateRecoltePrecedente).getTime() : 0;
-  
+  const datePrecedente = dateRecoltePrecedente
+    ? new Date(dateRecoltePrecedente).getTime()
+    : 0;
+
   if (isNaN(dateActuelle)) {
-    console.warn('Date de récolte actuelle invalide:', dateRecolteActuelle);
+    console.warn("Date de récolte actuelle invalide:", dateRecolteActuelle);
     return [];
   }
-  
+
   return intrants.filter((intrant) => {
     // Récupérer la date d'ajout de l'intrant
-    const dateIntrant = intrant.dateAjout ? new Date(intrant.dateAjout).getTime() : 
-                       (intrant.timestamp ? Number(intrant.timestamp) : NaN);
-    
+    const dateIntrant = intrant.dateAjout
+      ? new Date(intrant.dateAjout).getTime()
+      : intrant.timestamp
+      ? Number(intrant.timestamp)
+      : NaN;
+
     if (!Number.isFinite(dateIntrant)) {
-      console.warn('Date d\'intrant invalide:', intrant);
+      console.warn("Date d'intrant invalide:", intrant);
       return false;
     }
-    
+
     // Règle: intrant appliqué APRÈS la récolte précédente ET AVANT/À la récolte actuelle
     const apresRecoltePrecedente = dateIntrant > datePrecedente;
     const avantRecolteActuelle = dateIntrant <= dateActuelle;
-    
+
     const valide = apresRecoltePrecedente && avantRecolteActuelle;
-    
+
     // Log pour debug détaillé
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔍 Intrant ${intrant.nom || intrant.type}: ${intrant.dateAjout} - ` +
-        `Après ${dateRecoltePrecedente || 'début'}: ${apresRecoltePrecedente}, ` +
-        `Avant/à ${dateRecolteActuelle}: ${avantRecolteActuelle} => ${valide ? '✅' : '❌'}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `🔍 Intrant ${intrant.nom || intrant.type}: ${intrant.dateAjout} - ` +
+          `Après ${
+            dateRecoltePrecedente || "début"
+          }: ${apresRecoltePrecedente}, ` +
+          `Avant/à ${dateRecolteActuelle}: ${avantRecolteActuelle} => ${
+            valide ? "✅" : "❌"
+          }`
+      );
     }
-    
+
     return valide;
   });
 };
@@ -426,19 +483,28 @@ export const filterIntrantsForHarvest = (intrants = [], dateRecolteActuelle, dat
  * @param {string|null} dateRecoltePrecedente - Date de la récolte précédente ou null
  * @returns {boolean} true si l'intrant respecte la règle
  */
-export const validateIntrantForHarvest = (intrant, dateRecolteActuelle, dateRecoltePrecedente = null) => {
+export const validateIntrantForHarvest = (
+  intrant,
+  dateRecolteActuelle,
+  dateRecoltePrecedente = null
+) => {
   if (!intrant || !dateRecolteActuelle) return false;
-  
-  const dateIntrant = intrant.dateAjout ? new Date(intrant.dateAjout).getTime() : 
-                     (intrant.timestamp ? Number(intrant.timestamp) : NaN);
-  
+
+  const dateIntrant = intrant.dateAjout
+    ? new Date(intrant.dateAjout).getTime()
+    : intrant.timestamp
+    ? Number(intrant.timestamp)
+    : NaN;
+
   if (!Number.isFinite(dateIntrant)) return false;
-  
+
   const dateActuelle = new Date(dateRecolteActuelle).getTime();
-  const datePrecedente = dateRecoltePrecedente ? new Date(dateRecoltePrecedente).getTime() : 0;
-  
+  const datePrecedente = dateRecoltePrecedente
+    ? new Date(dateRecoltePrecedente).getTime()
+    : 0;
+
   if (isNaN(dateActuelle)) return false;
-  
+
   return dateIntrant > datePrecedente && dateIntrant <= dateActuelle;
 };
 
@@ -559,7 +625,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
     if (parcelle && parcelle.cid) {
       const resp = await getFileFromPinata(parcelle.cid);
       keyvalues = resp.keyvalues;
-  
+
       if (resp.data) {
         const json = resp.data;
         master = json && json.items ? json.items : json;
@@ -580,7 +646,11 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
   };
 
   // 4. Upload du master consolidé mis à jour (type parcelle)
-  const masterUpload = await uploadConsolidatedData(masterMisAJour, "parcelle", keyvalues);
+  const masterUpload = await uploadConsolidatedData(
+    masterMisAJour,
+    "parcelle",
+    keyvalues
+  );
   if (!masterUpload.success) {
     throw new Error(
       "Erreur lors de l'upload des données de parcelle consolidées"
@@ -626,9 +696,10 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
 export const getFileFromPinata = async (_cid) => {
   try {
     const res = await myPinataSDK.gateways.public.get(_cid);
-    const metadata = (await myPinataSDK.files.public.list().cid(_cid)).files[0]?.keyvalues;
-    
-    return {...res, keyvalues: metadata};
+    const metadata = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
+      ?.keyvalues;
+
+    return { ...res, keyvalues: metadata };
   } catch (error) {
     console.error(
       "Erreur lors de la recuperation de fichier depuis pinata : ",
@@ -666,18 +737,19 @@ export const getUrlDownloadFilePinata = async (_cid) => {
 };
 
 /**
- * 
- * @param {string} _cid 
- * @param {object} _keyvalues 
- * @returns 
+ *
+ * @param {string} _cid
+ * @param {object} _keyvalues
+ * @returns
  */
 export const ajouterKeyValuesFileIpfs = async (_cid, _keyvalues) => {
   try {
-    const idIpfs = (await myPinataSDK.files.public.list().cid(_cid)).files[0].id;
-    
+    const idIpfs = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
+      .id;
+
     const update = await myPinataSDK.files.public.update({
       id: idIpfs,
-      keyvalues: _keyvalues
+      keyvalues: _keyvalues,
     });
     return update;
   } catch (error) {

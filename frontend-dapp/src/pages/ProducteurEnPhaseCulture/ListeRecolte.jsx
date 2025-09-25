@@ -121,8 +121,6 @@ function ListeRecoltes() {
       setIsLoading(false);
       return;
     }
-    console.log("Chargement initial.");
-    
 
     chargerRecoltes(true);
   }, [address, account]);
