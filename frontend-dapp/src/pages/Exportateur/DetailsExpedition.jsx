@@ -51,7 +51,7 @@ const DetailsExpedition = ({}) => {
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
   const [isLoadingProcess, setIsLoadingProcess] = useState(true);
-  const location = window.location;
+  const urlEspaceClient = window.location.protocol + '//' + window.location.host + '/client-detail-expedition/';
 
   const nav = useNavigate();
 
@@ -144,7 +144,7 @@ const DetailsExpedition = ({}) => {
                   </p>
                 </div>
                 <div className="col-md-6 text-end">
-                  <QRCode value={location.protocol + '//' + location.host + '/client-detail-expedition/' + expedition.ref} size={100} />
+                  <QRCode value={urlEspaceClient + expedition.ref} size={100} />
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="text-muted">Produit</label>

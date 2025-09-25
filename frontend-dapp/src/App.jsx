@@ -94,7 +94,12 @@ function App() {
 
   return (
     <UserProvider state={state}>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <AppLayout
           state={state}
           setState={setState}
@@ -197,7 +202,10 @@ function AppLayout({
               }
             />
             <Route path="/espace-client" element={<EspaceClient />} />
-            <Route path="/client-detail-expedition/:reference" element={<DetailsExpedition />} />
+            <Route
+              path="/client-detail-expedition/:reference"
+              element={<DetailsExpedition />}
+            />
           </Routes>
         ) : (
           <div className="row">
@@ -325,8 +333,14 @@ function AppLayout({
                 />
                 <Route path="expeditions" element={<ListeExpeditions />} />
                 {/* <Route path="expeditions/:id" element={<DetailsExpedition />} /> */}
-                <Route path="certificateur/expeditions" element={<CertifierExpeditions />} />
-                <Route path="espace-client/produit/:id" element={<ProduitDetails />} />
+                <Route
+                  path="certificateur/expeditions"
+                  element={<CertifierExpeditions />}
+                />
+                <Route
+                  path="espace-client/produit/:id"
+                  element={<ProduitDetails />}
+                />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>
             </div>
