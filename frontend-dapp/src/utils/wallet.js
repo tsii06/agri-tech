@@ -22,7 +22,7 @@ export const USE_NETWORK = {
     symbol: "POL",
     decimals: 18,
   },
-  rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+  rpcUrls: ["https://indulgent-black-field.matic-amoy.quiknode.pro/499a3148b8aa2dfe7a83fc7350cea6059ed101ee/"],
   blockExplorerUrls: ["https://amoy.polygonscan.com/"],
 };
 
