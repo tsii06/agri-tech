@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DEBUT_EXPEDITION, getExportateurClientContract } from "../../utils/contract";
 import { getIPFSURL } from "../../utils/ipfsUtils";
+import { useUserContext } from "../../context/useContextt";
 
 export default function ListeExpeditions() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [expeditions, setExpeditions] = useState([]);
+  const { account } = useUserContext();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,6 +22,11 @@ export default function ListeExpeditions() {
           try {
             const exp = await contract.getExpedition(i);
             if (exp && exp.id && Number(exp.id) > 0) {
+              // ignore les expeditions n'appartenant pas a l'exportateur
+              if (account.toLowerCase() !== exp.exportateur.toLowerCase())
+                continue;
+              // console.log("=== Add user : ", account, "\n+++ Addr by contrat : ", exp.exportateur);
+              
               const e = {
                 id: Number(exp.id),
                 ref: exp.ref,
