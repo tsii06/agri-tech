@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  privateRPC: process.env.PRIVATE_RPC,
+  privateRPC: process.env.PRIVATE_RPC, // il faut un rpc de type websocket ici car on ecoute les evenements des smarts contracts
   publicRPC: process.env.PUBLIC_RPC,
   adresseExportateurClientContrat: process.env.EXPORTATEUR_CLIENT_ADDR,
   adresseRegistreExpeditionContrat: process.env.REGISTRE_EXPEDITION_ADDR,

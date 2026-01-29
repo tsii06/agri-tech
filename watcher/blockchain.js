@@ -6,7 +6,7 @@ const exportateurClientABI = require("./abi/ExportateurClient.json");
 const registreExpeditionABI = require("./abi/RegistreExpedition.json");
 
 // Providers
-const privateProvider = new ethers.JsonRpcProvider(config.privateRPC);
+const privateProvider = new ethers.WebSocketProvider(config.privateRPC); // websocket pour le rpc du smart contrat privee.
 const publicProvider = new ethers.JsonRpcProvider(config.publicRPC);
 
 // Signer pour envoi tx sur public
