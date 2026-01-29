@@ -155,5 +155,11 @@ library StructLib {
         bool certifier;
         string cidCertificat;
     }
+
+    struct ExpeditionAncrer {
+        string ref;
+        bytes32 rootMerkle;
+        uint256 horodatage;
+    }
     
 }
