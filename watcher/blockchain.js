@@ -27,9 +27,9 @@ module.exports = {
   listenExpedition: async (callback) => {
     exportateurClientContrat.on(
       "AjouterExpedition",
-      (exportateurAddr, idArticle, quantite, prix, rootMerkle, event) => {
+      (exportateurAddr, idArticle, quantite, prix, rootMerkle, ref, event) => {
         console.log(`Nouvelle expedition: ${idArticle}`);
-        callback({ rootMerkle });
+        callback({ ref, rootMerkle });
       }
     );
   },
@@ -43,11 +43,13 @@ module.exports = {
       await tx.wait();
       console.log("Expedition envoyée sur Amoy");
     } catch (error) {
-        console.error("Erreur lors de l'envoye de la transaction vers blockchain public : ", error.messages);
+        console.log("Erreur lors de l'envoye de la transaction vers blockchain public : ", error);
     }
   },
 
   getExpeditionData: async (ref) => {
     return await exportateurClientContrat.getExpeditionByReference(ref);
   },
+
+  privateProvider: privateProvider,
 };

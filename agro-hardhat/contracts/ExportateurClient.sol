@@ -71,7 +71,8 @@ contract ExportateurClient {
         uint32 idArticle,
         uint32 quantite,
         uint32 prix,
-        bytes32 indexed rootMerkle
+        bytes32 indexed rootMerkle,
+        string ref
     );
     event CertifierExpedition(
         address indexed certificateur,
@@ -140,7 +141,7 @@ contract ExportateurClient {
         // Mise à jour du mapping
         referenceToIdExpedition[ref] = compteurExpeditions;
 
-        emit AjouterExpedition(msg.sender, compteurExpeditions, _quantite, _prix, _rootMerkle);
+        emit AjouterExpedition(msg.sender, compteurExpeditions, _quantite, _prix, _rootMerkle, ref);
     }
 
     function certifierExpedition(
