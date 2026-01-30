@@ -331,93 +331,92 @@ function PassePortNumerique() {
             </div>
           </div>
           {/* Section 2: Origine & Producteur Certifiés */}
-          {parcelleLoading ? (
-            <div className="card-body mx-4 mt-3 mb-3">
-              <Skeleton
-                width={"100%"}
-                height={"100%"}
-                style={{ minHeight: 100 }}
+          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3 pb-0">
+            <h5 className="card-title mb-3">
+              <MapPin
+                className="text-success me-2"
+                style={{ display: "inline" }}
+                size={20}
               />
-            </div>
-          ) : (
-            <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3 pb-0">
-              <h5 className="card-title mb-3">
-                <MapPin
-                  className="text-success me-2"
-                  style={{ display: "inline" }}
-                  size={20}
+              Origine & Producteurs Certifiés
+            </h5>
+            {parcelleLoading ? (
+              <div className="mb-3">
+                <Skeleton
+                  width={"100%"}
+                  height={"100%"}
+                  style={{ minHeight: 100 }}
                 />
-                Origine & Producteurs Certifiés
-              </h5>
-              {/* Infos sur Producteur et ces parcelles */}
-              {parcellesVPS.length > 0 &&
-                parcellesVPS.map((parcelle) => (
-                  <div className="row border-bottom" key={parcelle.id}>
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-center mb-3">
-                        <div className="fs-1 me-3">
-                          <CircleUserRound
-                            className="text-success"
-                            size={40}
-                            style={{ display: "inline" }}
-                          />
-                        </div>
-                        <div>
-                          <p className="mb-0">
-                            <strong>Producteur:</strong>{" "}
-                            {parcelle.producteur.nom}
-                          </p>
-                          <p className="mb-0 text-muted">
-                            ID : {parcelle.producteur.idBlockchain}
-                          </p>
-                        </div>
+              </div>
+            ) : (
+              // Infos sur Producteur et ces parcelles
+              parcellesVPS.length > 0 &&
+              parcellesVPS.map((parcelle) => (
+                <div className="row border-bottom" key={parcelle.id}>
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-center mb-3">
+                      <div className="fs-1 me-3">
+                        <CircleUserRound
+                          className="text-success"
+                          size={40}
+                          style={{ display: "inline" }}
+                        />
                       </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="d-flex align-items-center mb-3">
-                        <div className="fs-1 me-3">
-                          <div style={{ flexShrink: 0, marginLeft: "16px" }}>
-                            <img
-                              src={
-                                parcelle.photos.length > 0
-                                  ? getIPFSURL(parcelle.photos[0].cid)
-                                  : "https://via.placeholder.com/100"
-                              }
-                              alt="Parcelle"
-                              style={{
-                                width: "70px",
-                                height: "70px",
-                                objectFit: "cover",
-                                borderRadius: "5px",
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <strong>GPS:</strong>
-                        {parcelle.location &&
-                        parcelle.location.lat &&
-                        parcelle.location.lng ? (
-                          <button
-                            className="btn btn-link p-0 ms-2"
-                            onClick={() => handleMapRedirect(parcelle)}
-                            style={{
-                              textDecoration: "underline",
-                              color: "var(--madtx-green)",
-                            }}
-                          >
-                            {`${parcelle.location.lat.toFixed(
-                              4
-                            )}, ${parcelle.location.lng.toFixed(4)}`}
-                          </button>
-                        ) : (
-                          "Non spécifiée"
-                        )}
+                      <div>
+                        <p className="mb-0">
+                          <strong>Producteur:</strong> {parcelle.producteur.nom}
+                        </p>
+                        <p className="mb-0 text-muted">
+                          ID : {parcelle.producteur.idBlockchain}
+                        </p>
                       </div>
                     </div>
                   </div>
-                ))}
-            </div>
-          )}
+                  <div className="col-md-6">
+                    <div className="d-flex align-items-center mb-3">
+                      <div className="fs-1 me-3">
+                        <div style={{ flexShrink: 0, marginLeft: "16px" }}>
+                          <img
+                            src={
+                              parcelle.photos.length > 0
+                                ? getIPFSURL(parcelle.photos[0].cid)
+                                : "https://via.placeholder.com/100"
+                            }
+                            alt="Parcelle"
+                            style={{
+                              width: "70px",
+                              height: "70px",
+                              objectFit: "cover",
+                              borderRadius: "5px",
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <strong>GPS:</strong>
+                      {parcelle.location &&
+                      parcelle.location.lat &&
+                      parcelle.location.lng ? (
+                        <button
+                          className="btn btn-link p-0 ms-2"
+                          onClick={() => handleMapRedirect(parcelle)}
+                          style={{
+                            textDecoration: "underline",
+                            color: "var(--madtx-green)",
+                          }}
+                        >
+                          {`${parcelle.location.lat.toFixed(
+                            4
+                          )}, ${parcelle.location.lng.toFixed(4)}`}
+                        </button>
+                      ) : (
+                        "Non spécifiée"
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
           {/* Section 3: Recolte & Acteurs */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
