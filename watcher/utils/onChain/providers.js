@@ -2,10 +2,9 @@ import { ethers } from "ethers";
 import config from "../../config.js";
 
 let privateReconnectAttempts = 0;
-let publicReconnectAttempts = 0;
 const MAX_RECONNECT = 5;
 
-export const getPrivateProvider = () => {
+const getPrivateProvider = () => {
   const privateProvider = new ethers.WebSocketProvider(config.privateRPC);
 
   privateProvider.websocket.on("error", (error) => {
@@ -26,3 +25,5 @@ export const getPrivateProvider = () => {
 
   return privateProvider;
 };
+
+export const privateProvider = getPrivateProvider();

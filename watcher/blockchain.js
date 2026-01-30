@@ -5,10 +5,9 @@ import { createAncrage } from "./services/ancrage.service.js";
 // Les abi des contrats
 import exportateurClientABI from "./abi/ExportateurClient.json" with { type: 'json' };
 import registreExpeditionABI from "./abi/RegistreExpedition.json" with { type: 'json' };
-import { getPrivateProvider } from "./utils/onChain/providers.js";
+import { privateProvider } from "./utils/onChain/providers.js";
 
 // Providers
-const privateProvider = getPrivateProvider(); // websocket pour le rpc du smart contrat privee.
 const publicProvider = new ethers.JsonRpcProvider(config.publicRPC);
 
 // Signer pour envoi tx sur public
