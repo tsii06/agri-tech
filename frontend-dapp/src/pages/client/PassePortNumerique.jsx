@@ -14,11 +14,14 @@ import QRCode from "react-qr-code";
 import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
 import Skeleton from "react-loading-skeleton";
 import {
+  getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
+  getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL } from "../../utils/ipfsUtils";
+import { initialRoleActeur } from "../../utils/roles";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -29,12 +32,16 @@ function PassePortNumerique() {
   const [authenticatLoading, setAuthenticateLoading] = useState(true);
   const [parcelleLoading, setParcelleLoading] = useState(true);
   const [recolteLoading, setRecolteLoading] = useState(true);
+  const [lotProduitLoading, setLotProduitLoading] = useState(true);
+  const [acteurLoading, setActeurLoading] = useState(true);
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
   const [expeditionVPS, setExpeditionVPS] = useState({});
   const [parcellesVPS, setParcellesVPS] = useState({});
   const [recoltesVPS, setRecoltesVPS] = useState({});
+  const [lotProduitsVPS, setLotProduitsVPS] = useState({});
+  const [acteursVPS, setActeursVPS] = useState([]);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -42,14 +49,17 @@ function PassePortNumerique() {
       console.log("Reponse watcher : ", res.data);
       setAnchorExpedition(res.data);
       setFirstLoading(false);
+      setActeursVPS([]); // initialise la liste des acteurs a chaque rechargement;
     });
-  }, []);
+  }, [ref]);
 
   // Comparer rootMerkle du mainnet au blockchain privee
   useEffect(() => {
     if (!firstLoading) {
       chargerDetailsExpedition().then((data) => {
         setExpeditionVPS(data);
+        // Recuperer exportateur
+        setActeursVPS((prev) => [...prev, data.exportateur]);
         if (
           anchorExpedition.rootMerkle.toLowerCase() ===
           data.rootMerkle.toLowerCase()
@@ -65,6 +75,11 @@ function PassePortNumerique() {
       chargerParcelles()
         .then((res) => {
           setParcellesVPS(res);
+          // Recuperer les producteurs
+          setActeursVPS((prev) => [
+            ...prev,
+            ...res.map((parcelle) => parcelle.producteur),
+          ]);
           setParcelleLoading(false);
         })
         .catch((err) => {
@@ -90,6 +105,36 @@ function PassePortNumerique() {
     }
   }, [parcelleLoading]);
 
+  // Charger liste lot produit expedition pour recuperer les collecteurs. Et puis afficher liste acteurs
+  useEffect(() => {
+    if (!recolteLoading)
+      chargerLotProduits()
+        .then((res) => {
+          setLotProduitsVPS(res);
+          // Recuperer les collecteurs
+          setActeursVPS((prev) => [
+            ...prev,
+            ...res.map((produit) => produit.collecteur),
+          ]);
+          setLotProduitLoading(false);
+          setActeurLoading(false);
+        })
+        .catch((err) =>
+          console.error("Erreur recuperation lot de produit depuis VPS : ", err)
+        );
+  }, [recolteLoading]);
+
+  // Charger les conditions de transport de l'expedition.
+  useEffect(() => {
+    if (!acteurLoading)
+      chargerConditionsTransport().catch((err) =>
+        console.error(
+          "Erreur recuperation condition transport expedition depuis VPS : ",
+          err
+        )
+      );
+  }, [acteurLoading]);
+
   // Les fonctions pour recuperer les data venant du VPS
   const chargerDetailsExpedition = async () => {
     // renvoyer si le ref appartient a l'exclusion
@@ -114,6 +159,16 @@ function PassePortNumerique() {
     const recoltesExp = await getRecoltesExpedition(expeditionVPS);
     console.log("Recolte expedition depuis VPS : ", recoltesExp);
     return recoltesExp;
+  };
+  const chargerLotProduits = async () => {
+    const lotProduitsExp = await getLotProduisExpedition(expeditionVPS);
+    console.log("Lot de produits depuis VPS : ", lotProduitsExp);
+    return lotProduitsExp;
+  };
+  const chargerConditionsTransport = async () => {
+    const conditionsExp = await getConditionsTransportExpedition(expeditionVPS);
+    console.log("Conditions de transport expedition : ", conditionsExp);
+    return conditionsExp;
   };
 
   // Les fonctions utilitaires
@@ -409,7 +464,7 @@ function PassePortNumerique() {
                             href={getIPFSURL(recolte.certificatPhytosanitaire)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-sm me-1 text-light"
+                            className="btn btn-sm me-1 text-white"
                             key={recolte.id}
                             style={{ background: "var(--madtx-green)" }}
                           >
@@ -420,27 +475,48 @@ function PassePortNumerique() {
                   </div>
                 </div>
               )}
-              <div className="col-md-6">
-                <p className="mb-3">
-                  <strong>Acteurs:</strong>
-                </p>
-                <div className="d-flex gap-2 flex-wrap">
-                  {passportData.quality.actors.map((actor, index) => (
-                    <div
-                      key={index}
-                      className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {actor.initial}
-                    </div>
-                  ))}
+              {/* Infos sur les acteurs */}
+              {acteurLoading ? (
+                <div className="col-md-6">
+                  <Skeleton
+                    width={"100%"}
+                    height={"100%"}
+                    style={{ minHeight: 100 }}
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className="col-md-6">
+                  <p className="mb-3">
+                    <strong>Acteurs:</strong>
+                  </p>
+                  <div className="row row-cols-4">
+                    {acteursVPS.length > 0 &&
+                      acteursVPS.map((acteur) => (
+                        <div
+                          key={acteur.id}
+                          className="col text-center"
+                          style={{ flex: "0 0 auto" }}
+                        >
+                          <div
+                            className="rounded-circle text-white d-flex align-items-center justify-content-center mx-auto mb-2"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              fontSize: "18px",
+                              fontWeight: "bold",
+                              background: "var(--madtx-blue)",
+                            }}
+                          >
+                            {initialRoleActeur(acteur.roles[0])}
+                          </div>
+                          <small className="d-block text-muted">
+                            {acteur.nom}
+                          </small>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {/* Section 4: Parcours Logistique & Qualité */}
