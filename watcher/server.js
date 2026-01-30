@@ -2,8 +2,10 @@ import express from "express";
 import config from "./config.js";
 import { getAncrageByRef } from "./services/ancrage.service.js";
 import { getExpeditionOnMainnet } from "./utils/onChain/call.js";
+import cors from 'cors';
 
 const app = express();
+app.use(cors());
 
 app.get("/anchor-expedition/:ref", async (req, res) => {
   try {
