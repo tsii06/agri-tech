@@ -4,11 +4,8 @@ import {
   MapPin,
   Leaf,
   AlertCircle,
-  Users,
-  Shovel,
-  UserRound,
   CircleUserRound,
-  MapPinned,
+  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
@@ -203,11 +200,19 @@ function PassePortNumerique() {
                   <span
                     className={`badge ${
                       authenticatLoading ? "bg-secondary" : "bg-success"
-                    } ms-2`}
+                    } ms-2 p-3 text-center`}
                   >
                     {authenticatLoading
                       ? "ENCOURS D'AUTHENTIFICATION..."
-                      : "AUTHENTICATE & IMMUABLE"}
+                      : "AUTHENTIQUE & IMMUABLE"}
+                    {/* Icone d'authentication */}
+                    {!authenticatLoading && (
+                      <ShieldCheck
+                        className="text-light ms-2"
+                        style={{ display: "inline" }}
+                        size={25}
+                      />
+                    )}
                   </span>
                 </p>
                 <p className="mb-2">
