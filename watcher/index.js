@@ -1,9 +1,5 @@
-const {
-  listenExpedition,
-  pushToPublic,
-  privateProvider,
-} = require("./blockchain");
-require("./server"); // start HTTP server
+import { listenExpedition, pushToPublic, privateProvider } from "./blockchain.js";
+import './server.js'; // start HTTP server
 
 const callbackListener = async (data) => {
   console.log("Processing expedition for public chain...");

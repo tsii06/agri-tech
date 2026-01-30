@@ -1,6 +1,6 @@
-const express = require("express");
-const { getExpeditionData } = require("./blockchain");
-const config = require("./config");
+import express from "express";
+import { getExpeditionData } from "./blockchain.js";
+import config from "./config.js";
 
 const app = express();
 
