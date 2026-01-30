@@ -63,6 +63,7 @@ import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpedit
 import ProduitDetails from "./pages/EspaceClient/ProduitDetails";
 import EspaceClient from "./pages/client/EspaceClient";
 import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
+import PassePortNumerique from "./pages/client/PassePortNumerique";
 
 function App() {
   const [state, setState] = useState({});
@@ -193,6 +194,7 @@ function AppLayout({
       />
 
       <div className="flex-grow-1">
+        {/* Pour l'affichage client sans la dashboard */}
         {location.pathname === "/" || location.pathname.includes("client") ? (
           <Routes>
             <Route
@@ -205,6 +207,10 @@ function AppLayout({
             <Route
               path="/client-detail-expedition/:reference"
               element={<DetailsExpedition />}
+            />
+            <Route
+              path="passe-port-numerique-client/:ref"
+              element={<PassePortNumerique />}
             />
           </Routes>
         ) : (
