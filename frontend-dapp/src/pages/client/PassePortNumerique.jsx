@@ -16,6 +16,7 @@ import Skeleton from "react-loading-skeleton";
 import {
   getDetailsExpeditionByRef,
   getParcellesExpedition,
+  getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 
@@ -27,11 +28,13 @@ function PassePortNumerique() {
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState(true);
   const [parcelleLoading, setParcelleLoading] = useState(true);
+  const [recolteLoading, setRecolteLoading] = useState(true);
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
   const [expeditionVPS, setExpeditionVPS] = useState({});
   const [parcellesVPS, setParcellesVPS] = useState({});
+  const [recoltesVPS, setRecoltesVPS] = useState({});
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -56,17 +59,36 @@ function PassePortNumerique() {
     }
   }, [firstLoading]);
 
-  // Afficher la section Origine & acteur certifiee
+  // Afficher la section Origine & Producteurs certifiee
   useEffect(() => {
-    chargerParcelles()
-      .then((res) => {
-        setParcellesVPS(res);
-        setParcelleLoading(false);
-      })
-      .catch((err) => {
-        console.error("Erreur recuperation parcelle depuis VPS : ", err);
-      });
+    if (!authenticatLoading) {
+      chargerParcelles()
+        .then((res) => {
+          setParcellesVPS(res);
+          setParcelleLoading(false);
+        })
+        .catch((err) => {
+          console.error("Erreur recuperation parcelle depuis VPS : ", err);
+        });
+    }
   }, [authenticatLoading]);
+
+  // Afficher section recolte
+  useEffect(() => {
+    if (!parcelleLoading) {
+      chargerRecoltes()
+        .then((res) => {
+          setRecoltesVPS(res);
+          setRecolteLoading(false);
+        })
+        .catch((err) => {
+          console.error(
+            "Erreur recuperation recolte expedition depuis VPS : ",
+            err
+          );
+        });
+    }
+  }, [parcelleLoading]);
 
   // Les fonctions pour recuperer les data venant du VPS
   const chargerDetailsExpedition = async () => {
@@ -87,6 +109,11 @@ function PassePortNumerique() {
     const parcellesExp = await getParcellesExpedition(expeditionVPS);
     console.log("Parcelle recuperer depuis VPS : ", parcellesExp);
     return parcellesExp;
+  };
+  const chargerRecoltes = async () => {
+    const recoltesExp = await getRecoltesExpedition(expeditionVPS);
+    console.log("Recolte expedition depuis VPS : ", recoltesExp);
+    return recoltesExp;
   };
 
   // Les fonctions utilitaires
@@ -336,7 +363,7 @@ function PassePortNumerique() {
                 ))}
             </div>
           )}
-          {/* Section 3: Origine & Acteurs & Qualités */}
+          {/* Section 3: Recolte & Acteurs */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
               <Leaf
@@ -344,31 +371,56 @@ function PassePortNumerique() {
                 style={{ display: "inline" }}
                 size={20}
               />
-              Origine & Acteurs & Qualités
+              Recolte & Acteurs
             </h5>
             <div className="row">
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <p className="mb-2">
-                    <strong>Récolte:</strong>{" "}
-                    <span className="badge bg-success">15/07/2024</span>
-                  </p>
-                  <p className="mb-2">
-                    <strong>Certification:</strong>{" "}
-                    <span className="badge bg-success">
-                      Certificat Bio Officiel (OPS)
-                    </span>
-                  </p>
-                  <p className="mb-0">
-                    <strong>Bio:</strong>{" "}
-                    <span className="badge bg-success">70%</span>
-                  </p>
+              {/* Infos sur les recoltes */}
+              {recolteLoading ? (
+                <div className="col-md-6">
+                  <Skeleton
+                    width={"100%"}
+                    height={"100%"}
+                    style={{ minHeight: 100 }}
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <p className="mb-2">
+                      <strong>Récolte:</strong> <br />
+                      {/* Listes dates de recoltes */}
+                      {recoltesVPS.length > 0 &&
+                        recoltesVPS.map((recolte) => (
+                          <span
+                            className="badge"
+                            style={{ background: "var(--madtx-green)" }}
+                            key={recolte.id}
+                          >
+                            {recolte.dateRecolte}
+                          </span>
+                        ))}
+                    </p>
+                    <p className="mb-2">
+                      <strong>Certification Phytonsanitaire:</strong> <br />
+                      {/* Listes des certificats phytosanitaires des recoltes */}
+                      {recoltesVPS.length > 0 &&
+                        recoltesVPS.map((recolte) => (
+                          <a
+                            href={getIPFSURL(recolte.certificatPhytosanitaire)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm me-1 text-light"
+                            key={recolte.id}
+                            style={{ background: "var(--madtx-green)" }}
+                          >
+                            Certificat #{recolte.id}
+                          </a>
+                        ))}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="col-md-6">
-                <p className="mb-2">
-                  <strong>Température:</strong> 25°C (Stable)
-                </p>
                 <p className="mb-3">
                   <strong>Acteurs:</strong>
                 </p>
