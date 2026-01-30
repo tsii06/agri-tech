@@ -1,10 +1,9 @@
 import { Sprout } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const EspaceClient = () => {
   const [reference, setReference] = useState("");
-  const [traceabilityData, setTraceabilityData] = useState(null);
   const nav = useNavigate();
 
   const handleSearch = async () => {
@@ -12,15 +11,15 @@ const EspaceClient = () => {
       alert("Veuillez entrer une référence produit.");
       return;
     }
-    nav(`/client-detail-expedition/${reference}`);
+    nav(`/passe-port-numerique-client/${reference}`);
   };
 
   return (
     <div className="container py-4">
-      <h2 className="text-center mb-4">Découvrez l'origine de vos produits</h2>
+      <h2 className="text-center mb-4">Découvrez l&apos;origine de vos produits</h2>
       <p className="text-center mb-4 text-muted">
         Suivez le parcours complet de vos produits agricoles, de la parcelle à
-        l'exportation, grâce à notre système de traçabilité transparent.
+        l&apos;exportation, grâce à notre système de traçabilité transparent.
       </p>
       {/* Encapsulation de la barre de recherche et du bouton dans une carte */}
       <div
@@ -52,7 +51,7 @@ const EspaceClient = () => {
             </div>
             <h5>Origine certifiée</h5>
             <p className="text-muted">
-              Vérifiez l'authenticité et la qualité de vos produits agricoles
+              Vérifiez l&apos;authenticité et la qualité de vos produits agricoles
             </p>
           </div>
         </div>
@@ -79,15 +78,6 @@ const EspaceClient = () => {
           </div>
         </div>
       </div>
-
-      {traceabilityData && (
-        <div className="mt-4">
-          <h4 className="text-center">Détails de la traçabilité</h4>
-          <pre className="bg-light p-3" style={{ whiteSpace: "pre-wrap" }}>
-            {JSON.stringify(traceabilityData, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 };

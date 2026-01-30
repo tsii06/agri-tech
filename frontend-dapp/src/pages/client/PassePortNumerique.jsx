@@ -1,26 +1,60 @@
-import { useParams } from "react-router-dom";
-import { CheckCircle, MapPin, Leaf, AlertCircle, QrCode } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CheckCircle, MapPin, Leaf, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
 import { timestampToDate } from "../../utils/date";
 import QRCode from "react-qr-code";
-import { URL_BLOCK_SCAN } from "../../utils/contract";
+import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
+import Skeleton from "react-loading-skeleton";
+import { getDetailsExpeditionByRef } from "../../utils/contrat/exportateurClient";
 
 // url : passe-port-numerique/:ref
 function PassePortNumerique() {
   const { ref } = useParams();
-  const [showQR, setShowQR] = useState(false);
   const [anchorExpedition, setAnchorExpedition] = useState(null);
+  // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
+  const [authenticatLoading, setAuthenticateLoading] = useState(true);
+  const [parcelleLoading, setParcelleLoading] = useState(true);
+  // navigateur
+  const nav = useNavigate();
+  // valeurs utiles
+  const [expeditionVPS, setExpeditionVPS] = useState({});
 
+  // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
-    // Recuperer l'expedition ancrer dans le mainnet
     apiGetAnchorExpedition(ref).then((res) => {
       console.log("Reponse watcher : ", res.data);
       setAnchorExpedition(res.data);
       setFirstLoading(false);
     });
   }, []);
+
+  // Comparer rootMerkle du mainnet au blockchain privee
+  useEffect(() => {
+    if (!firstLoading) {
+      chargerDetailsExpedition().then((data) => {
+        setExpeditionVPS(data);
+        if (
+          anchorExpedition.rootMerkle.toLowerCase() ===
+          data.rootMerkle.toLowerCase()
+        )
+          setAuthenticateLoading(false);
+      });
+    }
+  }, [firstLoading]);
+
+  const chargerDetailsExpedition = async () => {
+    // renvoyer si le ref appartient a l'exclusion
+    if (ref && EXCLUDE_EXPEDITION.includes(ref)) {
+      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+      nav("/espace-client");
+      return;
+    }
+    const detailsExpedition = await getDetailsExpeditionByRef(ref);
+    console.log("Reception expedition details : ", detailsExpedition);
+    return detailsExpedition;
+  };
 
   // Données exemple - à remplacer par des données réelles
   const passportData = {
@@ -66,7 +100,8 @@ function PassePortNumerique() {
       className="d-flex justify-content-center py-4"
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, var(--madtx-green) 0%, var(--madtx-blue) 100%)",
+        background:
+          "linear-gradient(135deg, var(--madtx-green) 0%, var(--madtx-blue) 100%)",
       }}
     >
       {firstLoading ? (
@@ -92,7 +127,7 @@ function PassePortNumerique() {
                   MAD-TX
                 </h2>
                 <small className="text-muted">
-                  Traçabilité de l'Océan Indien
+                  Traçabilité de l&apos;Océan Indien
                 </small>
               </div>
               <div className="col-md-6 text-end">
@@ -102,14 +137,12 @@ function PassePortNumerique() {
               </div>
             </div>
           </div>
-
           {/* Titre du Passeport */}
           <div className="card-body border-bottom text-center bg-light mx-4 mt-3 mb-3">
             <h3 className="mb-0">
               PASSEPORT NUMÉRIQUE DU LOT {anchorExpedition.ref}
             </h3>
           </div>
-
           {/* Section 1: Preuve d'Ancrage */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
@@ -118,13 +151,17 @@ function PassePortNumerique() {
                 style={{ display: "inline" }}
                 size={20}
               />
-              Preuve d'Ancrage
+              Preuve d&apos;Ancrage
             </h5>
             <div className="row">
               <div className="col-md-8">
                 <p className="mb-2">
-                  <span className="badge bg-success ms-2">
-                    {passportData.status}
+                  <span
+                    className={`badge ${
+                      authenticatLoading ? "bg-secondary" : "bg-success"
+                    } ms-2`}
+                  >
+                    {authenticatLoading ? "ENCOURS D'AUTHENTIFICATION..." : "AUTHENTICATE & IMMUABLE"}
                   </span>
                 </p>
                 <p className="mb-2">
@@ -145,7 +182,7 @@ function PassePortNumerique() {
                 <div className="bg-light rounded text-end">
                   <QRCode
                     value={URL_BLOCK_SCAN + anchorExpedition.txHash}
-                    size={80}
+                    size={90}
                   />
                 </div>
                 <a
@@ -155,58 +192,58 @@ function PassePortNumerique() {
                   className="btn btn-sm mt-2 text-white"
                   style={{ background: "var(--madtx-blue)" }}
                 >
-                  <strong>Voir transaction</strong>
+                  <strong>Voir transaction sur Polygon</strong>
                 </a>
-                {/* <button
-                  className="btn btn-info btn-sm"
-                  onClick={() => setShowQR(!showQR)}
-                >
-                  <QrCode
-                    size={16}
-                    className="me-2"
-                    style={{ display: "inline" }}
-                  />
-                  Voir Transaction
-                </button> */}
               </div>
             </div>
           </div>
-
           {/* Section 2: Origine & Acteurs Certifiés */}
-          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
-            <h5 className="card-title mb-3">
-              <MapPin
-                className="text-danger me-2"
-                style={{ display: "inline" }}
-                size={20}
+          {parcelleLoading ? (
+            <div className="card-body mx-4 mt-3 mb-3">
+              <Skeleton
+                width={"100%"}
+                height={"100%"}
+                style={{ minHeight: 100 }}
               />
-              Origine & Acteurs Certifiés
-            </h5>
-            <div className="row">
-              <div className="col-md-6">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="fs-1 me-3">{passportData.producer.image}</div>
-                  <div>
-                    <p className="mb-0">
-                      <strong>Producteur:</strong> {passportData.producer.name}
-                    </p>
-                    <p className="mb-0 text-muted">
-                      {passportData.producer.id}
-                    </p>
+            </div>
+          ) : (
+            <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
+              <h5 className="card-title mb-3">
+                <MapPin
+                  className="text-danger me-2"
+                  style={{ display: "inline" }}
+                  size={20}
+                />
+                Origine & Acteurs Certifiés
+              </h5>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="d-flex align-items-center mb-3">
+                    <div className="fs-1 me-3">
+                      {passportData.producer.image}
+                    </div>
+                    <div>
+                      <p className="mb-0">
+                        <strong>Producteur:</strong>{" "}
+                        {passportData.producer.name}
+                      </p>
+                      <p className="mb-0 text-muted">
+                        {passportData.producer.id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="alert alert-info mb-0" role="alert">
+                    <strong>Parcelle:</strong> Ambassadeur, Tamatave (GPS:
+                    -18.9°, 49.2°C)
+                    <br />
+                    <strong>Superficie:</strong> {passportData.region.area}
                   </div>
                 </div>
               </div>
-              <div className="col-md-6">
-                <div className="alert alert-info mb-0" role="alert">
-                  <strong>Parcelle:</strong> Ambassadeur, Tamatave (GPS: -18.9°,
-                  49.2°C)
-                  <br />
-                  <strong>Superficie:</strong> {passportData.region.area}
-                </div>
-              </div>
             </div>
-          </div>
-
+          )}
           {/* Section 3: Origine & Acteurs & Qualités */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
@@ -262,7 +299,6 @@ function PassePortNumerique() {
               </div>
             </div>
           </div>
-
           {/* Section 4: Parcours Logistique & Qualité */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
@@ -314,7 +350,6 @@ function PassePortNumerique() {
               </div>
             </div>
           </div>
-
           {/* Footer */}
           <div className="card-body text-center mt-3 mb-3">
             <small className="text-muted">

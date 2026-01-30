@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllHashMerkle,
@@ -12,10 +12,7 @@ import {
   Box,
   ChevronDown,
   ChevronUp,
-  MapPin,
   Truck,
-  Copy,
-  CopyCheck,
 } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
@@ -27,7 +24,7 @@ import { getIPFSURL } from "../../utils/ipfsUtils";
 import { EXCLUDE_EXPEDITION } from "../../utils/contract";
 import QRCode from "react-qr-code";
 
-const DetailsExpedition = ({}) => {
+const DetailsExpedition = () => {
   const { reference } = useParams();
   const [expedition, setExpedition] = useState({});
   const [parcelles, setParcelles] = useState([]);
@@ -36,7 +33,7 @@ const DetailsExpedition = ({}) => {
   const [conditionsTransport, setConditionsTransport] = useState([]);
   const [allHashesMerkle, setAllHashesMerkle] = useState(["0x1"]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  // const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
@@ -98,14 +95,15 @@ const DetailsExpedition = ({}) => {
     setIsLoadingLogistique(false);
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
-  };
+  // const copyToClipboard = (text) => {
+  //   navigator.clipboard.writeText(text);
+  //   setCopied(true);
+  //   setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+  // };
 
   useEffect(() => {
     chargerDetailsExpedition().catch((e) => {
+      console.error("Erreur reseaux : ", e);
       alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
       nav("/espace-client");
     });
@@ -129,7 +127,7 @@ const DetailsExpedition = ({}) => {
             >
               <h6 className="card-title text-start mb-2">
                 <Box className="text-success" size={18} />
-                &nbsp;Lot d'exportation &nbsp;
+                &nbsp;Lot d&apos;exportation &nbsp;
                 {expedition.certifier ? (
                   <span className="badge bg-success">Certifiée</span>
                 ) : (
