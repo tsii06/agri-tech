@@ -1,4 +1,4 @@
-import { listenExpedition, pushToPublic, privateProvider } from "./blockchain.js";
+import { listenExpedition, pushToPublic } from "./blockchain.js";
 import './server.js'; // start HTTP server
 
 const callbackListener = async (data) => {
@@ -7,9 +7,3 @@ const callbackListener = async (data) => {
 };
 
 listenExpedition(callbackListener);
-
-// Gestion des reconnections
-privateProvider.on("error", (error) => {
-  console.log("Erreur provider, reconnect...");
-  listenExpedition(callbackListener);
-});

@@ -54,8 +54,4 @@ export const pushToPublic = async (data) => {
   }
 };
 
-export const getExpeditionData = async (ref) => {
-  return await exportateurClientContrat.getExpeditionByReference(ref);
-};
-
-export { privateProvider };
+export { registreExpeditionContrat };

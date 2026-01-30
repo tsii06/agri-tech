@@ -1,27 +1,21 @@
 import express from "express";
-import { getExpeditionData } from "./blockchain.js";
 import config from "./config.js";
 import { getAncrageByRef } from "./services/ancrage.service.js";
+import { getExpeditionOnMainnet } from "./utils/onChain/call.js";
 
 const app = express();
 
-app.get("/expedition/:ref", async (req, res) => {
+app.get("/anchor-expedition/:ref", async (req, res) => {
   try {
     const ref = req.params.ref;
-    const data = await getExpeditionData(ref);
+    const dataOnMainnet = await getExpeditionOnMainnet(ref);
     const dataFromDb = await getAncrageByRef(ref);
-    // res.json(
-    //   JSON.parse(
-    //     JSON.stringify(data, (_, value) =>
-    //       typeof value === "bigint" ? value.toString() : value
-    //     )
-    //   )
-    // );
-    res.json(dataFromDb);
+    const data = { ...dataFromDb, ...dataOnMainnet };
+    res.json(data);
   } catch (err) {
     console.error(
-      "Erreur lors de la recuperation des donnees depuis le smart contract privee : ",
-      err.message
+      "Erreur lors de la recuperation des donnees depuis le smart contract public : ",
+      err
     );
     res.status(500).json({ error: err.message });
   }
