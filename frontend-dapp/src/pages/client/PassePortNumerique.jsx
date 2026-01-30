@@ -1,14 +1,28 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckCircle, MapPin, Leaf, AlertCircle } from "lucide-react";
+import {
+  CheckCircle,
+  MapPin,
+  Leaf,
+  AlertCircle,
+  Users,
+  Shovel,
+  UserRound,
+  CircleUserRound,
+  MapPinned,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
 import { timestampToDate } from "../../utils/date";
 import QRCode from "react-qr-code";
 import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
 import Skeleton from "react-loading-skeleton";
-import { getDetailsExpeditionByRef } from "../../utils/contrat/exportateurClient";
+import {
+  getDetailsExpeditionByRef,
+  getParcellesExpedition,
+} from "../../utils/contrat/exportateurClient";
+import { getIPFSURL } from "../../utils/ipfsUtils";
 
-// url : passe-port-numerique/:ref
+// url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
   const { ref } = useParams();
   const [anchorExpedition, setAnchorExpedition] = useState(null);
@@ -20,6 +34,7 @@ function PassePortNumerique() {
   const nav = useNavigate();
   // valeurs utiles
   const [expeditionVPS, setExpeditionVPS] = useState({});
+  const [parcellesVPS, setParcellesVPS] = useState({});
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -44,6 +59,19 @@ function PassePortNumerique() {
     }
   }, [firstLoading]);
 
+  // Afficher la section Origine & acteur certifiee
+  useEffect(() => {
+    chargerParcelles()
+      .then((res) => {
+        setParcellesVPS(res);
+        setParcelleLoading(false);
+      })
+      .catch((err) => {
+        console.error("Erreur recuperation parcelle depuis VPS : ", err);
+      });
+  }, [authenticatLoading]);
+
+  // Les fonctions pour recuperer les data venant du VPS
   const chargerDetailsExpedition = async () => {
     // renvoyer si le ref appartient a l'exclusion
     if (ref && EXCLUDE_EXPEDITION.includes(ref)) {
@@ -52,8 +80,24 @@ function PassePortNumerique() {
       return;
     }
     const detailsExpedition = await getDetailsExpeditionByRef(ref);
-    console.log("Reception expedition details : ", detailsExpedition);
+    console.log(
+      "Reception expedition details depuis VPS : ",
+      detailsExpedition
+    );
     return detailsExpedition;
+  };
+  const chargerParcelles = async () => {
+    const parcellesExp = await getParcellesExpedition(expeditionVPS);
+    console.log("Parcelle recuperer depuis VPS : ", parcellesExp);
+    return parcellesExp;
+  };
+
+  // Les fonctions utilitaires
+  const handleMapRedirect = (parcelle) => {
+    if (parcelle.location && parcelle.location.lat && parcelle.location.lng) {
+      const mapUrl = `https://www.google.com/maps?q=${parcelle.location.lat},${parcelle.location.lng}`;
+      window.open(mapUrl, "_blank");
+    }
   };
 
   // Données exemple - à remplacer par des données réelles
@@ -161,7 +205,9 @@ function PassePortNumerique() {
                       authenticatLoading ? "bg-secondary" : "bg-success"
                     } ms-2`}
                   >
-                    {authenticatLoading ? "ENCOURS D'AUTHENTIFICATION..." : "AUTHENTICATE & IMMUABLE"}
+                    {authenticatLoading
+                      ? "ENCOURS D'AUTHENTIFICATION..."
+                      : "AUTHENTICATE & IMMUABLE"}
                   </span>
                 </p>
                 <p className="mb-2">
@@ -197,7 +243,7 @@ function PassePortNumerique() {
               </div>
             </div>
           </div>
-          {/* Section 2: Origine & Acteurs Certifiés */}
+          {/* Section 2: Origine & Producteur Certifiés */}
           {parcelleLoading ? (
             <div className="card-body mx-4 mt-3 mb-3">
               <Skeleton
@@ -207,41 +253,82 @@ function PassePortNumerique() {
               />
             </div>
           ) : (
-            <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
+            <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3 pb-0">
               <h5 className="card-title mb-3">
                 <MapPin
-                  className="text-danger me-2"
+                  className="text-success me-2"
                   style={{ display: "inline" }}
                   size={20}
                 />
-                Origine & Acteurs Certifiés
+                Origine & Producteurs Certifiés
               </h5>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="fs-1 me-3">
-                      {passportData.producer.image}
+              {/* Infos sur Producteur et ces parcelles */}
+              {parcellesVPS.length > 0 &&
+                parcellesVPS.map((parcelle) => (
+                  <div className="row border-bottom" key={parcelle.id}>
+                    <div className="col-md-6">
+                      <div className="d-flex align-items-center mb-3">
+                        <div className="fs-1 me-3">
+                          <CircleUserRound
+                            className="text-success"
+                            size={40}
+                            style={{ display: "inline" }}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-0">
+                            <strong>Producteur:</strong>{" "}
+                            {parcelle.producteur.nom}
+                          </p>
+                          <p className="mb-0 text-muted">
+                            ID : {parcelle.producteur.idBlockchain}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="mb-0">
-                        <strong>Producteur:</strong>{" "}
-                        {passportData.producer.name}
-                      </p>
-                      <p className="mb-0 text-muted">
-                        {passportData.producer.id}
-                      </p>
+                    <div className="col-md-6">
+                      <div className="d-flex align-items-center mb-3">
+                        <div className="fs-1 me-3">
+                          <div style={{ flexShrink: 0, marginLeft: "16px" }}>
+                            <img
+                              src={
+                                parcelle.photos.length > 0
+                                  ? getIPFSURL(parcelle.photos[0].cid)
+                                  : "https://via.placeholder.com/100"
+                              }
+                              alt="Parcelle"
+                              style={{
+                                width: "70px",
+                                height: "70px",
+                                objectFit: "cover",
+                                borderRadius: "5px",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <strong>GPS:</strong>
+                        {parcelle.location &&
+                        parcelle.location.lat &&
+                        parcelle.location.lng ? (
+                          <button
+                            className="btn btn-link p-0 ms-2"
+                            onClick={() => handleMapRedirect(parcelle)}
+                            style={{
+                              textDecoration: "underline",
+                              color: "var(--madtx-green)",
+                            }}
+                          >
+                            {`${parcelle.location.lat.toFixed(
+                              4
+                            )}, ${parcelle.location.lng.toFixed(4)}`}
+                          </button>
+                        ) : (
+                          "Non spécifiée"
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="alert alert-info mb-0" role="alert">
-                    <strong>Parcelle:</strong> Ambassadeur, Tamatave (GPS:
-                    -18.9°, 49.2°C)
-                    <br />
-                    <strong>Superficie:</strong> {passportData.region.area}
-                  </div>
-                </div>
-              </div>
+                ))}
             </div>
           )}
           {/* Section 3: Origine & Acteurs & Qualités */}
