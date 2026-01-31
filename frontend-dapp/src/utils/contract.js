@@ -42,14 +42,14 @@ export const URL_BLOCK_SCAN = "https://amoy.polygonscan.com/tx/";
 // export const DEBUT_LOT_PRODUIT = 1;
 // export const DEBUT_EXPEDITION = 1;
 
-// Anciennes valeurs (remettre si nécessaire)
+// Ignorer les Anciennes valeurs obseletes (remettre si nécessaire)
 export const DEBUT_PARCELLE = 4;
 export const DEBUT_RECOLTE = 7;
 export const DEBUT_COMMANDE_RECOLTE = 16;
 export const DEBUT_PRODUIT = 1;
-export const DEBUT_COMMANDE_LOT_PRODUIT = 7;
+export const DEBUT_COMMANDE_LOT_PRODUIT = 19;
 export const DEBUT_LOT_PRODUIT = 5;
-export const DEBUT_EXPEDITION = 5;
+export const DEBUT_EXPEDITION = 16;
 
 export const EXCLUDE_EXPEDITION = ["EXP-17570788211", "EXP-17575277782", "EXP-17576898483", "EXP-17577490264"];
 

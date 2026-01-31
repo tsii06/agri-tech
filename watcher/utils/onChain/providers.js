@@ -6,12 +6,26 @@ const MAX_RECONNECT = 5;
 
 const getPrivateProvider = () => {
   const privateProvider = new ethers.WebSocketProvider(config.privateRPC);
+  privateProvider
+    .getNetwork()
+    .then((net) =>
+      console.log(
+        "PrivateProvider connecte au reseau : ",
+        net.name,
+        net.chainId
+      )
+    )
+    .catch((err) =>
+      console.error("Erreur connection au blockchain VPS : ", err)
+    );
 
   privateProvider.websocket.on("error", (error) => {
     console.error("WebSocket error:", error);
     if (privateReconnectAttempts < MAX_RECONNECT) {
       privateReconnectAttempts++;
-      console.log(`Reconnexion... (${privateReconnectAttempts}/${MAX_RECONNECT})`);
+      console.log(
+        `Reconnexion... (${privateReconnectAttempts}/${MAX_RECONNECT})`
+      );
       setTimeout(getPrivateProvider, 5000); // Attend 5s avant de reconnecter
     }
   });
