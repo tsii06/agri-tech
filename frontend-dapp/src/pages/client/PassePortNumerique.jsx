@@ -29,11 +29,14 @@ function PassePortNumerique() {
   const [anchorExpedition, setAnchorExpedition] = useState(null);
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
+  const [expeditionVPSLoading, setExpeditionVPSLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState(true);
   const [parcelleLoading, setParcelleLoading] = useState(true);
   const [recolteLoading, setRecolteLoading] = useState(true);
   const [lotProduitLoading, setLotProduitLoading] = useState(true);
   const [acteurLoading, setActeurLoading] = useState(true);
+  const [conditionTransportLoading, setConditionTransportLoading] =
+    useState(true);
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
@@ -42,6 +45,7 @@ function PassePortNumerique() {
   const [recoltesVPS, setRecoltesVPS] = useState({});
   const [lotProduitsVPS, setLotProduitsVPS] = useState({});
   const [acteursVPS, setActeursVPS] = useState([]);
+  const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -58,6 +62,7 @@ function PassePortNumerique() {
     if (!firstLoading) {
       chargerDetailsExpedition().then((data) => {
         setExpeditionVPS(data);
+        setExpeditionVPSLoading(false);
         // Recuperer exportateur
         setActeursVPS((prev) => [...prev, data.exportateur]);
         if (
@@ -71,7 +76,7 @@ function PassePortNumerique() {
 
   // Afficher la section Origine & Producteurs certifiee
   useEffect(() => {
-    if (!authenticatLoading) {
+    if (!expeditionVPSLoading) {
       chargerParcelles()
         .then((res) => {
           setParcellesVPS(res);
@@ -86,7 +91,7 @@ function PassePortNumerique() {
           console.error("Erreur recuperation parcelle depuis VPS : ", err);
         });
     }
-  }, [authenticatLoading]);
+  }, [expeditionVPSLoading]);
 
   // Afficher section recolte
   useEffect(() => {
@@ -127,12 +132,17 @@ function PassePortNumerique() {
   // Charger les conditions de transport de l'expedition.
   useEffect(() => {
     if (!acteurLoading)
-      chargerConditionsTransport().catch((err) =>
-        console.error(
-          "Erreur recuperation condition transport expedition depuis VPS : ",
-          err
-        )
-      );
+      chargerConditionsTransport()
+        .then((res) => {
+          setConditionsTransportVPS(res);
+          setConditionTransportLoading(false);
+        })
+        .catch((err) =>
+          console.error(
+            "Erreur recuperation condition transport expedition depuis VPS : ",
+            err
+          )
+        );
   }, [acteurLoading]);
 
   // Les fonctions pour recuperer les data venant du VPS
@@ -458,7 +468,7 @@ function PassePortNumerique() {
                       <strong>Certification Phytonsanitaire:</strong> <br />
                       {/* Listes des certificats phytosanitaires des recoltes */}
                       {recoltesVPS.length > 0 &&
-                        recoltesVPS.map((recolte) => (
+                        recoltesVPS.map((recolte, index) => (
                           <a
                             href={getIPFSURL(recolte.certificatPhytosanitaire)}
                             target="_blank"
@@ -467,7 +477,7 @@ function PassePortNumerique() {
                             key={recolte.id}
                             style={{ background: "var(--madtx-green)" }}
                           >
-                            Certificat #{recolte.id}
+                            Certificat #{index + 1}
                           </a>
                         ))}
                     </p>
@@ -522,7 +532,7 @@ function PassePortNumerique() {
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
               <AlertCircle
-                className="text-warning me-2"
+                className="text-success me-2"
                 style={{ display: "inline" }}
                 size={20}
               />
@@ -531,30 +541,55 @@ function PassePortNumerique() {
             <div className="row">
               <div className="col-md-6">
                 <p className="mb-2">
-                  <strong>Itinéraire:</strong>
+                  <strong>Conditions de Transport:</strong>
                 </p>
-                <p className="text-muted text-sm mb-3">
-                  {passportData.logistics.route}
-                </p>
-                <p className="mb-2">
-                  <strong>Méthode:</strong> Agricultture Raisonnée (Intrants
-                  Naturels)
-                </p>
+                {/* Liste rapport de transport */}
+                {conditionTransportLoading ? (
+                  <div className="row-cols-4">
+                    <Skeleton
+                      width={"100%"}
+                      height={"100%"}
+                      style={{ minHeight: 100 }}
+                    />
+                  </div>
+                ) : (
+                  <div className="row-cols-4">
+                    {conditionsTransportVPS.length > 0 &&
+                      conditionsTransportVPS.map((condition, index) => (
+                        <a
+                          href={getIPFSURL(condition.cidRapportTransport)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="col btn btn-sm me-1 text-white"
+                          key={index}
+                          style={{ background: "var(--madtx-green)" }}
+                        >
+                          Rapport #{index + 1}
+                        </a>
+                      ))}
+                  </div>
+                )}
               </div>
-              <div className="col-md-6">
-                <p className="mb-2">
-                  <strong>Température:</strong>{" "}
-                  {passportData.logistics.temperature}
-                </p>
-                <p className="mb-2">
-                  <strong>Ports Export:</strong>{" "}
-                  {passportData.logistics.exportPort}
-                </p>
-                <p className="mb-2">
-                  <strong>Ports Export:</strong>{" "}
-                  {passportData.logistics.exportQuality}
-                </p>
-              </div>
+              {/* Lieu de depart et de destination */}
+              {expeditionVPSLoading ? (
+                <div className="col-md-6">
+                  <Skeleton
+                    width={"100%"}
+                    height={"100%"}
+                    style={{ minHeight: 100 }}
+                  />
+                </div>
+              ) : (
+                <div className="col-md-6">
+                  <p className="mb-2">
+                    <strong>Depart:</strong> {expeditionVPS.lieuDepart}
+                  </p>
+                  <p className="mb-2">
+                    <strong>Destination:</strong>{" "}
+                    {expeditionVPS.destination}
+                  </p>
+                </div>
+              )}
             </div>
             <div className="mt-3">
               <p className="mb-2">
