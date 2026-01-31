@@ -3,9 +3,9 @@ import {
   CheckCircle,
   MapPin,
   Leaf,
-  AlertCircle,
   CircleUserRound,
   ShieldCheck,
+  Route,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
@@ -95,7 +95,7 @@ function PassePortNumerique() {
 
   // Afficher section recolte
   useEffect(() => {
-    if (!parcelleLoading) {
+    if (!expeditionVPSLoading) {
       chargerRecoltes()
         .then((res) => {
           setRecoltesVPS(res);
@@ -108,11 +108,11 @@ function PassePortNumerique() {
           );
         });
     }
-  }, [parcelleLoading]);
+  }, [expeditionVPSLoading]);
 
   // Charger liste lot produit expedition pour recuperer les collecteurs. Et puis afficher liste acteurs
   useEffect(() => {
-    if (!recolteLoading)
+    if (!expeditionVPSLoading)
       chargerLotProduits()
         .then((res) => {
           setLotProduitsVPS(res);
@@ -127,11 +127,11 @@ function PassePortNumerique() {
         .catch((err) =>
           console.error("Erreur recuperation lot de produit depuis VPS : ", err)
         );
-  }, [recolteLoading]);
+  }, [expeditionVPSLoading]);
 
   // Charger les conditions de transport de l'expedition.
   useEffect(() => {
-    if (!acteurLoading)
+    if (!expeditionVPSLoading)
       chargerConditionsTransport()
         .then((res) => {
           setConditionsTransportVPS(res);
@@ -143,7 +143,7 @@ function PassePortNumerique() {
             err
           )
         );
-  }, [acteurLoading]);
+  }, [expeditionVPSLoading]);
 
   // Les fonctions pour recuperer les data venant du VPS
   const chargerDetailsExpedition = async () => {
@@ -531,7 +531,7 @@ function PassePortNumerique() {
           {/* Section 4: Parcours Logistique & Qualité */}
           <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
             <h5 className="card-title mb-3">
-              <AlertCircle
+              <Route
                 className="text-success me-2"
                 style={{ display: "inline" }}
                 size={20}
@@ -591,6 +591,7 @@ function PassePortNumerique() {
                 </div>
               )}
             </div>
+            {/* Parcours producteur a exportateur */}
             <div className="mt-3">
               <p className="mb-2">
                 <strong>Images du Parcours:</strong>
