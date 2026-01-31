@@ -225,7 +225,14 @@ function PassePortNumerique() {
       }}
     >
       {firstLoading ? (
-        <div>Loading...</div>
+        <div
+          style={{
+            width: "90%",
+            maxWidth: "900px",
+          }}
+        >
+          <Skeleton width={"100%"} height={"100%"} style={{ minHeight: 100 }} />
+        </div>
       ) : (
         <div
           className="card border-0 shadow"
@@ -281,7 +288,9 @@ function PassePortNumerique() {
                     className={`badge ${
                       authenticatLoading && "bg-secondary"
                     } ms-2 p-3 text-center`}
-                    style={{ background: !authenticatLoading && "var(--madtx-green)"}}
+                    style={{
+                      background: !authenticatLoading && "var(--madtx-green)",
+                    }}
                   >
                     {authenticatLoading
                       ? "ENCOURS D'AUTHENTIFICATION"
@@ -580,7 +589,8 @@ function PassePortNumerique() {
                     <strong>Port de depart:</strong> {expeditionVPS.lieuDepart}
                   </p>
                   <p className="mb-2">
-                    <strong>Port de destination:</strong> {expeditionVPS.destination}
+                    <strong>Port de destination:</strong>{" "}
+                    {expeditionVPS.destination}
                   </p>
                 </div>
               )}
