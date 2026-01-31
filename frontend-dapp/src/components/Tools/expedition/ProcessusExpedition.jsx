@@ -13,7 +13,7 @@ const nodeTypes = {
   parcelleNode: ParcelleNode
 };
 
-const ProcessusExpedition = ({ expedition }) => {
+const ProcessusExpedition = ({ expedition, height="400px", background="" }) => {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // État pour le chargement
@@ -36,7 +36,7 @@ const ProcessusExpedition = ({ expedition }) => {
 
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "400px" }}>
+      <div className="d-flex justify-content-center align-items-center" style={{ height: height }}>
         <div className="custom-spinner"></div>
         <style>{`
           .custom-spinner {
@@ -62,7 +62,7 @@ const ProcessusExpedition = ({ expedition }) => {
   }
 
   return (
-    <div style={{ height: "400px" }}>
+    <div style={{ height: height, background: background }}>
       <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.2}>
         <MiniMap />
         <Controls />

@@ -22,6 +22,7 @@ import {
 } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
+import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -245,7 +246,7 @@ function PassePortNumerique() {
           style={{
             width: "90%",
             maxWidth: "900px",
-            backgroundColor: "#e9e3e3ff",
+            backgroundColor: "var(--madtx-gray)",
           }}
         >
           {/* Header */}
@@ -585,24 +586,29 @@ function PassePortNumerique() {
                     <strong>Depart:</strong> {expeditionVPS.lieuDepart}
                   </p>
                   <p className="mb-2">
-                    <strong>Destination:</strong>{" "}
-                    {expeditionVPS.destination}
+                    <strong>Destination:</strong> {expeditionVPS.destination}
                   </p>
                 </div>
               )}
             </div>
             {/* Parcours producteur a exportateur */}
             <div className="mt-3">
-              <p className="mb-2">
+              <p className="">
                 <strong>Images du Parcours:</strong>
               </p>
-              <div className="d-flex gap-2">
-                {passportData.images.map((image, index) => (
-                  <div key={index} className="rounded border p-2 fs-3">
-                    {image}
-                  </div>
-                ))}
-              </div>
+              {expeditionVPSLoading ? (
+                <div className="row">
+                  <Skeleton
+                    width={"100%"}
+                    height={"100%"}
+                    style={{ minHeight: 100 }}
+                  />
+                </div>
+              ) : (
+                <div className="row mx-1">
+                  <ProcessusExpedition expedition={expeditionVPS} height="300px" background="var(--madtx-gray)" />
+                </div>
+              )}
             </div>
           </div>
           {/* Footer */}
