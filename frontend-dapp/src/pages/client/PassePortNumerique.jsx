@@ -6,6 +6,7 @@ import {
   CircleUserRound,
   ShieldCheck,
   Route,
+  Package,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
@@ -66,11 +67,6 @@ function PassePortNumerique() {
         setExpeditionVPSLoading(false);
         // Recuperer exportateur
         setActeursVPS((prev) => [...prev, data.exportateur]);
-        if (
-          anchorExpedition.rootMerkle.toLowerCase() ===
-          data.rootMerkle.toLowerCase()
-        )
-          setAuthenticateLoading(false);
       });
     }
   }, [firstLoading]);
@@ -146,6 +142,35 @@ function PassePortNumerique() {
         );
   }, [expeditionVPSLoading]);
 
+  // Afficher badge authentifier apres que tous les loading soient mis a false
+  useEffect(() => {
+    if (
+      !firstLoading &&
+      !expeditionVPSLoading &&
+      !parcelleLoading &&
+      !recolteLoading &&
+      !lotProduitLoading &&
+      !acteurLoading &&
+      !conditionTransportLoading
+    ) {
+      console.log("Tous les chargements sont terminés");
+      // authentique si rootMerkle identique
+      if (
+        anchorExpedition.rootMerkle.toLowerCase() ===
+        expeditionVPS.rootMerkle.toLowerCase()
+      )
+        setAuthenticateLoading(false);
+    }
+  }, [
+    firstLoading,
+    expeditionVPSLoading,
+    parcelleLoading,
+    recolteLoading,
+    lotProduitLoading,
+    acteurLoading,
+    conditionTransportLoading,
+  ]);
+
   // Les fonctions pour recuperer les data venant du VPS
   const chargerDetailsExpedition = async () => {
     // renvoyer si le ref appartient a l'exclusion
@@ -190,45 +215,6 @@ function PassePortNumerique() {
     }
   };
 
-  // Données exemple - à remplacer par des données réelles
-  const passportData = {
-    reference: `EXP-2024-${ref || "001"}`,
-    product: "Produits Agricoles Certifiés",
-    status: "AUTHENTIQUE & IMMUABLE",
-    blockchainHash: "0x7e88...1234",
-    anchoredDate: "Ancré sur Polygon 25 à 10:30:15 UTC",
-    producer: {
-      name: "Coopérative Famadhy",
-      id: "ID: 007",
-      image: "👨‍🌾",
-    },
-    region: {
-      name: "Tamatave (GPS: -18.9°, 49.2°C)",
-      area: "25 hectares",
-    },
-    quality: {
-      date: "Récolte: 15/07/2024",
-      certification: "Certificat Bio Officiel (OPS)",
-      bioPercent: "70%",
-      temperature: "25°C (Stable)",
-      actors: [
-        { name: "Agriculteur", initial: "AG" },
-        { name: "Collecteur", initial: "CO" },
-        { name: "Exportateur", initial: "EX" },
-        { name: "Auditeur", initial: "AU" },
-      ],
-    },
-    logistics: {
-      route: "Récolte > Transport > Stockage > Conditionnement: 25/07/2024",
-      transport: "Camion Routier (PPS)",
-      temperature: "500 kg",
-      exportPort: "Bordeaux de Transport (PPS)",
-      exportQuality: "25/07",
-      certifications: ["Certificat Bio Officiel (OPS)"],
-    },
-    images: ["🌾", "🌱", "🌽"],
-  };
-
   return (
     <div
       className="d-flex justify-content-center py-4"
@@ -254,8 +240,9 @@ function PassePortNumerique() {
             <div className="row align-items-center">
               <div className="col-md-6">
                 <h2 className="mb-0">
-                  <Leaf
+                  <Package
                     className="text-success me-2"
+                    size={30}
                     style={{ display: "inline" }}
                   />
                   MAD-TX
@@ -272,13 +259,13 @@ function PassePortNumerique() {
             </div>
           </div>
           {/* Titre du Passeport */}
-          <div className="card-body border-bottom text-center bg-light mx-4 mt-3 mb-3">
+          <div className="card-body border-bottom text-center bg-light mx-4 mt-3">
             <h3 className="mb-0">
               PASSEPORT NUMÉRIQUE DU LOT {anchorExpedition.ref}
             </h3>
           </div>
           {/* Section 1: Preuve d'Ancrage */}
-          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
+          <div className="card-body border-bottom bg-light mx-4 mt-3">
             <h5 className="card-title mb-3">
               <CheckCircle
                 className="text-success me-2"
@@ -292,18 +279,25 @@ function PassePortNumerique() {
                 <p className="mb-2">
                   <span
                     className={`badge ${
-                      authenticatLoading ? "bg-secondary" : "bg-success"
+                      authenticatLoading && "bg-secondary"
                     } ms-2 p-3 text-center`}
+                    style={{ background: !authenticatLoading && "var(--madtx-green)"}}
                   >
                     {authenticatLoading
-                      ? "ENCOURS D'AUTHENTIFICATION..."
+                      ? "ENCOURS D'AUTHENTIFICATION"
                       : "AUTHENTIQUE & IMMUABLE"}
                     {/* Icone d'authentication */}
-                    {!authenticatLoading && (
+                    {authenticatLoading ? (
+                      <span
+                        className="spinner-border spinner-border-sm text-light ms-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                    ) : (
                       <ShieldCheck
                         className="text-light ms-2"
                         style={{ display: "inline" }}
-                        size={25}
+                        size={20}
                       />
                     )}
                   </span>
@@ -342,7 +336,7 @@ function PassePortNumerique() {
             </div>
           </div>
           {/* Section 2: Origine & Producteur Certifiés */}
-          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3 pb-0">
+          <div className="card-body border-bottom bg-light mx-4 mt-3 pb-0">
             <h5 className="card-title mb-3">
               <MapPin
                 className="text-success me-2"
@@ -429,7 +423,7 @@ function PassePortNumerique() {
             )}
           </div>
           {/* Section 3: Recolte & Acteurs */}
-          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
+          <div className="card-body border-bottom bg-light mx-4 mt-3">
             <h5 className="card-title mb-3">
               <Leaf
                 className="text-success me-2"
@@ -530,7 +524,7 @@ function PassePortNumerique() {
             </div>
           </div>
           {/* Section 4: Parcours Logistique & Qualité */}
-          <div className="card-body border-bottom bg-light mx-4 mt-3 mb-3">
+          <div className="card-body border-bottom bg-light mx-4 mt-3">
             <h5 className="card-title mb-3">
               <Route
                 className="text-success me-2"
@@ -583,10 +577,10 @@ function PassePortNumerique() {
               ) : (
                 <div className="col-md-6">
                   <p className="mb-2">
-                    <strong>Depart:</strong> {expeditionVPS.lieuDepart}
+                    <strong>Port de depart:</strong> {expeditionVPS.lieuDepart}
                   </p>
                   <p className="mb-2">
-                    <strong>Destination:</strong> {expeditionVPS.destination}
+                    <strong>Port de destination:</strong> {expeditionVPS.destination}
                   </p>
                 </div>
               )}
@@ -606,7 +600,11 @@ function PassePortNumerique() {
                 </div>
               ) : (
                 <div className="row mx-1">
-                  <ProcessusExpedition expedition={expeditionVPS} height="300px" background="var(--madtx-gray)" />
+                  <ProcessusExpedition
+                    expedition={expeditionVPS}
+                    height="300px"
+                    background="var(--madtx-gray)"
+                  />
                 </div>
               )}
             </div>
