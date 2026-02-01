@@ -232,7 +232,7 @@ export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
   return await uploadToIPFS(file, stringifyAll(metadata), "certificat-phytosanitaire");
 };
 // Fonction récursive pour tout transformer en string
-function stringifyAll(obj) {
+export function stringifyAll(obj) {
   if (Array.isArray(obj)) {
     return obj.map(stringifyAll);
   } else if (obj !== null && typeof obj === "object") {

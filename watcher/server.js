@@ -1,26 +1,18 @@
 import express from "express";
 import config from "./config.js";
-import { getAncrageByRef } from "./services/ancrage.service.js";
-import { getExpeditionOnMainnet } from "./utils/onChain/call.js";
 import cors from 'cors';
+import merkleVisualizationRouter from "./api/merkle.js";
 
-const app = express();
+export const app = express();
 app.use(cors());
+app.use(express.json());
 
-app.get("/anchor-expedition/:ref", async (req, res) => {
-  try {
-    const ref = req.params.ref;
-    const dataOnMainnet = await getExpeditionOnMainnet(ref);
-    const dataFromDb = await getAncrageByRef(ref);
-    const data = { ...dataFromDb, ...dataOnMainnet };
-    res.json(data);
-  } catch (err) {
-    console.error(
-      "Erreur lors de la recuperation des donnees depuis le smart contract public : ",
-      err
-    );
-    res.status(500).json({ error: err.message });
-  }
+// Routes
+app.use("/api/merkle", merkleVisualizationRouter);
+
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "OK", message: "Server is running" });
 });
 
 app.listen(config.port, () =>

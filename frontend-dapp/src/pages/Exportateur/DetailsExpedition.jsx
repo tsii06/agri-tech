@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  getAllHashMerkle,
+  getAllDataAnterieur,
   getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
   getLotProduisExpedition,
@@ -31,7 +31,7 @@ const DetailsExpedition = () => {
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState([]);
-  const [allHashesMerkle, setAllHashesMerkle] = useState(["0x1"]);
+  const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   const [loading, setLoading] = useState(true);
   // const [copied, setCopied] = useState(false);
 
@@ -66,8 +66,8 @@ const DetailsExpedition = () => {
   };
 
   const chargerAllHashesMerkle = async () => {
-    const hashesMerkle = await getAllHashMerkle(expedition.idCommandeProduit);
-    setAllHashesMerkle(hashesMerkle);
+    const dataAnterieur = await getAllDataAnterieur(expedition.idCommandeProduit);
+    setAllDataMerkle(dataAnterieur);
     setIsLoadingArbreMerkle(false);
   };
 
@@ -526,7 +526,7 @@ const DetailsExpedition = () => {
                     </style>
                   </div>
                 ) : (
-                  <VisualiserMerkleTree hashes={allHashesMerkle} />
+                  <VisualiserMerkleTree hashes={allDataMerkle} />
                 )}
               </div>
             </div>

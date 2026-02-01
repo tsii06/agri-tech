@@ -60,7 +60,6 @@ import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/Exportateur/Stock";
 import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
 import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
-import ProduitDetails from "./pages/EspaceClient/ProduitDetails";
 import EspaceClient from "./pages/client/EspaceClient";
 import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
 import PassePortNumerique from "./pages/client/PassePortNumerique";
@@ -342,10 +341,6 @@ function AppLayout({
                 <Route
                   path="certificateur/expeditions"
                   element={<CertifierExpeditions />}
-                />
-                <Route
-                  path="espace-client/produit/:id"
-                  element={<ProduitDetails />}
                 />
                 <Route path="transport" element={<LivraisonRecolte />} />
               </Routes>

@@ -7,8 +7,8 @@ import {
   getCollecteurExportateurContract,
   getExportateurClientContract,
 } from "../contract";
-import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata } from "../ipfsUtils";
-import { createMerkleTree, getMerkleRoot } from "../merkleUtils";
+import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata, stringifyAll } from "../ipfsUtils";
+import { createMerkleTree } from "../merkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
@@ -23,9 +23,9 @@ const collecteurExportateur = await getCollecteurExportateurContract();
  */
 export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
   // CALCULER LE ROOT MERKLE A L'ARTICLE.
-  const allHash = await getAllHashMerkle(_idCommandeProduits);
-  const tree = createMerkleTree(allHash);
-  const merkleRoot = getMerkleRoot(tree);
+  const allData = await getAllDataAnterieur(_idCommandeProduits);
+  const tree = await createMerkleTree(allData);
+  const merkleRoot = tree.root;
 
   const exportateurClient = await getExportateurClientContract();
   try {
@@ -56,91 +56,19 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
  * @param {Array} _idCommandeProduits ids des commandes de lot produits
  * @returns {Array}
  */
-export const getAllHashMerkle = async (_idCommandeProduits) => {
-  // recuper le hashMerkle des du condition de transport : collecteur -> exportateur
-  let hashTransportCE = [];
-  for (let id of _idCommandeProduits) {
-    try {
-      const conditions = await getConditionTransportCE(id);
-      if (conditions.id && conditions.id !== 0n)
-        hashTransportCE.push(conditions.hashTransaction?.toString());
-    } catch (error) {
-      console.error(
-        "Recuperation des hashs de conditions de transport CE: ",
-        error
-      );
-      return;
-    }
-  }
-  // recuperer les hashMerkles des lot de produits (collecteur)
-  let hashLotProduits = [];
-  let idCommandeRecoltes = [];
-  let idRecoltes = [];
-  for (let id of _idCommandeProduits) {
-    try {
-      const commande = await collecteurExportateur.getCommande(id);
-      const lotProduit = await getLotProduitEnrichi(
-        commande.idLotProduit
-      );
-      idCommandeRecoltes.push(...lotProduit.idCommandeRecoltes);
-      idRecoltes.push(...lotProduit.idRecolte);
-      hashLotProduits.push(lotProduit.hashTransaction?.toString());
-    } catch (error) {
-      console.error("Recuperation des hashs des lot produits : ", error);
-      return;
-    }
-  }
-  // recuperer les hashMerkles des conditions de transport recolte : producteur -> collecteur
-  let hashTransportPC = [];
-  for (let id of idCommandeRecoltes) {
-    try {
-      const conditions = await getConditionTransportPC(Number(id));
-      if (conditions.id && conditions.id !== 0n)
-        hashTransportPC.push(conditions.hashTransaction?.toString());
-    } catch (error) {
-      console.error("Recuperation hash transport PC : ", error);
-      return;
-    }
-  }
-  // recuperer hashMerkles recoltes
-  let hashRecoltes = [];
-  let idParcelles = [];
-  for (let id of idRecoltes) {
-    try {
-      const recolte = await getRecolte(id, [], '', true);
-      hashRecoltes.push(recolte.hashTransaction?.toString());
-      idParcelles.push(...recolte.idParcelle);
-    } catch (error) {
-      console.error("Recuperation hashs recoltes : ", error);
-      return;
-    }
-  }
-  // recuperer hashMerkles parcelles
-  let hashParcelles = [];
-  for (let id of idParcelles) {
-    try {
-      const parcelle = await getParcelle(id);
-      hashParcelles.push(parcelle.hashTransaction?.toString());
-    } catch (error) {
-      console.error("Recuperation hashs parcelles : ", error);
-      return;
-    }
-  }
+export const getAllDataAnterieur = async (_idCommandeProduits) => {
+  const allData = [];
+  // Recuperation de tous les donnees anterieur a l'expedition
+  const parcelles = await getParcellesExpedition({ idCommandeProduit: _idCommandeProduits });
+  allData.push(...parcelles);
+  const recoltes = await getRecoltesExpedition({ idCommandeProduit: _idCommandeProduits });
+  allData.push(...recoltes);
+  const lotProduits = await getLotProduisExpedition({ idCommandeProduit: _idCommandeProduits });
+  allData.push(...lotProduits);
+  const conditionsTransport = await getConditionsTransportExpedition({ idCommandeProduit: _idCommandeProduits });
+  allData.push(...conditionsTransport);
 
-  // supprimer les doublants
-  hashTransportCE = [...new Set(hashTransportCE)];
-  hashLotProduits = [...new Set(hashLotProduits)];
-  hashTransportPC = [...new Set(hashTransportPC)];
-  hashRecoltes = [...new Set(hashRecoltes)];
-  hashParcelles = [...new Set(hashParcelles)];
-
-  return [
-    ...hashTransportCE,
-    ...hashLotProduits,
-    ...hashTransportPC,
-    ...hashRecoltes,
-    ...hashParcelles,
-  ];
+  return stringifyAll(allData);
 };
 
 /**
