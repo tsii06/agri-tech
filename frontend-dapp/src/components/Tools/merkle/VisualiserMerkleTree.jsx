@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import ReactFlow, { Background, Controls, MiniMap } from "reactflow";
 import "reactflow/dist/style.css";
 import MerkleTreeNode from "./MerkleTreeNode";
-import { getStructureMerkleTree } from "../../../utils/merkleUtils";
+import { getStructureMerkleTree } from "../../../utils/frontMerkleUtils";
 
 const nodeTypes = {
   merkleNode: MerkleTreeNode,

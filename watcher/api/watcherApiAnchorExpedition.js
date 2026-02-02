@@ -1,6 +1,6 @@
 import { app } from "../server.js";
 import { getAncrageByRef } from "../services/ancrage.service.js";
-import { getExpeditionOnMainnet } from "../utils/onChain/call.js";
+import { getExpeditionOnMainnet } from "../utils/onChain/watcherOnChainCallUtils.js";
 
 app.get("/anchor-expedition/:ref", async (req, res) => {
   try {

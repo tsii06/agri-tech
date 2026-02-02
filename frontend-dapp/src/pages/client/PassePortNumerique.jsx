@@ -9,7 +9,7 @@ import {
   Package,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { apiGetAnchorExpedition } from "../../api/anchorExpedition";
+import { apiGetAnchorExpedition } from "../../api/frontApiAnchorExpedition";
 import { timestampToDate } from "../../utils/date";
 import QRCode from "react-qr-code";
 import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";

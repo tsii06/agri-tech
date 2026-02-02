@@ -6,7 +6,7 @@ import {
   verifyMerkleProof,
   getTreeStructure,
   hashData,
-} from "../utils/merkle/merkle.js";
+} from "../utils/merkle/watcherMerkleUtils.js";
 
 const router = express.Router();
 

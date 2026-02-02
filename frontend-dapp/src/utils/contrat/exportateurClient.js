@@ -8,7 +8,7 @@ import {
   getExportateurClientContract,
 } from "../contract";
 import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata, stringifyAll } from "../ipfsUtils";
-import { createMerkleTree } from "../merkleUtils";
+import { createMerkleTree } from "../frontMerkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";

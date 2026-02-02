@@ -5,7 +5,7 @@ import { createAncrage } from "./services/ancrage.service.js";
 // Les abi des contrats
 import exportateurClientABI from "./abi/ExportateurClient.json" with { type: 'json' };
 import registreExpeditionABI from "./abi/RegistreExpedition.json" with { type: 'json' };
-import { privateProvider } from "./utils/onChain/providers.js";
+import { privateProvider } from "./utils/onChain/watcherProvidersUtils.js";
 
 // Providers
 const publicProvider = new ethers.JsonRpcProvider(config.publicRPC);

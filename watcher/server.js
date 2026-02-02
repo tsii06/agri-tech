@@ -1,7 +1,7 @@
 import express from "express";
 import config from "./config.js";
 import cors from 'cors';
-import merkleVisualizationRouter from "./api/merkle.js";
+import merkleVisualizationRouter from "./api/watcherApiMerkle.js";
 
 export const app = express();
 app.use(cors());

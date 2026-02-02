@@ -1,4 +1,4 @@
-import { apiCreateMerkleTree, apiGetStructureMerkle } from "../api/merkleTree";
+import { apiCreateMerkleTree, apiGetStructureMerkle } from "../api/frontApiMerkleTree";
 
 
 /**
