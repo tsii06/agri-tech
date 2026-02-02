@@ -1,17 +1,9 @@
-import { registreExpeditionContrat } from "../../blockchain.js";
+import { registreExpeditionContrat } from "../../blockchainPublicAncrage.js";
 
 export const getExpeditionOnMainnet = async (_ref) => {
   try {
-    const res = await registreExpeditionContrat.getExpeditionAncrer(_ref);
-    // Transformer la reponse en objet js normal
-    const cleanRes = res.toObject();
-    // Convertit les BigInt en String
-    return JSON.parse(
-      JSON.stringify(cleanRes, (_, value) =>
-        typeof value === "bigint" ? value.toString() : value
-      )
-    );
-    return cleanRes;
+    const res = await registreExpeditionContrat.read('getExpeditionAncrer', _ref);
+    return JSON.parse(res);
   } catch (error) {
     console.error("Erreur lors de l'appel au smart contract public : ", error);
     throw new Error(
