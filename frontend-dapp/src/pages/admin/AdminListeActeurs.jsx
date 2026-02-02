@@ -125,7 +125,7 @@ export default function AdminListeActeurs() {
         </thead>
         <tbody>
           {acteurs.map((acteur, i) => (
-            <tr key={acteur.adresse}>
+            <tr key={i}>
               <td>{acteur.adresse}</td>
               <td>{ROLES[acteur.role]}</td>
               <td>{TYPES_ENTITE[acteur.typeEntite]}</td>

@@ -12,6 +12,7 @@ import { createMerkleTree } from "../frontMerkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
+import { enleveCollecteurDeData, enleveProducteurDeData } from "../onChain/frontOnChainUtils";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
 
@@ -60,11 +61,11 @@ export const getAllDataAnterieur = async (_idCommandeProduits) => {
   const allData = [];
   // Recuperation de tous les donnees anterieur a l'expedition
   const parcelles = await getParcellesExpedition({ idCommandeProduit: _idCommandeProduits });
-  allData.push(...parcelles);
+  allData.push(...enleveProducteurDeData(parcelles));
   const recoltes = await getRecoltesExpedition({ idCommandeProduit: _idCommandeProduits });
-  allData.push(...recoltes);
+  allData.push(...enleveProducteurDeData(recoltes));
   const lotProduits = await getLotProduisExpedition({ idCommandeProduit: _idCommandeProduits });
-  allData.push(...lotProduits);
+  allData.push(...enleveCollecteurDeData(lotProduits));
   const conditionsTransport = await getConditionsTransportExpedition({ idCommandeProduit: _idCommandeProduits });
   allData.push(...conditionsTransport);
 

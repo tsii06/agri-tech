@@ -26,6 +26,7 @@ import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import { createMerkleTree } from "../../utils/frontMerkleUtils";
+import { enleveCollecteurDeData, enleveProducteurDeData } from "../../utils/onChain/frontOnChainUtils";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -157,9 +158,9 @@ function PassePortNumerique() {
     ) {
       // Recuperation de tous les donnees anterieurs a l'expedition
       let allData = [];
-      allData.push(...parcellesVPS);
-      allData.push(...recoltesVPS);
-      allData.push(...lotProduitsVPS);
+      allData.push(...enleveProducteurDeData(parcellesVPS));
+      allData.push(...enleveProducteurDeData(recoltesVPS));
+      allData.push(...enleveCollecteurDeData(lotProduitsVPS));
       allData.push(...conditionsTransportVPS);
       allData = stringifyAll(allData);
       // Reconstruction de l'arbre de merkle
