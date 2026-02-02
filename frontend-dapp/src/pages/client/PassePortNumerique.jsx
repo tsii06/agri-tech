@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Route,
   Package,
+  ShieldAlert,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiGetAnchorExpedition } from "../../api/frontApiAnchorExpedition";
@@ -21,9 +22,10 @@ import {
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
-import { getIPFSURL } from "../../utils/ipfsUtils";
+import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
+import { createMerkleTree } from "../../utils/frontMerkleUtils";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -32,7 +34,7 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [expeditionVPSLoading, setExpeditionVPSLoading] = useState(true);
-  const [authenticatLoading, setAuthenticateLoading] = useState(true);
+  const [authenticatLoading, setAuthenticateLoading] = useState("encours");
   const [parcelleLoading, setParcelleLoading] = useState(true);
   const [recolteLoading, setRecolteLoading] = useState(true);
   const [lotProduitLoading, setLotProduitLoading] = useState(true);
@@ -153,13 +155,21 @@ function PassePortNumerique() {
       !acteurLoading &&
       !conditionTransportLoading
     ) {
-      console.log("Tous les chargements sont terminés");
-      // authentique si rootMerkle identique
-      if (
-        anchorExpedition.rootMerkle.toLowerCase() ===
-        expeditionVPS.rootMerkle.toLowerCase()
-      )
-        setAuthenticateLoading(false);
+      // Recuperation de tous les donnees anterieurs a l'expedition
+      let allData = [];
+      allData.push(...parcellesVPS);
+      allData.push(...recoltesVPS);
+      allData.push(...lotProduitsVPS);
+      allData.push(...conditionsTransportVPS);
+      allData = stringifyAll(allData);
+      // Reconstruction de l'arbre de merkle
+      createMerkleTree(allData).then((tree) => {
+        if (
+          anchorExpedition.rootMerkle.toLowerCase() === tree.root.toLowerCase()
+        )
+          setAuthenticateLoading("authentique");
+        else setAuthenticateLoading("falsifier");
+      });
     }
   }, [
     firstLoading,
@@ -212,6 +222,60 @@ function PassePortNumerique() {
     if (parcelle.location && parcelle.location.lat && parcelle.location.lng) {
       const mapUrl = `https://www.google.com/maps?q=${parcelle.location.lat},${parcelle.location.lng}`;
       window.open(mapUrl, "_blank");
+    }
+  };
+  const getTextBadgeAuthentification = (_isAuthenticateLoading) => {
+    switch (_isAuthenticateLoading) {
+      case "encours":
+        return "ENCOURS D'AUTHENTIFICATION";
+      case "authentique":
+        return "AUTHENTIQUE & IMMUABLE";
+      case "falsifier":
+        return "DONNEES FALSIFIER";
+      default:
+        break;
+    }
+  };
+  const getBackgroundBadgeAuthenticate = (_isAuthenticateLoading) => {
+    switch (_isAuthenticateLoading) {
+      case "encours":
+        return "bg-secondary";
+      case "authentique":
+        return "bg-madtx-green";
+      case "falsifier":
+        return "bg-danger";
+      default:
+        break;
+    }
+  };
+  const getIconBadgeAuthenticate = (_isAuthenticateLoading) => {
+    switch (_isAuthenticateLoading) {
+      case "encours":
+        return (
+          <span
+            className="spinner-border spinner-border-sm text-light ms-2"
+            role="status"
+            aria-hidden="true"
+          ></span>
+        );
+      case "authentique":
+        return (
+          <ShieldCheck
+            className="text-light ms-2"
+            style={{ display: "inline" }}
+            size={20}
+          />
+        );
+      case "falsifier":
+        return (
+          <ShieldAlert
+            className="text-light ms-2"
+            style={{ display: "inline" }}
+            size={20}
+          />
+        );
+      default:
+        break;
     }
   };
 
@@ -285,30 +349,12 @@ function PassePortNumerique() {
               <div className="col-md-8">
                 <p className="mb-2">
                   <span
-                    className={`badge ${
-                      authenticatLoading && "bg-secondary"
-                    } ms-2 p-3 text-center`}
-                    style={{
-                      background: !authenticatLoading && "var(--madtx-green)",
-                    }}
+                    className={`badge ${getBackgroundBadgeAuthenticate(authenticatLoading)} ms-2 p-3 text-center`}
                   >
-                    {authenticatLoading
-                      ? "ENCOURS D'AUTHENTIFICATION"
-                      : "AUTHENTIQUE & IMMUABLE"}
+                    {/* Texte du badge d'authentification */}
+                    {getTextBadgeAuthentification(authenticatLoading)}
                     {/* Icone d'authentication */}
-                    {authenticatLoading ? (
-                      <span
-                        className="spinner-border spinner-border-sm text-light ms-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                    ) : (
-                      <ShieldCheck
-                        className="text-light ms-2"
-                        style={{ display: "inline" }}
-                        size={20}
-                      />
-                    )}
+                    {getIconBadgeAuthenticate(authenticatLoading)}
                   </span>
                 </p>
                 <p className="mb-2">
@@ -504,9 +550,9 @@ function PassePortNumerique() {
                   </p>
                   <div className="row row-cols-4">
                     {acteursVPS.length > 0 &&
-                      acteursVPS.map((acteur) => (
+                      acteursVPS.map((acteur, index) => (
                         <div
-                          key={acteur.id}
+                          key={index}
                           className="col text-center"
                           style={{ flex: "0 0 auto" }}
                         >

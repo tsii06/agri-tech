@@ -206,3 +206,7 @@ header h1, .navbar-brand, .project-title, .main-title {
   color: #fff !important;
   border-color: #388e3c;
 } 
+
+.bg-madtx-green {
+  background-color: var(--madtx-green);
+}
