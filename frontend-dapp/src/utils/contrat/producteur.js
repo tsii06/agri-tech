@@ -205,8 +205,6 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
     const tx = await producteurEnPhaseCultureWrite.write("creerParcelle", [parcelleUpload.cid]);
     console.log("⏳ Transaction envoyée:", tx.hash);
 
-    console.log("✅ Transaction confirmée:", tx);
-
     // Vérifier le compteur après création
     const compteurApres = await producteurEnPhaseCultureRead.read("getCompteurParcelle");
     console.log("🗺️ Compteur parcelles après création:", Number(compteurApres));

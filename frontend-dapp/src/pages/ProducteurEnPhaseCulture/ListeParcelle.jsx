@@ -15,9 +15,9 @@ function MesParcelles() {
   const { roles, account } = useUserContext();
 
   // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading } = useParcellesProducteur(account);
+  const { data, isLoading, isRefetching } = useParcellesProducteur(account);
   const [parcelles, setParcelles] = useState(() => {
-    if (!isLoading) return data;
+    if (!isLoading && !isRefetching) return data;
     else return [];
   });
 
@@ -33,10 +33,10 @@ function MesParcelles() {
       setLoading(false);
       return;
     }
-    // Charger progressivement les parcelles si il n'y en a pas dans les caches. Afficher les parcelles si il y en a.
-    if (isLoading) chargerParcelles();
+    // Charger progressivement les parcelles si il n'y en a pas dans les caches ou il y avait une mutation. Afficher les parcelles si il y en a.
+    if (isRefetching) chargerParcelles();
     else setLoading(false);
-  }, [account, isLoading]);
+  }, [account, isRefetching]);
 
   const chargerParcelles = async (e) => {
     let _dernierParcelleCharger = dernierParcelleCharger;

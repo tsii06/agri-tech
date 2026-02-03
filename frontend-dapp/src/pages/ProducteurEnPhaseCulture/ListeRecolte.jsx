@@ -27,7 +27,7 @@ function ListeRecoltes() {
   // Utiliser cache pour stocker liste recolte du producteur.
   const cacheRecolte = useRecoltesProducteur(account);
   const [recoltes, setRecoltes] = useState(() => {
-    if (!cacheRecolte.isLoading) return cacheRecolte.data;
+    if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching) return cacheRecolte.data;
     else return [];
   });
 
@@ -132,9 +132,9 @@ function ListeRecoltes() {
       return;
     }
 
-    if (cacheRecolte.isLoading) chargerRecoltes(true);
+    if (cacheRecolte.isRefetching) chargerRecoltes(true);
     else setIsLoading(false);
-  }, [address, account, cacheRecolte.isLoading]);
+  }, [address, account, cacheRecolte.isRefetching]);
 
   const handleCertifier = async (event) => {
     event.preventDefault();
