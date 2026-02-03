@@ -63,6 +63,12 @@ const pushToPublic = async (data) => {
   }
 };
 
+// Ecouter l'event Ajouter expedition si le websocket tombe puis reconnecte.
+privateWsProvider.getProvider().websocket.on('open', async () => {
+  await exportateurClientContrat.contract.removeAllListeners();
+  await listenExpedition();
+});
+
 // Fermeture propre quand c'est fini
 process.on('SIGINT', () => {
   privateWsProvider.destroy();
