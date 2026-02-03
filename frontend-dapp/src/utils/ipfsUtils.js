@@ -1,3 +1,4 @@
+import { apiGetFileFromPinata } from "../api/frontApiPinata";
 import { getContract } from "./contract";
 import myPinataSDK from "./pinata";
 
@@ -459,19 +460,6 @@ export const filterIntrantsForHarvest = (
 
     const valide = apresRecoltePrecedente && avantRecolteActuelle;
 
-    // Log pour debug détaillé
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `🔍 Intrant ${intrant.nom || intrant.type}: ${intrant.dateAjout} - ` +
-          `Après ${
-            dateRecoltePrecedente || "début"
-          }: ${apresRecoltePrecedente}, ` +
-          `Avant/à ${dateRecolteActuelle}: ${avantRecolteActuelle} => ${
-            valide ? "✅" : "❌"
-          }`
-      );
-    }
-
     return valide;
   });
 };
@@ -631,7 +619,9 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
         master = json && json.items ? json.items : json;
       }
     }
-  } catch {}
+  } catch(error) {
+    console.error("Erreur dans updateCidParcelle : ", error);
+  }
 
   // S'assurer qu'on a bien un objet master
   if (!master || typeof master !== "object") {
@@ -695,11 +685,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
 
 export const getFileFromPinata = async (_cid) => {
   try {
-    const res = await myPinataSDK.gateways.public.get(_cid);
-    const metadata = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
-      ?.keyvalues;
-
-    return { ...res, keyvalues: metadata };
+    return await apiGetFileFromPinata(_cid);
   } catch (error) {
     console.error(
       "Erreur lors de la recuperation de fichier depuis pinata : ",

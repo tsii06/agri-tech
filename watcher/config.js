@@ -7,4 +7,7 @@ export default {
   adresseRegistreExpeditionContrat: process.env.REGISTRE_EXPEDITION_ADDR,
   privateKey: process.env.PRIVATE_KEY,
   port: 3000,
+  // config pinata
+  pinataJwt: process.env.JWT_PINATA,
+  pinataGateway: process.env.GATEWAY_PINATA
 };

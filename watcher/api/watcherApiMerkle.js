@@ -2,7 +2,6 @@ import express from "express";
 import {
   createMerkleTreeWithProofs,
   createMerkleTree,
-  getMerkleProof,
   verifyMerkleProof,
   getTreeStructure,
   hashData,

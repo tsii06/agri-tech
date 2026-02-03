@@ -1,5 +1,5 @@
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
-import { getContract, getProducteurContract } from "../contract";
+import { getContract } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,

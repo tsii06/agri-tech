@@ -17,6 +17,7 @@
     "express": "^5.2.1",
     "keccak256": "^1.0.6",
     "merkletreejs": "^0.6.0",
+    "pinata": "^2.5.3",
     "winston": "^3.19.0"
   },
   "devDependencies": {

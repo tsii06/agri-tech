@@ -3,7 +3,7 @@ import { wsProvider } from "./frontProviders";
 
 // les ABI des contrats
 import producteurEnPhaseCultureABI from "../../abi/ProducteurEnPhaseCulture.json";
-import { config } from "../config";
+import { config } from "../frontConfig";
 
 // Les contrats read-only
 export const producteurEnPhaseCultureRead = new SmartContractManager(
