@@ -36,7 +36,7 @@ function MesParcelles() {
     // Charger progressivement les parcelles si il n'y en a pas dans les caches. Afficher les parcelles si il y en a.
     if (isLoading) chargerParcelles();
     else setLoading(false);
-  }, [account]);
+  }, [account, isLoading]);
 
   const chargerParcelles = async (e) => {
     let _dernierParcelleCharger = dernierParcelleCharger;

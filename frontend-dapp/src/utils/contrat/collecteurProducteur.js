@@ -6,7 +6,6 @@ import {
   getFileFromPinata,
   uploadConsolidatedData,
   computeSeasonFromDate,
-  filterIntrantsForSeason,
   filterIntrantsForHarvest,
   getMasterFromCid,
   calculateNumeroRecolte,
@@ -14,6 +13,7 @@ import {
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 import { hasRole } from "../roles";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 
 const contrat = await getCollecteurProducteurContract();
 
@@ -212,7 +212,7 @@ export const getRecolte = async (
 
   // recuperer info on-chain
   try {
-    const recolteOnChain = await contrat.getRecolte(_idRecolte);
+    const recolteOnChain = await collecteurProducteurRead.read("getRecolte", _idRecolte);
 
     // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
     if (!_roles.includes(3) && _account !== "")

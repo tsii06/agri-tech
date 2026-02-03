@@ -3,4 +3,5 @@ export const config = {
     privateWsUrl: import.meta.env.VITE_PRIVATE_WS_PROVIDER,
     // Les addr des contrats
     addrProducteurEnPhaseCulture: import.meta.env.VITE_PRODUCTEUR_EN_PHASE_CULTURE_ADDR,
+    addrCollecteurProducteur: import.meta.env.VITE_COLLECTEUR_PRODUCTEUR_ADDR,
 };

@@ -15,6 +15,7 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -50,11 +51,10 @@ function ListeRecoltes() {
   const chargerRecoltes = async (reset = false) => {
     setIsLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
       const compteurRecoltes =
         dernierRecolteCharger !== 0 && reset !== true
           ? dernierRecolteCharger
-          : await contract.compteurRecoltes();
+          : await collecteurProducteurRead.read("compteurRecoltes");
 
       console.log(
         "🌾 Début chargement récoltes, compteur:",
@@ -101,8 +101,7 @@ function ListeRecoltes() {
         if (reset === true) {
           setRecoltes([recolteRaw]);
           reset = false;
-        } else
-          setRecoltes((prev) => [...prev, recolteRaw]);
+        } else setRecoltes((prev) => [...prev, recolteRaw]);
         nbrRecolteCharger--;
       }
       setDernierRecolteCharger(i);
@@ -169,7 +168,11 @@ function ListeRecoltes() {
       setRecoltes((prev) =>
         prev.map((recolte) =>
           recolte.id === recolteSelectionnee.id
-            ? { ...recolte, certifie: true, certificatPhytosanitaire: certificatUpload.cid }
+            ? {
+                ...recolte,
+                certifie: true,
+                certificatPhytosanitaire: certificatUpload.cid,
+              }
             : recolte
         )
       );
@@ -441,7 +444,7 @@ function ListeRecoltes() {
           <div className="mt-2">
             <small className="text-info">
               🌿 <strong>Nouvelle logique de saison :</strong> Chaque culture
-              est définie par la période du premier intrant jusqu'à la récolte,
+              est définie par la période du premier intrant jusqu&apos;à la récolte,
               avec un numéro séquentiel par parcelle.
               <span className="badge bg-success ms-1">✓ Dynamique</span>
               <span className="badge bg-warning text-dark ms-1">
@@ -651,7 +654,7 @@ function ListeRecoltes() {
 
                       <div className="mb-3">
                         <label htmlFor="dateEmission" className="form-label">
-                          Date d'émission *
+                          Date d&apos;émission *
                         </label>
                         <input
                           type="date"
@@ -663,7 +666,7 @@ function ListeRecoltes() {
 
                       <div className="mb-3">
                         <label htmlFor="dateExpiration" className="form-label">
-                          Date d'expiration *
+                          Date d&apos;expiration *
                         </label>
                         <input
                           type="date"
@@ -677,7 +680,7 @@ function ListeRecoltes() {
                     <div className="col-md-6">
                       <div className="mb-3">
                         <label htmlFor="dateInspection" className="form-label">
-                          Date d'inspection *
+                          Date d&apos;inspection *
                         </label>
                         <input
                           type="date"
