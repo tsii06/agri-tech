@@ -4,10 +4,10 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./index.css";
 import "react-loading-skeleton/dist/skeleton.css";
-import React from "react";
+import { QueryProvider } from "./providers/QueryProvider.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  // <React.StrictMode>
+  <QueryProvider>
     <App />
-  // </React.StrictMode>
+  </QueryProvider>
 );

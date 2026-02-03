@@ -8,9 +8,19 @@ import { getParcelle } from "../../utils/contrat/producteur";
 import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
+import { useParcellesProducteur } from "../../hooks/queries/useParcelles";
 
 function MesParcelles() {
-  const [parcelles, setParcelles] = useState([]);
+  // Utilisation du tableau de rôles
+  const { roles, account } = useUserContext();
+
+  // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
+  const { data, isLoading } = useParcellesProducteur(account);
+  const [parcelles, setParcelles] = useState(() => {
+    if (!isLoading) return data;
+    else return [];
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -18,15 +28,14 @@ function MesParcelles() {
   const [visibleCount, setVisibleCount] = useState(9);
   const [dernierParcelleCharger, setDernierParcelleCharger] = useState(0);
 
-  // Utilisation du tableau de rôles
-  const { roles, account } = useUserContext();
-
   useEffect(() => {
     if (!account) {
       setLoading(false);
       return;
     }
-    chargerParcelles();
+    // Charger progressivement les parcelles si il n'y en a pas dans les caches. Afficher les parcelles si il y en a.
+    if (isLoading) chargerParcelles();
+    else setLoading(false);
   }, [account]);
 
   const chargerParcelles = async (e) => {

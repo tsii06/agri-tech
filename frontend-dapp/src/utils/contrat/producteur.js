@@ -1,5 +1,5 @@
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
-import { getContract } from "../contract";
+import { DEBUT_PARCELLE, getContract } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
@@ -19,15 +19,19 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
 
   // Recuperer info on-chain
   try {
-    const parcelleOnChain = await producteurEnPhaseCultureRead.read('getParcelle', _idParcelle);
+    const parcelleOnChain = await producteurEnPhaseCultureRead.read(
+      "getParcelle",
+      _idParcelle
+    );
 
     // Vérifier si on doit filtrer par propriétaire
     if (_roles.length > 0 && _account !== "" && hasRole(_roles, 0)) {
       if (
-        parcelleOnChain.producteur?.toLowerCase() !==
-        _account?.toLowerCase()
+        parcelleOnChain.producteur?.toLowerCase() !== _account?.toLowerCase()
       ) {
-        console.log(`⏭️ Parcelle ${_idParcelle} ignorée: pas le bon propriétaire`);
+        console.log(
+          `⏭️ Parcelle ${_idParcelle} ignorée: pas le bon propriétaire`
+        );
         return { isProprietaire: false };
       }
     }
@@ -95,6 +99,51 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
     isProprietaire: true,
     dataOffChain: parcelleIpfs !== false, // pour savoir si il y a des dataOffChain
   };
+};
+
+// Recuperer tous les parcelles d'un producteur
+export const getParcellesProducteur = async (_account) => {
+  try {
+    const compteurParcellesRaw = await producteurEnPhaseCultureRead.read(
+      "getCompteurParcelle"
+    );
+    const compteurParcelles = Number(compteurParcellesRaw);
+
+    if (compteurParcelles === 0) {
+      console.log("⚠️ Aucune parcelle trouvée sur la blockchain");
+      return;
+    }
+
+    const parcellesDebug = [];
+    let i;
+
+    // Utiliser DEBUT_PARCELLE comme point de départ
+    for (i = compteurParcelles; i >= DEBUT_PARCELLE; i--) {
+      try {
+        const parcelleRaw = await getParcelle(i, [0], _account);
+
+        // Ne pas afficher si il n y a pas de data off-chain
+        if (!parcelleRaw.dataOffChain) {
+          continue;
+        }
+
+        // Vérifier si on doit filtrer par propriétaire
+        if (!parcelleRaw.isProprietaire) continue;
+
+        parcellesDebug.push(parcelleRaw);
+      } catch (error) {
+        console.error(
+          `❌ Erreur lors du chargement de la parcelle ${i}:`,
+          error
+        );
+      }
+    }
+    console.log("Tous les parcelles du producteur :", parcellesDebug);
+    return parcellesDebug;
+  } catch (error) {
+    console.error("❌ Erreur détaillée:", error);
+    return;
+  }
 };
 
 /**
