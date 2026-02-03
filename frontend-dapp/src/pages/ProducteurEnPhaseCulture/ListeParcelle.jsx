@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { DEBUT_PARCELLE, getContract } from "../../utils/contract";
+import { useState, useEffect } from "react";
+import { DEBUT_PARCELLE } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
@@ -7,6 +7,7 @@ import { hasRole } from "../../utils/roles";
 import { getParcelle } from "../../utils/contrat/producteur";
 import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
+import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 
 function MesParcelles() {
   const [parcelles, setParcelles] = useState([]);
@@ -36,11 +37,10 @@ function MesParcelles() {
     }
     setLoading(true);
     try {
-      const contract = await getContract();
       const compteurParcellesRaw =
         _dernierParcelleCharger !== 0
           ? _dernierParcelleCharger
-          : await contract.getCompteurParcelle();
+          : await producteurEnPhaseCultureRead.read('getCompteurParcelle');
       const compteurParcelles = Number(compteurParcellesRaw);
 
       console.log("🔍 Debug: Compteur parcelles:", compteurParcelles);

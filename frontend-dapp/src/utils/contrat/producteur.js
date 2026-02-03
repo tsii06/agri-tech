@@ -1,3 +1,4 @@
+import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 import { getContract, getProducteurContract } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
@@ -6,8 +7,6 @@ import {
 } from "../ipfsUtils";
 import { hasRole } from "../roles";
 import { getActeur } from "./gestionnaireActeurs";
-
-const contrat = await getProducteurContract();
 
 /**
  *
@@ -20,7 +19,7 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
 
   // Recuperer info on-chain
   try {
-    const parcelleOnChain = await contrat.getParcelle(_idParcelle);
+    const parcelleOnChain = await producteurEnPhaseCultureRead.read('getParcelle', _idParcelle);
 
     // Vérifier si on doit filtrer par propriétaire
     if (_roles.length > 0 && _account !== "" && hasRole(_roles, 0)) {
