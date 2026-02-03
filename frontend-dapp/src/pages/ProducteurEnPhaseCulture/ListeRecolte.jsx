@@ -132,9 +132,15 @@ function ListeRecoltes() {
       return;
     }
 
-    if (cacheRecolte.isRefetching) chargerRecoltes(true);
+    // Chargement progressif pour le debut ou utilisation de cache si a jour.
+    if (cacheRecolte.isLoading) chargerRecoltes(true);
     else setIsLoading(false);
-  }, [address, account, cacheRecolte.isRefetching]);
+  }, [address, account, cacheRecolte.isLoading]);
+
+  // Rechargement progresssif si il y a mutation du cache.
+  useEffect(() => {
+    if (cacheRecolte.isRefetching) chargerRecoltes(true);
+  }, [cacheRecolte.isRefetching]);
 
   const handleCertifier = async (event) => {
     event.preventDefault();

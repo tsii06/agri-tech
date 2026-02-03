@@ -33,10 +33,18 @@ function MesParcelles() {
       setLoading(false);
       return;
     }
-    // Charger progressivement les parcelles si il n'y en a pas dans les caches ou il y avait une mutation. Afficher les parcelles si il y en a.
-    if (isRefetching) chargerParcelles();
+    // Charger progressivement les parcelles si il n'y en a pas dans les caches. Afficher les parcelles si il y en a.
+    if (isLoading) chargerParcelles();
     else setLoading(false);
-  }, [account, isRefetching]);
+  }, [account, isLoading]);
+
+  // Maj state lors d'une mutation du cache.
+  useEffect(() => {
+    if (isRefetching) {
+      setParcelles([]);
+      chargerParcelles();
+    }
+  }, [isRefetching]);
 
   const chargerParcelles = async (e) => {
     let _dernierParcelleCharger = dernierParcelleCharger;
