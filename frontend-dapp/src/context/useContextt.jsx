@@ -1,6 +1,8 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
-import { getGestionnaireActeursContract } from "../utils/contract";
 import { ensureCorrectNetwork, USE_CHAIN_ID } from "../utils/wallet";
+import { gestionnaireActeursRead } from "../config/onChain/frontContracts";
 
 const UserContext = createContext();
 
@@ -14,8 +16,7 @@ export const UserProvider = ({ children, state }) => {
 
   const verifeActeur = async (userAddress) => {
     try {
-      const contract = await getGestionnaireActeursContract();
-      const rolesArray = await contract.getRoles(userAddress.toString());
+      const rolesArray = await gestionnaireActeursRead.read("getRoles", userAddress.toString());
 
       // verifie que l'user est un acteur
       if (rolesArray.length <= 0) setIsActeur(false);

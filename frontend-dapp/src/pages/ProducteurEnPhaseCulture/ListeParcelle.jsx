@@ -21,11 +21,16 @@ function MesParcelles() {
     else return [];
   });
 
+  // Afficher plus si le cache contient plus.
+  const [visibleCount, setVisibleCount] = useState(() => {
+    if (!isLoading && !isRefetching && data.length > 0) return data.length;
+    else return 9;
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [certifFiltre, setCertifFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
   const [dernierParcelleCharger, setDernierParcelleCharger] = useState(0);
 
   useEffect(() => {
@@ -57,7 +62,7 @@ function MesParcelles() {
       const compteurParcellesRaw =
         _dernierParcelleCharger !== 0
           ? _dernierParcelleCharger
-          : await producteurEnPhaseCultureRead.read('getCompteurParcelle');
+          : await producteurEnPhaseCultureRead.read("getCompteurParcelle");
       const compteurParcelles = Number(compteurParcellesRaw);
 
       console.log("🔍 Debug: Compteur parcelles:", compteurParcelles);
@@ -328,7 +333,10 @@ function MesParcelles() {
             <div className="text-center mt-3">
               <button
                 className="btn btn-outline-success"
-                onClick={chargerParcelles}
+                onClick={() => {
+                  chargerParcelles();
+                  setVisibleCount((prev) => prev + 9);
+                }}
               >
                 Charger plus
               </button>
