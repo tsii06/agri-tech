@@ -77,7 +77,8 @@ function CreerParcelle() {
       }
 
       // Excecute la fn mutation pour forcer le cache a se maj.
-      const res = await createParcelle.mutateAsync(parcelleData, location, cidCertificat);
+      console.log("Avant creation parcelle : ", { location, cidCertificat });
+      const res = await createParcelle.mutateAsync([parcelleData, location, cidCertificat]);
       if (!res)
         setError(
           "Impossible de créer la parcelle. Veuillez réessayer plus tard."

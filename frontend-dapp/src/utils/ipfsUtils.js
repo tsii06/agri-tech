@@ -1,4 +1,4 @@
-import { apiGetFileFromPinata } from "../api/frontApiPinata";
+import { apiAjouterKeyvalues, apiGetFileFromPinata, apiUploadConsolidatedData } from "../api/frontApiPinata";
 import { getContract } from "./contract";
 import myPinataSDK from "./pinata";
 
@@ -550,21 +550,7 @@ export const createConsolidatedIPFSData = (items, type) => {
  */
 export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
   try {
-    const consolidatedData = createConsolidatedIPFSData(data, type);
-    const blob = new Blob([JSON.stringify(consolidatedData)], {
-      type: "application/json",
-    });
-    const file = new File([blob], `${type}-${Date.now()}.json`, {
-      type: "application/json",
-    });
-
-    const metadata = {
-      type: `consolidated-${type}`,
-      timestamp: Date.now().toString(),
-      ..._metadata,
-    };
-
-    return await uploadToIPFS(file, metadata, type);
+    return await apiUploadConsolidatedData(data, type, _metadata);
   } catch (error) {
     console.error("Erreur lors de l'upload des données consolidées:", error);
     return {
@@ -730,14 +716,7 @@ export const getUrlDownloadFilePinata = async (_cid) => {
  */
 export const ajouterKeyValuesFileIpfs = async (_cid, _keyvalues) => {
   try {
-    const idIpfs = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
-      .id;
-
-    const update = await myPinataSDK.files.public.update({
-      id: idIpfs,
-      keyvalues: _keyvalues,
-    });
-    return update;
+    return await apiAjouterKeyvalues(_cid, _keyvalues);
   } catch (error) {
     console.error("Ajout keyvalues sur ipfs : ", error);
     throw new Error("Erreur ajout keyvalues : ", error);

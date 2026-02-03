@@ -6,7 +6,7 @@ export function useCreateParcelle(account) {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: createParcelle,
+    mutationFn: (args) => createParcelle(...args),
     
     onSuccess: (receipt) => {
       // Refetch la cache pour la liste de tous les parcelles
