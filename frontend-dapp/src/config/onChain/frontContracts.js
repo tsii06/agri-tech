@@ -1,5 +1,5 @@
 import { SmartContractManager } from "../../utils/contrat/frontSetupOnChain";
-import { wsProvider } from "./frontProviders";
+import { getSignerWallet, wsProvider } from "./frontProviders";
 
 // les ABI des contrats
 import producteurEnPhaseCultureABI from "../../abi/ProducteurEnPhaseCulture.json";
@@ -16,4 +16,12 @@ export const collecteurProducteurRead = new SmartContractManager(
   config.addrCollecteurProducteur,
   collecteurProducteurABI.abi,
   wsProvider
+);
+
+// Les contrats write
+const signerWallet = await getSignerWallet();
+export const producteurEnPhaseCultureWrite = new SmartContractManager(
+  config.addrProducteurEnPhaseCulture,
+  producteurEnPhaseCultureABI.abi,
+  signerWallet
 );

@@ -1,10 +1,8 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import {
-  uploadCertificatPhytosanitaire,
-} from "../../utils/ipfsUtils";
+import { uploadCertificatPhytosanitaire } from "../../utils/ipfsUtils";
 import { createParcelle } from "../../utils/contrat/producteur";
 
 const defaultCenter = {
@@ -12,6 +10,7 @@ const defaultCenter = {
   lng: 47.5079,
 };
 
+// eslint-disable-next-line react/prop-types
 function LocationMarker({ setLocation }) {
   useMapEvents({
     click(e) {
@@ -60,13 +59,9 @@ function CreerParcelle() {
       if (!certificat) {
         throw new Error("Certificat phytosanitaire manquant");
       } else {
-
-        const upload = await uploadCertificatPhytosanitaire(
-          certificat,
-          {
-            timestamp: Date.now()
-          }
-        );
+        const upload = await uploadCertificatPhytosanitaire(certificat, {
+          timestamp: Date.now(),
+        });
         if (!upload.success) {
           throw new Error(
             upload.error || "Erreur lors de l'upload du certificat"
@@ -77,10 +72,11 @@ function CreerParcelle() {
       }
 
       const res = await createParcelle(parcelleData, location, cidCertificat);
-      if (!res) 
-        setError("Impossible de créer la parcelle. Veuillez réessayer plus tard.");
-      else 
-        navigate("/mes-parcelles");
+      if (!res)
+        setError(
+          "Impossible de créer la parcelle. Veuillez réessayer plus tard."
+        );
+      else navigate("/mes-parcelles");
     } catch (error) {
       console.error("Erreur lors de la création de la parcelle:", error);
       setError(
@@ -162,7 +158,8 @@ function CreerParcelle() {
                 </MapContainer>
               </div>
               <small className="form-text text-muted">
-                Cliquez sur la carte pour définir l'emplacement de la parcelle
+                Cliquez sur la carte pour définir l&apos;emplacement de la
+                parcelle
               </small>
             </div>
           </div>

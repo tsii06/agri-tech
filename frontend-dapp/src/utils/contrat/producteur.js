@@ -1,5 +1,5 @@
-import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
-import { DEBUT_PARCELLE, getContract } from "../contract";
+import {  producteurEnPhaseCultureRead, producteurEnPhaseCultureWrite } from "../../config/onChain/frontContracts";
+import { DEBUT_PARCELLE } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
@@ -160,10 +160,8 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
   });
 
   try {
-    const contract = await getContract();
-
     // Vérifier le compteur avant création
-    const compteurAvant = await contract.getCompteurParcelle();
+    const compteurAvant = await producteurEnPhaseCultureRead.read("getCompteurParcelle");
     console.log("🗺️ Compteur parcelles avant création:", Number(compteurAvant));
 
     // Créer l'objet parcelle consolidé pour IPFS
@@ -203,14 +201,14 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
 
     // CREATION PARCELLE avec le nouveau format
     console.log("🔗 Création parcelle sur blockchain...");
-    const tx = await contract.creerParcelle(parcelleUpload.cid);
+    // const contract = await getProducteurEnPhaseCultureWrite();
+    const tx = await producteurEnPhaseCultureWrite.write("creerParcelle", [parcelleUpload.cid]);
     console.log("⏳ Transaction envoyée:", tx.hash);
 
-    const receipt = await tx.wait();
-    console.log("✅ Transaction confirmée:", receipt);
+    console.log("✅ Transaction confirmée:", tx);
 
     // Vérifier le compteur après création
-    const compteurApres = await contract.getCompteurParcelle();
+    const compteurApres = await producteurEnPhaseCultureRead.read("getCompteurParcelle");
     console.log("🗺️ Compteur parcelles après création:", Number(compteurApres));
     console.log("🎉 Nouvelle parcelle créée avec ID:", Number(compteurApres));
 
