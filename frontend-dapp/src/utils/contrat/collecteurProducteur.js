@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getCollecteurProducteurContract } from "../contract";
+import { DEBUT_RECOLTE, getCollecteurProducteurContract } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
@@ -212,7 +212,10 @@ export const getRecolte = async (
 
   // recuperer info on-chain
   try {
-    const recolteOnChain = await collecteurProducteurRead.read("getRecolte", _idRecolte);
+    const recolteOnChain = await collecteurProducteurRead.read(
+      "getRecolte",
+      _idRecolte
+    );
 
     // Afficher uniquement les recoltes de l'adresse connectée si c'est un producteur et pas collecteur
     if (!_roles.includes(3) && _account !== "")
@@ -319,7 +322,11 @@ export const getRecolte = async (
       );
 
       // Recuperer les intrants utiliser
-      [intrantsUtilises, dateRecoltePrecedente] = await getIntrantUtiliseEtDateRecoltePrecedent(recolteComplet, dateRecolteOriginal);
+      [intrantsUtilises, dateRecoltePrecedente] =
+        await getIntrantUtiliseEtDateRecoltePrecedent(
+          recolteComplet,
+          dateRecolteOriginal
+        );
 
       // Pour la première parcelle, récupérer la date de récolte précédente pour l'affichage
       if (!dateRecoltePrecedente && recolteComplet.idParcelle.length > 0) {
@@ -347,6 +354,31 @@ export const getRecolte = async (
     }
   } else {
     return { ...recolteComplet, isProprietaire: true };
+  }
+};
+
+// Recuperer tous les recoltes d'un producteur
+export const getRecoltesProducteur = async (account) => {
+  try {
+    const compteurRecoltes = await collecteurProducteurRead.read(
+      "compteurRecoltes"
+    );
+
+    let i;
+    let allRecoltes = [];
+
+    for (i = compteurRecoltes; i >= DEBUT_RECOLTE; i--) {
+      // Filtre les recoltes si 'address' est definie dans l'url
+      let recolteRaw = await getRecolte(i, [0], account);
+
+      if (!recolteRaw.isProprietaire) continue;
+
+      allRecoltes.push(recolteRaw);
+    }
+    return allRecoltes;
+  } catch (error) {
+    console.error("❌ Erreur chargement récoltes:", error);
+    return;
   }
 };
 
@@ -552,12 +584,15 @@ const getSaisonEtNumRecolte = async (recolteComplet, dateRecolteOriginal) => {
 };
 
 /**
- * 
- * @param {object} recolteComplet 
- * @param {string} dateRecolteOriginal 
+ *
+ * @param {object} recolteComplet
+ * @param {string} dateRecolteOriginal
  * @returns {Array}
  */
-const getIntrantUtiliseEtDateRecoltePrecedent = async (recolteComplet, dateRecolteOriginal) => {
+const getIntrantUtiliseEtDateRecoltePrecedent = async (
+  recolteComplet,
+  dateRecolteOriginal
+) => {
   try {
     let intrantsUtilises = [];
     let dateRecoltePrecedente = null;

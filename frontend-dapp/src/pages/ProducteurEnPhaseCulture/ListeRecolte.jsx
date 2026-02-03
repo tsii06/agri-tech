@@ -16,11 +16,22 @@ import {
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import { useRecoltesProducteur } from "../../hooks/queries/useRecoltes";
 
 function ListeRecoltes() {
   const { address } = useParams();
+
+  // Utilisation du tableau de rôles
+  const { roles, account } = useUserContext();
+
+  // Utiliser cache pour stocker liste recolte du producteur.
+  const cacheRecolte = useRecoltesProducteur(account);
+  const [recoltes, setRecoltes] = useState(() => {
+    if (!cacheRecolte.isLoading) return cacheRecolte.data;
+    else return [];
+  });
+
   const navigate = useNavigate();
-  const [recoltes, setRecoltes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantiteCommande, setQuantiteCommande] = useState("");
@@ -29,6 +40,7 @@ function ListeRecoltes() {
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [saisonFiltre, setSaisonFiltre] = useState("all");
+
   // Pour certification
   const [showModalCertification, setShowModalCertification] = useState(false);
   const [certificat, setCertificat] = useState(null);
@@ -39,14 +51,13 @@ function ListeRecoltes() {
   const autoriteCertificatrice = useRef(null);
   const numeroCertificat = useRef(null);
   const region = useRef(null);
+
   // Pour modification de prix
   const [showModalPrix, setShowModalPrix] = useState(false);
   const [recoltePrixSelectionnee, setRecoltePrixSelectionnee] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
   const [dernierRecolteCharger, setDernierRecolteCharger] = useState(() => 0);
 
-  // Utilisation du tableau de rôles
-  const { roles, account } = useUserContext();
 
   const chargerRecoltes = async (reset = false) => {
     setIsLoading(true);
@@ -121,8 +132,9 @@ function ListeRecoltes() {
       return;
     }
 
-    chargerRecoltes(true);
-  }, [address, account]);
+    if (cacheRecolte.isLoading) chargerRecoltes(true);
+    else setIsLoading(false);
+  }, [address, account, cacheRecolte.isLoading]);
 
   const handleCertifier = async (event) => {
     event.preventDefault();
