@@ -15,6 +15,7 @@ import {
 import myPinataSDK from "../../utils/pinata";
 import { raccourcirChaine } from "../../utils/stringUtils";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
+import { useAddIntantParcelle } from "../../hooks/mutations/mutationParcelles";
 
 function IntrantsParcelle() {
   const { id } = useParams();
@@ -41,6 +42,9 @@ function IntrantsParcelle() {
   const dateInspection = useRef(null);
   const autoriteCertificatrice = useRef(null);
   const numeroCertificat = useRef(null);
+
+  // useMutation pour l'ajout d'intrant.
+  const addIntrantMutation = useAddIntantParcelle(account);
 
   useEffect(() => {
     chargerParcelle();
@@ -128,11 +132,11 @@ function IntrantsParcelle() {
         };
 
         // 2. Ajouter l'intrant dans le master de la parcelle (avec dateAjout)
-        const masterUpload = await addIntrantToParcelleMaster(
-          parcelle,
-          intrantData,
-          intrantData.dateAjout
-        );
+        const masterUpload = await addIntrantMutation.mutateAsync({
+          parcelle: parcelle,
+          intrant: intrantData,
+          dateAJoutISO: intrantData.dateAjout
+      });
 
         // 7. Mettre à jour l'état local
         setIntrants([...intrants, intrantData]);
