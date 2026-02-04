@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { DEBUT_PARCELLE } from "../../utils/contract";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
