@@ -9,16 +9,10 @@ import { createRpcProvider, ReconnectingWebSocketProvider, SmartContractManager 
 
 // Providers
 const publicProvider = createRpcProvider(config.publicRPC);
-const privateWsProvider = new ReconnectingWebSocketProvider(config.privateWs);
 
 // Signer pour envoi tx sur public
 const signer = new ethers.Wallet(config.privateKey, publicProvider);
 
-const exportateurClientContrat = new SmartContractManager(
-  config.adresseExportateurClientContrat,
-  exportateurClientABI.abi,
-  privateWsProvider
-);
 const registreExpeditionContrat = new SmartContractManager(
   config.adresseRegistreExpeditionContrat,
   registreExpeditionABI.abi,
@@ -32,13 +26,30 @@ export const handleAjouterExpedition = (exportateurAddr, idArticle, quantite, pr
 
 // Ecouteur pour l'event d'ajout d'expedition
 export const listenExpedition = async () => {
+  const privateWsProvider = new ReconnectingWebSocketProvider(config.privateWs);
+  const exportateurClientContrat = new SmartContractManager(
+    config.adresseExportateurClientContrat,
+    exportateurClientABI.abi,
+    privateWsProvider
+  );
+
+  // Ecouter l'event AjouterExpedition.
   await exportateurClientContrat.contract.on("AjouterExpedition", handleAjouterExpedition);
   console.log("Nbr de handler attacher a l'event AjouterExpedition : ", await exportateurClientContrat.contract.listenerCount());
-};
 
-// Supprime les ecouteurs de exportateurClientContrat
-export const deleteEventAjouterExpedition = async () => {
-  exportateurClientContrat.off("AjouterExpedition", handleAjouterExpedition);
+  // Nouvelle wsProvide et nouvel contrat si wsProvider tombe.
+  privateWsProvider.getProvider().websocket.on("close", async () => {
+    privateWsProvider.destroy();
+    // Supprimer les ecouteurs de exportateur contrat
+    await exportateurClientContrat.contract.off("AjouterExpedition", handleAjouterExpedition);
+    await listenExpedition();
+  });
+
+  // Fermeture propre quand c'est fini
+  process.on('SIGINT', () => {
+    privateWsProvider.destroy();
+    process.exit();
+  });
 };
 
 const pushToPublic = async (data) => {
@@ -62,17 +73,5 @@ const pushToPublic = async (data) => {
     );
   }
 };
-
-// Ecouter l'event Ajouter expedition si le websocket tombe puis reconnecte.
-privateWsProvider.getProvider().websocket.on('open', async () => {
-  await exportateurClientContrat.contract.removeAllListeners();
-  await listenExpedition();
-});
-
-// Fermeture propre quand c'est fini
-process.on('SIGINT', () => {
-  privateWsProvider.destroy();
-  process.exit();
-});
 
 export { registreExpeditionContrat };
