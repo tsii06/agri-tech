@@ -2,7 +2,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
 import {
@@ -15,6 +14,7 @@ import {
 } from "../../utils/ipfsUtils";
 import myPinataSDK from "../../utils/pinata";
 import { raccourcirChaine } from "../../utils/stringUtils";
+import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 
 function IntrantsParcelle() {
   const { id } = useParams();
@@ -48,8 +48,7 @@ function IntrantsParcelle() {
 
   const chargerParcelle = async () => {
     try {
-      const contract = await getContract();
-      const parcelleData = await contract.getParcelle(id);
+      const parcelleData = await producteurEnPhaseCultureRead.read("getParcelle", id);
       setParcelle(parcelleData);
 
       // Si la parcelle a un CID, essayer de récupérer les intrants
