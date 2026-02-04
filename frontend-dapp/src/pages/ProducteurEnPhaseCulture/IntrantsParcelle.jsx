@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getContract } from "../../utils/contract";
@@ -7,12 +9,12 @@ import {
   uploadIntrant,
   getIPFSURL,
   getFileFromPinata,
-  updateCidParcelle,
   getMetadataFromPinata,
   uploadToIPFS,
   addIntrantToParcelleMaster,
 } from "../../utils/ipfsUtils";
 import myPinataSDK from "../../utils/pinata";
+import { raccourcirChaine } from "../../utils/stringUtils";
 
 function IntrantsParcelle() {
   const { id } = useParams();
@@ -65,8 +67,9 @@ function IntrantsParcelle() {
             }
           }
         } catch (error) {
-          console.log(
-            "Pas de intrants existantes ou erreur de récupération IPFS"
+          console.error(
+            "Pas de intrants existantes ou erreur de récupération IPFS : ",
+            error
           );
         }
       }
@@ -176,7 +179,6 @@ function IntrantsParcelle() {
       const certificatUpload = await uploadToIPFS(certificat, certificatData);
 
       // mettre a jour les metadata de l'intrant conscerner
-      const oldMetada = await getMetadataFromPinata(selectedIntrant.cid);
       await myPinataSDK.files.public.update({
         id: selectedIntrant.id,
         keyvalues: {
@@ -212,7 +214,7 @@ function IntrantsParcelle() {
 
   const afficherIntrant = (intrant) => {
     return (
-      <div key={intrant.cid} className="col-md-6 mb-3">
+      <div key={intrant.cid} className="col-md-6 mb-3"> 
         <div
           className={`card ${
             intrant.valider === "true" ? "border-success" : "border-warning"
@@ -241,7 +243,7 @@ function IntrantsParcelle() {
               </p>
             )}
             <p>
-              <strong>CID IPFS:</strong> {intrant.cid || "Non disponible"}
+              <strong>CID IPFS:</strong> {intrant.cid ? raccourcirChaine(intrant.cid) : "Non disponible"}
             </p>
             {intrant.certificat && (
               <p>
@@ -310,19 +312,23 @@ function IntrantsParcelle() {
                   <strong>ID:</strong> {parcelle.id}
                 </p>
                 <p>
-                  <strong>Producteur:</strong> {parcelle.producteur}
+                  <strong>Producteur:</strong>{" "}
+                  {raccourcirChaine(parcelle.producteur)}
                 </p>
                 <p>
-                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                  <strong>CID IPFS:</strong>{" "}
+                  {parcelle.cid
+                    ? raccourcirChaine(parcelle.cid) : "Aucun"}
                 </p>
               </div>
               <div className="col-md-6">
                 <p>
                   <strong>Hash Merkle:</strong>{" "}
-                  {parcelle.hashMerkle || "Non calculé"}
+                  {parcelle.hashMerkle
+                    ? raccourcirChaine(parcelle.hashMerkle) : "Non calculé"}
                 </p>
                 <p>
-                  <strong>Nombre d'intrants:</strong> {intrants.length}
+                  <strong>Nombre d&apos;intrants:</strong> {intrants.length}
                 </p>
               </div>
             </div>
@@ -343,7 +349,7 @@ function IntrantsParcelle() {
                   <div className="col-md-4">
                     <div className="mb-3">
                       <label htmlFor="nom" className="form-label">
-                        Nom de l'intrant
+                        Nom de l&apos;intrant
                       </label>
                       <input
                         type="text"
