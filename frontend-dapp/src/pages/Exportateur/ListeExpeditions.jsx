@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DEBUT_EXPEDITION, getExportateurClientContract } from "../../utils/contract";
@@ -49,13 +50,11 @@ export default function ListeExpeditions() {
                     e.nomProduit = root.nomProduit || root.nom || "";
                     e.dateExpedition = root.dateExpedition || root.date || "";
                   }
-                } catch {}
+                } catch { /* empty */ }
               }
               items.push(e);
             }
-          } catch (err) {
-            // ignorer une entrée invalide
-          }
+          } catch { /* empty */ }
         }
         setExpeditions(items);
       } catch (e) {

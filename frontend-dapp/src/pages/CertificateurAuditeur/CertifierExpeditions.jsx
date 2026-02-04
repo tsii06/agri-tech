@@ -1,7 +1,7 @@
+/* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from "react";
-import { getExportateurClientContract } from "../../utils/contract";
+import { DEBUT_EXPEDITION, getExportateurClientContract } from "../../utils/contract";
 import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
-import { ethers } from "ethers";
 import { uploadToIPFS } from "../../utils/ipfsUtils";
 
 export default function CertifierExpeditions() {
@@ -27,7 +27,7 @@ export default function CertifierExpeditions() {
       const contract = await getExportateurClientContract();
       const count = Number(await contract.compteurExpeditions());
       const items = [];
-      for (let i = 1; i <= count; i++) {
+      for (let i = DEBUT_EXPEDITION; i <= count; i++) {
         try {
           const exp = await contract.getExpedition(i);
           if (!exp || !exp.id) continue;
@@ -54,10 +54,10 @@ export default function CertifierExpeditions() {
                 e.destination = root.destination || "";
                 e.transporteur = root.transporteur || "";
               }
-            } catch {}
+            } catch { /* empty */ }
           }
           items.push(e);
-        } catch {}
+        } catch { /* empty */ }
       }
       setExpeditions(items);
     } catch (e) {

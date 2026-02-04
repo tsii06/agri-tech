@@ -27,7 +27,6 @@ const CollecteurExportateur_PROXY_ADDRESS =
   "0x1CBF67931463D5f38fb5855140eA2b302C059243";
 const EXPORTATEUR_CLIENT_ADDRESS = "0xdc0500D7013bA9e8aa20374cCc8894b9c391Ec09";
 const RPC_PROVIDER_CLIENT = "https://rpc-amoy.polygon.technology";
-const RPC_PROVIDER_WS = "wss://polygon-amoy-bor-rpc.publicnode.com";
 // const RPC_PROVIDER_CLIENT = "https://polygon-amoy.g.alchemy.com/v2/elscICFcMfuGdm1jebr2e3dkOF4471eK";
 
 
