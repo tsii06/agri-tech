@@ -8,14 +8,17 @@ import { getParcelle } from "../../utils/contrat/producteur";
 import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
-import { useParcellesProducteur } from "../../hooks/queries/useParcelles";
+import {
+  useParcellesProducteur,
+} from "../../hooks/queries/useParcelles";
 
 function MesParcelles() {
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
   // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading, isRefetching, refetch } = useParcellesProducteur(account);
+  const { data, isLoading, isRefetching, refetch } =
+    useParcellesProducteur(account);
   const [parcelles, setParcelles] = useState(() => {
     if (!isLoading && !isRefetching) return data;
     else return [];
@@ -53,15 +56,16 @@ function MesParcelles() {
 
   const chargerParcelles = async (e) => {
     let _dernierParcelleCharger = dernierParcelleCharger;
+    let reset = false;
     if (e?.target.value === "actualiser") {
-      setParcelles([]);
-      _dernierParcelleCharger = 0;
+      setDernierParcelleCharger(0);
       refetch();
+      return;
     }
     setLoading(true);
     try {
       const compteurParcellesRaw =
-        _dernierParcelleCharger !== 0
+        _dernierParcelleCharger !== 0 && !reset
           ? _dernierParcelleCharger
           : await producteurEnPhaseCultureRead.read("getCompteurParcelle");
       const compteurParcelles = Number(compteurParcellesRaw);
@@ -119,7 +123,10 @@ function MesParcelles() {
             userHasRole0: hasRole(roles, 0),
           });
 
-          setParcelles((prev) => [...prev, parcelleRaw]);
+          if (reset) {
+            setParcelles([parcelleRaw]);
+            reset = false;
+          } else setParcelles((prev) => [...prev, parcelleRaw]);
         } catch (error) {
           console.error(
             `❌ Erreur lors du chargement de la parcelle ${i}:`,
