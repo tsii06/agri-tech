@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -15,8 +16,11 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import {
+  collecteurProducteurRead,
+} from "../../config/onChain/frontContracts";
 import { useRecoltesProducteur } from "../../hooks/queries/useRecoltes";
+import { useUpdatePrixRecolte } from "../../hooks/mutations/mutationRecoltes";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -27,7 +31,8 @@ function ListeRecoltes() {
   // Utiliser cache pour stocker liste recolte du producteur.
   const cacheRecolte = useRecoltesProducteur(account);
   const [recoltes, setRecoltes] = useState(() => {
-    if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching) return cacheRecolte.data;
+    if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching)
+      return cacheRecolte.data;
     else return [];
   });
 
@@ -58,6 +63,8 @@ function ListeRecoltes() {
   const [nouveauPrix, setNouveauPrix] = useState("");
   const [dernierRecolteCharger, setDernierRecolteCharger] = useState(() => 0);
 
+  // useMutation pour la modification de prix d'une recolte
+  const updatePrixMutation = useUpdatePrixRecolte(account);
 
   const chargerRecoltes = async (reset = false) => {
     setIsLoading(true);
@@ -254,21 +261,10 @@ function ListeRecoltes() {
     event.preventDefault();
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.modifierPrixRecolte(
-        recoltePrixSelectionnee.id,
-        nouveauPrix
-      );
-      await tx.wait();
-
-      // maj liste recoltes
-      setRecoltes((prev) =>
-        prev.map((recolte) =>
-          recolte.id === recoltePrixSelectionnee.id
-            ? { ...recolte, prixUnit: nouveauPrix }
-            : recolte
-        )
-      );
+      await updatePrixMutation.mutateAsync({
+        id: recoltePrixSelectionnee.id,
+        prix: nouveauPrix,
+      });
 
       setShowModalPrix(false);
       alert("Prix modifié avec succès !");
@@ -463,8 +459,8 @@ function ListeRecoltes() {
           <div className="mt-2">
             <small className="text-info">
               🌿 <strong>Nouvelle logique de saison :</strong> Chaque culture
-              est définie par la période du premier intrant jusqu&apos;à la récolte,
-              avec un numéro séquentiel par parcelle.
+              est définie par la période du premier intrant jusqu&apos;à la
+              récolte, avec un numéro séquentiel par parcelle.
               <span className="badge bg-success ms-1">✓ Dynamique</span>
               <span className="badge bg-warning text-dark ms-1">
                 ⚠️ Ancien système
