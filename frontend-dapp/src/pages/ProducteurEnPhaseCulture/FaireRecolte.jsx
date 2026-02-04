@@ -1,15 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState,  useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  uploadConsolidatedData,
-  enrichRecolteWithSeasonAndInputs,
-  getMasterFromCid,
   uploadToIPFS,
   deleteFromIPFSByCid,
 } from "../../utils/ipfsUtils";
 import { useUserContext } from "../../context/useContextt";
-import { createRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getParcelle } from "../../utils/contrat/producteur";
+import { raccourcirChaine } from "../../utils/stringUtils";
+import { useCreateRecolte } from "../../hooks/mutations/mutationRecoltes";
 
 function FaireRecolte() {
   const navigate = useNavigate();
@@ -27,6 +26,9 @@ function FaireRecolte() {
   // recupere l'id du parcelle
   const { id } = useParams();
   const { account } = useUserContext();
+
+  // useMutation pour la creation de recolte.
+  const addRecolteMutation = useCreateRecolte(account);
 
   useEffect(() => {
     chargerParcelle();
@@ -74,13 +76,10 @@ function FaireRecolte() {
       }
 
       // 1) Crée la récolte on-chain + consolidation existante
-      await createRecolte({...recolteData, cidCalendrierCultural: cidCalendrierCultural}, parcelle);
-
-      // 2) Enrichir la récolte côté IPFS (saison + intrantsUtilises à partir de la parcelle)
-      // const enrichedUpload = await enrichRecolteWithSeasonAndInputs({
-      //   ...recolteData,
-      //   idParcelles: [Number(parcelle.id)],
-      // }, parcelle);
+      await addRecolteMutation.mutateAsync({
+        recolteData: {...recolteData, cidCalendrierCultural: cidCalendrierCultural},
+        parcelle: parcelle
+      });
 
       alert("Récolte bien enregistrée avec traçabilité IPFS et hash Merkle !");
       navigate("/liste-recolte");
@@ -125,19 +124,19 @@ function FaireRecolte() {
                   <strong>ID:</strong> {parcelle.id}
                 </p>
                 <p>
-                  <strong>Producteur:</strong> {parcelle.producteur?.adresse}
+                  <strong>Producteur:</strong> {raccourcirChaine(parcelle.producteur?.adresse)}
                 </p>
                 <p>
-                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                  <strong>CID IPFS:</strong> {parcelle.cid ? raccourcirChaine(parcelle.cid) : "Aucun"}
                 </p>
               </div>
               <div className="col-md-6">
                 <p>
                   <strong>Hash transaction:</strong>{" "}
-                  {parcelle.hashTransaction || "Non calculé"}
+                  {parcelle.hashTransaction ? raccourcirChaine(parcelle.hashTransaction) : "Non calculé"}
                 </p>
                 <p>
-                  <strong>Statut:</strong>
+                  <strong>Statut:</strong> &nbsp;
                   {parcelle.cid ? (
                     <span className="badge bg-success">
                       Données consolidées

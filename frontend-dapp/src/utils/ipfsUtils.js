@@ -1,4 +1,7 @@
-import { apiAjouterKeyvalues, apiGetFileFromPinata, apiUploadConsolidatedData } from "../api/frontApiPinata";
+import {
+  apiGetFileFromPinata,
+  apiUploadConsolidatedData,
+} from "../api/frontApiPinata";
 import { getProducteurEnPhaseCultureWrite } from "../config/onChain/frontContracts";
 import myPinataSDK from "./pinata";
 
@@ -228,9 +231,13 @@ export const uploadConditionTransport = async (file, conditionData) => {
 export const uploadCertificatPhytosanitaire = async (file, certificatData) => {
   const metadata = {
     type: "certificat-phytosanitaire",
-    ...certificatData
+    ...certificatData,
   };
-  return await uploadToIPFS(file, stringifyAll(metadata), "certificat-phytosanitaire");
+  return await uploadToIPFS(
+    file,
+    stringifyAll(metadata),
+    "certificat-phytosanitaire"
+  );
 };
 // Fonction récursive pour tout transformer en string
 export function stringifyAll(obj) {
@@ -605,7 +612,7 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
         master = json && json.items ? json.items : json;
       }
     }
-  } catch(error) {
+  } catch (error) {
     console.error("Erreur dans updateCidParcelle : ", error);
   }
 
@@ -639,19 +646,19 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
   if (_type == "photos") {
     await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
-      masterUpload.cid
+      masterUpload.cid,
     ]);
     // pour fournisseur
   } else if (_type === "intrants") {
     await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
-      masterUpload.cid
+      masterUpload.cid,
     ]);
     // pour auditeur
   } else if (_type === "inspections") {
     await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
-      masterUpload.cid
+      masterUpload.cid,
     ]);
   }
 
@@ -714,7 +721,14 @@ export const getUrlDownloadFilePinata = async (_cid) => {
  */
 export const ajouterKeyValuesFileIpfs = async (_cid, _keyvalues) => {
   try {
-    return await apiAjouterKeyvalues(_cid, _keyvalues);
+    const idIpfs = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
+      .id;
+
+    const update = await myPinataSDK.files.public.update({
+      id: idIpfs,
+      keyvalues: _keyvalues,
+    });
+    return update;
   } catch (error) {
     console.error("Ajout keyvalues sur ipfs : ", error);
     throw new Error("Erreur ajout keyvalues : ", error);

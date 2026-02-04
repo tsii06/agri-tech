@@ -39,3 +39,11 @@ export async function getProducteurEnPhaseCultureWrite() {
     signerWallet
   );
 }
+export async function getCollecteurProducteurWrite() {
+  const signerWallet = await getSignerWallet();
+  return new SmartContractManager(
+    config.addrCollecteurProducteur,
+    collecteurProducteurABI.abi,
+    signerWallet
+  );
+}

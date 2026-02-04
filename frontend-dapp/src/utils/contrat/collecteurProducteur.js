@@ -13,7 +13,7 @@ import {
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 import { hasRole } from "../roles";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import { collecteurProducteurRead, getCollecteurProducteurWrite } from "../../config/onChain/frontContracts";
 
 const contrat = await getCollecteurProducteurContract();
 
@@ -106,14 +106,13 @@ export const getConditionTransportPC = async (_idCommande) => {
  */
 export const getRecoltesParParcelle = async (idParcelle) => {
   try {
-    const contract = await getCollecteurProducteurContract();
-    const compteurRecoltes = await contract.compteurRecoltes();
+    const compteurRecoltes = await collecteurProducteurRead.read("compteurRecoltes");
     const recoltesParcelle = [];
 
     // Parcourir toutes les récoltes pour trouver celles de cette parcelle
     for (let i = 1; i <= compteurRecoltes; i++) {
       try {
-        const recolteOnChain = await contract.getRecolte(i);
+        const recolteOnChain = await collecteurProducteurRead.read("getRecolte", i);
         const idParcelles = Object.values(recolteOnChain.idParcelle).map((id) =>
           Number(id)
         );
@@ -397,7 +396,7 @@ export const createRecolte = async (recolteData, parcelle) => {
   let intrantsParcelle = [];
 
   try {
-    const contratProcteur = await getCollecteurProducteurContract();
+    const contratProcteur = await getCollecteurProducteurWrite();
 
     // 1. Récupérer les intrants valides selon la règle d'association
     try {
@@ -490,13 +489,12 @@ export const createRecolte = async (recolteData, parcelle) => {
     }
 
     // 4. Créer la récolte avec le CID IPFS
-    tx = await contratProcteur.ajoutRecolte(
+    tx = await contratProcteur.write("ajoutRecolte", [
       [parseInt(parcelle.id)], // Tableau de parcelles
       parseInt(recolteData.quantite),
       parseInt(recolteData.prix),
       recolteUpload.cid // CID IPFS
-    );
-    await tx.wait();
+    ]);
   } catch (error) {
     console.error("Creation recolte :", error);
 

@@ -11,7 +11,7 @@ export function useCreateParcelle(account) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (args) => createParcelle(...args),
+    mutationFn: async (args) => await createParcelle(...args),
 
     onSuccess: (receipt) => {
       // Refetch la cache pour la liste de tous les parcelles
@@ -22,8 +22,6 @@ export function useCreateParcelle(account) {
       });
 
       console.log("✅ Transaction confirmée:", receipt);
-
-      alert("Parcelle créé !");
     },
 
     onError: (error) => {
