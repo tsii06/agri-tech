@@ -3,19 +3,24 @@ import { useState, useEffect } from "react";
 import {
   uploadPhotoParcelle,
   getIPFSURL,
-  updateCidParcelle,
 } from "../../utils/ipfsUtils";
 import { useParams } from "react-router-dom";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
+import { useAddPhotoParcelle } from "../../hooks/mutations/mutationParcelles";
+import { useUserContext } from "../../context/useContextt";
 
 function PhotosParcelle() {
   const { id } = useParams(); // id de la parcelle
+  const { account } = useUserContext();
   const [selectedFile, setSelectedFile] = useState(null);
   const [ipfsUrl, setIpfsUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [parcelle, setParcelle] = useState(null);
   const [photos, setPhotos] = useState([]);
+
+  // UseMutation pou l'ajout de photo d'une parcelle
+  const addPhotoMutation = useAddPhotoParcelle(account);
 
   useEffect(() => {
     chargerParcelle();
@@ -81,11 +86,11 @@ function PhotosParcelle() {
         const nouvellesPhotos = [...photos, photoData];
 
         // mettre a jour la nouvelle cid relier au parcelle
-        const masterUpload = await updateCidParcelle(
-          parcelle,
-          nouvellesPhotos,
-          "photos"
-        );
+        const masterUpload = await addPhotoMutation.mutateAsync({
+          parcelle: parcelle,
+          newData: nouvellesPhotos,
+          type: "photos"
+        });
 
         // 7. Mettre à jour l'état local
         setPhotos(nouvellesPhotos);

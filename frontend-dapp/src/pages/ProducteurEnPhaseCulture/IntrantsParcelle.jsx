@@ -10,7 +10,6 @@ import {
   getFileFromPinata,
   getMetadataFromPinata,
   uploadToIPFS,
-  addIntrantToParcelleMaster,
 } from "../../utils/ipfsUtils";
 import myPinataSDK from "../../utils/pinata";
 import { raccourcirChaine } from "../../utils/stringUtils";

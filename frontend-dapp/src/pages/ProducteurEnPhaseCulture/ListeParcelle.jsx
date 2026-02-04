@@ -263,7 +263,7 @@ function MesParcelles() {
             disabled={loading}
             value={"actualiser"}
           >
-            🔄 Actualiser
+            Actualiser
           </button>
         </div>
 
