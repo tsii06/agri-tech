@@ -356,6 +356,29 @@ export const getRecolte = async (
   }
 };
 
+// Recuperer tous les recoltes
+export const getAllRecoltes = async () => {
+  try {
+    const compteurRecoltes = await collecteurProducteurRead.read(
+      "compteurRecoltes"
+    );
+
+    let i;
+    let allRecoltes = [];
+
+    for (i = compteurRecoltes; i >= DEBUT_RECOLTE; i--) {
+      // Filtre les recoltes si 'address' est definie dans l'url
+      let recolteRaw = await getRecolte(i);
+
+      allRecoltes.push(recolteRaw);
+    }
+    return allRecoltes;
+  } catch (error) {
+    console.error("❌ Erreur chargement récoltes:", error);
+    return;
+  }
+};
+
 // Recuperer tous les recoltes d'un producteur
 export const getRecoltesProducteur = async (account) => {
   try {

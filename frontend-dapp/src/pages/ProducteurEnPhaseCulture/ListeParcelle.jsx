@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { DEBUT_PARCELLE } from "../../utils/contract";
@@ -10,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 import {
+  useParcelles,
   useParcellesProducteur,
 } from "../../hooks/queries/useParcelles";
 
@@ -18,8 +20,8 @@ function MesParcelles() {
   const { roles, account } = useUserContext();
 
   // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading, isRefetching, refetch } =
-    useParcellesProducteur(account);
+  const { data, isLoading, isRefetching, refetch } = hasRole(roles, 0) ? 
+    useParcellesProducteur(account) : useParcelles();
   const [parcelles, setParcelles] = useState(() => {
     if (!isLoading && !isRefetching) return data;
     else return [];

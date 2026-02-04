@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -19,7 +20,7 @@ import {
 import {
   collecteurProducteurRead,
 } from "../../config/onChain/frontContracts";
-import { useRecoltesProducteur } from "../../hooks/queries/useRecoltes";
+import { useRecoltes, useRecoltesProducteur } from "../../hooks/queries/useRecoltes";
 import { useUpdatePrixRecolte } from "../../hooks/mutations/mutationRecoltes";
 
 function ListeRecoltes() {
@@ -29,7 +30,7 @@ function ListeRecoltes() {
   const { roles, account } = useUserContext();
 
   // Utiliser cache pour stocker liste recolte du producteur.
-  const cacheRecolte = useRecoltesProducteur(account);
+  const cacheRecolte = hasRole(roles, 0) ? useRecoltesProducteur(account) : useRecoltes();
   const [recoltes, setRecoltes] = useState(() => {
     if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching)
       return cacheRecolte.data;

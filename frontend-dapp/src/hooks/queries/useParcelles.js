@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getParcellesProducteur } from "../../utils/contrat/producteur";
+import { getAllParcelles, getParcellesProducteur } from "../../utils/contrat/producteur";
 
 export const PARCELLES_KEYS = {
   all: ["madtx-parcelles"],
@@ -10,10 +10,10 @@ export const PARCELLES_KEYS = {
 };
 
 // Recuperer tous les parcelles dans le cache
-export function useParcelles(queryFonction, filters = {}) {
+export function useParcelles() {
   return useQuery({
-    queryKey: PARCELLES_KEYS.list(filters),
-    queryFn: () => queryFonction(),
+    queryKey: PARCELLES_KEYS.lists(),
+    queryFn: async () => getAllParcelles(),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
   });
@@ -23,7 +23,7 @@ export function useParcelles(queryFonction, filters = {}) {
 export function useParcellesProducteur(account) {
   return useQuery({
     queryKey: PARCELLES_KEYS.list({ producteur: account }),
-    queryFn: () => getParcellesProducteur(account),
+    queryFn: async () => await getParcellesProducteur(account),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
   });

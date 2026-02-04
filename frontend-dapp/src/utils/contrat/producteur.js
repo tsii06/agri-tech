@@ -24,7 +24,7 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
       _idParcelle
     );
 
-    // Vérifier si on doit filtrer par propriétaire
+    // Vérifier si on doit filtrer par propriétaire si user producteur
     if (_roles.length > 0 && _account !== "" && hasRole(_roles, 0)) {
       if (
         parcelleOnChain.producteur?.toLowerCase() !== _account?.toLowerCase()
@@ -99,6 +99,48 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
     isProprietaire: true,
     dataOffChain: parcelleIpfs !== false, // pour savoir si il y a des dataOffChain
   };
+};
+
+// Recuperer tous les parcelles
+export const getAllParcelles = async () => {
+  try {
+    const compteurParcellesRaw = await producteurEnPhaseCultureRead.read(
+      "getCompteurParcelle"
+    );
+    const compteurParcelles = Number(compteurParcellesRaw);
+
+    if (compteurParcelles === 0) {
+      console.log("⚠️ Aucune parcelle trouvée sur la blockchain");
+      return;
+    }
+
+    const parcellesDebug = [];
+    let i;
+
+    // Utiliser DEBUT_PARCELLE comme point de départ
+    for (i = compteurParcelles; i >= DEBUT_PARCELLE; i--) {
+      try {
+        const parcelleRaw = await getParcelle(i);
+
+        // Ne pas afficher si il n y a pas de data off-chain
+        if (!parcelleRaw.dataOffChain) {
+          continue;
+        }
+
+        parcellesDebug.push(parcelleRaw);
+      } catch (error) {
+        console.error(
+          `❌ Erreur lors du chargement de la parcelle ${i}:`,
+          error
+        );
+      }
+    }
+    console.log("Tous les parcelles du producteur :", parcellesDebug);
+    return parcellesDebug;
+  } catch (error) {
+    console.error("❌ Erreur détaillée:", error);
+    return;
+  }
 };
 
 // Recuperer tous les parcelles d'un producteur
