@@ -31,3 +31,11 @@ export const producteurEnPhaseCultureWrite = new SmartContractManager(
   producteurEnPhaseCultureABI.abi,
   signerWallet
 );
+export async function getProducteurEnPhaseCultureWrite() {
+  const signerWallet = await getSignerWallet();
+  return new SmartContractManager(
+    config.addrProducteurEnPhaseCulture,
+    producteurEnPhaseCultureABI.abi,
+    signerWallet
+  );
+}

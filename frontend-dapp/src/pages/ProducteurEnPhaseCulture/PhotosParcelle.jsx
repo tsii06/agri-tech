@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   uploadPhotoParcelle,
   getIPFSURL,
   updateCidParcelle,
 } from "../../utils/ipfsUtils";
-import { getContract } from "../../utils/contract";
 import { useParams } from "react-router-dom";
+import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 
 function PhotosParcelle() {
   const { id } = useParams(); // id de la parcelle
@@ -25,8 +25,10 @@ function PhotosParcelle() {
       if (!id || isNaN(Number(id))) {
         throw new Error("Identifiant de parcelle invalide");
       }
-      const contract = await getContract();
-      const parcelleData = await contract.getParcelle(Number(id));
+      const parcelleData = await producteurEnPhaseCultureRead.read(
+        "getParcelle",
+        Number(id)
+      );
       setParcelle(parcelleData);
 
       // Si la parcelle a un CID, essayer de récupérer les photos
@@ -41,8 +43,9 @@ function PhotosParcelle() {
             }
           }
         } catch (error) {
-          console.log(
-            "Pas de photos existantes ou erreur de récupération IPFS"
+          console.error(
+            "Pas de photos existantes ou erreur de récupération IPFS : ",
+            error
           );
         }
       }
@@ -190,7 +193,9 @@ function PhotosParcelle() {
             <h5>Photos de la parcelle ({photos.length})</h5>
           </div>
           <div className="card-body">
-            <div className="row">{photos.map(afficherPhoto)}</div>
+            <div className="row">
+              {photos.map((photo) => afficherPhoto(photo))}
+            </div>
           </div>
         </div>
       )}
@@ -235,16 +240,33 @@ function PhotosParcelle() {
                   <strong>ID:</strong> {parcelle.id}
                 </p>
                 <p>
-                  <strong>Producteur:</strong> {parcelle.producteur}
+                  <strong>Producteur:</strong>{" "}
+                  {parcelle.producteur.substring(0, 6)}...
+                  {parcelle.producteur.substring(
+                    parcelle.producteur.length - 4
+                  )}
                 </p>
                 <p>
-                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                  <strong>CID IPFS:</strong>{" "}
+                  {parcelle.cid
+                    ? `${parcelle.cid.substring(
+                        0,
+                        6
+                      )}...${parcelle.cid.substring(parcelle.cid.length - 4)}`
+                    : "Aucun"}
                 </p>
               </div>
               <div className="col-md-6">
                 <p>
                   <strong>Hash Merkle:</strong>{" "}
-                  {parcelle.hashMerkle || "Non calculé"}
+                  {parcelle.hashMerkle
+                    ? `${parcelle.hashMerkle.substring(
+                        0,
+                        6
+                      )}...${parcelle.hashMerkle.substring(
+                        parcelle.hashMerkle.length - 4
+                      )}`
+                    : "Non calculé"}
                 </p>
                 <p>
                   <strong>Nombre de photos:</strong> {photos.length}

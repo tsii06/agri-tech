@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getGestionnaireActeursContract } from "../../utils/contract";
 import { User, LogOut, Wallet, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { gestionnaireActeursRead } from "../../config/onChain/frontContracts";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getRoleName = (roleNumber) => {
   const roles = {
     0: "PRODUCTEUR",

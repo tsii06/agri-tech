@@ -1,5 +1,5 @@
 import { apiAjouterKeyvalues, apiGetFileFromPinata, apiUploadConsolidatedData } from "../api/frontApiPinata";
-import { getContract } from "./contract";
+import { getProducteurEnPhaseCultureWrite } from "../config/onChain/frontContracts";
 import myPinataSDK from "./pinata";
 
 /**
@@ -634,28 +634,26 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
   }
 
   // 5. Mettre à jour le CID de la parcelle avec le nouveau master
-  const contract = await getContract();
-  let tx;
+  const contract = await getProducteurEnPhaseCultureWrite();
   // pour producteur
   if (_type == "photos") {
-    tx = await contract.mettreAJourPhotosParcelle(
+    await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
       masterUpload.cid
-    );
+    ]);
     // pour fournisseur
   } else if (_type === "intrants") {
-    tx = await contract.mettreAJourIntrantsParcelle(
+    await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
       masterUpload.cid
-    );
+    ]);
     // pour auditeur
   } else if (_type === "inspections") {
-    tx = await contract.mettreAJourInspectionsParcelle(
+    await contract.write("mettreAJourPhotosParcelle", [
       Number(parcelle.id),
       masterUpload.cid
-    );
+    ]);
   }
-  await tx.wait();
 
   // supprimer l'ancien fichier associé à la parcelle
   if (parcelle && parcelle.cid) {
