@@ -15,7 +15,7 @@ function MesParcelles() {
   const { roles, account } = useUserContext();
 
   // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading, isRefetching } = useParcellesProducteur(account);
+  const { data, isLoading, isRefetching, refetch } = useParcellesProducteur(account);
   const [parcelles, setParcelles] = useState(() => {
     if (!isLoading && !isRefetching) return data;
     else return [];
@@ -56,6 +56,7 @@ function MesParcelles() {
     if (e?.target.value === "actualiser") {
       setParcelles([]);
       _dernierParcelleCharger = 0;
+      refetch();
     }
     setLoading(true);
     try {

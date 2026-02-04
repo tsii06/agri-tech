@@ -111,6 +111,7 @@ function ListeRecoltes() {
 
         if (reset === true) {
           setRecoltes([recolteRaw]);
+          cacheRecolte.refetch();
           reset = false;
         } else setRecoltes((prev) => [...prev, recolteRaw]);
         nbrRecolteCharger--;

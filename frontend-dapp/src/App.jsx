@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import {
   BrowserRouter as Router,
   Routes,
@@ -56,13 +57,13 @@ import {
   Globe,
   Sprout,
 } from "lucide-react";
-import { getGestionnaireActeursContract } from "./utils/contract";
 import StockExportateur from "./pages/Exportateur/Stock";
 import ListeExpeditions from "./pages/Exportateur/ListeExpeditions";
 import CertifierExpeditions from "./pages/CertificateurAuditeur/CertifierExpeditions";
 import EspaceClient from "./pages/client/EspaceClient";
 import DetailsExpedition from "./pages/Exportateur/DetailsExpedition";
 import PassePortNumerique from "./pages/client/PassePortNumerique";
+import { gestionnaireActeursRead } from "./config/onChain/frontContracts";
 
 function App() {
   const [state, setState] = useState({});
@@ -75,8 +76,7 @@ function App() {
     const fetchRoles = async () => {
       if (account) {
         try {
-          const contract = await getGestionnaireActeursContract();
-          const rolesArray = await contract.getRoles(account);
+          const rolesArray = await gestionnaireActeursRead.read("getRoles", account);
           setRoles(rolesArray.map((r) => Number(r)));
         } catch (e) {
           console.error(

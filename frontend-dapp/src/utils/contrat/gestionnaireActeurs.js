@@ -1,6 +1,4 @@
-import { getGestionnaireActeursContract } from "../contract";
-
-const contrat = await getGestionnaireActeursContract();
+import { gestionnaireActeursRead } from "../../config/onChain/frontContracts";
 
 /**
  * 
@@ -9,7 +7,7 @@ const contrat = await getGestionnaireActeursContract();
  */
 export const getActeur = async (_address) => {
     try {
-        const acteurOnChain = await contrat.getDetailsActeur(_address);
+        const acteurOnChain = await gestionnaireActeursRead.read("getDetailsActeur", _address);
         // convertir en array
         const roles = acteurOnChain.roles.map(r => Number(r));
         let acteurComplet = {

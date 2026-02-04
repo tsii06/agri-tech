@@ -1,9 +1,10 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { getGestionnaireActeursContract } from "../../utils/contract";
 import { User, LogOut, Wallet, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getActeur } from "../../utils/contrat/gestionnaireActeurs";
+import { gestionnaireActeursRead } from "../../config/onChain/frontContracts";
 
 export const getRoleName = (roleNumber) => {
   const roles = {
@@ -104,8 +105,7 @@ function Header({ state, setAccount, setRole, setState }) {
 
   const verifierActeur = async (userAddress) => {
     try {
-      const contract = await getGestionnaireActeursContract();
-      const details = await contract.getDetailsActeur(userAddress);
+      const details = await gestionnaireActeursRead.read("getDetailsActeur", userAddress);
       if (details && details[0]) {
         const roleNumber = Number(details[1]);
         setRoleLocal(roleNumber);
