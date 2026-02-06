@@ -1,5 +1,4 @@
 import {
-  apiGetFileFromPinata,
   apiUploadConsolidatedData,
 } from "../api/frontApiPinata";
 import { getProducteurEnPhaseCultureWrite } from "../config/onChain/frontContracts";
@@ -676,7 +675,11 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
 
 export const getFileFromPinata = async (_cid) => {
   try {
-    return await apiGetFileFromPinata(_cid);
+    const res = await myPinataSDK.gateways.public.get(_cid);
+    const metadata = (await myPinataSDK.files.public.list().cid(_cid)).files[0]
+      ?.keyvalues;
+
+    return { ...res, keyvalues: metadata };
   } catch (error) {
     console.error(
       "Erreur lors de la recuperation de fichier depuis pinata : ",

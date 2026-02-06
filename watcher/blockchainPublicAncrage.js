@@ -25,12 +25,14 @@ export const handleAjouterExpedition = (exportateurAddr, idArticle, quantite, pr
 };
 
 // Ecouteur pour l'event d'ajout d'expedition
+let privateWsProvider;
+let exportateurClientContrat;
 export const listenExpedition = async () => {
-  const privateWsProvider = new ReconnectingWebSocketProvider(config.privateWs);
-  const exportateurClientContrat = new SmartContractManager(
+  privateWsProvider = new ReconnectingWebSocketProvider(config.privateWs);
+  exportateurClientContrat = new SmartContractManager(
     config.adresseExportateurClientContrat,
     exportateurClientABI.abi,
-    privateWsProvider
+    privateWsProvider.getProvider()
   );
 
   // Ecouter l'event AjouterExpedition.
@@ -39,18 +41,19 @@ export const listenExpedition = async () => {
 
   // Nouvelle wsProvide et nouvel contrat si wsProvider tombe.
   privateWsProvider.getProvider().websocket.on("close", async () => {
-    privateWsProvider.destroy();
     // Supprimer les ecouteurs de exportateur contrat
-    await exportateurClientContrat.contract.off("AjouterExpedition", handleAjouterExpedition);
-    await listenExpedition();
+    await exportateurClientContrat.contract.removeAllListeners();
+    await privateWsProvider.destroy();
+    setTimeout(listenExpedition, 3000);
   });
 
-  // Fermeture propre quand c'est fini
-  process.on('SIGINT', () => {
-    privateWsProvider.destroy();
-    process.exit();
-  });
 };
+
+// Fermeture propre quand c'est fini
+process.on('SIGINT', () => {
+  privateWsProvider.destroy();
+  process.exit();
+});
 
 const pushToPublic = async (data) => {
   try {
