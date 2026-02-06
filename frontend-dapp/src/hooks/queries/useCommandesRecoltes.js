@@ -7,7 +7,7 @@ export const COMMANDES_RECOLTES_KEYS = {
   lists: () => [...COMMANDES_RECOLTES_KEYS.all, "list"],
   list: (filters) => [...COMMANDES_RECOLTES_KEYS.lists(), filters],
   details: () => [...COMMANDES_RECOLTES_KEYS.all, "detail"],
-  detail: (id, filters = {}) => [...COMMANDES_RECOLTES_KEYS.details(), id, filters],
+  detail: (filters = {}, id) => [...COMMANDES_RECOLTES_KEYS.details(), filters, id],
 };
 
 // Recuperer tous les parcelles d'un producteur dans le cache
@@ -24,9 +24,9 @@ export function useCommandesRecoltesCollecteur(roles, account) {
 export function useCommandesRecoltesUnAUn(idsToFetch, roles = [], account = "") {
   return useQueries({
     queries: idsToFetch.map((id) => ({
-      // Si producteur, utiliser un queryKey specifique.
-      queryKey: hasRole(roles, 0)
-        ? COMMANDES_RECOLTES_KEYS.detail(id, { producteur: account })
+      // Si collecteur, utiliser un queryKey specifique.
+      queryKey: hasRole(roles, 3)
+        ? COMMANDES_RECOLTES_KEYS.detail({ collecteur: account }, id)
         : COMMANDES_RECOLTES_KEYS.detail(id),
       queryFn: async () => await getCommandeRecolte(id, roles, account),
       enabled: !!idsToFetch,
