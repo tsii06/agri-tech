@@ -20,8 +20,9 @@ function MesParcelles() {
   const { roles, account } = useUserContext();
 
   // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading, isRefetching, refetch } = hasRole(roles, 0) ? 
-    useParcellesProducteur(account) : useParcelles();
+  const { data, isLoading, isRefetching, refetch } = hasRole(roles, 0)
+    ? useParcellesProducteur(account)
+    : useParcelles();
   const [parcelles, setParcelles] = useState(() => {
     if (!isLoading && !isRefetching) return data;
     else return [];
@@ -137,6 +138,7 @@ function MesParcelles() {
           );
         }
       }
+      // Pour reconnaitre le dernier parcelle charger.
       setDernierParcelleCharger(i);
 
       console.log("🔍 Debug: Résumé des parcelles:", parcellesDebug);
@@ -324,6 +326,7 @@ function MesParcelles() {
               </div>
             ) : (
               <div className="row g-3">
+                {/* Listes parcelles si il y en a apres recherche */}
                 {parcellesAffichees.map((parcelle, index) => (
                   <motion.div
                     key={`parcelle-${parcelle.id}-${index}`}
@@ -335,6 +338,16 @@ function MesParcelles() {
                     <ParcelleCard parcelle={parcelle} userRole={roles} />
                   </motion.div>
                 ))}
+                {/* Skeleton de chargement */}
+                {loading && (
+                  <div className="col-md-4">
+                    <Skeleton
+                      width={"100%"}
+                      height={"100%"}
+                      style={{ minHeight: 200 }}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </AnimatePresence>

@@ -17,10 +17,11 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import {
-  collecteurProducteurRead,
-} from "../../config/onChain/frontContracts";
-import { useRecoltes, useRecoltesProducteur } from "../../hooks/queries/useRecoltes";
+  useRecoltes,
+  useRecoltesProducteur,
+} from "../../hooks/queries/useRecoltes";
 import { useUpdatePrixRecolte } from "../../hooks/mutations/mutationRecoltes";
 
 function ListeRecoltes() {
@@ -30,7 +31,9 @@ function ListeRecoltes() {
   const { roles, account } = useUserContext();
 
   // Utiliser cache pour stocker liste recolte du producteur.
-  const cacheRecolte = hasRole(roles, 0) ? useRecoltesProducteur(account) : useRecoltes();
+  const cacheRecolte = hasRole(roles, 0)
+    ? useRecoltesProducteur(account)
+    : useRecoltes();
   const [recoltes, setRecoltes] = useState(() => {
     if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching)
       return cacheRecolte.data;
@@ -45,7 +48,6 @@ function ListeRecoltes() {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
-  const [saisonFiltre, setSaisonFiltre] = useState("all");
 
   // Pour certification
   const [showModalCertification, setShowModalCertification] = useState(false);
@@ -288,13 +290,7 @@ function ListeRecoltes() {
       statutFiltre === "all" ||
       (statutFiltre === "certifie" && recolte.certifie) ||
       (statutFiltre === "noncertifie" && !recolte.certifie);
-    const matchSaison =
-      saisonFiltre === "all" ||
-      (saisonFiltre === "dynamique" &&
-        recolte.saison?.typeSaison === "dynamique") ||
-      (saisonFiltre === "legacy" &&
-        (recolte.saison?.periode === "H1" || recolte.saison?.periode === "H2"));
-    return matchSearch && matchStatut && matchSaison;
+    return matchSearch && matchStatut;
   });
 
   if (!account && !address) {
@@ -366,48 +362,6 @@ function ListeRecoltes() {
                     onClick={() => setStatutFiltre("noncertifie")}
                   >
                     Non certifiées
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Filtre par type de saison */}
-            <div className="dropdown">
-              <button
-                className="btn btn-outline-info dropdown-toggle d-flex align-items-center"
-                type="button"
-                id="dropdownSaison"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <ChevronDown size={16} className="me-1" />
-                {saisonFiltre === "all" && "Toutes cultures"}
-                {saisonFiltre === "dynamique" && "Cultures dynamiques"}
-                {saisonFiltre === "legacy" && "Anciens systèmes"}
-              </button>
-              <ul className="dropdown-menu" aria-labelledby="dropdownSaison">
-                <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => setSaisonFiltre("all")}
-                  >
-                    Toutes cultures
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => setSaisonFiltre("dynamique")}
-                  >
-                    Cultures dynamiques (nouveau système)
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => setSaisonFiltre("legacy")}
-                  >
-                    Anciens systèmes (H1/H2)
                   </button>
                 </li>
               </ul>

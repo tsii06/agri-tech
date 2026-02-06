@@ -1,13 +1,29 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from "react";
-import { DEBUT_EXPEDITION, getExportateurClientContract } from "../../utils/contract";
-import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
+import {
+  DEBUT_EXPEDITION,
+  getExportateurClientContract,
+} from "../../utils/contract";
+import { deleteFromIPFSByCid } from "../../utils/ipfsUtils";
 import { uploadToIPFS } from "../../utils/ipfsUtils";
+import { motion, AnimatePresence } from "framer-motion";
+import Skeleton from "react-loading-skeleton";
+import { exportateurClientRead } from "../../config/onChain/frontContracts";
+import { getExpedition } from "../../utils/contrat/exportateurClient";
+import { useExpeditions } from "../../hooks/queries/useExpeditions";
 
 export default function CertifierExpeditions() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [expeditions, setExpeditions] = useState([]);
+
+  // Utilisation de cache pour la liste des expeditions.
+  const { data, isLoading, isRefetching, refetch } = useExpeditions();
+  const [expeditions, setExpeditions] = useState(() => {
+    if (!isLoading && !isRefetching) return data;
+    else return [];
+  });
+
   const [onlyPending, setOnlyPending] = useState(true);
   const [expeditionSelectionnee, setExpeditionSelectionnee] = useState(null);
   const [showModalCertification, setShowModalCertification] = useState(false);
@@ -20,46 +36,27 @@ export default function CertifierExpeditions() {
   const [region, setRegion] = useState("");
   const [btnLoading, setBtnLoading] = useState(false);
 
+  // Pour le chargement progressive des expeditions
+  const [dernierExpeditionCharger, setDernierExpeditionChanger] = useState(0);
+
   const loadExpeditions = async () => {
+    let _dernierExpeditionCharger = dernierExpeditionCharger;
     setLoading(true);
     setMessage("");
     try {
-      const contract = await getExportateurClientContract();
-      const count = Number(await contract.compteurExpeditions());
-      const items = [];
-      for (let i = DEBUT_EXPEDITION; i <= count; i++) {
-        try {
-          const exp = await contract.getExpedition(i);
-          if (!exp || !exp.id) continue;
-          const e = {
-            id: Number(exp.id),
-            ref: exp.ref,
-            quantite: Number(exp.quantite),
-            prix: Number(exp.prix),
-            exportateur: exp.exportateur,
-            cid: exp.cid,
-            rootMerkle: exp.rootMerkle,
-            certifier: Boolean(exp.certifier),
-            cidCertificat: exp.cidCertificat,
-          };
-          // enrichir depuis IPFS si disponible
-          if (e.cid) {
-            try {
-              const res = await fetch(getIPFSURL(e.cid));
-              if (res.ok) {
-                const data = await res.json();
-                const root = data && data.items ? data.items : data;
-                e.ipfs = root;
-                e.nomProduit = root.nomProduit || root.nom || "";
-                e.destination = root.destination || "";
-                e.transporteur = root.transporteur || "";
-              }
-            } catch { /* empty */ }
-          }
-          items.push(e);
-        } catch { /* empty */ }
+      const count =
+        _dernierExpeditionCharger !== 0
+          ? _dernierExpeditionCharger
+          : Number(await exportateurClientRead.read("compteurExpeditions"));
+      let i;
+      for (i = count; i >= DEBUT_EXPEDITION; i--) {
+        const exp = await getExpedition(i);
+        if (!exp || !exp.id) continue;
+        // Ajoute un a un les expeditions dans expeditions.
+        setExpeditions((prev) => [...prev, exp]);
       }
-      setExpeditions(items);
+      // Pour reconnaitre le dernier expedition charger.
+      setDernierExpeditionChanger(i);
     } catch (e) {
       setMessage("Erreur chargement expéditions: " + (e?.message || e));
     }
@@ -67,14 +64,20 @@ export default function CertifierExpeditions() {
   };
 
   useEffect(() => {
-    loadExpeditions();
-  }, []);
+    if (isLoading) loadExpeditions();
+    else setLoading(false);
+  }, [isLoading]);
+
+  // Maj cache si mutation expedition.
+  useEffect(() => {
+    if (isRefetching) loadExpeditions();
+  }, [isRefetching]);
 
   const handleCertifier = async (e) => {
     e.preventDefault();
     setBtnLoading(true);
     setMessage("");
-    let cid = '';
+    let cid = "";
     try {
       if (
         !certificat ||
@@ -97,10 +100,14 @@ export default function CertifierExpeditions() {
         region: region.toString(),
       };
 
-      const upload = await uploadToIPFS(certificat, {
-        type: "certificat-expedition",
-        ...metadata,
-      }, "certificat-expedition");
+      const upload = await uploadToIPFS(
+        certificat,
+        {
+          type: "certificat-expedition",
+          ...metadata,
+        },
+        "certificat-expedition"
+      );
       cid = upload.cid;
 
       if (!upload?.success || !upload?.cid) {
@@ -124,7 +131,7 @@ export default function CertifierExpeditions() {
         "Erreur lors de la certification: " + (error?.message || error)
       );
       // supprimer le fichier ipfs si erreur
-      if (cid !== '') deleteFromIPFSByCid(cid);
+      if (cid !== "") deleteFromIPFSByCid(cid);
     }
     setBtnLoading(false);
   };
@@ -154,25 +161,29 @@ export default function CertifierExpeditions() {
         </div>
       </div>
       {message && <div className="alert alert-info">{message}</div>}
-      {loading ? (
-        <div>Chargement...</div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Référence</th>
-                <th>Produit</th>
-                <th>Quantité</th>
-                <th>Prix</th>
-                <th>Certifiée</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e) => (
-                <tr key={e.id}>
+      {/* Liste des expeditions */}
+      <div className="table-responsive">
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Référence</th>
+              <th>Produit</th>
+              <th>Quantité</th>
+              <th>Prix</th>
+              <th>Certifiée</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <AnimatePresence>
+              {filtered.map((e, index) => (
+                <motion.tr
+                  key={`expedition-${e.id}-${index}`}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
                   <td>{e.id}</td>
                   <td>{e.ref || "-"}</td>
                   <td>{e.nomProduit || "-"}</td>
@@ -187,7 +198,6 @@ export default function CertifierExpeditions() {
                           setExpeditionSelectionnee(e);
                           setShowModalCertification(true);
                         }}
-                        disabled={loading}
                       >
                         Certifier
                       </button>
@@ -195,19 +205,29 @@ export default function CertifierExpeditions() {
                       <span className="text-muted">Déjà certifiée</span>
                     )}
                   </td>
-                </tr>
+                </motion.tr>
               ))}
-              {filtered.length === 0 && (
+              {filtered.length === 0 && !loading && (
                 <tr>
                   <td colSpan={7} className="text-center text-muted py-4">
                     Aucune expédition
                   </td>
                 </tr>
               )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              {loading && (
+                <tr>
+                  <td colSpan={7} className="p-0 m-0">
+                    <Skeleton
+                      width={"100%"}
+                      height={"100%"}
+                    />
+                  </td>
+                </tr>
+              )}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
 
       {/* Modal de certification */}
       {showModalCertification && (

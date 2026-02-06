@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { getCollecteurExportateurContract } from "./contract";
 import { getActeur } from "./contrat/gestionnaireActeurs";
-import { getFileFromPinata, getIPFSURL } from "./ipfsUtils";
+import { getFileFromPinata } from "./ipfsUtils";
 import { hasRole } from "./roles";
 
 /**
@@ -36,7 +36,7 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     idRecolte: idRecoltes.map(el => Number(el)),
     idCommandeRecoltes: idCommandeRecoltes.map(el => Number(el)),
     quantite: Number(produitRaw.quantite ?? 0),
-    prixUnit: Number(produitRaw.prix) ?? 0,
+    prixUnit: Number(produitRaw.prix ?? 0),
     collecteur: {...await getActeur(collecteurAddr), adresse: collecteurAddr},
     cid: produitRaw.cid,
     hashMerkle: produitRaw.hashMerkle || "",

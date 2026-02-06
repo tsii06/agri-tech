@@ -4,15 +4,26 @@ import {
   getLotProduitEnrichi,
 } from "../collecteurExporatateur";
 import {
+  DEBUT_EXPEDITION,
   getCollecteurExportateurContract,
   getExportateurClientContract,
 } from "../contract";
-import { ajouterKeyValuesFileIpfs, deleteFromIPFSByCid, getFileFromPinata, stringifyAll } from "../ipfsUtils";
+import {
+  ajouterKeyValuesFileIpfs,
+  deleteFromIPFSByCid,
+  getFileFromPinata,
+  getIPFSURL,
+  stringifyAll,
+} from "../ipfsUtils";
 import { createMerkleTree } from "../frontMerkleUtils";
 import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
-import { enleveCollecteurDeData, enleveProducteurDeData } from "../onChain/frontOnChainUtils";
+import {
+  enleveCollecteurDeData,
+  enleveProducteurDeData,
+} from "../onChain/frontOnChainUtils";
+import { exportateurClientRead } from "../../config/onChain/frontContracts";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
 
@@ -40,14 +51,14 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
 
     // ajouter hash transaction aux keyvalues du fichier sur ipfs
     await ajouterKeyValuesFileIpfs(_cid, { hashTransaction: res.hash });
-    
+
     return res;
   } catch (error) {
     console.error("Creation d'une article : ", error);
 
     // supprimer le fichier ipfs si erreur
-    if (_cid !== '') deleteFromIPFSByCid(_cid);
-  
+    if (_cid !== "") deleteFromIPFSByCid(_cid);
+
     throw new Error("Creation article.");
   }
 };
@@ -60,13 +71,21 @@ export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
 export const getAllDataAnterieur = async (_idCommandeProduits) => {
   const allData = [];
   // Recuperation de tous les donnees anterieur a l'expedition
-  const parcelles = await getParcellesExpedition({ idCommandeProduit: _idCommandeProduits });
+  const parcelles = await getParcellesExpedition({
+    idCommandeProduit: _idCommandeProduits,
+  });
   allData.push(...enleveProducteurDeData(parcelles));
-  const recoltes = await getRecoltesExpedition({ idCommandeProduit: _idCommandeProduits });
+  const recoltes = await getRecoltesExpedition({
+    idCommandeProduit: _idCommandeProduits,
+  });
   allData.push(...enleveProducteurDeData(recoltes));
-  const lotProduits = await getLotProduisExpedition({ idCommandeProduit: _idCommandeProduits });
+  const lotProduits = await getLotProduisExpedition({
+    idCommandeProduit: _idCommandeProduits,
+  });
   allData.push(...enleveCollecteurDeData(lotProduits));
-  const conditionsTransport = await getConditionsTransportExpedition({ idCommandeProduit: _idCommandeProduits });
+  const conditionsTransport = await getConditionsTransportExpedition({
+    idCommandeProduit: _idCommandeProduits,
+  });
   allData.push(...conditionsTransport);
 
   return stringifyAll(allData);
@@ -224,8 +243,7 @@ export const getConditionsTransportExpedition = async (_expedition) => {
   // recuperer les conditions transport CE
   for (let id of _expedition.idCommandeProduit) {
     const condition = await getConditionTransportCE(id);
-    if (condition.cid && condition.cid !== "")
-      conditions.push(condition);
+    if (condition.cid && condition.cid !== "") conditions.push(condition);
     // recuperer les ids des commandes recoltes
     try {
       const commande = await collecteurExportateur.getCommande(id);
@@ -241,13 +259,68 @@ export const getConditionsTransportExpedition = async (_expedition) => {
 
   // suprimmer les doublants
   idCommandeRecoltes = [...new Set(idCommandeRecoltes)];
-  
+
   // recuperer les conditions transport PC
   for (let id of idCommandeRecoltes) {
     const condition = await getConditionTransportPC(id);
-    if (condition.cid && condition.cid !== "")
-      conditions.push(condition);
+    if (condition.cid && condition.cid !== "") conditions.push(condition);
   }
 
   return conditions;
+};
+
+// Recuperer expedition par id
+export const getExpedition = async (id) => {
+  try {
+    const exp = await exportateurClientRead.read("getExpedition", id);
+    const e = {
+      id: Number(exp.id),
+      ref: exp.ref,
+      quantite: Number(exp.quantite),
+      prix: Number(exp.prix),
+      exportateur: exp.exportateur,
+      cid: exp.cid,
+      rootMerkle: exp.rootMerkle,
+      certifier: Boolean(exp.certifier),
+      cidCertificat: exp.cidCertificat,
+    };
+    // enrichir depuis IPFS si disponible
+    if (e.cid) {
+      try {
+        const res = await fetch(getIPFSURL(e.cid));
+        if (res.ok) {
+          const data = await res.json();
+          const root = data && data.items ? data.items : data;
+          e.ipfs = root;
+          e.nomProduit = root.nomProduit || root.nom || "";
+          e.destination = root.destination || "";
+          e.transporteur = root.transporteur || "";
+        }
+      } catch {
+        /* empty */
+      }
+    }
+    return e;
+  } catch {
+    /* empty */
+  }
+};
+
+// Recuper tous les expeditions d'un coup
+export const getAllExpeditions = async () => {
+  try {
+    const count = Number(
+      await exportateurClientRead.read("compteurExpeditions")
+    );
+    let allExpeditions = [];
+    for (let i = count; i >= DEBUT_EXPEDITION; i--) {
+      const exp = await getExpedition(i);
+      if (!exp || !exp.id) continue;
+      // Ajoute un a un les expeditions dans allExpeditions
+      allExpeditions.push(exp);
+    }
+    return allExpeditions;
+  } catch (e) {
+    console.error("Erreur chargement expéditions: ", e?.message || e);
+  }
 };

@@ -135,7 +135,7 @@ export const getAllParcelles = async () => {
         );
       }
     }
-    console.log("Tous les parcelles du producteur :", parcellesDebug);
+    console.log("Tous les parcelles :", parcellesDebug);
     return parcellesDebug;
   } catch (error) {
     console.error("❌ Erreur détaillée:", error);

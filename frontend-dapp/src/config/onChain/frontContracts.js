@@ -5,6 +5,7 @@ import { getSignerWallet, wsProvider } from "./frontProviders";
 import producteurEnPhaseCultureABI from "../../abi/ProducteurEnPhaseCulture.json";
 import collecteurProducteurABI from "../../abi/CollecteurProducteur.json";
 import gestionnaireActeursABI from "../../abi/GestionnaireActeurs.json";
+import exportateurClientABI from "../../abi/ExportateurClient.json";
 import { config } from "../frontConfig";
 
 // Les contrats read-only
@@ -21,6 +22,11 @@ export const collecteurProducteurRead = new SmartContractManager(
 export const gestionnaireActeursRead = new SmartContractManager(
   config.addrGestionnaireActeurs,
   gestionnaireActeursABI.abi,
+  wsProvider
+);
+export const exportateurClientRead = new SmartContractManager(
+  config.addrExportateurClient,
+  exportateurClientABI.abi,
   wsProvider
 );
 

@@ -13,7 +13,7 @@ export const PARCELLES_KEYS = {
 export function useParcelles() {
   return useQuery({
     queryKey: PARCELLES_KEYS.lists(),
-    queryFn: async () => getAllParcelles(),
+    queryFn: async () => await getAllParcelles(),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
   });
