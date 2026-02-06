@@ -1,14 +1,10 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  DEBUT_RECOLTE,
-} from "../../utils/contract";
+import { DEBUT_RECOLTE } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
-import { getRecolte } from "../../utils/contrat/collecteurProducteur";
 import RecolteCard from "../../components/Tools/RecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
@@ -16,12 +12,11 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
-import {
-  collecteurProducteurRead,
-} from "../../config/onChain/frontContracts";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import {
   useRecoltes,
   useRecoltesProducteur,
+  useRecoltesUnAUn,
 } from "../../hooks/queries/useRecoltes";
 import {
   useCertificateRecolte,
@@ -29,17 +24,32 @@ import {
   useUpdatePrixRecolte,
 } from "../../hooks/mutations/mutationRecoltes";
 
+// Tab de tous les ids recoltes
+const compteurRecoltes = Number(
+  await collecteurProducteurRead.read("compteurRecoltes")
+);
+const recoltesIDs = Array.from(
+  { length: compteurRecoltes - DEBUT_RECOLTE + 1 },
+  (_, i) => compteurRecoltes - i
+);
+// Nbr de recoltes par chargement
+const NBR_RECOLTES_PAR_PAGE = 3;
+
 function ListeRecoltes() {
   const { address } = useParams();
+  console.log("Address initiale : ", address);
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
   // Utiliser cache pour stocker liste recolte du producteur.
-  const cacheRecolte = hasRole(roles, 0)
-    ? useRecoltesProducteur(account)
-    : useRecoltes();
-  const [recoltes, setRecoltes] = useState(() => {
+  const cacheRecolte =
+    address === undefined
+      ? hasRole(roles, 0)
+        ? useRecoltesProducteur(account)
+        : useRecoltes()
+      : useRecoltesProducteur(address);
+  const initialiserRecoltes = () => {
     if (
       !cacheRecolte.isLoading &&
       cacheRecolte.data !== undefined &&
@@ -47,10 +57,29 @@ function ListeRecoltes() {
     )
       return cacheRecolte.data;
     else return [];
-  });
+  };
+  let recoltes = initialiserRecoltes();
+
+  // Nbr de recoltes par tranche
+  const [recoltesToShow, setRecoltesToShow] = useState(NBR_RECOLTES_PAR_PAGE);
+  const idsToFetch = recoltesIDs.slice(0, recoltesToShow);
+
+  // Utiliser cache pour stocker liste recolte. ================= //
+  // Si address est definie, recuperer les recoltes de l'address, si non celles de l'user.
+  const recoltesUnAUn =
+    address === undefined
+      ? useRecoltesUnAUn(idsToFetch, roles, account)
+      : useRecoltesUnAUn(idsToFetch, [0], address);
+
+  // Charger 9 de plus
+  const chargerPlusDeRecoltes = (plus = NBR_RECOLTES_PAR_PAGE) => {
+    setRecoltesToShow((prev) => Math.min(prev + plus, recoltesIDs.length));
+  };
+
+  // Check si on peut charger plus
+  const hasMore = recoltesToShow < recoltesIDs.length;
 
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [recolteSelectionnee, setRecolteSelectionnee] = useState(null);
@@ -72,7 +101,6 @@ function ListeRecoltes() {
   const [showModalPrix, setShowModalPrix] = useState(false);
   const [recoltePrixSelectionnee, setRecoltePrixSelectionnee] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
-  const [dernierRecolteCharger, setDernierRecolteCharger] = useState(() => 0);
 
   // useMutation pour la modification de prix d'une recolte
   const updatePrixMutation = useUpdatePrixRecolte(account);
@@ -86,91 +114,35 @@ function ListeRecoltes() {
   // Reperer la recolte qui a ete modifier.
   const [recolteChanged, setRecolteChanged] = useState(null);
 
-  const chargerRecoltes = async (reset = false) => {
-    setIsLoading(true);
-    try {
-      const compteurRecoltes =
-        dernierRecolteCharger !== 0 && reset !== true
-          ? dernierRecolteCharger
-          : await collecteurProducteurRead.read("compteurRecoltes");
+  // Filtrage recoltes selon recherche, statut et type de saison
+  const recoltesFiltres = recoltesUnAUn.filter((q) => {
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
 
-      console.log(
-        "🌾 Début chargement récoltes, compteur:",
-        Number(compteurRecoltes)
-      );
+    // Ne pas garder les recoltes qui n'apartient pas a l'user si user est producteur, ou ce qui n'appartiennent pas a address si definit.
+    if (!q.data?.isProprietaire) return false;
 
-      let nbrRecolteCharger = 9;
-      let i;
+    const searchLower = search.toLowerCase();
+    const matchSearch =
+      (q.data?.nomProduit &&
+        q.data?.nomProduit.toLowerCase().includes(searchLower)) ||
+      (q.data?.id && q.data?.id.toString().includes(searchLower));
+    const matchStatut =
+      statutFiltre === "all" ||
+      (statutFiltre === "certifie" && q.data?.certifie) ||
+      (statutFiltre === "noncertifie" && !q.data?.certifie);
+    return matchSearch && matchStatut;
+  });
 
-      for (
-        i = compteurRecoltes;
-        i >= DEBUT_RECOLTE && nbrRecolteCharger > 0;
-        i--
-      ) {
-        // Filtre les recoltes si 'address' est definie dans l'url
-        let recolteRaw;
-        if (address !== undefined)
-          recolteRaw = await getRecolte(i, [0], address);
-        else recolteRaw = await getRecolte(i, roles, account);
-
-        if (!recolteRaw.isProprietaire) continue;
-
-        console.log(`🌾 Récolte ${i}:`, {
-          nomProduit: recolteRaw.nomProduit,
-          saison: recolteRaw.saison?.nom,
-          identifiantSaison: recolteRaw.saison?.identifiant,
-          numeroRecolte: recolteRaw.numeroRecolte || "Non défini",
-          typeSaison: recolteRaw.saison?.typeSaison || "legacy",
-          dureeCulture: recolteRaw.saison?.dureeCultureJours || "Non calculé",
-          intrantsCount: recolteRaw.intrantsUtilises?.length || 0,
-          intrantsSource: recolteRaw.intrantsSource || "UNKNOWN",
-          dateRecolte: recolteRaw.dateRecolteOriginal,
-          dateRecoltePrecedente:
-            recolteRaw.dateRecoltePrecedente || "Première récolte",
-          periodeIntrants: recolteRaw.dateRecoltePrecedente
-            ? `${recolteRaw.dateRecoltePrecedente} → ${recolteRaw.dateRecolteOriginal}`
-            : `Début → ${recolteRaw.dateRecolteOriginal}`,
-          ipfsStored:
-            recolteRaw.intrantsSource === "IPFS_STORED"
-              ? "📦 Stocké IPFS"
-              : "🔄 Calcul dynamique",
-        });
-
-        if (reset === true) {
-          setRecoltes([recolteRaw]);
-          cacheRecolte.refetch();
-          reset = false;
-        } else setRecoltes((prev) => [...prev, recolteRaw]);
-        nbrRecolteCharger--;
-      }
-      setDernierRecolteCharger(i);
-    } catch (error) {
-      console.error("❌ Erreur chargement récoltes:", error);
-      setError(
-        "Erreur lors du chargement des recoltes. Veuillez reessayer plus tard."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!(address && address.length > 0) && !account) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Chargement progressif pour le debut ou utilisation de cache si a jour.
-    if (cacheRecolte.isLoading || recoltes.length === 0) chargerRecoltes(true);
-    else setIsLoading(false);
-  }, [address, account, cacheRecolte.isLoading]);
-
-  // Rechargement progresssif si il y a mutation du cache.
-  useEffect(() => {
-    // Charger les nouvelles donnees cache seulement si refetching terminer.
-    if (!cacheRecolte.isRefetching && cacheRecolte.data !== undefined)
-      setRecoltes(cacheRecolte.data);
-  }, [cacheRecolte.isRefetching]);
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (recoltesFiltres.length === 0 ||
+      recoltesFiltres.length % NBR_RECOLTES_PAR_PAGE !== 0)
+  )
+    chargerPlusDeRecoltes(
+      NBR_RECOLTES_PAR_PAGE - (recoltesFiltres.length % NBR_RECOLTES_PAR_PAGE)
+    );
 
   const handleCertifier = async (event) => {
     event.preventDefault();
@@ -280,20 +252,6 @@ function ListeRecoltes() {
     }
   };
 
-  // Filtrage recoltes selon recherche, statut et type de saison
-  const recoltesFiltres = recoltes.filter((recolte) => {
-    const searchLower = search.toLowerCase();
-    const matchSearch =
-      (recolte.nomProduit &&
-        recolte.nomProduit.toLowerCase().includes(searchLower)) ||
-      (recolte.id && recolte.id.toString().includes(searchLower));
-    const matchStatut =
-      statutFiltre === "all" ||
-      (statutFiltre === "certifie" && recolte.certifie) ||
-      (statutFiltre === "noncertifie" && !recolte.certifie);
-    return matchSearch && matchStatut;
-  });
-
   if (!account && !address) {
     return (
       <div className="text-center text-muted">
@@ -384,26 +342,26 @@ function ListeRecoltes() {
               : hasRole(roles, 0) && "Mes Récoltes"}
           </h2>
           <p className="text-muted mb-0">
-            {recoltes.length > 0 && (
+            {recoltesFiltres.length > 0 && (
               <>
-                {recoltes.filter((r) => r.cid).length} récoltes avec données
+                {recoltesFiltres.filter((q) => q.data?.cid).length} récoltes avec données
                 IPFS,
-                {recoltes.filter((r) => !r.cid).length} récoltes sans données
+                {recoltesFiltres.filter((q) => !q.data?.cid).length} récoltes sans données
                 IPFS
-                {recoltes.filter((r) => r.saison).length > 0 && (
+                {recoltesFiltres.filter((q) => q.data?.saison).length > 0 && (
                   <>
                     {" | "}
                     {
-                      recoltes.filter(
-                        (r) => r.saison?.typeSaison === "dynamique"
+                      recoltesFiltres.filter(
+                        (q) => q.data?.saison?.typeSaison === "dynamique"
                       ).length
                     }{" "}
                     cultures dynamiques,{" "}
                     {
-                      recoltes.filter(
-                        (r) =>
-                          r.saison?.periode === "H1" ||
-                          r.saison?.periode === "H2"
+                      recoltesFiltres.filter(
+                        (q) =>
+                          q.data?.saison?.periode === "H1" ||
+                          q.data?.saison?.periode === "H2"
                       ).length
                     }{" "}
                     anciennes saisons
@@ -426,22 +384,25 @@ function ListeRecoltes() {
         </div>
 
         {/* LISTE DES RECOLTES */}
-        {recoltes.length > 0 || isLoading ? (
+        {recoltesFiltres.length > 0 ? (
           <div className="row g-3">
             <AnimatePresence>
-              {recoltesFiltres.map((recolte, index) =>
-                cacheRecolte.isRefetching &&
-                recolteChanged !== null &&
-                recolteChanged.id === recolte.id ? (
-                  // Skeleton pour seulement la recolte concerner par la modification.
-                  <div className="col-md-4" key={index}>
-                    <Skeleton
-                      width={"100%"}
-                      height={"100%"}
-                      style={{ minHeight: 200 }}
-                    />
-                  </div>
-                ) : (
+              {recoltesFiltres.map((query, index) => {
+                const recolte = query.data;
+                // Skeleton si la recolte est encours de chargement
+                if (query.isLoading || query.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
+                      />
+                    </div>
+                  );
+
+                // Affichage de la recolte
+                return (
                   <motion.div
                     key={`recolte-${recolte.id}-${index}`}
                     className="col-md-4"
@@ -500,34 +461,20 @@ function ListeRecoltes() {
                       </div>
                     </div>
                   </motion.div>
-                )
-              )}
+                );
+              })}
             </AnimatePresence>
-            {/* Skeleton de chargement */}
-            {isLoading && (
-              <div className="col-md-4">
-                <Skeleton
-                  width={"100%"}
-                  height={"100%"}
-                  style={{ minHeight: 200 }}
-                />
-              </div>
-            )}
           </div>
         ) : (
-          !isLoading && (
-            <div className="text-center text-muted">
-              Aucune récolte trouvée.
-            </div>
-          )
+          <div className="text-center text-muted">Aucune récolte trouvée.</div>
         )}
 
         {/* Btn pour charger plus de recoltes */}
-        {dernierRecolteCharger >= DEBUT_RECOLTE && (
+        {hasMore && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"
-              onClick={chargerRecoltes}
+              onClick={() => chargerPlusDeRecoltes()}
             >
               Charger plus
             </button>
