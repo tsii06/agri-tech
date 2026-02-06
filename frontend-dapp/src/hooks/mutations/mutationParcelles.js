@@ -65,6 +65,30 @@ export function useAddIntantParcelle(account) {
   });
 }
 
+// A l'ajout d'inspection d'une parcelle
+export function useAddInspectionParcelle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) =>
+      updateCidParcelle(args.parcelle, args.newData, args.type),
+
+    onSuccess: (receipt) => {
+      // Refetch la cache pour la liste de tous les parcelles
+      queryClient.invalidateQueries({ queryKey: PARCELLES_KEYS.lists() });
+
+      console.log("✅ Transaction confirmée:", receipt);
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message || "Erreur lors de l'ajout de inspection parcelle";
+      alert(message);
+      console.error("Add inspection parcelle error:", error);
+    },
+  });
+}
+
 // A l'ajout de photo d'une parcelle
 export function useAddPhotoParcelle(account) {
   const queryClient = useQueryClient();

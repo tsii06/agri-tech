@@ -1,14 +1,12 @@
+/* eslint-disable react/prop-types */
 import { Link } from "react-router-dom";
 import {
   MapPin,
   Package2,
-  BadgeCheck,
   Calendar,
   FileCheck2,
-  Hash,
   Database,
   AlertCircle,
-  ShieldCheck,
   Fingerprint,
   User,
 } from "lucide-react";
@@ -24,7 +22,6 @@ const ParcelleCard = ({
     id,
     producteur,
     qualiteSemence,
-    methodeCulture,
     location,
     dateRecolte,
     certificatPhytosanitaire,
@@ -33,8 +30,6 @@ const ParcelleCard = ({
     photos = [],
     intrants = [],
     inspections = [],
-    ipfsTimestamp,
-    ipfsVersion,
   } = parcelle;
 
   const renderLinks = () => {
@@ -56,6 +51,13 @@ const ParcelleCard = ({
           className="btn btn-link"
         >
           Intrants ({intrants.length})
+        </Link>,
+        <Link
+          key="inspections-auditeur"
+          to={`/parcelle/${id}/inspections`}
+          className="btn btn-link"
+        >
+          Inspections ({inspections.length})
         </Link>,
         <Link
           key="recolter"

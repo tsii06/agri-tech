@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unescaped-entities */
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getContract } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
 import {
   uploadInspection,
   getIPFSURL,
-  updateCidParcelle,
 } from "../../utils/ipfsUtils";
+import { raccourcirChaine } from "../../utils/stringUtils";
+import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
+import { useAddInspectionParcelle } from "../../hooks/mutations/mutationParcelles";
 
 function InspectionsParcelle() {
   const { id } = useParams(); // id de la parcelle
@@ -23,14 +26,19 @@ function InspectionsParcelle() {
   const [selectedFile, setSelectedFile] = useState(null);
   const { account, roles } = useUserContext();
 
+  // useMutation pour l'ajout d'inspection
+  const addInspectionMutation = useAddInspectionParcelle();
+
   useEffect(() => {
     chargerParcelle();
   }, [id]);
 
   const chargerParcelle = async () => {
     try {
-      const contract = await getContract();
-      const parcelleData = await contract.getParcelle(id);
+      const parcelleData = await producteurEnPhaseCultureRead.read(
+        "getParcelle",
+        id
+      );
       setParcelle(parcelleData);
 
       // Si la parcelle a un CID, essayer de récupérer les inspections
@@ -46,8 +54,8 @@ function InspectionsParcelle() {
               setInspections(root.inspections);
             }
           }
-        } catch (error) {
-          console.log(
+        } catch {
+          console.error(
             "Pas d'inspections existantes ou erreur de récupération IPFS"
           );
         }
@@ -106,11 +114,11 @@ function InspectionsParcelle() {
       const nouvellesInspections = [...inspections, nouvelleInspection];
 
       // mettre a jour la nouvelle cid relier au parcelle
-      const masterUpload = await updateCidParcelle(
-        parcelle,
-        nouvellesInspections,
-        "inspections"
-      );
+      const masterUpload = await addInspectionMutation.mutateAsync({
+        parcelle: parcelle,
+        newData: nouvellesInspections,
+        type: "inspections",
+      });
 
       // 9. Mettre à jour l'état local
       setInspections(nouvellesInspections);
@@ -144,7 +152,7 @@ function InspectionsParcelle() {
           </div>
           <div className="card-body">
             <p>
-              <strong>Auditeur:</strong> {inspection.auditeur}
+              <strong>Auditeur:</strong> {raccourcirChaine(inspection.auditeur)}
             </p>
             <p>
               <strong>Rapport:</strong> {inspection.rapport}
@@ -164,7 +172,7 @@ function InspectionsParcelle() {
               {new Date(inspection.timestamp).toLocaleDateString()}
             </p>
             <p>
-              <strong>CID IPFS:</strong> {inspection.cid || "Non disponible"}
+              <strong>CID IPFS:</strong> {inspection.cid ? raccourcirChaine(inspection.cid) : "Non disponible"}
             </p>
 
             {inspection.cid && (
@@ -200,16 +208,20 @@ function InspectionsParcelle() {
                   <strong>ID:</strong> {parcelle.id}
                 </p>
                 <p>
-                  <strong>Producteur:</strong> {parcelle.producteur}
+                  <strong>Producteur:</strong>{" "}
+                  {raccourcirChaine(parcelle.producteur)}
                 </p>
                 <p>
-                  <strong>CID IPFS:</strong> {parcelle.cid || "Aucun"}
+                  <strong>CID IPFS:</strong>{" "}
+                  {parcelle.cid ? raccourcirChaine(parcelle.cid) : "Aucun"}
                 </p>
               </div>
               <div className="col-md-6">
                 <p>
                   <strong>Hash Merkle:</strong>{" "}
-                  {parcelle.hashMerkle || "Non calculé"}
+                  {parcelle.hashMerkle
+                    ? raccourcirChaine(parcelle.hashMerkle)
+                    : "Non calculé"}
                 </p>
                 <p>
                   <strong>Nombre d'inspections:</strong> {inspections.length}

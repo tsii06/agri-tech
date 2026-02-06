@@ -237,13 +237,8 @@ function IntrantsParcelle() {
               <strong>Catégorie:</strong> {intrant.categorie}
             </p>
             <p>
-              <strong>Quantité:</strong> {intrant.quantite}
+              <strong>Quantité:</strong> {intrant.quantite} Kg
             </p>
-            {account.toLowerCase() !== intrant.fournisseur.toLowerCase() && (
-              <p>
-                <strong>Fournisseur:</strong> {intrant.fournisseur}
-              </p>
-            )}
             <p>
               <strong>CID IPFS:</strong> {intrant.cid ? raccourcirChaine(intrant.cid) : "Non disponible"}
             </p>
@@ -267,7 +262,7 @@ function IntrantsParcelle() {
 
             {hasRole(roles, 2) && intrant.valider === "false" && (
               <button
-                className="btn btn-sm btn-outline-primary me-2"
+                className="btn btn-sm btn-outline-success me-2"
                 onClick={() => {
                   setSelectedIntrant(intrant);
                   setShowModal(true);

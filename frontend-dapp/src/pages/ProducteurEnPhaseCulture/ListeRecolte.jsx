@@ -58,7 +58,6 @@ function ListeRecoltes() {
   const [btnLoading, setBtnLoading] = useState(null);
   const dateEmission = useRef(null);
   const dateExpiration = useRef(null);
-  const dateInspection = useRef(null);
   const autoriteCertificatrice = useRef(null);
   const numeroCertificat = useRef(null);
   const region = useRef(null);
@@ -657,18 +656,6 @@ function ListeRecoltes() {
                     </div>
 
                     <div className="col-md-6">
-                      <div className="mb-3">
-                        <label htmlFor="dateInspection" className="form-label">
-                          Date d&apos;inspection *
-                        </label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          ref={dateInspection}
-                          required
-                        />
-                      </div>
-
                       <div className="mb-3">
                         <label
                           htmlFor="autoriteCertificatrice"

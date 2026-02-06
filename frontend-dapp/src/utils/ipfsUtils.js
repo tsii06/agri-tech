@@ -649,13 +649,13 @@ export const updateCidParcelle = async (parcelle, newData, _type) => {
     ]);
     // pour fournisseur
   } else if (_type === "intrants") {
-    await contract.write("mettreAJourPhotosParcelle", [
+    await contract.write("mettreAJourIntrantsParcelle", [
       Number(parcelle.id),
       masterUpload.cid,
     ]);
     // pour auditeur
   } else if (_type === "inspections") {
-    await contract.write("mettreAJourPhotosParcelle", [
+    await contract.write("mettreAJourInspectionsParcelle", [
       Number(parcelle.id),
       masterUpload.cid,
     ]);
