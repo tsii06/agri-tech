@@ -1,10 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState } from "react";
-import {
-  DEBUT_EXPEDITION,
-  getExportateurClientContract,
-} from "../../utils/contract";
+import { DEBUT_EXPEDITION } from "../../utils/contract";
 import { deleteFromIPFSByCid } from "../../utils/ipfsUtils";
 import { uploadToIPFS } from "../../utils/ipfsUtils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,13 +9,14 @@ import Skeleton from "react-loading-skeleton";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
 import { getExpedition } from "../../utils/contrat/exportateurClient";
 import { useExpeditions } from "../../hooks/queries/useExpeditions";
+import { useCertificateExpedition } from "../../hooks/mutations/mutationExpedition";
 
 export default function CertifierExpeditions() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   // Utilisation de cache pour la liste des expeditions.
-  const { data, isLoading, isRefetching, refetch } = useExpeditions();
+  const { data, isLoading, isRefetching } = useExpeditions();
   const [expeditions, setExpeditions] = useState(() => {
     if (!isLoading && !isRefetching) return data;
     else return [];
@@ -39,13 +37,16 @@ export default function CertifierExpeditions() {
   // Pour le chargement progressive des expeditions
   const [dernierExpeditionCharger, setDernierExpeditionChanger] = useState(0);
 
-  const loadExpeditions = async () => {
+  // useMutation pour la maj cache.
+  const cerificateExpeditionMutation = useCertificateExpedition();
+
+  const loadExpeditions = async (reset = false) => {
     let _dernierExpeditionCharger = dernierExpeditionCharger;
     setLoading(true);
     setMessage("");
     try {
       const count =
-        _dernierExpeditionCharger !== 0
+        _dernierExpeditionCharger !== 0 && !reset
           ? _dernierExpeditionCharger
           : Number(await exportateurClientRead.read("compteurExpeditions"));
       let i;
@@ -53,24 +54,31 @@ export default function CertifierExpeditions() {
         const exp = await getExpedition(i);
         if (!exp || !exp.id) continue;
         // Ajoute un a un les expeditions dans expeditions.
-        setExpeditions((prev) => [...prev, exp]);
+        if (reset) {
+          setExpeditions([exp]);
+          reset = false;
+        } else setExpeditions((prev) => [...prev, exp]);
       }
       // Pour reconnaitre le dernier expedition charger.
       setDernierExpeditionChanger(i);
     } catch (e) {
       setMessage("Erreur chargement expéditions: " + (e?.message || e));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (isLoading) loadExpeditions();
+    if (isLoading) loadExpeditions(true);
     else setLoading(false);
   }, [isLoading]);
 
   // Maj cache si mutation expedition.
   useEffect(() => {
-    if (isRefetching) loadExpeditions();
+    if (isRefetching) {
+      console.log("Rafraichissement de la liste des expeditions.");
+      loadExpeditions(true);
+    }
   }, [isRefetching]);
 
   const handleCertifier = async (e) => {
@@ -114,17 +122,17 @@ export default function CertifierExpeditions() {
         throw new Error(upload?.error || "Echec d'upload IPFS");
       }
 
-      const contract = await getExportateurClientContract();
-      const tx = await contract.certifierExpedition(
-        expeditionSelectionnee.id,
-        upload.cid
-      );
-      await tx.wait();
+      await cerificateExpeditionMutation.mutateAsync({
+        id: expeditionSelectionnee.id,
+        cid: upload.cid,
+      });
 
       setMessage(
         `Expédition #${expeditionSelectionnee.id} certifiée avec succès`
       );
-      await loadExpeditions();
+      // Rafraichir la liste depuis le debut.
+      setDernierExpeditionChanger(0);
+      setExpeditions([]);
       setShowModalCertification(false);
     } catch (error) {
       setMessage(
@@ -217,10 +225,7 @@ export default function CertifierExpeditions() {
               {loading && (
                 <tr>
                   <td colSpan={7} className="p-0 m-0">
-                    <Skeleton
-                      width={"100%"}
-                      height={"100%"}
-                    />
+                    <Skeleton width={"100%"} height={"100%"} />
                   </td>
                 </tr>
               )}

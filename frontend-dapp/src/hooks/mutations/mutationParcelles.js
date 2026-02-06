@@ -26,9 +26,9 @@ export function useCreateParcelle(account) {
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la création";
+        error.response?.data?.message || "Erreur lors de la création parcelle";
       alert(message);
-      console.error("Create user error:", error);
+      console.error("Create parcelle error:", error);
     },
   });
 }
@@ -58,9 +58,9 @@ export function useAddIntantParcelle(account) {
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la création";
+        error.response?.data?.message || "Erreur lors de l'ajout d'intrant parcelle";
       alert(message);
-      console.error("Create user error:", error);
+      console.error("Add intrant parcelle error:", error);
     },
   });
 }
@@ -86,9 +86,9 @@ export function useAddPhotoParcelle(account) {
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la création";
+        error.response?.data?.message || "Erreur lors de l'ajout de photo parcelle";
       alert(message);
-      console.error("Create user error:", error);
+      console.error("Add photo parcelle error:", error);
     },
   });
 }

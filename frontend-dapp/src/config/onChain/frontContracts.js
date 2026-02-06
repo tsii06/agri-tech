@@ -30,7 +30,7 @@ export const exportateurClientRead = new SmartContractManager(
   wsProvider
 );
 
-// Les contrats write
+// Les contrats write ==================================================================================
 const signerWallet = await getSignerWallet();
 export const producteurEnPhaseCultureWrite = new SmartContractManager(
   config.addrProducteurEnPhaseCulture,
@@ -50,6 +50,14 @@ export async function getCollecteurProducteurWrite() {
   return new SmartContractManager(
     config.addrCollecteurProducteur,
     collecteurProducteurABI.abi,
+    signerWallet
+  );
+}
+export async function getExportateurClientWrite() {
+  const signerWallet = await getSignerWallet();
+  return new SmartContractManager(
+    config.addrExportateurClient,
+    exportateurClientABI.abi,
     signerWallet
   );
 }
