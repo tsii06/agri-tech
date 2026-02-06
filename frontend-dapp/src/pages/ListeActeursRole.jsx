@@ -1,10 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import {
   getCollecteurExportateurContract,
   getCollecteurProducteurContract,
-  getGestionnaireActeursContract,
 } from "../utils/contract";
 import {
   User,
@@ -20,6 +20,8 @@ import {
 import { hasRole } from "../utils/roles";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
+import { gestionnaireActeursRead } from "../config/onChain/frontContracts";
+import { raccourcirChaine } from "../utils/stringUtils";
 
 const ROLE_LABELS = [
   "Producteur", // 0
@@ -53,7 +55,6 @@ export default function ListeActeursRole() {
   const [visibleCount, setVisibleCount] = useState(9);
   const [btnLoading, setBtnLoading] = useState(false);
   const nav = useNavigate();
-  const [listeAddr, setListeAddr] = useState([]);
   const [dernierActeurCharger, setDernierActeurCharger] = useState(() => -1);
 
   // Détermine le rôle cible à afficher selon les rôles utilisateur
@@ -142,8 +143,7 @@ export default function ListeActeursRole() {
     setLoading(true);
     setError("");
     try {
-      const contract = await getGestionnaireActeursContract();
-      const addresses = await contract.getActeursByRole(roleCible);
+      const addresses = await gestionnaireActeursRead.read("getActeursByRole", roleCible);
 
       let nbrActeurCharger = 9;
       let i =
@@ -151,7 +151,7 @@ export default function ListeActeursRole() {
 
       for (i; i >= 0 && nbrActeurCharger > 0; i--) {
         try {
-          const details = await contract.getDetailsActeur(addresses[i]);
+          const details = await gestionnaireActeursRead.read("getDetailsActeur", addresses[i]);
           const detailsObject = {
             adresse: addresses[i],
             nom: details[4],
@@ -337,7 +337,7 @@ export default function ListeActeursRole() {
                         <strong>Téléphone:</strong> {acteur.telephone}
                       </p>
                       <p>
-                        <strong>Adresse:</strong> {acteur.adresse}
+                        <strong>Adresse:</strong> {raccourcirChaine(acteur.adresse)}
                       </p>
                       <p
                         className="fw-semibold d-flex align-items-center"
