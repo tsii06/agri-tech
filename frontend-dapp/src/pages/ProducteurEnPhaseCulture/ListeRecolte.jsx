@@ -150,7 +150,9 @@ function ListeRecoltes() {
 
   // Rechargement progresssif si il y a mutation du cache.
   useEffect(() => {
-    if (cacheRecolte.isRefetching) chargerRecoltes(true);
+    // if (cacheRecolte.isRefetching) chargerRecoltes(true);
+    if (!cacheRecolte.isRefetching && cacheRecolte.data !== undefined)
+      setRecoltes(cacheRecolte.data);
   }, [cacheRecolte.isRefetching]);
 
   const handleCertifier = async (event) => {
@@ -428,65 +430,76 @@ function ListeRecoltes() {
         {recoltes.length > 0 || isLoading ? (
           <div className="row g-3">
             <AnimatePresence>
-              {recoltesFiltres.map((recolte, index) => (
-                <motion.div
-                  key={`recolte-${recolte.id}-${index}`}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div
-                    className="card shadow-sm p-3"
-                    style={{
-                      borderRadius: 16,
-                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                    }}
-                  >
-                    <RecolteCard recolte={recolte} />
-
-                    {/* Btn pour chaque roles */}
-                    <div className="d-flex justify-content-between mt-3">
-                      {/* Actions selon le rôle */}
-                      {hasRole(roles, 3) && recolte.certifie && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => {
-                            setRecolteSelectionnee(recolte);
-                            setShowModal(true);
-                          }}
-                        >
-                          Commander
-                        </button>
-                      )}
-
-                      {hasRole(roles, 2) && !recolte.certifie && (
-                        <button
-                          className="btn btn-success btn-sm"
-                          onClick={() => {
-                            setRecolteSelectionnee(recolte);
-                            setShowModalCertification(true);
-                          }}
-                        >
-                          Certifier
-                        </button>
-                      )}
-
-                      {hasRole(roles, 0) && (
-                        <button
-                          className="btn btn-agrichain"
-                          onClick={() => {
-                            setRecoltePrixSelectionnee(recolte);
-                            setShowModalPrix(true);
-                          }}
-                        >
-                          Modifier le prix
-                        </button>
-                      )}
-                    </div>
+              {recoltesFiltres.map((recolte, index) =>
+                cacheRecolte.isRefetching && recolteSelectionnee.id === recolte.id ? (
+                  <div className="col-md-4" key={index}>
+                    <Skeleton
+                      width={"100%"}
+                      height={"100%"}
+                      style={{ minHeight: 200 }}
+                    />
                   </div>
-                </motion.div>
-              ))}
+                ) : (
+                  <motion.div
+                    key={`recolte-${recolte.id}-${index}`}
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div
+                      className="card shadow-sm p-3"
+                      style={{
+                        borderRadius: 16,
+                        boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                      }}
+                    >
+                      <RecolteCard recolte={recolte} />
+
+                      {/* Btn pour chaque roles */}
+                      <div className="d-flex justify-content-between mt-3">
+                        {/* Actions selon le rôle */}
+                        {hasRole(roles, 3) && recolte.certifie && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                              setRecolteSelectionnee(recolte);
+                              setShowModal(true);
+                            }}
+                          >
+                            Commander
+                          </button>
+                        )}
+
+                        {hasRole(roles, 2) && !recolte.certifie && (
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => {
+                              setRecolteSelectionnee(recolte);
+                              setShowModalCertification(true);
+                            }}
+                          >
+                            Certifier
+                          </button>
+                        )}
+
+                        {hasRole(roles, 0) && (
+                          <button
+                            className="btn btn-agrichain"
+                            onClick={() => {
+                              setRecolteSelectionnee(recolte);
+                              setRecoltePrixSelectionnee(recolte);
+                              setShowModalPrix(true);
+                            }}
+                          >
+                            Modifier le prix
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              )}
             </AnimatePresence>
             {/* Skeleton de chargement */}
             {isLoading && (
