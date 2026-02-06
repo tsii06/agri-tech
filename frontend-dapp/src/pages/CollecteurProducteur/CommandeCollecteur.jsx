@@ -1,115 +1,75 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/no-unescaped-entities */
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   DEBUT_COMMANDE_RECOLTE,
   getCollecteurProducteurContract,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
-import { getCommandeRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
-import { useCommandesRecoltesCollecteur } from "../../hooks/queries/useCommandesRecoltes";
+import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
+
+// Tab de tous les ids recoltes
+const compteurCommandes = Number(
+  await collecteurProducteurRead.read("compteurCommandes")
+);
+const commandesRecoltesIDs = Array.from(
+  { length: compteurCommandes - DEBUT_COMMANDE_RECOLTE + 1 },
+  (_, i) => compteurCommandes - i
+);
+
+// Nbr de recoltes par chargement
+const NBR_COMMANDES_PAR_PAGE = 9;
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
-  const [acteur, setActeur] = useState({});
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
   const [search, setSearch] = useState("");
   const [paiementFiltre, setPaiementFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
-  const [error, setError] = useState(null);
-  const [warnings, setWarnings] = useState([]);
   const [commandeErrors, setCommandeErrors] = useState({});
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
   const { roles, account } = useUserContext();
 
+  // Nbr de recoltes par tranche
+  const [commandesRecoltesToShow, setCommandesRecoltesToShow] = useState(
+    NBR_COMMANDES_PAR_PAGE
+  );
+  const idsToFetch = commandesRecoltesIDs.slice(0, commandesRecoltesToShow);
+
   // Utilisation cache pour la liste des commandes recoltes.
-  const cacheCommandes = useCommandesRecoltesCollecteur(roles, account);
-  const [commandes, setCommandes] = useState(() => {
-    if (
-      !cacheCommandes.isLoading &&
-      !cacheCommandes.isRefetching &&
-      cacheCommandes.data !== undefined
-    )
-      return cacheCommandes.data;
-    else return [];
-  });
+  const commandesUnAUn = useCommandesRecoltesUnAUn(idsToFetch, roles, account);
 
-  const chargerCommandes = async (reset = false) => {
-    setIsLoading(true);
-    try {
-      setError(null);
-      setWarnings([]);
-      const compteurCommandesRaw =
-        dernierCommandeCharger !== 0 && reset !== true
-          ? dernierCommandeCharger
-          : await collecteurProducteurRead.read("compteurCommandes");
-      const compteurCommandes = Number(compteurCommandesRaw);
-
-      let nbrCommandeCharger = 9;
-      let i;
-
-      for (
-        i = compteurCommandes;
-        i >= DEBUT_COMMANDE_RECOLTE && nbrCommandeCharger > 0;
-        i--
-      ) {
-        const commandeRaw = await getCommandeRecolte(i, roles, account);
-
-        // Ignorer si pas proprietaire
-        if (!commandeRaw.isProprietaire) continue;
-
-        if (reset === true) {
-          setCommandes(() => [commandeRaw]);
-          reset = false;
-        } else setCommandes((prev) => [...prev, commandeRaw]);
-        nbrCommandeCharger--;
-      }
-      setDernierCommandeCharger(i);
-
-      setActeur(acteur);
-    } catch (error) {
-      console.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
+  // Charger 9 de plus
+  const chargerPlusDeCommandes = (plus = NBR_COMMANDES_PAR_PAGE) => {
+    setCommandesRecoltesToShow((prev) =>
+      Math.min(prev + plus, commandesRecoltesIDs.length)
+    );
   };
+
+  // Check si on peut charger plus
+  const hasMore = commandesRecoltesToShow < commandesRecoltesIDs.length;
 
   useEffect(() => {
     if (!window.ethereum) {
       alert("Veuillez installer Metamask pour accéder à vos commandes.");
-      setIsLoading(false);
       return;
     }
-    if (!account) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Chargement progressif pour le debut ou utilisation de cache si a jour.
-    if (cacheCommandes.isLoading || commandes.length === 0) chargerCommandes(true);
-    else setIsLoading(false);
-  }, [account, acteur, location.state]); // Ajouter location.state comme dépendance pour réexécuter le useEffect
+  }, []);
 
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
     try {
       const contract = await getCollecteurProducteurContract();
-      const commande = commandes.find((c) => c.id === commandeId);
+      const commande = commandesFiltres.find((q) => q.data?.id === commandeId);
 
       // Effectuer le paiement
       // Les paramètres sont: idCommande, montant, mode
@@ -147,15 +107,6 @@ function CommandeCollecteur() {
       const tx = await contract.validerCommandeRecolte(_idCommande, _valide);
       await tx.wait();
 
-      // maj local
-      setCommandes((prev) =>
-        prev.map((cmd) =>
-          cmd.id == _idCommande
-            ? { ...cmd, statutRecolte: _valide ? 1 : 2 }
-            : cmd
-        )
-      );
-
       // Nettoyer l'erreur associée le cas échéant
       setCommandeErrors((prev) => {
         const next = { ...prev };
@@ -175,7 +126,15 @@ function CommandeCollecteur() {
   };
 
   // Filtrage commandes selon recherche et paiement
-  const commandesFiltres = commandes.filter((commande) => {
+  const commandesFiltres = commandesUnAUn.filter((q) => {
+    const commande = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
+    if (!commande.isProprietaire) return false;
+
     const searchLower = search.toLowerCase();
     const matchSearch =
       (commande.nomProduit &&
@@ -190,7 +149,17 @@ function CommandeCollecteur() {
       (paiementFiltre === "nonpaye" && !commande.payer);
     return matchSearch && matchPaiement;
   });
-  const commandesAffichees = commandesFiltres.slice(0, visibleCount);
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (commandesFiltres.length === 0 ||
+      commandesFiltres.length % NBR_COMMANDES_PAR_PAGE !== 0)
+  )
+    chargerPlusDeCommandes(
+      NBR_COMMANDES_PAR_PAGE -
+        (commandesFiltres.length % NBR_COMMANDES_PAR_PAGE)
+    );
 
   if (!window.ethereum) {
     return (
@@ -210,20 +179,6 @@ function CommandeCollecteur() {
   return (
     <div className="container py-4">
       <div className="card p-4 shadow-sm">
-        {error && (
-          <div
-            className="alert alert-danger d-flex align-items-center"
-            role="alert"
-          >
-            <div>{error}</div>
-          </div>
-        )}
-        {warnings && warnings.length > 0 && (
-          <div className="alert alert-warning" role="alert">
-            Certaines données IPFS n'ont pas pu être chargées ({warnings.length}
-            ). L'affichage utilise les données on-chain.
-          </div>
-        )}
         <div
           className="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between"
           style={{ marginBottom: 24 }}
@@ -239,7 +194,6 @@ function CommandeCollecteur() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
@@ -296,65 +250,71 @@ function CommandeCollecteur() {
         >
           <h2 className="h5 mb-0">Mes Commandes</h2>
           <p className="text-muted mb-0">
-            {commandes.length > 0 && (
+            {commandesFiltres.length > 0 && (
               <>
-                {commandes.filter((c) => c.cid).length} commandes avec données
-                IPFS,
-                {commandes.filter((c) => !c.cid).length} commandes sans données
-                IPFS
+                {commandesFiltres.filter((q) => q.data?.cid).length} commandes
+                avec données IPFS,
+                {commandesFiltres.filter((q) => !q.data?.cid).length} commandes
+                sans données IPFS
               </>
             )}
           </p>
         </div>
 
         {/* LISTE DES COMMANDES */}
-        {commandes.length > 0 || isLoading ? (
+        {commandesFiltres.length > 0 ? (
           <div className="row g-3">
             <AnimatePresence>
-              {commandesAffichees.map((commande, index) => (
-                <motion.div
-                  key={`commande-${commande?.id ?? "na"}-${index}`}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <CommandeRecolteCard
-                    commande={commande}
-                    roles={roles}
-                    commandeErrors={commandeErrors}
-                    validerCommande={validerCommande}
-                    setDetailsCondition={setDetailsCondition}
-                    setShowDetailsModal={setShowDetailsModal}
-                    setCommandeSelectionnee={setCommandeSelectionnee}
-                    setShowModal={setShowModal}
-                    btnLoading={btnLoading}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+              {commandesFiltres.map((q, index) => {
+                const commande = q.data;
 
-            {/* Indicateur de chargement */}
-            {isLoading && (
-              <div className="col-md-4">
-                <Skeleton
-                  width={"100%"}
-                  height={"100%"}
-                  style={{ minHeight: 200 }}
-                />
-              </div>
-            )}
+                // Skeleton si la commande est en cours de chargement
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
+                      />
+                    </div>
+                  );
+
+                // Affichage du commande
+                return (
+                  <motion.div
+                    key={`commande-${commande?.id ?? "na"}-${index}`}
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <CommandeRecolteCard
+                      commande={commande}
+                      roles={roles}
+                      commandeErrors={commandeErrors}
+                      validerCommande={validerCommande}
+                      setDetailsCondition={setDetailsCondition}
+                      setShowDetailsModal={setShowDetailsModal}
+                      setCommandeSelectionnee={setCommandeSelectionnee}
+                      setShowModal={setShowModal}
+                      btnLoading={btnLoading}
+                    />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="text-center text-muted">Aucune commande trouvée.</div>
         )}
 
         {/* Btn pour charger plus de recoltes */}
-        {dernierCommandeCharger >= DEBUT_COMMANDE_RECOLTE && (
+        {hasMore && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"
-              onClick={chargerCommandes}
+              onClick={() => chargerPlusDeCommandes()}
             >
               Charger plus
             </button>

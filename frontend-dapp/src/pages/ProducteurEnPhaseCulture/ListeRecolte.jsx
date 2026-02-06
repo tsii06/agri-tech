@@ -31,7 +31,7 @@ const recoltesIDs = Array.from(
   (_, i) => compteurRecoltes - i
 );
 // Nbr de recoltes par chargement
-const NBR_RECOLTES_PAR_PAGE = 3;
+const NBR_RECOLTES_PAR_PAGE = 9;
 
 function ListeRecoltes() {
   const { address } = useParams();
