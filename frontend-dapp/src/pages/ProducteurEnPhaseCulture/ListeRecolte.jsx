@@ -14,8 +14,6 @@ import {
 } from "../../utils/ipfsUtils";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import {
-  useRecoltes,
-  useRecoltesProducteur,
   useRecoltesUnAUn,
 } from "../../hooks/queries/useRecoltes";
 import {
@@ -37,28 +35,9 @@ const NBR_RECOLTES_PAR_PAGE = 3;
 
 function ListeRecoltes() {
   const { address } = useParams();
-  console.log("Address initiale : ", address);
 
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
-
-  // Utiliser cache pour stocker liste recolte du producteur.
-  const cacheRecolte =
-    address === undefined
-      ? hasRole(roles, 0)
-        ? useRecoltesProducteur(account)
-        : useRecoltes()
-      : useRecoltesProducteur(address);
-  const initialiserRecoltes = () => {
-    if (
-      !cacheRecolte.isLoading &&
-      cacheRecolte.data !== undefined &&
-      !cacheRecolte.isRefetching
-    )
-      return cacheRecolte.data;
-    else return [];
-  };
-  let recoltes = initialiserRecoltes();
 
   // Nbr de recoltes par tranche
   const [recoltesToShow, setRecoltesToShow] = useState(NBR_RECOLTES_PAR_PAGE);
@@ -103,16 +82,13 @@ function ListeRecoltes() {
   const [nouveauPrix, setNouveauPrix] = useState("");
 
   // useMutation pour la modification de prix d'une recolte
-  const updatePrixMutation = useUpdatePrixRecolte(account);
+  const updatePrixMutation = useUpdatePrixRecolte();
 
   // useMutation pour la commande d'une recolte
   const commandeMutation = useCommandeRecolte();
 
   // useMutation pour la modification de prix d'une recolte
   const certificateMutation = useCertificateRecolte();
-
-  // Reperer la recolte qui a ete modifier.
-  const [recolteChanged, setRecolteChanged] = useState(null);
 
   // Filtrage recoltes selon recherche, statut et type de saison
   const recoltesFiltres = recoltesUnAUn.filter((q) => {
@@ -179,7 +155,6 @@ function ListeRecoltes() {
         cid: certificatUpload.cid,
       });
 
-      setRecolteChanged(recolteSelectionnee);
       setShowModalCertification(false);
       alert("Récolte certifiée avec succès !");
     } catch (error) {
@@ -200,7 +175,7 @@ function ListeRecoltes() {
   const handleCommander = async (recolteId) => {
     setBtnLoading(true);
     try {
-      const recolte = recoltes.find((r) => r.id === recolteId);
+      const recolte = recoltesFiltres.find((q) => q.data.id === recolteId);
 
       // Vérifier que la quantité est valide
       const quantite = Number(quantiteCommande);
@@ -241,7 +216,6 @@ function ListeRecoltes() {
         prix: nouveauPrix,
       });
 
-      setRecolteChanged(recolteSelectionnee);
       setShowModalPrix(false);
       alert("Prix modifié avec succès !");
     } catch (error) {

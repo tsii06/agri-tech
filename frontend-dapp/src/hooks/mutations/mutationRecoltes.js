@@ -32,32 +32,29 @@ export function useCreateRecolte(account) {
 }
 
 // A la modification de prix d'une recotle
-export function useUpdatePrixRecolte(account) {
+export function useUpdatePrixRecolte() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (args) => {
       const contract = await getCollecteurProducteurWrite();
-      await contract.write("modifierPrixRecolte", [
-        args.id,
-        args.prix
-      ]);
+      await contract.write("modifierPrixRecolte", [args.id, args.prix]);
+      return { idRecolte: args.id };
     },
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
-      // Refetch la cache pour la liste de tous les parcelles du producteur.
+      // Refetch la recoltes concernee.
       queryClient.invalidateQueries({
-        queryKey: RECOLTES_KEYS.list({ producteur: account }),
+        queryKey: RECOLTES_KEYS.detail(receipt.idRecolte),
       });
 
-      console.log("✅ Transaction confirmée:", receipt);
+      console.log("✅ Transaction confirmée");
     },
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la modification prix recolte";
+        error.response?.data?.message ||
+        "Erreur lors de la modification prix recolte";
       alert(message);
       console.error("Modification prix recolte error:", error);
     },
@@ -71,18 +68,18 @@ export function useCertificateRecolte() {
   return useMutation({
     mutationFn: async (args) => {
       const collecteurProducteurContract = await getCollecteurProducteurWrite();
-      const tx = await collecteurProducteurContract.write("certifieRecolte", [
+      await collecteurProducteurContract.write("certifieRecolte", [
         args.id,
         args.cid,
       ]);
-      return tx;
+      return { idRecolte: args.id };
     },
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
+      // Refetch la recolte concernee.
+      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.detail(receipt.idRecolte) });
 
-      console.log("✅ Transaction confirmée:", receipt);
+      console.log("✅ Transaction confirmée");
     },
 
     onError: (error) => {
@@ -104,20 +101,22 @@ export function useCommandeRecolte() {
       const contract = await getCollecteurProducteurWrite();
       await contract.write("passerCommandeVersProducteur", [
         args.id,
-        args.quantite
+        args.quantite,
       ]);
+      return { idRecolte: args.id };
     },
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
+      // Refetch la recolte concernee.
+      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.detail(receipt.idRecolte) });
 
-      console.log("✅ Transaction confirmée:", receipt);
+      console.log("✅ Transaction confirmée");
     },
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la commande d'une recolte";
+        error.response?.data?.message ||
+        "Erreur lors de la commande d'une recolte";
       alert(message);
       console.error("Passer commande recolte error:", error);
     },
