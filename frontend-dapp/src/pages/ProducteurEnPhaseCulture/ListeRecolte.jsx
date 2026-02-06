@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   DEBUT_RECOLTE,
-  getCollecteurProducteurContract,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
@@ -17,13 +16,16 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import {
+  collecteurProducteurRead,
+} from "../../config/onChain/frontContracts";
 import {
   useRecoltes,
   useRecoltesProducteur,
 } from "../../hooks/queries/useRecoltes";
 import {
   useCertificateRecolte,
+  useCommandeRecolte,
   useUpdatePrixRecolte,
 } from "../../hooks/mutations/mutationRecoltes";
 
@@ -38,7 +40,11 @@ function ListeRecoltes() {
     ? useRecoltesProducteur(account)
     : useRecoltes();
   const [recoltes, setRecoltes] = useState(() => {
-    if (!cacheRecolte.isLoading && cacheRecolte.data !== undefined && !cacheRecolte.isRefetching)
+    if (
+      !cacheRecolte.isLoading &&
+      cacheRecolte.data !== undefined &&
+      !cacheRecolte.isRefetching
+    )
       return cacheRecolte.data;
     else return [];
   });
@@ -70,6 +76,9 @@ function ListeRecoltes() {
 
   // useMutation pour la modification de prix d'une recolte
   const updatePrixMutation = useUpdatePrixRecolte(account);
+
+  // useMutation pour la commande d'une recolte
+  const commandeMutation = useCommandeRecolte();
 
   // useMutation pour la modification de prix d'une recolte
   const certificateMutation = useCertificateRecolte();
@@ -219,7 +228,6 @@ function ListeRecoltes() {
   const handleCommander = async (recolteId) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
       const recolte = recoltes.find((r) => r.id === recolteId);
 
       // Vérifier que la quantité est valide
@@ -237,11 +245,10 @@ function ListeRecoltes() {
       }
 
       // Passer la commande
-      const tx = await contract.passerCommandeVersProducteur(
-        recolteId,
-        quantite
-      );
-      await tx.wait();
+      await commandeMutation.mutateAsync({
+        id: recolteId,
+        quantite: quantite,
+      });
 
       // Rediriger vers la page des commandes
       navigate("/liste-collecteur-commande");

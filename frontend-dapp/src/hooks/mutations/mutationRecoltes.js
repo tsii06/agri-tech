@@ -57,9 +57,9 @@ export function useUpdatePrixRecolte(account) {
 
     onError: (error) => {
       const message =
-        error.response?.data?.message || "Erreur lors de la création";
+        error.response?.data?.message || "Erreur lors de la modification prix recolte";
       alert(message);
-      console.error("Create user error:", error);
+      console.error("Modification prix recolte error:", error);
     },
   });
 }
@@ -91,6 +91,35 @@ export function useCertificateRecolte() {
         "Erreur lors de la certification recolte";
       alert(message);
       console.error("Certificate recolte error:", error);
+    },
+  });
+}
+
+// A la commeande d'une recotle
+export function useCommandeRecolte() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurProducteurWrite();
+      await contract.write("passerCommandeVersProducteur", [
+        args.id,
+        args.quantite
+      ]);
+    },
+
+    onSuccess: (receipt) => {
+      // Refetch la cache pour la liste de tous les parcelles
+      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
+
+      console.log("✅ Transaction confirmée:", receipt);
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message || "Erreur lors de la commande d'une recolte";
+      alert(message);
+      console.error("Passer commande recolte error:", error);
     },
   });
 }
