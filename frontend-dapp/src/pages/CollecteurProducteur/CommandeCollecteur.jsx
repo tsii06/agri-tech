@@ -1,21 +1,19 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unescaped-entities */
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   DEBUT_COMMANDE_RECOLTE,
   getCollecteurProducteurContract,
-  URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
-import {
-  getCommandeRecolte,
-  getConditionTransportPC,
-  getRecolte,
-} from "../../utils/contrat/collecteurProducteur";
-import { getFileFromPinata, getIPFSURL } from "../../utils/ipfsUtils";
+import { getCommandeRecolte } from "../../utils/contrat/collecteurProducteur";
+import { getIPFSURL } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
@@ -44,11 +42,10 @@ function CommandeCollecteur() {
     try {
       setError(null);
       setWarnings([]);
-      const contract = await getCollecteurProducteurContract();
       const compteurCommandesRaw =
         dernierCommandeCharger !== 0 && reset !== true
           ? dernierCommandeCharger
-          : await contract.compteurCommandes();
+          : await collecteurProducteurRead.read("compteurCommandes");
       const compteurCommandes = Number(compteurCommandesRaw);
 
       let nbrCommandeCharger = 9;
@@ -61,49 +58,13 @@ function CommandeCollecteur() {
       ) {
         const commandeRaw = await getCommandeRecolte(i, roles, account);
 
-        // Filtrer par collecteur connecté
+        // Ignorer si pas proprietaire
         if (!commandeRaw.isProprietaire) continue;
 
-        // recuperer condition de transport s'il y en a
-        let commande = {};
-        if (commandeRaw.enregistrerCondition) {
-          const conditions = await getConditionTransportPC(i);
-          commande = {
-            ...conditions,
-          };
-        }
-
-        // recuperation date recolte
-        const recolteOnChain = await contract.getRecolte(commandeRaw.idRecolte);
-        const recolteIpfs = await getFileFromPinata(recolteOnChain.cid);
-        // Format : jour mois année
-        let dateRecolteFormat = "N/A";
-        const dateRecolteOriginal = recolteIpfs?.data?.items?.dateRecolte;
-        if (dateRecolteOriginal && dateRecolteOriginal !== "") {
-          dateRecolteFormat = new Date(dateRecolteOriginal).toLocaleDateString(
-            "fr-FR",
-            {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }
-          );
-        }
-
-        // recuperer le nom du produit
-        const nomProduit = recolteIpfs?.data?.items?.nomProduit;
-
-        commande = {
-          ...commande,
-          ...commandeRaw,
-          nomProduit: nomProduit,
-          dateRecolte: dateRecolteFormat,
-        };
-
         if (reset === true) {
-          setCommandes((prev) => [commande]);
+          setCommandes(() => [commandeRaw]);
           reset = false;
-        } else setCommandes((prev) => [...prev, commande]);
+        } else setCommandes((prev) => [...prev, commandeRaw]);
         nbrCommandeCharger--;
       }
       setDernierCommandeCharger(i);
@@ -160,11 +121,6 @@ function CommandeCollecteur() {
       });
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
-      const message =
-        error?.reason ||
-        error?.data?.message ||
-        error?.message ||
-        "Erreur lors du paiement";
     } finally {
       setBtnLoading(false);
     }
@@ -202,10 +158,6 @@ function CommandeCollecteur() {
     } finally {
       setBtnLoading(false);
     }
-  };
-
-  const getStatutPaiement = (payer) => {
-    return payer ? "Payé" : "Non payé";
   };
 
   // Filtrage commandes selon recherche et paiement

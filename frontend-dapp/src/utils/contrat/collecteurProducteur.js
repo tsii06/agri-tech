@@ -13,7 +13,10 @@ import {
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 import { hasRole } from "../roles";
-import { collecteurProducteurRead, getCollecteurProducteurWrite } from "../../config/onChain/frontContracts";
+import {
+  collecteurProducteurRead,
+  getCollecteurProducteurWrite,
+} from "../../config/onChain/frontContracts";
 
 const contrat = await getCollecteurProducteurContract();
 
@@ -30,8 +33,9 @@ export const getCommandeRecolte = async (
   _account = ""
 ) => {
   try {
-    const res = await contrat.getCommande(_idCommande);
+    const res = await collecteurProducteurRead.read("getCommande", _idCommande);
 
+    // Filtrer les commandes si user collecteur.
     if (_roles.length > 0 && hasRole(_roles, 3) && _account !== "")
       if (res?.collecteur.toString().toLowerCase() !== _account.toLowerCase())
         return { isProprietaire: false };
@@ -43,7 +47,7 @@ export const getCommandeRecolte = async (
         ? await getActeur(res.transporteur.toString())
         : {};
 
-    return {
+    let commande = {
       id: Number(res.id),
       idRecolte: Number(res.idRecolte),
       quantite: Number(res.quantite),
@@ -59,6 +63,43 @@ export const getCommandeRecolte = async (
         adresse: res.transporteur.toString(),
       },
       isProprietaire: true,
+    };
+
+    // recuperer condition de transport s'il y en a
+    if (commande.enregistrerCondition) {
+      const conditions = await getConditionTransportPC(commande.id);
+      commande = {
+        ...conditions,
+      };
+    }
+
+    // recuperation date recolte
+    const recolteOnChain = await collecteurProducteurRead.read(
+      "getRecolte",
+      commande.idRecolte
+    );
+    const recolteIpfs = await getFileFromPinata(recolteOnChain.cid);
+    // Format : jour mois année
+    let dateRecolteFormat = "N/A";
+    const dateRecolteOriginal = recolteIpfs?.data?.items?.dateRecolte;
+    if (dateRecolteOriginal && dateRecolteOriginal !== "") {
+      dateRecolteFormat = new Date(dateRecolteOriginal).toLocaleDateString(
+        "fr-FR",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }
+      );
+    }
+
+    // recuperer le nom du produit
+    const nomProduit = recolteIpfs?.data?.items?.nomProduit;
+
+    return {
+      ...commande,
+      nomProduit: nomProduit,
+      dateRecolte: dateRecolteFormat,
     };
   } catch (error) {
     console.log("Recuperation commande lot produit : ", error);
@@ -106,13 +147,18 @@ export const getConditionTransportPC = async (_idCommande) => {
  */
 export const getRecoltesParParcelle = async (idParcelle) => {
   try {
-    const compteurRecoltes = await collecteurProducteurRead.read("compteurRecoltes");
+    const compteurRecoltes = await collecteurProducteurRead.read(
+      "compteurRecoltes"
+    );
     const recoltesParcelle = [];
 
     // Parcourir toutes les récoltes pour trouver celles de cette parcelle
     for (let i = 1; i <= compteurRecoltes; i++) {
       try {
-        const recolteOnChain = await collecteurProducteurRead.read("getRecolte", i);
+        const recolteOnChain = await collecteurProducteurRead.read(
+          "getRecolte",
+          i
+        );
         const idParcelles = Object.values(recolteOnChain.idParcelle).map((id) =>
           Number(id)
         );
@@ -516,7 +562,7 @@ export const createRecolte = async (recolteData, parcelle) => {
       [parseInt(parcelle.id)], // Tableau de parcelles
       parseInt(recolteData.quantite),
       parseInt(recolteData.prix),
-      recolteUpload.cid // CID IPFS
+      recolteUpload.cid, // CID IPFS
     ]);
   } catch (error) {
     console.error("Creation recolte :", error);
