@@ -63,3 +63,34 @@ export function useUpdatePrixRecolte(account) {
     },
   });
 }
+
+// A la certification d'une recolte
+export function useCertificateRecolte() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) => {
+      const collecteurProducteurContract = await getCollecteurProducteurWrite();
+      const tx = await collecteurProducteurContract.write("certifieRecolte", [
+        args.id,
+        args.cid,
+      ]);
+      return tx;
+    },
+
+    onSuccess: (receipt) => {
+      // Refetch la cache pour la liste de tous les parcelles
+      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
+
+      console.log("✅ Transaction confirmée:", receipt);
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors de la certification recolte";
+      alert(message);
+      console.error("Certificate recolte error:", error);
+    },
+  });
+}

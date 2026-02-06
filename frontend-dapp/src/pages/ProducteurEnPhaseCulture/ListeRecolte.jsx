@@ -22,7 +22,10 @@ import {
   useRecoltes,
   useRecoltesProducteur,
 } from "../../hooks/queries/useRecoltes";
-import { useUpdatePrixRecolte } from "../../hooks/mutations/mutationRecoltes";
+import {
+  useCertificateRecolte,
+  useUpdatePrixRecolte,
+} from "../../hooks/mutations/mutationRecoltes";
 
 function ListeRecoltes() {
   const { address } = useParams();
@@ -35,7 +38,7 @@ function ListeRecoltes() {
     ? useRecoltesProducteur(account)
     : useRecoltes();
   const [recoltes, setRecoltes] = useState(() => {
-    if (!cacheRecolte.isLoading && !cacheRecolte.isRefetching)
+    if (!cacheRecolte.isLoading && cacheRecolte.data !== undefined && !cacheRecolte.isRefetching)
       return cacheRecolte.data;
     else return [];
   });
@@ -68,6 +71,12 @@ function ListeRecoltes() {
 
   // useMutation pour la modification de prix d'une recolte
   const updatePrixMutation = useUpdatePrixRecolte(account);
+
+  // useMutation pour la modification de prix d'une recolte
+  const certificateMutation = useCertificateRecolte();
+
+  // Reperer la recolte qui a ete modifier.
+  const [recolteChanged, setRecolteChanged] = useState(null);
 
   const chargerRecoltes = async (reset = false) => {
     setIsLoading(true);
@@ -144,13 +153,13 @@ function ListeRecoltes() {
     }
 
     // Chargement progressif pour le debut ou utilisation de cache si a jour.
-    if (cacheRecolte.isLoading) chargerRecoltes(true);
+    if (cacheRecolte.isLoading || recoltes.length === 0) chargerRecoltes(true);
     else setIsLoading(false);
   }, [address, account, cacheRecolte.isLoading]);
 
   // Rechargement progresssif si il y a mutation du cache.
   useEffect(() => {
-    // if (cacheRecolte.isRefetching) chargerRecoltes(true);
+    // Charger les nouvelles donnees cache seulement si refetching terminer.
     if (!cacheRecolte.isRefetching && cacheRecolte.data !== undefined)
       setRecoltes(cacheRecolte.data);
   }, [cacheRecolte.isRefetching]);
@@ -165,11 +174,8 @@ function ListeRecoltes() {
       const certificatData = {
         dateEmission: dateEmission.current.value,
         dateExpiration: dateExpiration.current.value,
-        dateInspection: dateInspection.current.value,
         autoriteCertificatrice: autoriteCertificatrice.current.value,
         adresseCertificateur: account,
-        adresseProducteur: recolteSelectionnee.producteur,
-        produit: recolteSelectionnee.nomProduit,
         numeroCertificat: numeroCertificat.current.value,
         region: region.current.value,
         idRecolte: recolteSelectionnee.id,
@@ -188,26 +194,12 @@ function ListeRecoltes() {
       cid = certificatUpload.cid;
 
       // Certifier la récolte avec le CID du certificat
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.certifieRecolte(
-        recolteSelectionnee.id,
-        certificatUpload.cid
-      );
-      await tx.wait();
+      await certificateMutation.mutateAsync({
+        id: recolteSelectionnee.id,
+        cid: certificatUpload.cid,
+      });
 
-      // maj liste recoltes
-      setRecoltes((prev) =>
-        prev.map((recolte) =>
-          recolte.id === recolteSelectionnee.id
-            ? {
-                ...recolte,
-                certifie: true,
-                certificatPhytosanitaire: certificatUpload.cid,
-              }
-            : recolte
-        )
-      );
-
+      setRecolteChanged(recolteSelectionnee);
       setShowModalCertification(false);
       alert("Récolte certifiée avec succès !");
     } catch (error) {
@@ -271,6 +263,7 @@ function ListeRecoltes() {
         prix: nouveauPrix,
       });
 
+      setRecolteChanged(recolteSelectionnee);
       setShowModalPrix(false);
       alert("Prix modifié avec succès !");
     } catch (error) {
@@ -431,7 +424,10 @@ function ListeRecoltes() {
           <div className="row g-3">
             <AnimatePresence>
               {recoltesFiltres.map((recolte, index) =>
-                cacheRecolte.isRefetching && recolteSelectionnee.id === recolte.id ? (
+                cacheRecolte.isRefetching &&
+                recolteChanged !== null &&
+                recolteChanged.id === recolte.id ? (
+                  // Skeleton pour seulement la recolte concerner par la modification.
                   <div className="col-md-4" key={index}>
                     <Skeleton
                       width={"100%"}
