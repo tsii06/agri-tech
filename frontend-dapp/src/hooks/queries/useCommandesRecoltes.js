@@ -3,7 +3,7 @@ import { getAllCommandesRecoltes, getCommandeRecolte } from "../../utils/contrat
 import { hasRole } from "../../utils/roles";
 
 export const COMMANDES_RECOLTES_KEYS = {
-  all: ["madtx-recoltes"],
+  all: ["madtx-commandes-recoltes"],
   lists: () => [...COMMANDES_RECOLTES_KEYS.all, "list"],
   list: (filters) => [...COMMANDES_RECOLTES_KEYS.lists(), filters],
   details: () => [...COMMANDES_RECOLTES_KEYS.all, "detail"],

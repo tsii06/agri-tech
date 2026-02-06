@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import {
@@ -20,8 +19,11 @@ import {
 import { hasRole } from "../utils/roles";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
-import { gestionnaireActeursRead } from "../config/onChain/frontContracts";
 import { raccourcirChaine } from "../utils/stringUtils";
+import {
+  useActeursByRole,
+  useAddressActeursByRole,
+} from "../hooks/queries/useActeurs";
 
 const ROLE_LABELS = [
   "Producteur", // 0
@@ -46,16 +48,12 @@ export default function ListeActeursRole() {
     ? parseInt(idCommandeProduit, 10)
     : null;
 
-  const [acteurs, setActeurs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actifFiltre, setActifFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
   const [btnLoading, setBtnLoading] = useState(false);
   const nav = useNavigate();
-  const [dernierActeurCharger, setDernierActeurCharger] = useState(() => -1);
 
   // Détermine le rôle cible à afficher selon les rôles utilisateur
   let roleCible = null;
@@ -79,11 +77,17 @@ export default function ListeActeursRole() {
     // si c'est pour le choix d'un transporteur pour une commande recolte
     if (idCommandeR !== null)
       titre = `Choisir transporteur pour la commande recolte #${idCommandeR}`;
-    // si c'est pour le choix d'un transporteur pour une commande recolte
+    // si c'est pour le choix d'un transporteur pour une commande lot produits.
     else if (idCommandeP !== null)
       titre = `Choisir transporteur pour la commande produit #${idCommandeP}`;
     else titre = `Liste des ${ROLE_LABELS[roleUrl]}s`;
   }
+
+  // Tous les addresses acteurs avec role === roleCible.
+  const { data: addresses } = useAddressActeursByRole(roleCible);
+
+  // Lancer useQueries pour stocker les acteurs dans cache
+  const acteursUnAUn = useActeursByRole(addresses, roleCible);
 
   const handleChoisirTransporteurCommandeRecolte = async (addrTransporteur) => {
     setBtnLoading(true);
@@ -139,58 +143,13 @@ export default function ListeActeursRole() {
     }
   };
 
-  const chargerActeurs = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const addresses = await gestionnaireActeursRead.read("getActeursByRole", roleCible);
-
-      let nbrActeurCharger = 9;
-      let i =
-        dernierActeurCharger >= 0 ? dernierActeurCharger : addresses.length - 1;
-
-      for (i; i >= 0 && nbrActeurCharger > 0; i--) {
-        try {
-          const details = await gestionnaireActeursRead.read("getDetailsActeur", addresses[i]);
-          const detailsObject = {
-            adresse: addresses[i],
-            nom: details[4],
-            email: details[7],
-            telephone: details[8],
-            actif: details[2],
-            role: Number(details[1]),
-            idBlockchain: details[0],
-          };
-          setActeurs((prev) => [...prev, detailsObject]);
-          nbrActeurCharger--;
-        } catch (e) {
-          console.error(
-            "Erreur lors de la recuperation de details acteurs : ",
-            e
-          );
-        }
-      }
-      setDernierActeurCharger(i);
-    } catch (error) {
-      console.error("Recuperation liste acteur : ", error);
-
-      setError("Erreur lors du chargement les acteurs. Veuillez reessayer.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (roleCible === null) {
-      setLoading(false);
-      return;
-    }
-    setActeurs([]);
-    chargerActeurs();
-  }, [roleCible]);
-
   // Filtrage acteurs selon recherche et statut
-  const acteursFiltres = acteurs.filter((acteur) => {
+  const acteursFiltres = acteursUnAUn.filter((q) => {
+    const acteur = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
     const searchLower = search.toLowerCase();
     const matchSearch =
       (acteur.nom && acteur.nom.toLowerCase().includes(searchLower)) ||
@@ -206,7 +165,6 @@ export default function ListeActeursRole() {
       (actifFiltre === "inactif" && !acteur.actif);
     return matchSearch && matchActif;
   });
-  const acteursAffiches = acteursFiltres.slice(0, visibleCount);
 
   if (roleCible === null) {
     return (
@@ -234,7 +192,6 @@ export default function ListeActeursRole() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
@@ -292,133 +249,130 @@ export default function ListeActeursRole() {
         </div>
 
         {/* Liste des acteurs */}
-        {acteurs.length > 0 || loading ? (
+        {acteursFiltres.length > 0 ? (
           <div className="row">
             <AnimatePresence>
-              {acteursAffiches.map((acteur) => (
-                <motion.div
-                  className="col-md-4 mb-3"
-                  key={acteur.adresse}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div
-                    className="card shadow-sm"
-                    style={{
-                      borderRadius: 16,
-                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                    }}
+              {acteursFiltres.map((q, index) => {
+                const acteur = q.data;
+
+                // Skeleton si encours de chargement
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
+                      />
+                    </div>
+                  );
+
+                // Afficher acteurs.
+                return (
+                  <motion.div
+                    className="col-md-4 mb-3"
+                    key={acteur.adresse}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
                   >
                     <div
-                      className="d-flex justify-content-center align-items-center mb-2"
-                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                      className="card shadow-sm"
+                      style={{
+                        borderRadius: 16,
+                        boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                      }}
                     >
-                      <User size={36} />
-                    </div>
-                    <div className="card-body">
-                      <h5 className="card-title text-center mb-3">
-                        {acteur.nom}
-                      </h5>
-                      <p>
-                        <KeyRound size={16} className="me-2 text-success" />
-                        <strong>ID Blockchain:</strong> {acteur.idBlockchain}
-                      </p>
-                      <p>
-                        <UserCheck size={16} className="me-2 text-success" />
-                        <strong>Rôle:</strong> {ROLE_LABELS[acteur.role]}
-                      </p>
-                      <p>
-                        <Mail size={16} className="me-2 text-success" />
-                        <strong>Email:</strong> {acteur.email}
-                      </p>
-                      <p>
-                        <Phone size={16} className="me-2 text-success" />
-                        <strong>Téléphone:</strong> {acteur.telephone}
-                      </p>
-                      <p>
-                        <strong>Adresse:</strong> {raccourcirChaine(acteur.adresse)}
-                      </p>
-                      <p
-                        className="fw-semibold d-flex align-items-center"
-                        style={{ gap: 6 }}
+                      <div
+                        className="d-flex justify-content-center align-items-center mb-2"
+                        style={{ fontSize: 32, color: "#4d7c0f" }}
                       >
-                        {acteur.actif ? (
-                          <BadgeCheck size={16} className="me-1 text-success" />
-                        ) : (
-                          <BadgeX size={16} className="me-1 text-danger" />
-                        )}
-                        <strong>Actif:</strong> {acteur.actif ? "Oui" : "Non"}
-                      </p>
-
-                      {/* Bouton d'action */}
-                      {/* Si choisir un transporteur pour une commande */}
-                      {roleUrl === 5 ? (
-                        <button
-                          className="btn-agrichain"
-                          onClick={() => {
-                            if (idCommandeR !== null)
-                              return handleChoisirTransporteurCommandeRecolte(
-                                acteur.adresse
-                              );
-                            else if (idCommandeP !== null)
-                              return handleChoisirTransporteurCommandeProduit(
-                                acteur.adresse
-                              );
-                          }}
-                          disabled={btnLoading}
+                        <User size={36} />
+                      </div>
+                      <div className="card-body">
+                        <h5 className="card-title text-center mb-3">
+                          {acteur.nom}
+                        </h5>
+                        <p>
+                          <KeyRound size={16} className="me-2 text-success" />
+                          <strong>ID Blockchain:</strong> {acteur.idBlockchain}
+                        </p>
+                        <p>
+                          <UserCheck size={16} className="me-2 text-success" />
+                          <strong>Rôle:</strong>{" "}
+                          {acteur.roles.map((r) => `${ROLE_LABELS[r]}, `)}
+                        </p>
+                        <p>
+                          <Mail size={16} className="me-2 text-success" />
+                          <strong>Email:</strong> {acteur.email}
+                        </p>
+                        <p>
+                          <Phone size={16} className="me-2 text-success" />
+                          <strong>Téléphone:</strong> {acteur.telephone}
+                        </p>
+                        <p>
+                          <strong>Adresse:</strong>{" "}
+                          {raccourcirChaine(acteur.adresse)}
+                        </p>
+                        <p
+                          className="fw-semibold d-flex align-items-center"
+                          style={{ gap: 6 }}
                         >
-                          {btnLoading && (
-                            <span className="spinner-border spinner-border-sm"></span>
+                          {acteur.actif ? (
+                            <BadgeCheck
+                              size={16}
+                              className="me-1 text-success"
+                            />
+                          ) : (
+                            <BadgeX size={16} className="me-1 text-danger" />
                           )}
-                          &nbsp;Choisir
-                        </button>
-                      ) : (
-                        <button
-                          className="btn-agrichain"
-                          onClick={() => {
-                            if (hasRole(roles, 6)) {
-                              navigate(`/liste-lot-produits/${acteur.adresse}`);
-                            } else if (hasRole(roles, 3)) {
-                              navigate(`/listerecolte/${acteur.adresse}`);
-                            }
-                          }}
-                        >
-                          {boutonLabel}
-                        </button>
-                      )}
+                          <strong>Actif:</strong> {acteur.actif ? "Oui" : "Non"}
+                        </p>
+
+                        {/* Bouton d'action */}
+                        {/* Si choisir un transporteur pour une commande */}
+                        {roleUrl === 5 ? (
+                          <button
+                            className="btn-agrichain"
+                            onClick={() => {
+                              if (idCommandeR !== null)
+                                return handleChoisirTransporteurCommandeRecolte(
+                                  acteur.adresse
+                                );
+                              else if (idCommandeP !== null)
+                                return handleChoisirTransporteurCommandeProduit(
+                                  acteur.adresse
+                                );
+                            }}
+                            disabled={btnLoading}
+                          >
+                            {btnLoading && (
+                              <span className="spinner-border spinner-border-sm"></span>
+                            )}
+                            &nbsp;Choisir
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-agrichain"
+                            onClick={() => {
+                              if (hasRole(roles, 6)) {
+                                navigate(
+                                  `/liste-lot-produits/${acteur.adresse}`
+                                );
+                              } else if (hasRole(roles, 3)) {
+                                navigate(`/listerecolte/${acteur.adresse}`);
+                              }
+                            }}
+                          >
+                            {boutonLabel}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
-
-            {/* Indicateur de chargement */}
-            {loading && (
-              <div className="col-md-4">
-                <Skeleton
-                  width={"100%"}
-                  height={"100%"}
-                  style={{ minHeight: 200 }}
-                />
-              </div>
-            )}
-
-            {/* Btn pour charger plus de recoltes */}
-            {dernierActeurCharger >= 0 && (
-              <div className="text-center mt-3">
-                <button
-                  className="btn btn-outline-success"
-                  onClick={chargerActeurs}
-                >
-                  Charger plus
-                </button>
-              </div>
-            )}
-          </div>
-        ) : acteurs.length === 0 ? (
-          <div className="text-center text-muted">
-            Aucun acteur ne correspond à la recherche ou au filtre.
           </div>
         ) : (
           acteursFiltres.length === 0 && (
@@ -430,16 +384,6 @@ export default function ListeActeursRole() {
 
         {error && <div className="alert alert-danger mt-5">{error}</div>}
       </div>
-      {acteursAffiches.length < acteursFiltres.length && (
-        <div className="text-center mt-3">
-          <button
-            className="btn-agrichain-outline"
-            onClick={() => setVisibleCount(visibleCount + 9)}
-          >
-            Charger plus
-          </button>
-        </div>
-      )}
     </div>
   );
 }
