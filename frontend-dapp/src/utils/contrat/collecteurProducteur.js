@@ -1,5 +1,9 @@
 import { ethers } from "ethers";
-import { DEBUT_RECOLTE, getCollecteurProducteurContract } from "../contract";
+import {
+  DEBUT_COMMANDE_RECOLTE,
+  DEBUT_RECOLTE,
+  getCollecteurProducteurContract,
+} from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
@@ -720,3 +724,24 @@ const getIntrantUtiliseEtDateRecoltePrecedent = async (
     console.warn("Erreur récupération intrants:", intrantsError);
   }
 };
+
+// Recuperer tous les commandes recoltes en fonction du roles de l'user
+export async function getAllCommandesRecoltes(roles = [], account = "") {
+  const compteurCommandesRaw = await collecteurProducteurRead.read(
+    "compteurCommandes"
+  );
+  const compteurCommandes = Number(compteurCommandesRaw);
+  let allCommandesRecoltes = [];
+
+  for (let i = compteurCommandes; i >= DEBUT_COMMANDE_RECOLTE; i--) {
+    const commandeRaw = await getCommandeRecolte(i, roles, account);
+
+    // Ignorer si pas proprietaire
+    if (!commandeRaw.isProprietaire) continue;
+
+    allCommandesRecoltes.push(commandeRaw);
+  }
+
+  console.log(`Tous les commandes recoltes ${account}: `, allCommandesRecoltes);
+  return allCommandesRecoltes;
+}

@@ -14,11 +14,11 @@ import Skeleton from "react-loading-skeleton";
 import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import { useCommandesRecoltesCollecteur } from "../../hooks/queries/useCommandesRecoltes";
 
 function CommandeCollecteur() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [commandes, setCommandes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [acteur, setActeur] = useState({});
@@ -36,6 +36,18 @@ function CommandeCollecteur() {
   const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
   const { roles, account } = useUserContext();
+
+  // Utilisation cache pour la liste des commandes recoltes.
+  const cacheCommandes = useCommandesRecoltesCollecteur(roles, account);
+  const [commandes, setCommandes] = useState(() => {
+    if (
+      !cacheCommandes.isLoading &&
+      !cacheCommandes.isRefetching &&
+      cacheCommandes.data !== undefined
+    )
+      return cacheCommandes.data;
+    else return [];
+  });
 
   const chargerCommandes = async (reset = false) => {
     setIsLoading(true);
@@ -88,7 +100,9 @@ function CommandeCollecteur() {
       return;
     }
 
-    chargerCommandes(true);
+    // Chargement progressif pour le debut ou utilisation de cache si a jour.
+    if (cacheCommandes.isLoading || commandes.length === 0) chargerCommandes(true);
+    else setIsLoading(false);
   }, [account, acteur, location.state]); // Ajouter location.state comme dépendance pour réexécuter le useEffect
 
   const handlePayer = async (commandeId) => {
