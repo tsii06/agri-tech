@@ -99,10 +99,7 @@ export function useUpdateStatusTransportCommandeRecolte() {
         error.response?.data?.message ||
         "Erreur lors du maj status transport commande recolte";
       alert(message);
-      console.error(
-        "Maj status transport commande recolte error:",
-        error
-      );
+      console.error("Maj status transport commande recolte error:", error);
     },
   });
 }
@@ -125,7 +122,6 @@ export function useValiderCommandeRecolte() {
       // Refetch la commande recoltes concernee.
       queryClient.invalidateQueries({
         queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
-        refetchType: 'active',
       });
 
       console.log("✅ Transaction confirmée");
@@ -136,10 +132,41 @@ export function useValiderCommandeRecolte() {
         error.response?.data?.message ||
         "Erreur lors de la validation commande recolte";
       alert(message);
-      console.error(
-        "Validation commande recolte error:",
-        error
+      console.error("Validation commande recolte error:", error);
+    },
+  });
+}
+
+// A l'enregistrement condition transport commande recolte
+export function usePayerCommandeRecolte() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurProducteurWrite();
+      const res = await contract.write(
+        "effectuerPaiementVersProducteur",
+        [args.id, args.prix, args.modePaiement],
+        args.options
       );
+      return { ...res, idCommandeRecolte: args.id };
+    },
+
+    onSuccess: (receipt) => {
+      // Refetch la commande recoltes concernee.
+      queryClient.invalidateQueries({
+        queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
+      });
+
+      console.log("✅ Transaction confirmée");
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors du paiement commande recolte";
+      alert(message);
+      console.error("Paiement commande recolte error:", error);
     },
   });
 }

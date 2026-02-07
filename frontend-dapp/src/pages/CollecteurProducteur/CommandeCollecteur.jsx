@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   DEBUT_COMMANDE_RECOLTE,
-  getCollecteurProducteurContract,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
@@ -12,7 +11,10 @@ import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
-import { useValiderCommandeRecolte } from "../../hooks/mutations/mutationCommandesRecoltes";
+import {
+  usePayerCommandeRecolte,
+  useValiderCommandeRecolte,
+} from "../../hooks/mutations/mutationCommandesRecoltes";
 
 // Tab de tous les ids recoltes
 const compteurCommandes = Number(
@@ -62,6 +64,9 @@ function CommandeCollecteur() {
   // useMutation pour la validation commande
   const validateMutation = useValiderCommandeRecolte();
 
+  // useMutation pour paiement commande
+  const payerMutation = usePayerCommandeRecolte();
+
   useEffect(() => {
     if (!window.ethereum) {
       alert("Veuillez installer Metamask pour accéder à vos commandes.");
@@ -72,31 +77,29 @@ function CommandeCollecteur() {
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
-      const commande = commandesFiltres.find((q) => q.data?.id === commandeId);
+      const commande = (commandesFiltres.find((q) => q.data?.id === commandeId)).data;
 
       // Effectuer le paiement
       // Les paramètres sont: idCommande, montant, mode
-      const tx = await contract.effectuerPaiementVersProducteur(
-        commandeId,
-        commande.prix,
-        modePaiement,
-        { value: commande.prix } // Attention: la valeur doit correspondre au montant envoyé
-      );
-      await tx.wait();
+      await payerMutation.mutateAsync({
+        id: commandeId,
+        prix: commande.prix,
+        modePaiement: modePaiement,
+        options: { value: commande.prix }, // Attention: la valeur doit correspondre au montant envoyé
+      });
 
       // Fermer le modal
       setShowModal(false);
-
-      // Rediriger vers la page des produits
-      navigate("/liste-produits");
-
+      
       // Nettoyer l'erreur associée le cas échéant
       setCommandeErrors((prev) => {
         const next = { ...prev };
         delete next[commandeId];
         return next;
       });
+
+      // Rediriger vers la page des produits
+      navigate("/liste-produits");
     } catch (error) {
       console.error("Erreur lors du paiement:", error);
     } finally {

@@ -80,13 +80,21 @@ export const getCommandeRecolte = async (
 
     // recuperer condition de transport s'il y en a
     if (commande.enregistrerCondition) {
+      let conditions = {};
       try {
-        const conditions = await getConditionTransportPC(commande.id);
+        conditions = await getConditionTransportPC(commande.id);
         commande = {
           ...commande,
           ...conditions,
         };
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      } finally {
+        commande = {
+          ...commande,
+          ...conditions,
+        };
+      }
     }
 
     // recuperation date recolte
