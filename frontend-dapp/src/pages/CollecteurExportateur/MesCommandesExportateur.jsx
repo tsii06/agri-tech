@@ -1,7 +1,5 @@
 import { useState } from "react";
-import {
-  URL_BLOCK_SCAN,
-} from "../../utils/contract";
+import { URL_BLOCK_SCAN } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import {
   ShoppingCart,
@@ -87,7 +85,9 @@ function MesCommandesExportateur() {
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
     try {
-      const commande = (commandesFiltres.find((q) => q.data.id === commandeId)).data;
+      const commande = commandesFiltres.find(
+        (q) => q.data.id === commandeId
+      ).data;
 
       // Effectuer le paiement
       await payerMutation.mutateAsync({
@@ -209,6 +209,16 @@ function MesCommandesExportateur() {
       (paiementFiltre === "nonpaye" && !commande.payer);
     return matchSearch && matchPaiement;
   });
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (commandesFiltres.length === 0 ||
+      commandesFiltres.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlus(
+      NBR_ITEMS_PAR_PAGE - (commandesFiltres.length % NBR_ITEMS_PAR_PAGE)
+    );
 
   return (
     <div className="container py-4">

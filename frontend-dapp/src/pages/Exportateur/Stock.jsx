@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+/* eslint-disable react/no-unescaped-entities */
+import { useState } from "react";
 import {
-  DEBUT_COMMANDE_LOT_PRODUIT,
-  getCollecteurExportateurContract,
-  getRoleOfAddress,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
@@ -15,28 +13,23 @@ import {
   LucideTruck,
   Fingerprint,
 } from "lucide-react";
-import {
-  getCommandeProduit,
-  getConditionTransportCE,
-  getLotProduitEnrichi,
-} from "../../utils/collecteurExporatateur";
 import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
 import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
 import { AnimatePresence, motion } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
+import {
+  useCommandesLotsProduitsIDs,
+  useCommandesLotsProduitsUnAUn,
+} from "../../hooks/queries/useCommandesLotsProduits";
+
+// Nbr de recoltes par chargement
+const NBR_ITEMS_PAR_PAGE = 9;
 
 function StockExportateur() {
-  const [commandes, setCommandes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const { account } = useUserContext();
   const [search, setSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(9);
-  const [expandedId, setExpandedId] = useState(null);
   const [detailsCondition, setDetailsCondition] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedStocks, setSelectedStocks] = useState([]);
@@ -49,95 +42,47 @@ function StockExportateur() {
     typeTransport: "",
   });
   const nav = useNavigate();
-  const [dernierCommandeCharger, setDernierCommandeCharger] = useState(() => 0);
 
-  const chargerCommandes = async (reset = false) => {
-    setIsLoading(true);
-    try {
-      const contract = await getCollecteurExportateurContract();
-      let role = userRole;
-      if (!role) {
-        role = await getRoleOfAddress(account);
-        setUserRole(role);
-      }
+  const { roles, account } = useUserContext();
 
-      // Obtenir le nombre total de commandes ou le prochain commande charger
-      const compteurCommandesRaw =
-        dernierCommandeCharger !== 0
-          ? dernierCommandeCharger
-          : await contract.getCompteurCommande();
-      const compteurCommandes = Number(compteurCommandesRaw);
+  // Recuperation de tab listes des ids commandes recoltes
+  const { data: commandesLotsProduitsIDs } = useCommandesLotsProduitsIDs();
 
-      let nbrCommandeCharger = 9;
-      let i;
+  // Nbr de recoltes par tranche
+  const [commandesLotsProduitsToShow, setCommandesLotsProduitsToShow] =
+    useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetch =
+    commandesLotsProduitsIDs?.slice(0, commandesLotsProduitsToShow) || [];
 
-      // Charger toutes les commandes
-      for (
-        i = compteurCommandes;
-        i >= DEBUT_COMMANDE_LOT_PRODUIT && nbrCommandeCharger > 0;
-        i--
-      ) {
-        const commandeRaw = await getCommandeProduit(i);
+  // Utilisation cache pour la liste des commandes recoltes.
+  const commandesUnAUn = useCommandesLotsProduitsUnAUn(
+    idsToFetch,
+    roles,
+    account,
+    true
+  );
 
-        // ne pas afficher les commandes deja enregistrer dans le stock ou non payer
-        if (commandeRaw.enregistre || !commandeRaw.payer) continue;
-
-        // Normaliser adresses
-        const exportateurAddr =
-          commandeRaw.exportateur?.adresse.toString?.() ||
-          commandeRaw.exportateur ||
-          "";
-        if (!exportateurAddr) continue;
-
-        // Vérifier si la commande appartient à l'exportateur connecté
-        if (exportateurAddr.toLowerCase() === account.toLowerCase()) {
-          // Normaliser types primitifs
-          const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
-          const produit =
-            idLotProduitNum > 0
-              ? await getLotProduitEnrichi(idLotProduitNum)
-              : {};
-
-          let commandeEnrichie = {
-            ...commandeRaw,
-            idLotProduit: idLotProduitNum,
-            nomProduit: produit?.nom || "",
-          };
-
-          // Charger les condition de transport
-          if (commandeRaw.enregistrerCondition) {
-            const conditions = await getConditionTransportCE(i);
-            commandeEnrichie = {
-              ...commandeEnrichie,
-              ...conditions,
-            };
-          }
-
-          if (reset) {
-            setCommandes([commandeEnrichie]);
-            reset = false;
-          } else setCommandes((prev) => [...prev, commandeEnrichie]);
-          nbrCommandeCharger--;
-        }
-      }
-      setDernierCommandeCharger(i);
-    } catch (error) {
-      console.error("Erreur lors du chargement des commandes:", error);
-      setError(
-        "Erreur lors du chargement des stocks. Veuillez reessayer plus tard."
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  // Charger 9 de plus
+  const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setCommandesLotsProduitsToShow((prev) =>
+      Math.min(prev + plus, commandesLotsProduitsIDs?.length)
+    );
   };
 
-  useEffect(() => {
-    if (!account) return;
-    chargerCommandes(true);
-  }, [account]);
+  // Check si on peut charger plus
+  const hasMore =
+    commandesLotsProduitsToShow < commandesLotsProduitsIDs?.length;
 
   // Filtrage commandes selon recherche et paiement
-  const commandesFiltres = commandes.filter((commande) => {
+  const commandesFiltres = commandesUnAUn.filter((q) => {
+    const commande = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
+    if (commande.isProprietaire && !commande.isProprietaire) return false;
+
     const searchLower = search.toLowerCase();
     const matchSearch =
       (commande.nomProduit &&
@@ -149,7 +94,16 @@ function StockExportateur() {
 
     return matchSearch;
   });
-  const commandesAffichees = commandesFiltres.slice(0, visibleCount);
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (commandesFiltres.length === 0 ||
+      commandesFiltres.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlus(
+      NBR_ITEMS_PAR_PAGE - (commandesFiltres.length % NBR_ITEMS_PAR_PAGE)
+    );
 
   const handleCheckboxChange = (id) => {
     setSelectedStocks((prev) =>
@@ -165,11 +119,11 @@ function StockExportateur() {
       return;
     }
     // Annuler si les produits sont de types differents
-    const stockSelected = commandes.filter((el) =>
-      selectedStocks.includes(el.id)
+    const stockSelected = commandesFiltres.filter((q) =>
+      selectedStocks.includes(q.data.id)
     );
     const IsStockSameType = stockSelected.every(
-      (el) => el.nomProduit === stockSelected[0].nomProduit
+      (q) => q.data.nomProduit === stockSelected[0].data.nomProduit
     );
     if (!IsStockSameType) {
       alert("Veuillez choisir des produits de meme type.");
@@ -178,7 +132,7 @@ function StockExportateur() {
     // ajouter nomProduit dans ShipmentDetail
     setShipmentDetails((prev) => ({
       ...prev,
-      nomProduit: stockSelected[0].nomProduit,
+      nomProduit: stockSelected[0].data.nomProduit,
     }));
     setShowShipmentModal(true);
   };
@@ -264,23 +218,11 @@ function StockExportateur() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
           </div>
         </div>
-
-        {/* Affichage erreur */}
-        {error && (
-          <div
-            className="alert alert-danger d-flex align-items-center"
-            role="alert"
-          >
-            <div>{error}</div>
-          </div>
-        )}
-
         <div
           style={{
             backgroundColor: "rgb(240 249 232 / var(--tw-bg-opacity,1))",
@@ -291,7 +233,7 @@ function StockExportateur() {
           <h2 className="h5">Stock exportateur</h2>
         </div>
 
-        {commandes.length > 0 || isLoading ? (
+        {commandesFiltres.length > 0 ? (
           /* LISTE DES COMMANDES */
           <div className="row g-3">
             <div className="d-flex justify-content-center">
@@ -304,165 +246,148 @@ function StockExportateur() {
               </button>
             </div>
             <AnimatePresence>
-              {commandesAffichees.map((commande) => (
-                <motion.div
-                  key={commande.id}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div
-                    className="card border shadow-sm p-3"
-                    style={{
-                      borderRadius: 16,
-                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                    }}
-                  >
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id={`checkbox-${commande.id}`}
-                        checked={selectedStocks.includes(commande.id)}
-                        onChange={() => handleCheckboxChange(commande.id)}
+              {commandesFiltres.map((q, index) => {
+                const commande = q.data;
+
+                // Skeleton si data en cours de chargement
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
                       />
-                      <label
-                        className="form-check-label"
-                        htmlFor={`checkbox-${commande.id}`}
-                      >
-                        Sélectionner
-                      </label>
                     </div>
+                  );
+
+                // Afficher commande dans stock
+                return (
+                  <motion.div
+                    key={`${commande.id}-${index}`}
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
                     <div
-                      className="d-flex justify-content-center align-items-center mb-2"
-                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                      className="card border shadow-sm p-3"
+                      style={{
+                        borderRadius: 16,
+                        boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                      }}
                     >
-                      <ShoppingCart size={36} />
-                    </div>
-                    <h5 className="card-title text-center mb-3">
-                      {commande.nomProduit}
-                    </h5>
-                    <div className="card-text small">
-                      <p>
-                        <Hash size={16} className="me-2 text-success" />
-                        <strong>ID Commande:</strong> {commande.id}
-                      </p>
-                      <p>
-                        <Hash size={16} className="me-2 text-success" />
-                        <strong>ID Lot Produit:</strong> {commande.idLotProduit}
-                      </p>
-                      <p>
-                        <Package2 size={16} className="me-2 text-success" />
-                        <strong>Quantité:</strong> {commande.quantite} kg
-                      </p>
-                      <p>
-                        <Archive size={16} className="me-2 text-success" />
-                        <strong>Collecteur:</strong> {commande.collecteur?.nom}
-                      </p>
-                      <p>
-                        <LucideTruck size={16} className="me-2 text-success" />
-                        <strong>Transporteur:</strong>{" "}
-                        {commande.transporteur?.nom || "N/A"}
-                      </p>
-                      {commande.statutTransport === 1 && (
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`checkbox-${commande.id}`}
+                          checked={selectedStocks.includes(commande.id)}
+                          onChange={() => handleCheckboxChange(commande.id)}
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor={`checkbox-${commande.id}`}
+                        >
+                          Sélectionner
+                        </label>
+                      </div>
+                      <div
+                        className="d-flex justify-content-center align-items-center mb-2"
+                        style={{ fontSize: 32, color: "#4d7c0f" }}
+                      >
+                        <ShoppingCart size={36} />
+                      </div>
+                      <h5 className="card-title text-center mb-3">
+                        {commande.nomProduit}
+                      </h5>
+                      <div className="card-text small">
                         <p>
-                          <Fingerprint
+                          <Hash size={16} className="me-2 text-success" />
+                          <strong>ID Commande:</strong> {commande.id}
+                        </p>
+                        <p>
+                          <Hash size={16} className="me-2 text-success" />
+                          <strong>ID Lot Produit:</strong>{" "}
+                          {commande.idLotProduit}
+                        </p>
+                        <p>
+                          <Package2 size={16} className="me-2 text-success" />
+                          <strong>Quantité:</strong> {commande.quantite} kg
+                        </p>
+                        <p>
+                          <Archive size={16} className="me-2 text-success" />
+                          <strong>Collecteur:</strong>{" "}
+                          {commande.collecteur?.nom}
+                        </p>
+                        <p>
+                          <LucideTruck
                             size={16}
                             className="me-2 text-success"
                           />
-                          <strong>Hash transaction:</strong>{" "}
-                          <a
-                            href={URL_BLOCK_SCAN + commande.hashTransaction}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {commande.hashTransaction?.slice(0, 6)}...
-                            {commande.hashTransaction?.slice(-4)}
-                          </a>
+                          <strong>Transporteur:</strong>{" "}
+                          {commande.transporteur?.nom || "N/A"}
                         </p>
-                      )}
-                    </div>
-                    <div>
-                      {/* Btn pour afficher les conditions transport */}
-                      {commande.enregistrerCondition && (
-                        <button
-                          className="btn btn-outline-success btn-sm w-100"
-                          onClick={() => {
-                            setDetailsCondition({
-                              temperature: commande.temperature || null,
-                              humidite: commande.humidite || null,
-                              cidRapportTransport:
-                                commande.cidRapportTransport || null,
-                              dureeTransport: commande.dureeTransport,
-                              lieuDepart: commande.lieuDepart,
-                              destination: commande.destination,
-                            });
-                            setShowDetailsModal(true);
-                          }}
-                        >
-                          Voir détails conditions
-                        </button>
-                      )}
-                    </div>
-                    {expandedId === commande.id && commande.ipfsRoot && (
-                      <div className="mt-3">
-                        <div
-                          className="alert alert-secondary"
-                          role="alert"
-                          style={{ whiteSpace: "pre-wrap" }}
-                        >
-                          <div className="mb-2">
-                            <strong>Type:</strong>{" "}
-                            {commande.ipfsType || "inconnu"}
-                          </div>
-                          <pre
-                            className="mb-0"
-                            style={{ maxHeight: 240, overflow: "auto" }}
-                          >
-                            {JSON.stringify(commande.ipfsRoot, null, 2)}
-                          </pre>
-                        </div>
+                        {commande.statutTransport === 1 && (
+                          <p>
+                            <Fingerprint
+                              size={16}
+                              className="me-2 text-success"
+                            />
+                            <strong>Hash transaction:</strong>{" "}
+                            <a
+                              href={URL_BLOCK_SCAN + commande.hashTransaction}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {commande.hashTransaction?.slice(0, 6)}...
+                              {commande.hashTransaction?.slice(-4)}
+                            </a>
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                      <div>
+                        {/* Btn pour afficher les conditions transport */}
+                        {commande.enregistrerCondition && (
+                          <button
+                            className="btn btn-outline-success btn-sm w-100"
+                            onClick={() => {
+                              setDetailsCondition({
+                                temperature: commande.temperature || null,
+                                humidite: commande.humidite || null,
+                                cidRapportTransport:
+                                  commande.cidRapportTransport || null,
+                                dureeTransport: commande.dureeTransport,
+                                lieuDepart: commande.lieuDepart,
+                                destination: commande.destination,
+                              });
+                              setShowDetailsModal(true);
+                            }}
+                          >
+                            Voir détails conditions
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
 
-            {/* Indicateur de chargement */}
-            {isLoading && (
-              <div className="col-md-4">
-                <Skeleton
-                  width={"100%"}
-                  height={"100%"}
-                  style={{ minHeight: 200 }}
-                />
-              </div>
-            )}
-
             {/* Btn pour charger plus de recoltes */}
-            {dernierCommandeCharger >= DEBUT_COMMANDE_LOT_PRODUIT && (
+            {hasMore && (
               <div className="text-center mt-3">
                 <button
                   className="btn btn-outline-success"
-                  onClick={() => chargerCommandes(false)}
+                  onClick={() => chargerPlus()}
                 >
                   Charger plus
                 </button>
               </div>
             )}
           </div>
-        ) : commandes.length === 0 ? (
-          <div className="text-center text-muted">
-            Vous n&apos;avez pas encore passé de commandes.
-          </div>
         ) : (
-          commandesFiltres.length === 0 && (
-            <div className="text-center text-muted">
-              Aucune commande ne correspond à la recherche ou au filtre.
-            </div>
-          )
+          <div className="text-center text-muted">Aucune commande trouver.</div>
         )}
       </div>
 

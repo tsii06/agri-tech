@@ -190,10 +190,15 @@ export const getProduitEnrichi = async (id, roles = [], account = "") => {
 export const getCommandeLotProduitEnrichi = async (
   id,
   roles = [],
-  account = ""
+  account = "",
+  isStock = false
 ) => {
   try {
     const commandeRaw = await getCommandeProduit(id);
+
+    // ne pas afficher les commandes deja enregistrer dans le stock ou non payer
+    if (isStock && (commandeRaw.enregistre || !commandeRaw.payer))
+      return { isProprietaire: false };
 
     // Normaliser adresses
     const exportateurAddr =

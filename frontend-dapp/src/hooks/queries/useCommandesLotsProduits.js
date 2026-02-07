@@ -21,17 +21,19 @@ export const COMMANDES_LOTS_PRODUITS_KEYS = {
 export function useCommandesLotsProduitsUnAUn(
   idsToFetch,
   roles = [],
-  account = ""
+  account = "",
+  isStock = false
 ) {
   return useQueries({
     queries: idsToFetch.map((id) => ({
       // Si exportateur ou transporteur, utiliser un queryKey specifique.
       queryKey: hasRole(roles, 6)
-        ? COMMANDES_LOTS_PRODUITS_KEYS.detail(id, { exportateur: account })
+        ? COMMANDES_LOTS_PRODUITS_KEYS.detail(id, { exportateur: account, stock: isStock })
         : hasRole(roles, 5)
         ? COMMANDES_LOTS_PRODUITS_KEYS.detail(id, { transporteur: account })
         : COMMANDES_LOTS_PRODUITS_KEYS.detail(id),
-      queryFn: async () => await getCommandeLotProduitEnrichi(id, roles, account),
+      queryFn: async () =>
+        await getCommandeLotProduitEnrichi(id, roles, account, isStock),
       enabled: !!idsToFetch,
     })),
   });
