@@ -82,6 +82,7 @@ export const getCommandeRecolte = async (
     if (commande.enregistrerCondition) {
       try {
         const conditions = await getConditionTransportPC(commande.id);
+        console.log("Condition commande recolte :", conditions);
         commande = {
           ...commande,
           ...conditions,

@@ -4,7 +4,6 @@ import {
   DEBUT_COMMANDE_LOT_PRODUIT,
   DEBUT_COMMANDE_RECOLTE,
   getCollecteurExportateurContract,
-  getCollecteurProducteurContract,
 } from "../../utils/contract";
 import {
   ajouterKeyValuesFileIpfs,
@@ -32,7 +31,10 @@ import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
-import { useConditionTransportCommandeRecolte } from "../../hooks/mutations/mutationCommandesRecoltes";
+import {
+  useConditionTransportCommandeRecolte,
+  useUpdateStatusTransportCommandeRecolte,
+} from "../../hooks/mutations/mutationCommandesRecoltes";
 
 const contract = await getCollecteurExportateurContract();
 
@@ -58,7 +60,6 @@ function LivraisonRecolte() {
   const [lieuDepart, setLieuDepart] = useState("");
   const [destination, setDestination] = useState("");
   const [commandes, setCommandes] = useState([]);
-  const [commandesRecolte, setCommandesRecolte] = useState([]);
   const [error, setError] = useState(null);
   const [detailsCondition, setDetailsCondition] = useState({});
   const [rapportTransport, setRapportTransport] = useState(null);
@@ -120,6 +121,10 @@ function LivraisonRecolte() {
   // useMutation pour enregistrement condition transport commande recolte
   const conditionCommandeRecolteMutation =
     useConditionTransportCommandeRecolte();
+
+  // useMutation pour maj status transport commande recolte
+  const statusTransportCommandeRecolteMutation =
+    useUpdateStatusTransportCommandeRecolte();
 
   const chargerCommandeProduits = async (reset = false) => {
     setIsLoadingProduit(true);
@@ -198,13 +203,6 @@ function LivraisonRecolte() {
         1
       );
       await tx.wait();
-
-      // maj local
-      setCommandesRecolte((prev) =>
-        prev.map((cmd) =>
-          cmd.id === commandeId ? { ...cmd, statutTransport: 1 } : cmd
-        )
-      );
 
       alert("Statut de transport mis à jour avec succès !");
       setError(null);
@@ -327,16 +325,10 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.mettreAJourStatutTransport(commandeId, 1);
-      await tx.wait();
-
-      // maj local
-      setCommandesRecolte((prev) =>
-        prev.map((cmd) =>
-          cmd.id === commandeId ? { ...cmd, statutTransport: 1 } : cmd
-        )
-      );
+      await statusTransportCommandeRecolteMutation.mutateAsync({
+        id: commandeId,
+        status: 1, 
+      });
 
       alert("Statut de transport (Récolte) mis à jour avec succès !");
       setError(null);
@@ -410,23 +402,6 @@ function LivraisonRecolte() {
       await ajouterKeyValuesFileIpfs(uploaded.cid, {
         hashTransaction: tx.hash,
       });
-
-      // maj local
-      setCommandesRecolte((prev) =>
-        prev.map((cmd) =>
-          cmd.id == commandeId
-            ? {
-                ...cmd,
-                enregistrerCondition: true,
-                cidRapportTransport: uploadRapportTransport.cid,
-                dureeTransport: dureeTransport,
-                lieuDepart: lieuDepart,
-                destination: destination,
-                hashTransaction: tx.hash,
-              }
-            : cmd
-        )
-      );
 
       alert("Condition de transport (Récolte) enregistrée !");
       setShowConditionModal(false);

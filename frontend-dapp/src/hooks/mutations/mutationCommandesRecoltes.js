@@ -63,7 +63,46 @@ export function useConditionTransportCommandeRecolte() {
         error.response?.data?.message ||
         "Erreur lors de l'enregistrement condition transport commande recolte";
       alert(message);
-      console.error("Enregistrement condition transport commande recolte error:", error);
+      console.error(
+        "Enregistrement condition transport commande recolte error:",
+        error
+      );
+    },
+  });
+}
+
+// A l'enregistrement condition transport commande recolte
+export function useUpdateStatusTransportCommandeRecolte() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurProducteurWrite();
+      const res = await contract.write("mettreAJourStatutTransport", [
+        args.id,
+        args.status,
+      ]);
+      return { ...res, idCommandeRecolte: args.id };
+    },
+
+    onSuccess: (receipt) => {
+      // Refetch la commande recoltes concernee.
+      queryClient.invalidateQueries({
+        queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
+      });
+
+      console.log("✅ Transaction confirmée");
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors du maj status transport commande recolte";
+      alert(message);
+      console.error(
+        "Maj status transport commande recolte error:",
+        error
+      );
     },
   });
 }
