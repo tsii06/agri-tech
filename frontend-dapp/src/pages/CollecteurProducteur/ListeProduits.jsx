@@ -11,7 +11,6 @@ import {
   Calendar,
   FileCheck2,
   Search,
-  ChevronDown,
   User,
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
@@ -26,6 +25,7 @@ import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurExportateurRead } from "../../config/onChain/frontContracts";
 import { useProduitsUnAUn } from "../../hooks/queries/useProduits";
+import { useEnregistrementProduit } from "../../hooks/mutations/mutationProduits";
 
 // Tab de tous les ids recoltes
 const compteurProduits = Number(
@@ -40,11 +40,8 @@ const NBR_ITEMS_PAR_PAGE = 9;
 
 function ListeProduits() {
   const { address } = useParams();
-  const [produits, setProduits] = useState([]);
   const [btnLoading, setBtnLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [statutFiltre, setStatutFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [produitFiltreNom, setProduitFiltreNom] = useState(null);
   const [showLotModal, setShowLotModal] = useState(false);
@@ -66,6 +63,9 @@ function ListeProduits() {
 
   // Check si on peut charger plus
   const hasMore = produitsToShow < produitsIDs.length;
+
+  // useMutation pour l'enregistrement de produit
+  const enregistrementMutation = useEnregistrementProduit();
 
   const handleCheckboxChange = (produitId, produitNom) => {
     setSelectedProducts((prevSelected) => {
@@ -101,9 +101,9 @@ function ListeProduits() {
 
       // Nom du lot a creer
       let nomLot = "";
-      for (let p of produits) {
-        if (selectedProducts.includes(p.id)) {
-          nomLot = p.nom;
+      for (let query of produitsFiltres) {
+        if (selectedProducts.includes(query.data.id)) {
+          nomLot = query.data.nom;
           break;
         }
       }
@@ -112,19 +112,18 @@ function ListeProduits() {
       const dataLot = {
         id: idLastLot + 1,
         nom: nomLot,
-        certificatsPhytosanitaires: produits
-          .filter((p) => selectedProducts.includes(p.id))
-          .map((p) => p.certificatPhytosanitaire),
+        certificatsPhytosanitaires: produitsFiltres
+          .filter((q) => selectedProducts.includes(q.data.id))
+          .map((q) => q.data.certificatPhytosanitaire),
       };
       const resUploadLot = await uploadLotProduit(dataLot, account);
       cid = resUploadLot.cid;
 
-      const tx = await contract.ajouterLotProduit(
-        selectedProducts,
-        resUploadLot.cid,
-        Number(lotPrix)
-      );
-      await tx.wait();
+      const tx = await enregistrementMutation.mutateAsync({
+        produitsIDs: selectedProducts,
+        cid: resUploadLot.cid,
+        prix: Number(lotPrix),
+      });
 
       // ajouter le hash transaction dans les keyvalues du fichier ipfs lot produit
       await ajouterKeyValuesFileIpfs(resUploadLot.cid, {
@@ -161,13 +160,8 @@ function ListeProduits() {
     const matchSearch =
       (produit.nom && produit.nom.toLowerCase().includes(searchLower)) ||
       (produit.id && produit.id.toString().includes(searchLower));
-    const matchStatut =
-      statutFiltre === "all" ||
-      (statutFiltre === "valide" && produit.statut === 1) ||
-      (statutFiltre === "attente" && produit.statut === 0) ||
-      (statutFiltre === "rejete" && produit.statut === 2);
     const matchNom = produitFiltreNom ? produit.nom === produitFiltreNom : true;
-    return matchSearch && matchStatut && matchNom;
+    return matchSearch && matchNom;
   });
 
   // Charger encore plus si le nbr de produits, si filtrees === 0 ou si la page n'est pas pleine.
@@ -206,59 +200,9 @@ function ListeProduits() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
-          </div>
-          <div className="dropdown">
-            <button
-              className="btn btn-outline-success dropdown-toggle d-flex align-items-center"
-              type="button"
-              id="dropdownStatut"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <ChevronDown size={16} className="me-1" />
-              {statutFiltre === "all" && "Tous les statuts"}
-              {statutFiltre === "valide" && "Validés"}
-              {statutFiltre === "attente" && "En attente"}
-              {statutFiltre === "rejete" && "Rejetés"}
-            </button>
-            <ul className="dropdown-menu" aria-labelledby="dropdownStatut">
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("all")}
-                >
-                  Tous les statuts
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("valide")}
-                >
-                  Validés
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("attente")}
-                >
-                  En attente
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => setStatutFiltre("rejete")}
-                >
-                  Rejetés
-                </button>
-              </li>
-            </ul>
           </div>
         </div>
         <div
@@ -475,16 +419,8 @@ function ListeProduits() {
               </div>
             )}
           </div>
-        ) : produits.length === 0 ? (
-          <div className="text-center text-muted">
-            Vous n&apos;avez pas encore de produits.
-          </div>
         ) : (
-          produitsFiltres.length === 0 && (
-            <div className="text-center text-muted">
-              Aucun produit ne correspond à la recherche ou au filtre.
-            </div>
-          )
+          <div className="text-center text-muted">Aucun produit trouver.</div>
         )}
 
         {showLotModal && (

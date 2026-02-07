@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useState } from "react";
 import {
-  DEBUT_LOT_PRODUIT,
   getCollecteurExportateurContract,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
@@ -20,19 +19,12 @@ import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
-import { collecteurExportateurRead } from "../../config/onChain/frontContracts";
-import { useLotsProduitsUnAUn } from "../../hooks/queries/useLotsProduits";
+import {
+  useLotsProduitsIDs,
+  useLotsProduitsUnAUn,
+} from "../../hooks/queries/useLotsProduits";
 import { useUpdatePrixLotProduit } from "../../hooks/mutations/mutationLotsProduits";
 
-// Tab de tous les ids recoltes
-const compteurLotProduits = Number(
-  await collecteurExportateurRead.read("compteurLotProduits")
-);
-const lotsProduitsIDs = Array.from(
-  { length: compteurLotProduits - DEBUT_LOT_PRODUIT + 1 },
-  (_, i) => compteurLotProduits - i
-);
-// Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
 
 function ListeLotProduits() {
@@ -49,10 +41,13 @@ function ListeLotProduits() {
   const { roles, account } = useUserContext();
   const nav = useNavigate();
 
+  // Recuperation de la liste de id lots produits
+  const { data: lotsProduitsIDs } = useLotsProduitsIDs();
+
   // Nbr de recoltes par tranche
   const [lotsProduitsToShow, setLotsProduitsToShow] =
     useState(NBR_ITEMS_PAR_PAGE);
-  const idsToFetch = lotsProduitsIDs.slice(0, lotsProduitsToShow);
+  const idsToFetch = lotsProduitsIDs?.slice(0, lotsProduitsToShow) || [];
 
   // Utiliser cache pour stocker liste recolte. ================= //
   // Si address est definie, recuperer les lots de produits de l'address, si non celles de l'user.
@@ -64,12 +59,12 @@ function ListeLotProduits() {
   // Charger 9 de plus
   const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
     setLotsProduitsToShow((prev) =>
-      Math.min(prev + plus, lotsProduitsIDs.length)
+      Math.min(prev + plus, lotsProduitsIDs?.length)
     );
   };
 
   // Check si on peut charger plus
-  const hasMore = lotsProduitsToShow < lotsProduitsIDs.length;
+  const hasMore = lotsProduitsToShow < lotsProduitsIDs?.length;
 
   // useMutation pour la modification prix
   const updatePrixMutation = useUpdatePrixLotProduit();
