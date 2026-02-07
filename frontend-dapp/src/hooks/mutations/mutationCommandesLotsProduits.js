@@ -71,38 +71,38 @@ export function useConditionTransportCommandeLotProduit() {
   });
 }
 
-// // A l'enregistrement condition transport commande recolte
-// export function useUpdateStatusTransportCommandeRecolte() {
-//   const queryClient = useQueryClient();
+// // A l'enregistrement condition transport commande lot produit
+export function useUpdateStatusTransportCommandeLotProduit() {
+  const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: async (args) => {
-//       const contract = await getCollecteurProducteurWrite();
-//       const res = await contract.write("mettreAJourStatutTransport", [
-//         args.id,
-//         args.status,
-//       ]);
-//       return { ...res, idCommandeRecolte: args.id };
-//     },
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurExportateurWrite();
+      const res = await contract.write("mettreAJourStatutTransport", [
+        args.id,
+        args.status,
+      ]);
+      return { ...res, idCommandeRecolte: args.id };
+    },
 
-//     onSuccess: (receipt) => {
-//       // Refetch la commande recoltes concernee.
-//       queryClient.invalidateQueries({
-//         queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
-//       });
+    onSuccess: (receipt) => {
+      // Refetch la commande recoltes concernee.
+      queryClient.invalidateQueries({
+        queryKey: COMMANDES_LOTS_PRODUITS_KEYS.detail(receipt.idCommandeRecolte),
+      });
 
-//       console.log("✅ Transaction confirmée");
-//     },
+      console.log("✅ Transaction confirmée");
+    },
 
-//     onError: (error) => {
-//       const message =
-//         error.response?.data?.message ||
-//         "Erreur lors du maj status transport commande recolte";
-//       alert(message);
-//       console.error("Maj status transport commande recolte error:", error);
-//     },
-//   });
-// }
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors du maj status transport commande lot produit";
+      alert(message);
+      console.error("Maj status transport commande lot produit error:", error);
+    },
+  });
+}
 
 // // A l'enregistrement condition transport commande recolte
 // export function useValiderCommandeRecolte() {

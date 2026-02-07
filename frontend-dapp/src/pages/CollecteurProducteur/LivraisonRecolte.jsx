@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   DEBUT_COMMANDE_RECOLTE,
-  getCollecteurExportateurContract,
 } from "../../utils/contract";
 import {
   ajouterKeyValuesFileIpfs,
@@ -33,7 +32,10 @@ import {
   useCommandesLotsProduitsIDs,
   useCommandesLotsProduitsUnAUn,
 } from "../../hooks/queries/useCommandesLotsProduits";
-import { useConditionTransportCommandeLotProduit } from "../../hooks/mutations/mutationCommandesLotsProduits";
+import {
+  useConditionTransportCommandeLotProduit,
+  useUpdateStatusTransportCommandeLotProduit,
+} from "../../hooks/mutations/mutationCommandesLotsProduits";
 
 // Tab de tous les ids recoltes
 const compteurCommandesRecoltes = Number(
@@ -171,9 +173,13 @@ function LivraisonRecolte() {
         (commandesLotsProduitsFiltres.length % NBR_ITEMS_PAR_PAGE)
     );
 
-  // useMutation pour enregistrement condition transport commande recolte
+  // useMutation pour enregistrement condition transport commande lot produit
   const conditionCommandeLotProduitMutation =
     useConditionTransportCommandeLotProduit();
+
+  // useMutation pour maj status transport commande lot produit
+  const statusTransportCommandeLotProduitMutation =
+    useUpdateStatusTransportCommandeLotProduit();
 
   const getStatutTransportLabel = (statutCode) => {
     switch (statutCode) {
@@ -190,12 +196,10 @@ function LivraisonRecolte() {
     setIsProcessing(true);
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurExportateurContract();
-      const tx = await contract.mettreAJourStatutTransport(
-        Number(commandeId),
-        1
-      );
-      await tx.wait();
+      await statusTransportCommandeLotProduitMutation.mutateAsync({
+        id: Number(commandeId),
+        status: 1,
+      });
 
       alert("Statut de transport mis à jour avec succès !");
       setError(null);
