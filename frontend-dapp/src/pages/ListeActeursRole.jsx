@@ -2,9 +2,6 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import {
-  getCollecteurExportateurContract,
-} from "../utils/contract";
-import {
   User,
   Mail,
   Phone,
@@ -24,6 +21,7 @@ import {
   useAddressActeursByRole,
 } from "../hooks/queries/useActeurs";
 import { useChoixTransporteurCommandeRecolte } from "../hooks/mutations/mutationCommandesRecoltes";
+import { useChoixTransporteurCommandeLotProduit } from "../hooks/mutations/mutationCommandesLotsProduits";
 
 const ROLE_LABELS = [
   "Producteur", // 0
@@ -92,6 +90,8 @@ export default function ListeActeursRole() {
   // useMutation pour la choix de transporteur
   const choixTransporteurCommandeRecolte =
     useChoixTransporteurCommandeRecolte();
+  const choixTransporteurCommandeLotProduit =
+    useChoixTransporteurCommandeLotProduit();
 
   const handleChoisirTransporteurCommandeRecolte = async (addrTransporteur) => {
     setBtnLoading(true);
@@ -121,14 +121,12 @@ export default function ListeActeursRole() {
   const handleChoisirTransporteurCommandeProduit = async (addrTransporteur) => {
     setBtnLoading(true);
     try {
-      const contrat = await getCollecteurExportateurContract();
-      const tx = await contrat.choisirTransporteurCommandeProduit(
-        idCommandeP,
-        addrTransporteur
-      );
-      tx.wait();
+      await choixTransporteurCommandeLotProduit.mutateAsync({
+        id: idCommandeP,
+        addrTransporteur: addrTransporteur,
+      });
 
-      nav("/mes-commandes-exportateur", { refresh: Date.now() });
+      nav("/mes-commandes-exportateur");
     } catch (error) {
       console.error(
         "Erreur lors du choix de transporteur pour la commande recolte : ",
