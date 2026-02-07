@@ -1,35 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createRecolte } from "../../utils/contrat/collecteurProducteur";
-import { getCollecteurExportateurWrite, getCollecteurProducteurWrite } from "../../config/onChain/frontContracts";
+import { getCollecteurExportateurWrite } from "../../config/onChain/frontContracts";
 import { LOTS_PRODUITS_KEYS } from "../queries/useLotsProduits";
-
-// A la creation d'une recotle
-export function useCreateRecolte(account) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (args) =>
-      await createRecolte(args.recolteData, args.parcelle),
-
-    onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: LOTS_PRODUITS_KEYS.lists() });
-      // Refetch la cache pour la liste de tous les parcelles du producteur.
-      queryClient.invalidateQueries({
-        queryKey: LOTS_PRODUITS_KEYS.list({ producteur: account }),
-      });
-
-      console.log("✅ Transaction confirmée:", receipt);
-    },
-
-    onError: (error) => {
-      const message =
-        error.response?.data?.message || "Erreur lors de la création";
-      alert(message);
-      console.error("Create user error:", error);
-    },
-  });
-}
+import { COMMANDES_LOTS_PRODUITS_KEYS } from "../queries/useCommandesLotsProduits";
 
 // A la modification de prix d'une recotle
 export function useUpdatePrixLotProduit() {
@@ -61,54 +33,29 @@ export function useUpdatePrixLotProduit() {
   });
 }
 
-// A la certification d'une recolte
-export function useCertificateRecolte() {
+// A la commeande d'un lot produit
+export function useCommandeLotProduit() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (args) => {
-      const collecteurProducteurContract = await getCollecteurProducteurWrite();
-      await collecteurProducteurContract.write("certifieRecolte", [
-        args.id,
-        args.cid,
-      ]);
-      return { idRecolte: args.id };
+      const contract = await getCollecteurExportateurWrite();
+      await contract.write("passerCommande", [args.id, args.quantite]);
+      return { idCommandeLotProduit: args.id };
     },
 
     onSuccess: (receipt) => {
       // Refetch la recolte concernee.
-      queryClient.invalidateQueries({ queryKey: LOTS_PRODUITS_KEYS.detail(receipt.idRecolte) });
+      queryClient.invalidateQueries({
+        queryKey: LOTS_PRODUITS_KEYS.detail(receipt.idCommandeLotProduit),
+      });
 
-      console.log("✅ Transaction confirmée");
-    },
-
-    onError: (error) => {
-      const message =
-        error.response?.data?.message ||
-        "Erreur lors de la certification recolte";
-      alert(message);
-      console.error("Certificate recolte error:", error);
-    },
-  });
-}
-
-// A la commeande d'une recotle
-export function useCommandeRecolte() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (args) => {
-      const contract = await getCollecteurProducteurWrite();
-      await contract.write("passerCommandeVersProducteur", [
-        args.id,
-        args.quantite,
-      ]);
-      return { idRecolte: args.id };
-    },
-
-    onSuccess: (receipt) => {
-      // Refetch la recolte concernee.
-      queryClient.invalidateQueries({ queryKey: LOTS_PRODUITS_KEYS.detail(receipt.idRecolte) });
+      // Il y a creatin de nouveau commande lot produit. Attendre 3s pour que la blockchain se met a jour.
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: COMMANDES_LOTS_PRODUITS_KEYS.compteur,
+        });
+      }, 3000);
 
       console.log("✅ Transaction confirmée");
     },

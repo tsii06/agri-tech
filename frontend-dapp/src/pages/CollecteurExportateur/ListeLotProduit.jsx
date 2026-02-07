@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useState } from "react";
 import {
-  getCollecteurExportateurContract,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,7 +22,10 @@ import {
   useLotsProduitsIDs,
   useLotsProduitsUnAUn,
 } from "../../hooks/queries/useLotsProduits";
-import { useUpdatePrixLotProduit } from "../../hooks/mutations/mutationLotsProduits";
+import {
+  useCommandeLotProduit,
+  useUpdatePrixLotProduit,
+} from "../../hooks/mutations/mutationLotsProduits";
 
 const NBR_ITEMS_PAR_PAGE = 9;
 
@@ -69,6 +71,9 @@ function ListeLotProduits() {
   // useMutation pour la modification prix
   const updatePrixMutation = useUpdatePrixLotProduit();
 
+  // useMutation pour la commande lot produit
+  const commandeMutation = useCommandeLotProduit();
+
   const handleModifierPrix = async (produitId) => {
     setBtnLoading(true);
     try {
@@ -103,7 +108,6 @@ function ListeLotProduits() {
   const handleCommanderProduit = async (produitId) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurExportateurContract();
       // Vérifier la quantité
       const quantite = Number(quantiteCommande);
       if (
@@ -115,8 +119,10 @@ function ListeLotProduits() {
         return;
       }
       // Appel du smart contract pour commander
-      const tx = await contract.passerCommande(produitId, quantite);
-      await tx.wait();
+      await commandeMutation.mutateAsync({
+        id: produitId,
+        quantite: quantite,
+      });
       alert("Commande passée avec succès !");
       setShowModal(false);
       setProduitSelectionne(null);
