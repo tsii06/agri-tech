@@ -23,7 +23,7 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     hasRole(roles, 3) &&
     produitRaw.collecteur.toLowerCase() !== account.toLowerCase()
   ) {
-    return null;
+    return { isProprietaire: false };
   }
 
   // convertir en array
@@ -33,15 +33,17 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
 
   let produitEnrichi = {
     id: _id,
-    idRecolte: idRecoltes.map(el => Number(el)),
-    idCommandeRecoltes: idCommandeRecoltes.map(el => Number(el)),
+    idRecolte: idRecoltes.map((el) => Number(el)),
+    idCommandeRecoltes: idCommandeRecoltes.map((el) => Number(el)),
     quantite: Number(produitRaw.quantite ?? 0),
     prixUnit: Number(produitRaw.prix ?? 0),
-    collecteur: {...await getActeur(collecteurAddr), adresse: collecteurAddr},
+    collecteur: {
+      ...(await getActeur(collecteurAddr)),
+      adresse: collecteurAddr,
+    },
     cid: produitRaw.cid,
     hashMerkle: produitRaw.hashMerkle || "",
   };
-  
 
   // Enrichir depuis le fichier ipfs
   const res = await getFileFromPinata(produitRaw.cid);
@@ -49,15 +51,15 @@ export const getLotProduitEnrichi = async (_id, roles = [], account = "") => {
     ...res?.data?.items,
     ...res?.keyvalues,
     ...produitEnrichi,
-  }
-  
+  };
+
   return produitEnrichi;
 };
 
 /**
- * 
- * @param {number} _idCommande 
- * @returns 
+ *
+ * @param {number} _idCommande
+ * @returns
  */
 export const getConditionTransportCE = async (_idCommande) => {
   const contrat = await getCollecteurExportateurContract();
@@ -83,15 +85,15 @@ export const getConditionTransportCE = async (_idCommande) => {
   conditionComplet = {
     ...conditionComplet,
     ...conditionIpfs.data.items,
-    ...conditionIpfs?.keyvalues
+    ...conditionIpfs?.keyvalues,
   };
   return conditionComplet;
 };
 
 /**
- * 
- * @param {number} _idCommande 
- * @returns 
+ *
+ * @param {number} _idCommande
+ * @returns
  */
 export const getCommandeProduit = async (_idCommande) => {
   const contrat = await getCollecteurExportateurContract();
@@ -101,7 +103,10 @@ export const getCommandeProduit = async (_idCommande) => {
 
     const collecteurDetails = await getActeur(res.collecteur?.toString());
     const exportateurDetails = await getActeur(res.exportateur?.toString());
-    const transporteurDetails = res.transporteur !== ethers.ZeroAddress ? await getActeur(res.transporteur.toString()):{};
+    const transporteurDetails =
+      res.transporteur !== ethers.ZeroAddress
+        ? await getActeur(res.transporteur.toString())
+        : {};
 
     return {
       id: Number(res.id),
@@ -111,9 +116,15 @@ export const getCommandeProduit = async (_idCommande) => {
       statutTransport: Number(res.statutTransport),
       statutProduit: Number(res.statutProduit),
       payer: res.payer,
-      collecteur: {...collecteurDetails, adresse: res.collecteur?.toString()},
-      exportateur: {...exportateurDetails, adresse: res.exportateur?.toString()},
-      transporteur: {...transporteurDetails, adresse: res.transporteur?.toString()},
+      collecteur: { ...collecteurDetails, adresse: res.collecteur?.toString() },
+      exportateur: {
+        ...exportateurDetails,
+        adresse: res.exportateur?.toString(),
+      },
+      transporteur: {
+        ...transporteurDetails,
+        adresse: res.transporteur?.toString(),
+      },
       enregistre: res.enregistre,
       enregistrerCondition: res.enregistrerCondition,
     };

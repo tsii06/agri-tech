@@ -6,6 +6,7 @@ import producteurEnPhaseCultureABI from "../../abi/ProducteurEnPhaseCulture.json
 import collecteurProducteurABI from "../../abi/CollecteurProducteur.json";
 import gestionnaireActeursABI from "../../abi/GestionnaireActeurs.json";
 import exportateurClientABI from "../../abi/ExportateurClient.json";
+import collecteurExportateurABI from "../../abi/CollecteurExportateur.json";
 import { config } from "../frontConfig";
 
 // Les contrats read-only
@@ -27,6 +28,11 @@ export const gestionnaireActeursRead = new SmartContractManager(
 export const exportateurClientRead = new SmartContractManager(
   config.addrExportateurClient,
   exportateurClientABI.abi,
+  wsProvider
+);
+export const collecteurExportateurRead = new SmartContractManager(
+  config.addrCollecteurExportateur,
+  collecteurExportateurABI.abi,
   wsProvider
 );
 

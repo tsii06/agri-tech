@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/rules-of-hooks */
+import { useState } from "react";
 import {
   DEBUT_LOT_PRODUIT,
   getCollecteurExportateurContract,
@@ -6,7 +7,6 @@ import {
 } from "../../utils/contract";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Box,
   Group,
   Hash,
   Package2,
@@ -18,94 +18,62 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import {
-  deleteFromIPFSByCid,
-  getIPFSURL,
-  uploadLotProduit,
-} from "../../utils/ipfsUtils";
-import { getLotProduitEnrichi } from "../../utils/collecteurExporatateur";
+import { deleteFromIPFSByCid, uploadLotProduit } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
+import { collecteurExportateurRead } from "../../config/onChain/frontContracts";
+import { useLotsProduitsUnAUn } from "../../hooks/queries/useLotsProduits";
+
+// Tab de tous les ids recoltes
+const compteurLotProduits = Number(
+  await collecteurExportateurRead.read("compteurLotProduits")
+);
+const lotsProduitsIDs = Array.from(
+  { length: compteurLotProduits - DEBUT_LOT_PRODUIT + 1 },
+  (_, i) => compteurLotProduits - i
+);
+// Nbr de recoltes par chargement
+const NBR_ITEMS_PAR_PAGE = 9;
 
 function ListeLotProduits() {
   const { address } = useParams();
   const [produits, setProduits] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [_, setState] = useState({});
+  const [, setState] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [produitSelectionne, setProduitSelectionne] = useState(null);
   const [nouveauPrix, setNouveauPrix] = useState("");
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(9);
   const [quantiteCommande, setQuantiteCommande] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showLotModal, setShowLotModal] = useState(false);
   const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
   const nav = useNavigate();
-  const [dernierLotProduitCharger, setDernierLotProduitCharger] = useState(
-    () => 0
-  );
 
-  const chargerProduits = async (reset = false) => {
-    setIsLoading(true);
-    try {
-      const contract = await getCollecteurExportateurContract();
+  // Nbr de recoltes par tranche
+  const [lotsProduitsToShow, setLotsProduitsToShow] =
+    useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetch = lotsProduitsIDs.slice(0, lotsProduitsToShow);
 
-      // Obtenir le nombre total de produits
-      const compteurProduitsRaw =
-        dernierLotProduitCharger !== 0 && reset !== true
-          ? dernierLotProduitCharger
-          : await contract.compteurLotProduits();
-      const compteurProduits = Number(compteurProduitsRaw);
+  // Utiliser cache pour stocker liste recolte. ================= //
+  // Si address est definie, recuperer les lots de produits de l'address, si non celles de l'user.
+  const lotsProduitsUnAUn =
+    address === undefined
+      ? useLotsProduitsUnAUn(idsToFetch, roles, account)
+      : useLotsProduitsUnAUn(idsToFetch, [3], address);
 
-      let nbrLotProduitCharger = 9;
-      let i;
-      let lotProduit;
-
-      for (
-        i = compteurProduits;
-        i >= DEBUT_LOT_PRODUIT && nbrLotProduitCharger > 0;
-        i--
-      ) {
-        if (address !== undefined)
-          lotProduit = await getLotProduitEnrichi(i, [3], address);
-        else
-          lotProduit = await getLotProduitEnrichi(i, roles, account);
-
-        console.log("Lot produit enrichi : ", lotProduit);
-
-        if (lotProduit) {
-          if (reset === true) {
-            setProduits([lotProduit]);
-            reset = false;
-          } else
-            setProduits((prev) => [...prev, lotProduit]);
-          nbrLotProduitCharger--;
-        }
-      }
-      setDernierLotProduitCharger(i);
-
-      setError(false);
-    } catch (error) {
-      console.error("Erreur lors du chargement des produits:", error);
-      setError("Erreur lors du chargement des produits");
-    } finally {
-      setIsLoading(false);
-    }
+  // Charger 9 de plus
+  const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setLotsProduitsToShow((prev) =>
+      Math.min(prev + plus, lotsProduitsIDs.length)
+    );
   };
 
-  useEffect(() => {
-    if (!account && !address) {
-      setIsLoading(false);
-      return;
-    }
-    setProduits([]);
-    chargerProduits(true);
-  }, [address, account, _, roles]);
+  // Check si on peut charger plus
+  const hasMore = lotsProduitsToShow < lotsProduitsIDs.length;
 
   const handleModifierPrix = async (produitId) => {
     setBtnLoading(true);
@@ -239,7 +207,14 @@ function ListeLotProduits() {
   };
 
   // Filtrage produits selon recherche et statut
-  const produitsFiltres = produits.filter((produit) => {
+  const produitsFiltres = lotsProduitsUnAUn.filter((q) => {
+    const produit = q.data;
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les recoltes qui n'apartient pas a l'user si user est producteur, ou ce qui n'appartiennent pas a address si definit.
+    if (produit.isProprietaire && !produit.isProprietaire) return false;
+
     const searchLower = search.toLowerCase();
     const matchSearch =
       (produit.nom && produit.nom.toLowerCase().includes(searchLower)) ||
@@ -251,7 +226,16 @@ function ListeLotProduits() {
       (statutFiltre === "rejete" && produit.statut === 2);
     return matchSearch && matchStatut;
   });
-  const produitsAffiches = produitsFiltres.slice(0, visibleCount);
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (produitsFiltres.length === 0 ||
+      produitsFiltres.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlus(
+      NBR_ITEMS_PAR_PAGE - (produitsFiltres.length % NBR_ITEMS_PAR_PAGE)
+    );
 
   if (!account && !address) {
     return (
@@ -279,7 +263,6 @@ function ListeLotProduits() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
@@ -352,7 +335,9 @@ function ListeLotProduits() {
               <div className="d-flex align-items-center">
                 <Hash size={20} className="me-2 text-primary" />
                 <span className="small">
-                  <strong>{produits.filter((p) => p.cid).length}</strong>{" "}
+                  <strong>
+                    {produitsFiltres.filter((q) => q.data?.cid).length}
+                  </strong>{" "}
                   produits avec données IPFS
                 </span>
               </div>
@@ -361,7 +346,9 @@ function ListeLotProduits() {
               <div className="d-flex align-items-center">
                 <Hash size={20} className="me-2 text-warning" />
                 <span className="small">
-                  <strong>{produits.filter((p) => p.hashMerkle).length}</strong>{" "}
+                  <strong>
+                    {produitsFiltres.filter((q) => q.data?.hashMerkle).length}
+                  </strong>{" "}
                   produits avec hash Merkle
                 </span>
               </div>
@@ -370,7 +357,7 @@ function ListeLotProduits() {
               <div className="d-flex align-items-center">
                 <Package2 size={20} className="me-2 text-success" />
                 <span className="small">
-                  <strong>{produits.length}</strong> produits au total
+                  <strong>{produitsFiltres.length}</strong> produits au total
                 </span>
               </div>
             </div>
@@ -386,141 +373,139 @@ function ListeLotProduits() {
           )}
         </div>
 
-        {produits.length > 0 || isLoading ? (
+        {produitsFiltres.length > 0 ? (
           /* Affichage des lots de produits */
           <div className="row g-3">
             <AnimatePresence>
-              {produitsAffiches.map((produit) => (
-                <motion.div
-                  key={produit.id}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div
-                    className="card border shadow-sm p-3"
-                    style={{
-                      borderRadius: 16,
-                      boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
-                    }}
+              {produitsFiltres.map((q, index) => {
+                const produit = q.data;
+
+                // Skeleton si la recolte est encours de chargement
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
+                      />
+                    </div>
+                  );
+
+                // Afficher lot produit
+                return (
+                  <motion.div
+                    key={produit.id}
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
                   >
                     <div
-                      className="d-flex justify-content-center align-items-center mb-2"
-                      style={{ fontSize: 32, color: "#4d7c0f" }}
+                      className="card border shadow-sm p-3"
+                      style={{
+                        borderRadius: 16,
+                        boxShadow: "0 2px 12px 0 rgba(60,72,88,.08)",
+                      }}
                     >
-                      <Group size={36} />
-                    </div>
-                    <h5 className="card-title text-center mb-3">
-                      {produit.nom} #{produit.id}
-                    </h5>
-                    <div className="card-text small">
-                      <p>
-                        <Hash size={16} className="me-2 text-success" />
-                        <strong>ID Lot Produit:</strong> {produit.id}
-                      </p>
-                      <p>
-                        <Hash size={16} className="me-2 text-success" />
-                        <strong>IDs Récoltes:</strong>{" "}
-                        {produit.idRecolte.join(", ")}
-                      </p>
-                      <p>
-                        <Package2 size={16} className="me-2 text-success" />
-                        <strong>Quantité:</strong> {produit.quantite} kg
-                      </p>
-                      <p>
-                        <BadgeEuro size={16} className="me-2 text-success" />
-                        <strong>Prix unitaire:</strong> {produit.prixUnit} Ar
-                      </p>
-                      <p>
-                        <User size={16} className="me-2 text-success" />
-                        <strong>Collecteur:</strong>&nbsp;
-                        {produit.collecteur.nom}
-                      </p>
-                      {produit.hashTransaction &&
-                        produit.hashTransaction !== "" && (
-                          <p>
-                            <Fingerprint
-                              size={16}
-                              className="me-2 text-success"
-                            />
-                            <strong>Hash transaction:</strong>&nbsp;
-                            <a
-                              href={URL_BLOCK_SCAN + produit.hashTransaction}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {produit.hashTransaction?.slice(0, 6)}...
-                              {produit.hashTransaction?.slice(-4)}
-                            </a>
-                          </p>
+                      <div
+                        className="d-flex justify-content-center align-items-center mb-2"
+                        style={{ fontSize: 32, color: "#4d7c0f" }}
+                      >
+                        <Group size={36} />
+                      </div>
+                      <h5 className="card-title text-center mb-3">
+                        {produit.nom} #{produit.id}
+                      </h5>
+                      <div className="card-text small">
+                        <p>
+                          <Hash size={16} className="me-2 text-success" />
+                          <strong>ID Lot Produit:</strong> {produit.id}
+                        </p>
+                        <p>
+                          <Hash size={16} className="me-2 text-success" />
+                          <strong>IDs Récoltes:</strong>{" "}
+                          {produit.idRecolte.join(", ")}
+                        </p>
+                        <p>
+                          <Package2 size={16} className="me-2 text-success" />
+                          <strong>Quantité:</strong> {produit.quantite} kg
+                        </p>
+                        <p>
+                          <BadgeEuro size={16} className="me-2 text-success" />
+                          <strong>Prix unitaire:</strong> {produit.prixUnit} Ar
+                        </p>
+                        <p>
+                          <User size={16} className="me-2 text-success" />
+                          <strong>Collecteur:</strong>&nbsp;
+                          {produit.collecteur.nom}
+                        </p>
+                        {produit.hashTransaction &&
+                          produit.hashTransaction !== "" && (
+                            <p>
+                              <Fingerprint
+                                size={16}
+                                className="me-2 text-success"
+                              />
+                              <strong>Hash transaction:</strong>&nbsp;
+                              <a
+                                href={URL_BLOCK_SCAN + produit.hashTransaction}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {produit.hashTransaction?.slice(0, 6)}...
+                                {produit.hashTransaction?.slice(-4)}
+                              </a>
+                            </p>
+                          )}
+                      </div>
+                      <div className="mt-3">
+                        {/* Actions pour le collecteur */}
+                        {hasRole(roles, 3) && (
+                          <button
+                            onClick={() => {
+                              setProduitSelectionne(produit);
+                              setNouveauPrix(produit.prixUnit);
+                              setShowModal(true);
+                            }}
+                            className="btn btn-agrichain"
+                          >
+                            Modifier le prix
+                          </button>
                         )}
+                        {/* Actions pour le exportateur */}
+                        {hasRole(roles, 6) && (
+                          <button
+                            onClick={() => {
+                              setProduitSelectionne(produit);
+                              setShowModal("commander");
+                            }}
+                            className="btn-agrichain"
+                          >
+                            Commander
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-3">
-                      {/* Actions pour le collecteur */}
-                      {hasRole(roles, 3) && (
-                        <button
-                          onClick={() => {
-                            setProduitSelectionne(produit);
-                            setNouveauPrix(produit.prixUnit);
-                            setShowModal(true);
-                          }}
-                          className="btn btn-agrichain"
-                        >
-                          Modifier le prix
-                        </button>
-                      )}
-                      {/* Actions pour le exportateur */}
-                      {hasRole(roles, 6) && (
-                        <button
-                          onClick={() => {
-                            setProduitSelectionne(produit);
-                            setShowModal("commander");
-                          }}
-                          className="btn-agrichain"
-                        >
-                          Commander
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
 
-            {/* Indicateur de chargement */}
-            {isLoading && (
-              <div className="col-md-4">
-                <Skeleton
-                  width={"100%"}
-                  height={"100%"}
-                  style={{ minHeight: 200 }}
-                />
-              </div>
-            )}
-
-            {/* Btn pour charger plus de recoltes */}
-            {dernierLotProduitCharger >= DEBUT_LOT_PRODUIT && (
+            {/* Btn pour charger plus de lots produits */}
+            {hasMore && (
               <div className="text-center mt-3">
                 <button
                   className="btn btn-outline-success"
-                  onClick={chargerProduits}
+                  onClick={() => chargerPlus()}
                 >
                   Charger plus
                 </button>
               </div>
             )}
           </div>
-        ) : produits.length === 0 ? (
-          <div className="text-center text-muted">
-            Vous n&apos;avez pas encore de produits.
-          </div>
         ) : (
-          produitsFiltres.length === 0 && (
-            <div className="text-center text-muted">
-              Aucun produit ne correspond à la recherche ou au filtre.
-            </div>
-          )
+          <div className="text-center text-muted">Aucun produit trouver.</div>
         )}
 
         {showLotModal && (
@@ -698,17 +683,6 @@ function ListeLotProduits() {
             </div>
           </div>
         </>
-      )}
-
-      {produitsAffiches.length < produitsFiltres.length && (
-        <div className="text-center mt-3">
-          <button
-            className="btn btn-outline-success"
-            onClick={() => setVisibleCount(visibleCount + 9)}
-          >
-            Charger plus
-          </button>
-        </div>
       )}
     </div>
   );

@@ -6,4 +6,5 @@ export const config = {
     addrCollecteurProducteur: import.meta.env.VITE_COLLECTEUR_PRODUCTEUR_ADDR,
     addrGestionnaireActeurs: import.meta.env.VITE_GESTIONNAIRE_ACTEURS_ADDR,
     addrExportateurClient: import.meta.env.VITE_EXPORTATEUR_CLIENT_ADDR,
+    addrCollecteurExportateur: import.meta.env.VITE_COLLECTEUR_EXPORTATEUR_ADDR,
 };
