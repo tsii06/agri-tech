@@ -26,7 +26,11 @@ export function useEnregistrementProduit() {
         });
       });
       // apres enregistrement il y a ajoute de nouveau lot produits
-      queryClient.invalidateQueries({ queryKey: LOTS_PRODUITS_KEYS.compteur });
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: LOTS_PRODUITS_KEYS.compteur,
+        });
+      }, 3000);
 
       console.log("✅ Transaction confirmée");
     },

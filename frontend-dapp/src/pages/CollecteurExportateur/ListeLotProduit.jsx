@@ -59,7 +59,7 @@ function ListeLotProduits() {
   // Charger 9 de plus
   const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
     setLotsProduitsToShow((prev) =>
-      Math.min(prev + plus, lotsProduitsIDs?.length)
+      Math.min(prev + plus, lotsProduitsIDs?.length || 0)
     );
   };
 
@@ -324,7 +324,7 @@ function ListeLotProduits() {
                 // Afficher lot produit
                 return (
                   <motion.div
-                    key={produit.id}
+                    key={`${produit.id}-${index}`}
                     className="col-md-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
