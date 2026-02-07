@@ -18,11 +18,11 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import { hasRole } from "../../utils/roles";
-import { deleteFromIPFSByCid, uploadLotProduit } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurExportateurRead } from "../../config/onChain/frontContracts";
 import { useLotsProduitsUnAUn } from "../../hooks/queries/useLotsProduits";
+import { useUpdatePrixLotProduit } from "../../hooks/mutations/mutationLotsProduits";
 
 // Tab de tous les ids recoltes
 const compteurLotProduits = Number(
@@ -37,7 +37,6 @@ const NBR_ITEMS_PAR_PAGE = 9;
 
 function ListeLotProduits() {
   const { address } = useParams();
-  const [produits, setProduits] = useState([]);
   const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
   const [, setState] = useState({});
@@ -47,9 +46,6 @@ function ListeLotProduits() {
   const [search, setSearch] = useState("");
   const [statutFiltre, setStatutFiltre] = useState("all");
   const [quantiteCommande, setQuantiteCommande] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [showLotModal, setShowLotModal] = useState(false);
-  const [lotPrix, setLotPrix] = useState("");
   const { roles, account } = useUserContext();
   const nav = useNavigate();
 
@@ -75,11 +71,12 @@ function ListeLotProduits() {
   // Check si on peut charger plus
   const hasMore = lotsProduitsToShow < lotsProduitsIDs.length;
 
+  // useMutation pour la modification prix
+  const updatePrixMutation = useUpdatePrixLotProduit();
+
   const handleModifierPrix = async (produitId) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurExportateurContract();
-
       // Vérifier que le nouveau prix est valide
       const prix = Number(nouveauPrix);
       if (isNaN(prix) || prix <= 0) {
@@ -88,16 +85,10 @@ function ListeLotProduits() {
       }
 
       // Modifier le prix
-      const tx = await contract.setPriceProduit(produitId, prix);
-      await tx.wait();
-
-      // Mettre à jour l'état local
-      const produitsTemp = [...produits];
-      const index = produitsTemp.findIndex((p) => p.id === produitId);
-      if (index !== -1) {
-        produitsTemp[index].prixUnit = prix.toString();
-        setProduits(produitsTemp);
-      }
+      await updatePrixMutation.mutateAsync({
+        id: produitId,
+        prix: prix,
+      });
 
       // Fermer le modal
       setShowModal(false);
@@ -146,63 +137,6 @@ function ListeLotProduits() {
       );
     } finally {
       setBtnLoading(false);
-    }
-  };
-
-  const handleConfirmCreateLot = async () => {
-    if (!lotPrix || isNaN(Number(lotPrix)) || Number(lotPrix) <= 0) {
-      alert("Veuillez entrer un prix valide pour le lot.");
-      return;
-    }
-    let cid = "";
-
-    try {
-      const contract = await getCollecteurExportateurContract();
-      const idLastLot = Number(await contract.compteurLotProduits());
-
-      // Somme des quantiter des produits selectionners
-      let sommeQuantite = 0;
-      for (let p of produits) {
-        if (selectedProducts.includes(p.id)) sommeQuantite += p.quantite;
-      }
-
-      // Nom du lot a creer
-      let nomLot = "";
-      for (let p of produits) {
-        if (selectedProducts.includes(p.id)) {
-          nomLot = p.nom;
-          break;
-        }
-      }
-
-      // Uploader les data du lotProduit
-      const dataLot = {
-        id: idLastLot + 1,
-        quantite: sommeQuantite,
-        nom: nomLot,
-        prix: lotPrix,
-      };
-      const resUploadLot = await uploadLotProduit(dataLot, account);
-      cid = resUploadLot.cid;
-
-      const tx = await contract.ajouterLotProduit(
-        selectedProducts,
-        resUploadLot.cid,
-        Number(lotPrix)
-      );
-      await tx.wait();
-
-      alert("Lot créé avec succès !");
-      setSelectedProducts([]); // Reset selected products
-      setShowLotModal(false);
-      setLotPrix("");
-    } catch (error) {
-      console.error("Erreur lors de la création du lot:", error);
-      alert(
-        "Une erreur est survenue lors de la création du lot. Veuillez réessayer."
-      );
-      // suprimer le fichier sur ipfs si il y a erreur
-      if (cid !== "") deleteFromIPFSByCid(cid);
     }
   };
 
@@ -506,54 +440,6 @@ function ListeLotProduits() {
           </div>
         ) : (
           <div className="text-center text-muted">Aucun produit trouver.</div>
-        )}
-
-        {showLotModal && (
-          <>
-            <div className="modal-backdrop fade show"></div>
-            <div className="modal show d-block" tabIndex="-1">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Créer un lot</h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setShowLotModal(false)}
-                    ></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <label className="form-label">Prix par kilo (Ar)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={lotPrix}
-                        onChange={(e) => setLotPrix(e.target.value)}
-                        placeholder="Entrez le prix par kilo"
-                      />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowLotModal(false)}
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleConfirmCreateLot}
-                    >
-                      Confirmer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
         )}
       </div>
 
