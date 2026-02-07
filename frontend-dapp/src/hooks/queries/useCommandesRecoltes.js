@@ -1,6 +1,8 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { getCommandeRecolte } from "../../utils/contrat/collecteurProducteur";
 import { hasRole } from "../../utils/roles";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import { DEBUT_COMMANDE_RECOLTE } from "../../utils/contract";
 
 export const COMMANDES_RECOLTES_KEYS = {
   all: ["madtx-commandes-recoltes"],
@@ -12,6 +14,7 @@ export const COMMANDES_RECOLTES_KEYS = {
     id,
     filters,
   ],
+  compteur: ["madtx-compteur-commandes-recoltes"],
 };
 
 // Recuperation un a un recoltes dans caches.
@@ -31,5 +34,23 @@ export function useCommandesRecoltesUnAUn(
       queryFn: async () => await getCommandeRecolte(id, roles, account),
       enabled: !!idsToFetch,
     })),
+  });
+}
+
+// Recuperer tab des ids de commandes recoltes
+export function useCommandesRecoltesIDs() {
+  return useQuery({
+    queryKey: COMMANDES_RECOLTES_KEYS.compteur,
+    queryFn: async () => {
+      // Tab de tous les ids recoltes
+      const compteurCommandes = Number(
+        await collecteurProducteurRead.read("compteurCommandes")
+      );
+      const commandesRecoltesIDs = Array.from(
+        { length: compteurCommandes - DEBUT_COMMANDE_RECOLTE + 1 },
+        (_, i) => compteurCommandes - i
+      );
+      return commandesRecoltesIDs;
+    },
   });
 }

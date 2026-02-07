@@ -1,29 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  DEBUT_COMMANDE_RECOLTE,
-} from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
-import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
+import { useCommandesRecoltesIDs, useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
 import {
   usePayerCommandeRecolte,
   useValiderCommandeRecolte,
 } from "../../hooks/mutations/mutationCommandesRecoltes";
-
-// Tab de tous les ids recoltes
-const compteurCommandes = Number(
-  await collecteurProducteurRead.read("compteurCommandes")
-);
-const commandesRecoltesIDs = Array.from(
-  { length: compteurCommandes - DEBUT_COMMANDE_RECOLTE + 1 },
-  (_, i) => compteurCommandes - i
-);
 
 // Nbr de recoltes par chargement
 const NBR_COMMANDES_PAR_PAGE = 9;
@@ -42,11 +29,15 @@ function CommandeCollecteur() {
 
   const { roles, account } = useUserContext();
 
+
+  // Recuperation de tab listes des ids commandes recoltes
+  const { data: commandesRecoltesIDs } = useCommandesRecoltesIDs();
+
   // Nbr de recoltes par tranche
   const [commandesRecoltesToShow, setCommandesRecoltesToShow] = useState(
     NBR_COMMANDES_PAR_PAGE
   );
-  const idsToFetch = commandesRecoltesIDs.slice(0, commandesRecoltesToShow);
+  const idsToFetch = commandesRecoltesIDs?.slice(0, commandesRecoltesToShow) || [];
 
   // Utilisation cache pour la liste des commandes recoltes.
   const commandesUnAUn = useCommandesRecoltesUnAUn(idsToFetch, roles, account);
@@ -54,12 +45,12 @@ function CommandeCollecteur() {
   // Charger 9 de plus
   const chargerPlusDeCommandes = (plus = NBR_COMMANDES_PAR_PAGE) => {
     setCommandesRecoltesToShow((prev) =>
-      Math.min(prev + plus, commandesRecoltesIDs.length)
+      Math.min(prev + plus, commandesRecoltesIDs?.length)
     );
   };
 
   // Check si on peut charger plus
-  const hasMore = commandesRecoltesToShow < commandesRecoltesIDs.length;
+  const hasMore = commandesRecoltesToShow < commandesRecoltesIDs?.length;
 
   // useMutation pour la validation commande
   const validateMutation = useValiderCommandeRecolte();

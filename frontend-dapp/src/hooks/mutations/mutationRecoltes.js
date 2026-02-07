@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RECOLTES_KEYS } from "../queries/useRecoltes";
 import { createRecolte } from "../../utils/contrat/collecteurProducteur";
 import { getCollecteurProducteurWrite } from "../../config/onChain/frontContracts";
+import { COMMANDES_RECOLTES_KEYS } from "../queries/useCommandesRecoltes";
 
 // A la creation d'une recotle
 export function useCreateRecolte(account) {
@@ -77,7 +78,9 @@ export function useCertificateRecolte() {
 
     onSuccess: (receipt) => {
       // Refetch la recolte concernee.
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.detail(receipt.idRecolte) });
+      queryClient.invalidateQueries({
+        queryKey: RECOLTES_KEYS.detail(receipt.idRecolte),
+      });
 
       console.log("✅ Transaction confirmée");
     },
@@ -108,7 +111,16 @@ export function useCommandeRecolte() {
 
     onSuccess: (receipt) => {
       // Refetch la recolte concernee.
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.detail(receipt.idRecolte) });
+      queryClient.invalidateQueries({
+        queryKey: RECOLTES_KEYS.detail(receipt.idRecolte),
+      });
+
+      // Il y a creation d'une commandes recoltes apres
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: COMMANDES_RECOLTES_KEYS.compteur,
+        });
+      }, 3000);
 
       console.log("✅ Transaction confirmée");
     },
