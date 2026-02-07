@@ -99,7 +99,10 @@ export const getConditionTransportCE = async (_idCommande) => {
  */
 export const getCommandeProduit = async (_idCommande) => {
   try {
-    const res = await collecteurExportateurRead.read("getCommande", _idCommande);
+    const res = await collecteurExportateurRead.read(
+      "getCommande",
+      _idCommande
+    );
 
     const collecteurDetails = await getActeur(res.collecteur?.toString());
     const exportateurDetails = await getActeur(res.exportateur?.toString());
@@ -197,6 +200,10 @@ export const getCommandeLotProduitEnrichi = async (
       commandeRaw.exportateur?.adresse.toString?.() ||
       commandeRaw.exportateur ||
       "";
+    const transporteurAddr =
+      commandeRaw.transporteur?.adresse.toString?.() ||
+      commandeRaw.transporteur ||
+      "";
 
     if (!exportateurAddr) return { isProprietaire: false };
 
@@ -204,6 +211,13 @@ export const getCommandeLotProduitEnrichi = async (
     if (
       hasRole(roles, 6) &&
       exportateurAddr.toLowerCase() !== account.toLowerCase()
+    )
+      return { isProprietaire: false };
+
+    // Filtrer les commandes si user transporteur
+    if (
+      hasRole(roles, 5) &&
+      transporteurAddr.toLowerCase() !== account.toLowerCase()
     )
       return { isProprietaire: false };
 

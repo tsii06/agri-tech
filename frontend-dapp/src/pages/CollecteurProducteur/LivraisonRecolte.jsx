@@ -33,6 +33,7 @@ import {
   useCommandesLotsProduitsIDs,
   useCommandesLotsProduitsUnAUn,
 } from "../../hooks/queries/useCommandesLotsProduits";
+import { useConditionTransportCommandeLotProduit } from "../../hooks/mutations/mutationCommandesLotsProduits";
 
 // Tab de tous les ids recoltes
 const compteurCommandesRecoltes = Number(
@@ -120,13 +121,13 @@ function LivraisonRecolte() {
   // Recuperer le tab qui contient tous les ids commandes lot produit
   const { data: commandesLotsProduitsIDs } = useCommandesLotsProduitsIDs();
 
-  // Nbr de commandes recoltes par tranche
+  // Nbr de commandes lots produits par tranche
   const [commandesLotsProduitsToShow, setCommandesLotsProduitsToShow] =
     useState(NBR_ITEMS_PAR_PAGE);
   const idsToFetchCommandeLotsProduits =
     commandesLotsProduitsIDs?.slice(0, commandesLotsProduitsToShow) || [];
 
-  // Utilisation cache pour la liste des commandes recoltes.
+  // Utilisation cache pour la liste des commandes lots produits.
   const commandesLotsProduitsUnAUn = useCommandesLotsProduitsUnAUn(
     idsToFetchCommandeLotsProduits,
     roles,
@@ -144,7 +145,7 @@ function LivraisonRecolte() {
   const hasMoreCommandesLotsProduits =
     commandesLotsProduitsToShow < commandesLotsProduitsIDs?.length;
 
-  // Filtrage commandes recoltes du cache
+  // Filtrage commandes lots produits du cache
   const commandesLotsProduitsFiltres = commandesLotsProduitsUnAUn.filter(
     (q) => {
       const commande = q.data;
@@ -158,6 +159,21 @@ function LivraisonRecolte() {
       return true;
     }
   );
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMoreCommandesLotsProduits &&
+    (commandesLotsProduitsFiltres.length === 0 ||
+      commandesLotsProduitsFiltres.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlusDeCommandesLotsProduits(
+      NBR_ITEMS_PAR_PAGE -
+        (commandesLotsProduitsFiltres.length % NBR_ITEMS_PAR_PAGE)
+    );
+
+  // useMutation pour enregistrement condition transport commande recolte
+  const conditionCommandeLotProduitMutation =
+    useConditionTransportCommandeLotProduit();
 
   const getStatutTransportLabel = (statutCode) => {
     switch (statutCode) {
@@ -244,12 +260,10 @@ function LivraisonRecolte() {
       cid = uploaded.cid;
 
       // 2) Enregistrer côté contrat (signature: (id, cid))
-      const contract = await getCollecteurExportateurContract();
-      const tx = await contract.enregistrerCondition(
-        Number(commandeId),
-        uploaded.cid
-      );
-      await tx.wait();
+      const tx = await conditionCommandeLotProduitMutation.mutateAsync({
+        id: Number(commandeId),
+        cid: uploaded.cid,
+      });
 
       // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
       await ajouterKeyValuesFileIpfs(uploaded.cid, {
