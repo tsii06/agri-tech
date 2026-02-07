@@ -98,10 +98,8 @@ export const getConditionTransportCE = async (_idCommande) => {
  * @returns
  */
 export const getCommandeProduit = async (_idCommande) => {
-  const contrat = await getCollecteurExportateurContract();
-
   try {
-    const res = await contrat.getCommande(_idCommande);
+    const res = await collecteurExportateurRead.read("getCommande", _idCommande);
 
     const collecteurDetails = await getActeur(res.collecteur?.toString());
     const exportateurDetails = await getActeur(res.exportateur?.toString());
@@ -182,5 +180,54 @@ export const getProduitEnrichi = async (id, roles = [], account = "") => {
     return produitEnrichi;
   } catch (error) {
     console.error("Erreur recuperation stock collecteur : ", error);
+  }
+};
+
+// Recuperer commandes lots produits enrichi
+export const getCommandeLotProduitEnrichi = async (
+  id,
+  roles = [],
+  account = ""
+) => {
+  try {
+    const commandeRaw = await getCommandeProduit(id);
+
+    // Normaliser adresses
+    const exportateurAddr =
+      commandeRaw.exportateur?.adresse.toString?.() ||
+      commandeRaw.exportateur ||
+      "";
+
+    if (!exportateurAddr) return { isProprietaire: false };
+
+    // Vérifier si la commande appartient à l'exportateur connecté, si user est exportateur
+    if (
+      hasRole(roles, 6) &&
+      exportateurAddr.toLowerCase() !== account.toLowerCase()
+    )
+      return { isProprietaire: false };
+
+    // Normaliser types primitifs
+    const idLotProduitNum = Number(commandeRaw.idLotProduit ?? 0);
+    const produit =
+      idLotProduitNum > 0 ? await getLotProduitEnrichi(idLotProduitNum) : {};
+
+    let commandeEnrichie = {
+      ...commandeRaw,
+      idLotProduit: idLotProduitNum,
+      nomProduit: produit?.nom || "",
+    };
+
+    // Charger les condition de transport
+    if (commandeRaw.enregistrerCondition) {
+      const conditions = await getConditionTransportCE(id);
+      commandeEnrichie = {
+        ...commandeEnrichie,
+        ...conditions,
+      };
+    }
+    return commandeEnrichie;
+  } catch (error) {
+    console.error(`Erreur recuperation commande ID ${id} :`, error);
   }
 };

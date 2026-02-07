@@ -29,7 +29,6 @@ function CommandeCollecteur() {
 
   const { roles, account } = useUserContext();
 
-
   // Recuperation de tab listes des ids commandes recoltes
   const { data: commandesRecoltesIDs } = useCommandesRecoltesIDs();
 
