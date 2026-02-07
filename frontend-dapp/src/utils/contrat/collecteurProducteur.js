@@ -69,6 +69,11 @@ export const getCommandeRecolte = async (
       isProprietaire: true,
     };
 
+    // Filtrer les commandes si user transporteur
+    if (_roles.length > 0 && hasRole(_roles, 5) && _account !== "")
+      if (commande.transporteur.adresse?.toLowerCase() !== _account.toLowerCase())
+        return { isProprietaire: false };
+
     // recuperer condition de transport s'il y en a
     if (commande.enregistrerCondition) {
       const conditions = await getConditionTransportPC(commande.id);

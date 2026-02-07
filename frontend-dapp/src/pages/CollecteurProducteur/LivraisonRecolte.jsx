@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import {
   DEBUT_COMMANDE_LOT_PRODUIT,
@@ -24,28 +25,34 @@ import {
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
 import {
-  getCommandeRecolte,
-  getConditionTransportPC,
-} from "../../utils/contrat/collecteurProducteur";
-import {
   getCommandeProduit,
   getConditionTransportCE,
 } from "../../utils/collecteurExporatateur";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
+import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
 
-const contractCP = await getCollecteurProducteurContract();
 const contract = await getCollecteurExportateurContract();
 
+// Tab de tous les ids recoltes
+const compteurCommandesRecoltes = Number(
+  await collecteurProducteurRead.read("compteurCommandes")
+);
+const commandesRecoltesIDs = Array.from(
+  { length: compteurCommandesRecoltes - DEBUT_COMMANDE_RECOLTE + 1 },
+  (_, i) => compteurCommandesRecoltes - i
+);
+
+// Nbr de recoltes par chargement
+const NBR_ITEMS_PAR_PAGE = 9;
+
 function LivraisonRecolte() {
-  const [isLoadingRecolte, setIsLoadingRecolte] = useState(true);
   const [isLoadingProduit, setIsLoadingProduit] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [temperature, setTemperature] = useState("");
-  const [humidite, setHumidite] = useState("");
   const [dureeTransport, setDureeTransport] = useState("");
   const [lieuDepart, setLieuDepart] = useState("");
   const [destination, setDestination] = useState("");
@@ -56,12 +63,58 @@ function LivraisonRecolte() {
   const [rapportTransport, setRapportTransport] = useState(null);
 
   // les derniers commandes charger
-  const [dernierCommandeRecolteCharger, setDernierCommandeRecolteCharger] =
-    useState(() => 0);
   const [dernierCommandeProduitCharger, setDernierCommandeProduitCharger] =
     useState(() => 0);
 
-  const { account } = useUserContext();
+  const { roles, account } = useUserContext();
+
+  // COMMANDES RECOLTES ==================================================================
+  // Nbr de commandes recoltes par tranche
+  const [commandesRecoltesToShow, setCommandesRecoltesToShow] =
+    useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetch = commandesRecoltesIDs.slice(0, commandesRecoltesToShow);
+
+  // Utilisation cache pour la liste des commandes recoltes.
+  const commandesRecoltesUnAUn = useCommandesRecoltesUnAUn(
+    idsToFetch,
+    roles,
+    account
+  );
+
+  // Charger 9 de plus
+  const chargerPlusDeCommandesRecoltes = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setCommandesRecoltesToShow((prev) =>
+      Math.min(prev + plus, commandesRecoltesIDs.length)
+    );
+  };
+
+  // Check si on peut charger plus
+  const hasMoreCommandesRecoltes =
+    commandesRecoltesToShow < commandesRecoltesIDs.length;
+
+  // Filtrage commandes recoltes du cache
+  const commandesRecoltesFiltres = commandesRecoltesUnAUn.filter((q) => {
+    const commande = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
+    if (commande.isProprietaire && !commande.isProprietaire) return false;
+
+    return true;
+  });
+
+  // Charger encore plus si le nbr de recoltes filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMoreCommandesRecoltes &&
+    (commandesRecoltesFiltres.length === 0 ||
+      commandesRecoltesFiltres.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlusDeCommandesRecoltes(
+      NBR_ITEMS_PAR_PAGE -
+        (commandesRecoltesFiltres.length % NBR_ITEMS_PAR_PAGE)
+    );
 
   const chargerCommandeProduits = async (reset = false) => {
     setIsLoadingProduit(true);
@@ -115,60 +168,8 @@ function LivraisonRecolte() {
     }
   };
 
-  const chargerCommandeRecoltes = async (reset = false) => {
-    setIsLoadingRecolte(true);
-    try {
-      // Charger les CommandeRecolte (CollecteurProducteur)
-      const compteurCommandesRecolte =
-        dernierCommandeRecolteCharger !== 0
-          ? dernierCommandeRecolteCharger
-          : await contractCP.getCompteurCommandes();
-
-      let nbrCommandeRecolteCharger = 9;
-      let i;
-
-      for (
-        i = compteurCommandesRecolte;
-        i >= DEBUT_COMMANDE_RECOLTE && nbrCommandeRecolteCharger > 0;
-        i--
-      ) {
-        const c = await getCommandeRecolte(i);
-
-        // ignorer les commandes que le transporteur n'a pas access.
-        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase())
-          continue;
-
-        // recuperer condition de transport si deja enregister
-        let commandeRecolteEnrichie = {};
-        if (c.enregistrerCondition) {
-          const condition = await getConditionTransportPC(i);
-          commandeRecolteEnrichie = {
-            ...c,
-            ...condition,
-          };
-        } else {
-          commandeRecolteEnrichie = { ...c };
-        }
-
-        if (!reset)
-          setCommandesRecolte((prev) => [...prev, commandeRecolteEnrichie]);
-        else {
-          setCommandesRecolte([commandeRecolteEnrichie]);
-          reset = false;
-        }
-        nbrCommandeRecolteCharger--;
-      }
-      setDernierCommandeRecolteCharger(i);
-    } catch (error) {
-      console.error("Recuperation commande produit : ", error);
-    } finally {
-      setIsLoadingRecolte(false);
-    }
-  };
-
   useEffect(() => {
     chargerCommandeProduits(true);
-    chargerCommandeRecoltes(true);
   }, []);
 
   const getStatutTransportLabel = (statutCode) => {
@@ -295,8 +296,6 @@ function LivraisonRecolte() {
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
       // await chargerCommandeProduits(true);
-      setTemperature("");
-      setHumidite("");
       setDureeTransport("");
       setLieuDepart("");
       setDestination("");
@@ -477,115 +476,131 @@ function LivraisonRecolte() {
         >
           <AnimatePresence>
             {isRecolteOpen &&
-              commandesRecolte.map((cmd) => (
-                <motion.div
-                  key={cmd.id}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="card shadow-sm p-3 mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h4 className="card-title my-2">
-                        Commande Récolte#{cmd.id}
-                      </h4>
-                    </div>
+              (commandesRecoltesFiltres.length > 0 ? (
+                commandesRecoltesFiltres.map((q, index) => {
+                  const cmd = q.data;
 
-                    <p>
-                      <Sprout size={16} className="me-2 text-success" />
-                      <strong>Récolte:</strong> #{cmd.idRecolte}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {cmd.quantite} kg
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Producteur:</strong>{" "}
-                      {cmd.producteur?.nom || "N/A"}
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}
-                      {cmd.collecteur?.nom || "N/A"}
-                    </p>
-                    <p>
-                      <Fingerprint size={16} className="me-2 text-success" />
-                      <strong>Hash transaction:</strong>{" "}
-                      {cmd.hashTransaction?.slice(0, 6)}...
-                      {cmd.hashTransaction?.slice(-4)}
-                    </p>
-                    <p>
-                      <Truck size={16} className="me-2 text-success" />
-                      <strong>Transport:</strong>{" "}
-                      {getStatutTransportLabel(cmd.statutTransport)}
-                    </p>
+                  // Skeleton si la commande est en cours de chargement
+                  if (q.isLoading || q.isRefetching)
+                    return (
+                      <div className="col-md-4" key={index}>
+                        <Skeleton
+                          width={"100%"}
+                          height={"100%"}
+                          style={{ minHeight: 200 }}
+                        />
+                      </div>
+                    );
 
-                    <div className="d-flex gap-2 mt-3">
-                      {!cmd.enregistrerCondition && (
-                        <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => {
-                            setShowConditionModal(`recolte-${cmd.id}`);
-                          }}
-                        >
-                          Condition de transport
-                        </button>
-                      )}
-                      {cmd.statutTransport === 0 &&
-                        cmd.enregistrerCondition && (
-                          <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => handleSubmitStatutRecolte(cmd.id)}
-                            disabled={btnLoading}
-                          >
-                            {btnLoading ? "Livraison..." : "Livrer"}
-                          </button>
-                        )}
-                      {cmd.enregistrerCondition && (
-                        <button
-                          className="btn btn-outline-success btn-sm"
-                          onClick={() => {
-                            setDetailsCondition({
-                              temperature: cmd.temperature || null,
-                              humidite: cmd.humidite || null,
-                              cidRapportTransport:
-                                cmd.cidRapportTransport || null,
-                              dureeTransport: cmd.dureeTransport,
-                              lieuDepart: cmd.lieuDepart,
-                              destination: cmd.destination,
-                            });
-                            setShowDetailsModal(true);
-                          }}
-                        >
-                          Voir détails conditions
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
+                  return (
+                    <motion.div
+                      key={cmd.id}
+                      className="col-md-4"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <div className="card shadow-sm p-3 mb-3">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <h4 className="card-title my-2">
+                            Commande Récolte#{cmd.id}
+                          </h4>
+                        </div>
+
+                        <p>
+                          <Sprout size={16} className="me-2 text-success" />
+                          <strong>Récolte:</strong> #{cmd.idRecolte}
+                        </p>
+                        <p>
+                          <Package2 size={16} className="me-2 text-success" />
+                          <strong>Quantité:</strong> {cmd.quantite} kg
+                        </p>
+                        <p>
+                          <User size={16} className="me-2 text-success" />
+                          <strong>Producteur:</strong>{" "}
+                          {cmd.producteur?.nom || "N/A"}
+                        </p>
+                        <p>
+                          <User size={16} className="me-2 text-success" />
+                          <strong>Collecteur:</strong>{" "}
+                          {cmd.collecteur?.nom || "N/A"}
+                        </p>
+                        <p>
+                          <Fingerprint
+                            size={16}
+                            className="me-2 text-success"
+                          />
+                          <strong>Hash transaction:</strong>{" "}
+                          {cmd.hashTransaction?.slice(0, 6)}...
+                          {cmd.hashTransaction?.slice(-4)}
+                        </p>
+                        <p>
+                          <Truck size={16} className="me-2 text-success" />
+                          <strong>Transport:</strong>{" "}
+                          {getStatutTransportLabel(cmd.statutTransport)}
+                        </p>
+
+                        <div className="d-flex gap-2 mt-3">
+                          {!cmd.enregistrerCondition && (
+                            <button
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => {
+                                setShowConditionModal(`recolte-${cmd.id}`);
+                              }}
+                            >
+                              Condition de transport
+                            </button>
+                          )}
+                          {cmd.statutTransport === 0 &&
+                            cmd.enregistrerCondition && (
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() =>
+                                  handleSubmitStatutRecolte(cmd.id)
+                                }
+                                disabled={btnLoading}
+                              >
+                                {btnLoading ? "Livraison..." : "Livrer"}
+                              </button>
+                            )}
+                          {cmd.enregistrerCondition && (
+                            <button
+                              className="btn btn-outline-success btn-sm"
+                              onClick={() => {
+                                setDetailsCondition({
+                                  temperature: cmd.temperature || null,
+                                  humidite: cmd.humidite || null,
+                                  cidRapportTransport:
+                                    cmd.cidRapportTransport || null,
+                                  dureeTransport: cmd.dureeTransport,
+                                  lieuDepart: cmd.lieuDepart,
+                                  destination: cmd.destination,
+                                });
+                                setShowDetailsModal(true);
+                              }}
+                            >
+                              Voir détails conditions
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-muted">
+                  Aucune commandes recoltes trouvée.
+                </div>
               ))}
           </AnimatePresence>
-
-          {/* Indicateur de chargement */}
-          {isLoadingRecolte && (
-            <div className="col-md-4">
-              <Skeleton
-                width={"100%"}
-                height={"100%"}
-                style={{ minHeight: 200 }}
-              />
-            </div>
-          )}
         </div>
 
         {/* Btn pour charger plus de commandes recoltes */}
-        {dernierCommandeRecolteCharger >= DEBUT_COMMANDE_RECOLTE && (
+        {hasMoreCommandesRecoltes && (
           <div className="text-center mt-3">
             <button
               className="btn btn-outline-success"
-              onClick={chargerCommandeRecoltes}
+              onClick={() => chargerPlusDeCommandesRecoltes()}
             >
               Charger plus
             </button>
