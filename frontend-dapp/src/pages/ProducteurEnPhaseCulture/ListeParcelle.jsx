@@ -1,161 +1,53 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from "react";
-import { DEBUT_PARCELLE } from "../../utils/contract";
+import { useState } from "react";
 import ParcelleCard from "../../components/Tools/ParcelleCard";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
-import { hasRole } from "../../utils/roles";
-import { getParcelle } from "../../utils/contrat/producteur";
 import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
-import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 import {
-  useParcelles,
-  useParcellesProducteur,
+  useParcellesIDs,
+  useParcellesUnAUn,
 } from "../../hooks/queries/useParcelles";
+
+const NBR_ITEMS_PAR_PAGE = 9;
 
 function MesParcelles() {
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
-  // Utiliser le cache de useQuery pour la liste des parcelles du producteur. Recharge les parcelles si cache vide.
-  const { data, isLoading, isRefetching, refetch } = hasRole(roles, 0)
-    ? useParcellesProducteur(account)
-    : useParcelles();
-  const [parcelles, setParcelles] = useState(() => {
-    if (!isLoading && !isRefetching) return data;
-    else return [];
-  });
+  // Recuperation de la liste de id lots produits
+  const { data: parcellesIDs } = useParcellesIDs();
 
-  // Afficher plus si le cache contient plus.
-  const [visibleCount, setVisibleCount] = useState(() => {
-    if (!isLoading && !isRefetching && data.length > 0) return data.length;
-    else return 9;
-  });
+  // Nbr de recoltes par tranche
+  const [parcellesToShow, setParcellesToShow] = useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetch = parcellesIDs?.slice(0, parcellesToShow) || [];
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [certifFiltre, setCertifFiltre] = useState("all");
-  const [dernierParcelleCharger, setDernierParcelleCharger] = useState(0);
+  // Utiliser cache pour stocker liste parcelles. ================= //
+  const parcellesUnAUn = useParcellesUnAUn(idsToFetch, roles, account);
 
-  useEffect(() => {
-    if (!account) {
-      setLoading(false);
-      return;
-    }
-    // Charger progressivement les parcelles si il n'y en a pas dans les caches. Afficher les parcelles si il y en a.
-    if (isLoading) chargerParcelles();
-    else setLoading(false);
-  }, [account, isLoading]);
-
-  // Maj state lors d'une mutation du cache.
-  useEffect(() => {
-    if (isRefetching) {
-      setParcelles([]);
-      chargerParcelles();
-    }
-  }, [isRefetching]);
-
-  const chargerParcelles = async (e) => {
-    let _dernierParcelleCharger = dernierParcelleCharger;
-    let reset = false;
-    if (e?.target.value === "actualiser") {
-      setDernierParcelleCharger(0);
-      refetch();
-      return;
-    }
-    setLoading(true);
-    try {
-      const compteurParcellesRaw =
-        _dernierParcelleCharger !== 0 && !reset
-          ? _dernierParcelleCharger
-          : await producteurEnPhaseCultureRead.read("getCompteurParcelle");
-      const compteurParcelles = Number(compteurParcellesRaw);
-
-      console.log("🔍 Debug: Compteur parcelles:", compteurParcelles);
-      console.log("🔍 Debug: DEBUT_PARCELLE:", DEBUT_PARCELLE);
-      console.log("🔍 Debug: Account connecté:", account);
-      console.log("🔍 Debug: Rôles utilisateur:", roles);
-
-      if (compteurParcelles === 0) {
-        console.log("⚠️ Aucune parcelle trouvée sur la blockchain");
-        setParcelles([]);
-        setLoading(false);
-        return;
-      }
-
-      const parcellesDebug = [];
-      let nbrParcelleCharger = 9;
-      let i;
-
-      // Utiliser DEBUT_PARCELLE comme point de départ
-      for (
-        i = compteurParcelles;
-        i >= DEBUT_PARCELLE && nbrParcelleCharger > 0;
-        i--
-      ) {
-        try {
-          const parcelleRaw = await getParcelle(i, roles, account);
-
-          // Ne pas afficher si il n y a pas de data off-chain
-          if (!parcelleRaw.dataOffChain) {
-            console.log(`⏭️ Parcelle ${i} ignorée: pas de données off-chain`);
-            continue;
-          }
-
-          // Vérifier si on doit filtrer par propriétaire
-          if (!parcelleRaw.isProprietaire) continue;
-
-          nbrParcelleCharger--;
-
-          console.log(`🔍 Debug: Parcelle ${i}:`, {
-            id: parcelleRaw.id,
-            producteur: parcelleRaw.producteur?.adresse,
-            cid: parcelleRaw.cid,
-            dataOffChain: parcelleRaw.dataOffChain,
-          });
-
-          parcellesDebug.push({
-            id: i,
-            producteur: parcelleRaw.producteur?.adresse,
-            isMyParcel:
-              parcelleRaw.producteur?.adresse?.toLowerCase() ===
-              account?.toLowerCase(),
-            hasOffChainData: parcelleRaw.dataOffChain,
-            userHasRole0: hasRole(roles, 0),
-          });
-
-          if (reset) {
-            setParcelles([parcelleRaw]);
-            reset = false;
-          } else setParcelles((prev) => [...prev, parcelleRaw]);
-        } catch (error) {
-          console.error(
-            `❌ Erreur lors du chargement de la parcelle ${i}:`,
-            error
-          );
-        }
-      }
-      // Pour reconnaitre le dernier parcelle charger.
-      setDernierParcelleCharger(i);
-
-      console.log("🔍 Debug: Résumé des parcelles:", parcellesDebug);
-
-      setError(null);
-    } catch (error) {
-      console.error("❌ Erreur détaillée:", error);
-      setError(
-        "Impossible de charger les parcelles. Veuillez réessayer plus tard."
-      );
-    } finally {
-      setLoading(false);
-    }
+  // Charger 9 de plus
+  const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setParcellesToShow((prev) =>
+      Math.min(prev + plus, parcellesIDs?.length || 0)
+    );
   };
 
+  // Check si on peut charger plus
+  const hasMore = parcellesToShow < parcellesIDs?.length;
+
+  const [search, setSearch] = useState("");
+  const [certifFiltre, setCertifFiltre] = useState("all");
+
   // Filtrage parcelles selon recherche et certificat
-  const parcellesFiltres = parcelles.filter((parcelle) => {
+  const parcellesFiltres = parcellesUnAUn.filter((q) => {
+    const parcelle = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les parcelles qui n'apartient pas a l'user si user est collecteur
+    if (parcelle.isProprietaire && !parcelle.isProprietaire) return false;
+
     const searchLower = search.toLowerCase();
     const matchSearch =
       (parcelle.qualiteSemence &&
@@ -174,27 +66,10 @@ function MesParcelles() {
     return matchSearch && matchCertif;
   });
 
-  const parcellesAffichees = parcellesFiltres.slice(0, visibleCount);
-
   if (!account) {
     return (
       <div className="text-center text-muted">
         Veuillez connecter votre wallet pour voir vos parcelles.
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Erreur</h3>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        </div>
       </div>
     );
   }
@@ -217,7 +92,6 @@ function MesParcelles() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setVisibleCount(9);
               }}
               style={{ borderRadius: "0 8px 8px 0" }}
             />
@@ -262,14 +136,6 @@ function MesParcelles() {
               </li>
             </ul>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={chargerParcelles}
-            disabled={loading}
-            value={"actualiser"}
-          >
-            Actualiser
-          </button>
         </div>
 
         <div className="">
@@ -283,11 +149,11 @@ function MesParcelles() {
           >
             <h2 className="h5 mb-0">Liste des Parcelles</h2>
             <p className="text-muted mb-0">
-              {parcelles.length > 0 && (
+              {parcellesFiltres.length > 0 && (
                 <>
-                  {parcelles.filter((p) => p.cid).length} parcelles avec données
+                  {parcellesFiltres.filter((q) => q.data?.cid).length} parcelles avec données
                   IPFS,
-                  {parcelles.filter((p) => !p.cid).length} parcelles sans
+                  {parcellesFiltres.filter((q) => !q.data?.cid).length} parcelles sans
                   données IPFS
                 </>
               )}
@@ -296,71 +162,50 @@ function MesParcelles() {
 
           {/* LISTE DES PARCELLES */}
           <AnimatePresence>
-            {parcelles.length > 0 || loading ? (
+            {parcellesFiltres.length > 0 ? (
               <div className="row g-3">
-                {parcellesAffichees.map((parcelle, index) => (
-                  <motion.div
-                    key={`parcelle-${parcelle.id}-${index}`}
-                    className="col-md-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <ParcelleCard parcelle={parcelle} userRole={roles} />
-                  </motion.div>
-                ))}
-                {/* Skeleton de chargement */}
-                {loading && (
-                  <div className="col-md-4">
-                    <Skeleton
-                      width={"100%"}
-                      height={"100%"}
-                      style={{ minHeight: 200 }}
-                    />
-                  </div>
-                )}
-              </div>
-            ) : parcellesFiltres.length === 0 ? (
-              <div className="text-center text-muted">
-                Aucune parcelle ne correspond à la recherche ou au filtre.
+                {parcellesFiltres.map((q, index) => {
+                  const parcelle = q.data;
+
+                  // Skeleton si chargement donnee
+                  if (q.isLoading || q.isRefetching)
+                    return (
+                      <div className="col-md-4" key={index}>
+                        <Skeleton
+                          width={"100%"}
+                          height={"100%"}
+                          style={{ minHeight: 200 }}
+                        />
+                      </div>
+                    );
+
+                  // Afficher parcelle
+                  return (
+                    <motion.div
+                      key={`parcelle-${parcelle.id}-${index}`}
+                      className="col-md-4"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <ParcelleCard parcelle={parcelle} userRole={roles} />
+                    </motion.div>
+                  );
+                })}
               </div>
             ) : (
-              <div className="row g-3">
-                {/* Listes parcelles si il y en a apres recherche */}
-                {parcellesAffichees.map((parcelle, index) => (
-                  <motion.div
-                    key={`parcelle-${parcelle.id}-${index}`}
-                    className="col-md-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <ParcelleCard parcelle={parcelle} userRole={roles} />
-                  </motion.div>
-                ))}
-                {/* Skeleton de chargement */}
-                {loading && (
-                  <div className="col-md-4">
-                    <Skeleton
-                      width={"100%"}
-                      height={"100%"}
-                      style={{ minHeight: 200 }}
-                    />
-                  </div>
-                )}
+              <div className="text-center text-muted">
+                Aucune parcelle trouver.
               </div>
             )}
           </AnimatePresence>
 
           {/* Charger les autres parcelles si il en reste */}
-          {dernierParcelleCharger >= DEBUT_PARCELLE && (
+          {hasMore && (
             <div className="text-center mt-3">
               <button
                 className="btn btn-outline-success"
-                onClick={() => {
-                  chargerParcelles();
-                  setVisibleCount((prev) => prev + 9);
-                }}
+                onClick={() => chargerPlus()}
               >
                 Charger plus
               </button>

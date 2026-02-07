@@ -10,6 +10,7 @@ export const RECOLTES_KEYS = {
   list: (filters) => [...RECOLTES_KEYS.lists(), filters],
   details: () => [...RECOLTES_KEYS.all, "detail"],
   detail: (id, filters = {}) => [...RECOLTES_KEYS.details(), id, filters],
+  compteur: ["madtx-compteur-recoltes"]
 };
 
 // Recuperation un a un recoltes dans caches.
