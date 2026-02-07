@@ -1,7 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  DEBUT_COMMANDE_LOT_PRODUIT,
   DEBUT_COMMANDE_RECOLTE,
   getCollecteurExportateurContract,
 } from "../../utils/contract";
@@ -23,10 +21,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useUserContext } from "../../context/useContextt";
-import {
-  getCommandeProduit,
-  getConditionTransportCE,
-} from "../../utils/collecteurExporatateur";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
@@ -35,8 +29,10 @@ import {
   useConditionTransportCommandeRecolte,
   useUpdateStatusTransportCommandeRecolte,
 } from "../../hooks/mutations/mutationCommandesRecoltes";
-
-const contract = await getCollecteurExportateurContract();
+import {
+  useCommandesLotsProduitsIDs,
+  useCommandesLotsProduitsUnAUn,
+} from "../../hooks/queries/useCommandesLotsProduits";
 
 // Tab de tous les ids recoltes
 const compteurCommandesRecoltes = Number(
@@ -51,7 +47,6 @@ const commandesRecoltesIDs = Array.from(
 const NBR_ITEMS_PAR_PAGE = 9;
 
 function LivraisonRecolte() {
-  const [isLoadingProduit, setIsLoadingProduit] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConditionModal, setShowConditionModal] = useState(false);
@@ -59,14 +54,9 @@ function LivraisonRecolte() {
   const [dureeTransport, setDureeTransport] = useState("");
   const [lieuDepart, setLieuDepart] = useState("");
   const [destination, setDestination] = useState("");
-  const [commandes, setCommandes] = useState([]);
   const [error, setError] = useState(null);
   const [detailsCondition, setDetailsCondition] = useState({});
   const [rapportTransport, setRapportTransport] = useState(null);
-
-  // les derniers commandes charger
-  const [dernierCommandeProduitCharger, setDernierCommandeProduitCharger] =
-    useState(() => 0);
 
   const { roles, account } = useUserContext();
 
@@ -126,61 +116,48 @@ function LivraisonRecolte() {
   const statusTransportCommandeRecolteMutation =
     useUpdateStatusTransportCommandeRecolte();
 
-  const chargerCommandeProduits = async (reset = false) => {
-    setIsLoadingProduit(true);
+  // COMMANDES LOT PRODUIT ==================================================================
+  // Recuperer le tab qui contient tous les ids commandes lot produit
+  const { data: commandesLotsProduitsIDs } = useCommandesLotsProduitsIDs();
 
-    try {
-      // Charger toutes les commandes (CommandeProduit)
-      const compteurCommandesRaw =
-        dernierCommandeProduitCharger !== 0
-          ? dernierCommandeProduitCharger
-          : await contract.getCompteurCommande();
-      const compteurCommandes = Number(compteurCommandesRaw);
+  // Nbr de commandes recoltes par tranche
+  const [commandesLotsProduitsToShow, setCommandesLotsProduitsToShow] =
+    useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetchCommandeLotsProduits =
+    commandesLotsProduitsIDs?.slice(0, commandesLotsProduitsToShow) || [];
 
-      let nbrCommandeProduitCharger = 9;
-      let i;
+  // Utilisation cache pour la liste des commandes recoltes.
+  const commandesLotsProduitsUnAUn = useCommandesLotsProduitsUnAUn(
+    idsToFetchCommandeLotsProduits,
+    roles,
+    account
+  );
 
-      for (
-        i = compteurCommandes;
-        i >= DEBUT_COMMANDE_LOT_PRODUIT && nbrCommandeProduitCharger > 0;
-        i--
-      ) {
-        const c = await getCommandeProduit(i);
-
-        // si commande n'est pas au transporteur ne pas l'afficher
-        if (c.transporteur.adresse?.toLowerCase() !== account.toLowerCase())
-          continue;
-
-        // recuperer condition de transport si deja enregister
-        let commandeEnrichie = {};
-        if (c.enregistrerCondition) {
-          const conditions = await getConditionTransportCE(i);
-          commandeEnrichie = {
-            ...c,
-            ...conditions,
-          };
-        } else {
-          commandeEnrichie = { ...c };
-        }
-
-        if (!reset) setCommandes((prev) => [...prev, commandeEnrichie]);
-        else {
-          setCommandes([commandeEnrichie]);
-          reset = false;
-        }
-        nbrCommandeProduitCharger--;
-      }
-      setDernierCommandeProduitCharger(i);
-    } catch (error) {
-      console.error("Recuperation commande produit : ", error);
-    } finally {
-      setIsLoadingProduit(false);
-    }
+  // Charger 9 de plus
+  const chargerPlusDeCommandesLotsProduits = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setCommandesLotsProduitsToShow((prev) =>
+      Math.min(prev + plus, commandesLotsProduitsIDs?.length)
+    );
   };
 
-  useEffect(() => {
-    chargerCommandeProduits(true);
-  }, []);
+  // Check si on peut charger plus
+  const hasMoreCommandesLotsProduits =
+    commandesLotsProduitsToShow < commandesLotsProduitsIDs?.length;
+
+  // Filtrage commandes recoltes du cache
+  const commandesLotsProduitsFiltres = commandesLotsProduitsUnAUn.filter(
+    (q) => {
+      const commande = q.data;
+
+      // Ne pas filtrer si pas encore charger
+      if (q.isLoading || q.isRefetching) return true;
+
+      // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
+      if (commande.isProprietaire && !commande.isProprietaire) return false;
+
+      return true;
+    }
+  );
 
   const getStatutTransportLabel = (statutCode) => {
     switch (statutCode) {
@@ -279,23 +256,6 @@ function LivraisonRecolte() {
         hashTransaction: tx.hash,
       });
 
-      // maj local
-      setCommandes((prev) =>
-        prev.map((cmd) =>
-          cmd.id == commandeId
-            ? {
-                ...cmd,
-                enregistrerCondition: true,
-                cidRapportTransport: uploadRapportTransport.cid,
-                dureeTransport: dureeTransport,
-                lieuDepart: lieuDepart,
-                destination: destination,
-                hashTransaction: tx.hash,
-              }
-            : cmd
-        )
-      );
-
       alert("Condition de transport enregistrée !");
       setShowConditionModal(false);
       // await chargerCommandeProduits(true);
@@ -327,7 +287,7 @@ function LivraisonRecolte() {
     try {
       await statusTransportCommandeRecolteMutation.mutateAsync({
         id: commandeId,
-        status: 1, 
+        status: 1,
       });
 
       alert("Statut de transport (Récolte) mis à jour avec succès !");
@@ -428,8 +388,8 @@ function LivraisonRecolte() {
   };
 
   // Ajout des états pour gérer l'ouverture/fermeture des sections
-  const [isRecolteOpen, setIsRecolteOpen] = useState(true);
-  const [isProduitOpen, setIsProduitOpen] = useState(true);
+  const [isRecolteOpen, setIsRecolteOpen] = useState(false);
+  const [isProduitOpen, setIsProduitOpen] = useState(false);
 
   // Fonction pour basculer l'état des sections
   const toggleRecolte = () => setIsRecolteOpen(!isRecolteOpen);
@@ -439,11 +399,11 @@ function LivraisonRecolte() {
     <div className="container py-4">
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* LISTE DES COMMANDES SUR LES RECOLTES DES PRODUCTEURS */}
+      {/* LISTE DES COMMANDES SUR LES RECOLTES DES COLLECTEURS */}
       <div className="card p-4 shadow-sm my-4">
         <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
           <span>
-            <Sprout /> Liste des Commandes sur <strong>Récolte</strong>
+            <Sprout /> Liste des Commandes <strong>Collecteur</strong>
           </span>
           <button className="btn" onClick={toggleRecolte}>
             {isRecolteOpen ? <ChevronUp /> : <ChevronDown />}
@@ -574,26 +534,25 @@ function LivraisonRecolte() {
                 </div>
               ))}
           </AnimatePresence>
+          {/* Btn pour charger plus de commandes recoltes */}
+          {hasMoreCommandesRecoltes && isRecolteOpen && (
+            <div className="text-center mt-3">
+              <button
+                className="btn btn-outline-success"
+                onClick={() => chargerPlusDeCommandesRecoltes()}
+              >
+                Charger plus
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Btn pour charger plus de commandes recoltes */}
-        {hasMoreCommandesRecoltes && (
-          <div className="text-center mt-3">
-            <button
-              className="btn btn-outline-success"
-              onClick={() => chargerPlusDeCommandesRecoltes()}
-            >
-              Charger plus
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* LISTE DES COMMANDES SUR LES PRODUITS DES COLLECTEURS */}
+      {/* LISTE DES COMMANDES SUR LES PRODUITS DES EXPORTATEURS */}
       <div className="card p-4 shadow-sm">
         <h2 className="h5 mb-3 d-flex justify-content-between align-items-center">
           <span>
-            <Package /> Liste des Commandes sur <strong>Produit</strong>
+            <Package /> Liste des Commandes <strong>Exportateur</strong>
           </span>
           <button className="btn" onClick={toggleProduit}>
             {isProduitOpen ? <ChevronUp /> : <ChevronDown />}
@@ -607,120 +566,125 @@ function LivraisonRecolte() {
         >
           <AnimatePresence>
             {isProduitOpen &&
-              commandes.map((commande) => (
-                <motion.div
-                  key={commande.id}
-                  className="col-md-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="card shadow-sm p-3 mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h4 className="card-title my-2">
-                        Commande Produit#{commande.id}
-                      </h4>
+              commandesLotsProduitsFiltres.map((q, index) => {
+                const commande = q.data;
+
+                // Skeleton si chargement encours
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <div className="col-md-4" key={index}>
+                      <Skeleton
+                        width={"100%"}
+                        height={"100%"}
+                        style={{ minHeight: 200 }}
+                      />
                     </div>
+                  );
 
-                    <p>
-                      <Package size={16} className="me-2 text-success" />
-                      <strong>Produit:</strong> #{commande.idLotProduit}
-                    </p>
-                    <p>
-                      <Package2 size={16} className="me-2 text-success" />
-                      <strong>Quantité:</strong> {commande.quantite} kg
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Collecteur:</strong>{" "}
-                      {commande.collecteur?.nom || "N/A"}
-                    </p>
-                    <p>
-                      <User size={16} className="me-2 text-success" />
-                      <strong>Exportateur:</strong>{" "}
-                      {commande.exportateur?.nom || "N/A"}
-                    </p>
-                    <p>
-                      <Fingerprint size={16} className="me-2 text-success" />
-                      <strong>Hash transaciton:</strong>{" "}
-                      {commande.hashTransaction?.slice(0, 6)}...
-                      {commande.hashTransaction?.slice(-4)}
-                    </p>
-                    <p>
-                      <Truck size={16} className="me-2 text-success" />
-                      <strong>Transport:</strong>{" "}
-                      {getStatutTransportLabel(commande.statutTransport)}
-                    </p>
+                // Afficher commande lot produit
+                return (
+                  <motion.div
+                    key={`${commande.id}-${index}`}
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="card shadow-sm p-3 mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h4 className="card-title my-2">
+                          Commande Produit#{commande.id}
+                        </h4>
+                      </div>
 
-                    <div className="d-flex gap-2 mt-3">
-                      {!commande.enregistrerCondition && (
-                        <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => {
-                            setShowConditionModal(`produit-${commande.id}`);
-                          }}
-                        >
-                          Condition de transport
-                        </button>
-                      )}
-                      {commande.statutTransport == 0 &&
-                        commande.enregistrerCondition && (
+                      <p>
+                        <Package size={16} className="me-2 text-success" />
+                        <strong>Produit:</strong> #{commande.idLotProduit}
+                      </p>
+                      <p>
+                        <Package2 size={16} className="me-2 text-success" />
+                        <strong>Quantité:</strong> {commande.quantite} kg
+                      </p>
+                      <p>
+                        <User size={16} className="me-2 text-success" />
+                        <strong>Collecteur:</strong>{" "}
+                        {commande.collecteur?.nom || "N/A"}
+                      </p>
+                      <p>
+                        <User size={16} className="me-2 text-success" />
+                        <strong>Exportateur:</strong>{" "}
+                        {commande.exportateur?.nom || "N/A"}
+                      </p>
+                      <p>
+                        <Fingerprint size={16} className="me-2 text-success" />
+                        <strong>Hash transaciton:</strong>{" "}
+                        {commande.hashTransaction?.slice(0, 6)}...
+                        {commande.hashTransaction?.slice(-4)}
+                      </p>
+                      <p>
+                        <Truck size={16} className="me-2 text-success" />
+                        <strong>Transport:</strong>{" "}
+                        {getStatutTransportLabel(commande.statutTransport)}
+                      </p>
+
+                      <div className="d-flex gap-2 mt-3">
+                        {!commande.enregistrerCondition && (
                           <button
-                            className="btn btn-success btn-sm"
-                            onClick={() => handleSubmitStatut(commande.id)}
-                            disabled={btnLoading}
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => {
+                              setShowConditionModal(`produit-${commande.id}`);
+                            }}
                           >
-                            {btnLoading ? "Livrer..." : "Livrer"}
+                            Condition de transport
                           </button>
                         )}
-                      {commande.enregistrerCondition && (
-                        <button
-                          className="btn btn-outline-success btn-sm"
-                          onClick={() => {
-                            setDetailsCondition({
-                              temperature: commande.temperature || null,
-                              humidite: commande.humidite || null,
-                              cidRapportTransport:
-                                commande.cidRapportTransport || null,
-                              dureeTransport: commande.dureeTransport,
-                              lieuDepart: commande.lieuDepart,
-                              destination: commande.destination,
-                            });
-                            setShowDetailsModal(true);
-                          }}
-                        >
-                          Voir détails conditions
-                        </button>
-                      )}
+                        {commande.statutTransport == 0 &&
+                          commande.enregistrerCondition && (
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleSubmitStatut(commande.id)}
+                              disabled={btnLoading}
+                            >
+                              {btnLoading ? "Livrer..." : "Livrer"}
+                            </button>
+                          )}
+                        {commande.enregistrerCondition && (
+                          <button
+                            className="btn btn-outline-success btn-sm"
+                            onClick={() => {
+                              setDetailsCondition({
+                                temperature: commande.temperature || null,
+                                humidite: commande.humidite || null,
+                                cidRapportTransport:
+                                  commande.cidRapportTransport || null,
+                                dureeTransport: commande.dureeTransport,
+                                lieuDepart: commande.lieuDepart,
+                                destination: commande.destination,
+                              });
+                              setShowDetailsModal(true);
+                            }}
+                          >
+                            Voir détails conditions
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
           </AnimatePresence>
-
-          {/* Indicateur de chargement */}
-          {isLoadingProduit && (
-            <div className="col-md-4">
-              <Skeleton
-                width={"100%"}
-                height={"100%"}
-                style={{ minHeight: 200 }}
-              />
+          {/* Btn pour charger plus de commandes produit */}
+          {hasMoreCommandesLotsProduits && isProduitOpen && (
+            <div className="text-center mt-3">
+              <button
+                className="btn btn-outline-success"
+                onClick={() => chargerPlusDeCommandesLotsProduits()}
+              >
+                Charger plus
+              </button>
             </div>
           )}
         </div>
-
-        {/* Btn pour charger plus de commandes produit */}
-        {dernierCommandeProduitCharger >= DEBUT_COMMANDE_LOT_PRODUIT && (
-          <div className="text-center mt-3">
-            <button
-              className="btn btn-outline-success"
-              onClick={chargerCommandeProduits}
-            >
-              Charger plus
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Modal pour enregistrer les conditions de transport */}
