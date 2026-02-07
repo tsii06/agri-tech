@@ -37,7 +37,9 @@ export const getCommandeRecolte = async (
   _account = ""
 ) => {
   try {
-    const res = await collecteurProducteurRead.read("getCommande", _idCommande);
+    const res = (
+      await collecteurProducteurRead.read("getCommande", _idCommande)
+    ).toObject();
 
     // Filtrer les commandes si user collecteur.
     if (_roles.length > 0 && hasRole(_roles, 3) && _account !== "")
@@ -71,22 +73,26 @@ export const getCommandeRecolte = async (
 
     // Filtrer les commandes si user transporteur
     if (_roles.length > 0 && hasRole(_roles, 5) && _account !== "")
-      if (commande.transporteur.adresse?.toLowerCase() !== _account.toLowerCase())
+      if (
+        commande.transporteur.adresse?.toLowerCase() !== _account.toLowerCase()
+      )
         return { isProprietaire: false };
 
     // recuperer condition de transport s'il y en a
     if (commande.enregistrerCondition) {
-      const conditions = await getConditionTransportPC(commande.id);
-      commande = {
-        ...conditions,
-      };
+      try {
+        const conditions = await getConditionTransportPC(commande.id);
+        commande = {
+          ...commande,
+          ...conditions,
+        };
+      } catch { /* empty */ }
     }
 
     // recuperation date recolte
-    const recolteOnChain = await collecteurProducteurRead.read(
-      "getRecolte",
-      commande.idRecolte
-    );
+    const recolteOnChain = (
+      await collecteurProducteurRead.read("getRecolte", commande.idRecolte)
+    ).toObject();
     const recolteIpfs = await getFileFromPinata(recolteOnChain.cid);
     // Format : jour mois année
     let dateRecolteFormat = "N/A";
@@ -111,7 +117,7 @@ export const getCommandeRecolte = async (
       dateRecolte: dateRecolteFormat,
     };
   } catch (error) {
-    console.log("Recuperation commande lot produit : ", error);
+    console.error("Recuperation commande recoltes : ", error);
     return {};
   }
 };

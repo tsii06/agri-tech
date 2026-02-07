@@ -156,7 +156,7 @@ export class SmartContractManager {
         throw new Error("Transaction failed");
       }
 
-      return receipt;
+      return { ...receipt, hash: tx.hash };
     } catch (error) {
       throw this._handleError(error, "write", methodName);
     }

@@ -32,6 +32,7 @@ import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
+import { useConditionTransportCommandeRecolte } from "../../hooks/mutations/mutationCommandesRecoltes";
 
 const contract = await getCollecteurExportateurContract();
 
@@ -115,6 +116,10 @@ function LivraisonRecolte() {
       NBR_ITEMS_PAR_PAGE -
         (commandesRecoltesFiltres.length % NBR_ITEMS_PAR_PAGE)
     );
+
+  // useMutation pour enregistrement condition transport commande recolte
+  const conditionCommandeRecolteMutation =
+    useConditionTransportCommandeRecolte();
 
   const chargerCommandeProduits = async (reset = false) => {
     setIsLoadingProduit(true);
@@ -396,9 +401,10 @@ function LivraisonRecolte() {
       cid = uploaded.cid;
 
       // 2) Enregistrer côté contrat CP (signature: (id, cid))
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.enregistrerCondition(commandeId, uploaded.cid);
-      await tx.wait();
+      const tx = await conditionCommandeRecolteMutation.mutateAsync({
+        id: commandeId,
+        cid: uploaded.cid,
+      });
 
       // ajouter hash transaction dans les keyvalues du fichier uploader sur ipfs
       await ajouterKeyValuesFileIpfs(uploaded.cid, {
@@ -494,7 +500,7 @@ function LivraisonRecolte() {
 
                   return (
                     <motion.div
-                      key={cmd.id}
+                      key={index}
                       className="col-md-4"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
