@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../context/useContextt";
 import {
   getCollecteurExportateurContract,
-  getCollecteurProducteurContract,
 } from "../utils/contract";
 import {
   User,
@@ -24,6 +23,7 @@ import {
   useActeursByRole,
   useAddressActeursByRole,
 } from "../hooks/queries/useActeurs";
+import { useChoixTransporteurCommandeRecolte } from "../hooks/mutations/mutationCommandesRecoltes";
 
 const ROLE_LABELS = [
   "Producteur", // 0
@@ -89,15 +89,17 @@ export default function ListeActeursRole() {
   // Lancer useQueries pour stocker les acteurs dans cache
   const acteursUnAUn = useActeursByRole(addresses, roleCible);
 
+  // useMutation pour la choix de transporteur
+  const choixTransporteurCommandeRecolte =
+    useChoixTransporteurCommandeRecolte();
+
   const handleChoisirTransporteurCommandeRecolte = async (addrTransporteur) => {
     setBtnLoading(true);
     try {
-      const contrat = await getCollecteurProducteurContract();
-      const tx = await contrat.choisirTransporteurCommandeRecolte(
-        idCommandeR,
-        addrTransporteur
-      );
-      tx.wait();
+      await choixTransporteurCommandeRecolte.mutateAsync({
+        id: idCommandeR,
+        addrTransporteur: addrTransporteur,
+      });
 
       nav("/liste-collecteur-commande", { refresh: Date.now() });
     } catch (error) {
