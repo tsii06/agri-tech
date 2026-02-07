@@ -3,6 +3,8 @@ import { getCollecteurExportateurContract } from "./contract";
 import { getActeur } from "./contrat/gestionnaireActeurs";
 import { getFileFromPinata } from "./ipfsUtils";
 import { hasRole } from "./roles";
+import { collecteurExportateurRead } from "../config/onChain/frontContracts";
+import { getRecolte } from "./contrat/collecteurProducteur";
 
 /**
  *
@@ -131,5 +133,54 @@ export const getCommandeProduit = async (_idCommande) => {
   } catch (error) {
     console.log("Recuperation commande lot produit : ", error);
     return {};
+  }
+};
+
+// Recuperer un produit enrichie.
+export const getProduitEnrichi = async (id, roles = [], account = "") => {
+  const produitRaw = await collecteurExportateurRead.read("getProduit", id);
+  const collecteurAddr =
+    produitRaw.collecteur?.toString?.() || produitRaw.collecteur || "";
+  // Appliquer pour collecteur.
+  if (
+    hasRole(roles, 3) &&
+    produitRaw.collecteur.toLowerCase() !== account.toLowerCase()
+  )
+    return { isProprietaire: false };
+
+  // ne plus afficher les produits enregistrer
+  if (produitRaw.enregistre) return { isProprietaire: false };
+
+  let produitEnrichi = {
+    id: id,
+    idRecolte: Number(produitRaw.idRecolte ?? 0),
+    quantite: Number(produitRaw.quantite ?? 0),
+    statut: Number(produitRaw.statut ?? produitRaw.enregistre ?? 0),
+    collecteur:
+      collecteurAddr && collecteurAddr !== ""
+        ? await getActeur(collecteurAddr)
+        : null,
+    hashMerkle: produitRaw.hashMerkle || "",
+    enregistre: produitRaw.enregistre || 0,
+  };
+
+  // Enrichir depuis la récolte associée (prixUnit et CID JSON)
+  try {
+    if (produitEnrichi.idRecolte > 0) {
+      const recolteRaw = await getRecolte(produitEnrichi.idRecolte);
+      produitEnrichi.certificatPhytosanitaire =
+        recolteRaw.certificatPhytosanitaire?.toString?.() ||
+        recolteRaw.certificatPhytosanitaire ||
+        "";
+      produitEnrichi.nom = recolteRaw.nomProduit;
+      produitEnrichi.dateRecolte = recolteRaw.dateRecolte;
+      produitEnrichi.ipfsTimestamp = recolteRaw.timestamp || null;
+      produitEnrichi.ipfsVersion = recolteRaw.version || null;
+      produitEnrichi.recolteHashMerkle = recolteRaw.parcelleHashMerkle || "";
+    }
+
+    return produitEnrichi;
+  } catch (error) {
+    console.error("Erreur recuperation stock collecteur : ", error);
   }
 };
