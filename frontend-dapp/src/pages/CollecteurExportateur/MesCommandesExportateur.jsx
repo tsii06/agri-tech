@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  getCollecteurExportateurContract,
   URL_BLOCK_SCAN,
 } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
@@ -27,13 +26,15 @@ import {
   useCommandesLotsProduitsIDs,
   useCommandesLotsProduitsUnAUn,
 } from "../../hooks/queries/useCommandesLotsProduits";
-import { useValiderCommandeLotProduit } from "../../hooks/mutations/mutationCommandesLotsProduits";
+import {
+  usePayerCommandeLotProduit,
+  useValiderCommandeLotProduit,
+} from "../../hooks/mutations/mutationCommandesLotsProduits";
 
 // Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
 
 function MesCommandesExportateur() {
-  const [commandes, setCommandes] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [commandeSelectionnee, setCommandeSelectionnee] = useState(null);
   const [modePaiement, setModePaiement] = useState(0); // 0 = VirementBancaire
@@ -77,31 +78,24 @@ function MesCommandesExportateur() {
   // useMutation pour validation commande
   const validateMutation = useValiderCommandeLotProduit();
 
+  // useMutation pour payer commande
+  const payerMutation = usePayerCommandeLotProduit();
+
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
 
   const handlePayer = async (commandeId) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurExportateurContract();
-      const commande = commandes.find((c) => c.id === commandeId);
+      const commande = (commandesFiltres.find((q) => q.data.id === commandeId)).data;
 
       // Effectuer le paiement
-      const tx = await contract.effectuerPaiement(
-        commandeId,
-        commande.prix,
-        modePaiement,
-        { value: commande.prix } // La valeur envoyée doit correspondre au prix
-      );
-      await tx.wait();
-
-      // Mettre à jour l'état local
-      const commandesTemp = [...commandes];
-      const index = commandesTemp.findIndex((c) => c.id === commandeId);
-      if (index !== -1) {
-        commandesTemp[index].payer = true;
-        setCommandes(commandesTemp);
-      }
+      await payerMutation.mutateAsync({
+        id: commandeId,
+        prix: commande.prix,
+        modePaiement: modePaiement,
+        options: { value: commande.prix }, // La valeur envoyée doit correspondre au prix
+      });
 
       // Fermer le modal
       setShowModal(false);

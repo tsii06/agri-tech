@@ -88,7 +88,9 @@ export function useUpdateStatusTransportCommandeLotProduit() {
     onSuccess: (receipt) => {
       // Refetch la commande recoltes concernee.
       queryClient.invalidateQueries({
-        queryKey: COMMANDES_LOTS_PRODUITS_KEYS.detail(receipt.idCommandeRecolte),
+        queryKey: COMMANDES_LOTS_PRODUITS_KEYS.detail(
+          receipt.idCommandeRecolte
+        ),
       });
 
       console.log("✅ Transaction confirmée");
@@ -137,36 +139,38 @@ export function useValiderCommandeLotProduit() {
   });
 }
 
-// // A l'enregistrement condition transport commande recolte
-// export function usePayerCommandeRecolte() {
-//   const queryClient = useQueryClient();
+// A l'enregistrement condition transport commande lot produit
+export function usePayerCommandeLotProduit() {
+  const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: async (args) => {
-//       const contract = await getCollecteurProducteurWrite();
-//       const res = await contract.write(
-//         "effectuerPaiementVersProducteur",
-//         [args.id, args.prix, args.modePaiement],
-//         args.options
-//       );
-//       return { ...res, idCommandeRecolte: args.id };
-//     },
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurExportateurWrite();
+      const res = await contract.write(
+        "effectuerPaiement",
+        [args.id, args.prix, args.modePaiement],
+        args.options
+      );
+      return { ...res, idCommande: args.id };
+    },
 
-//     onSuccess: (receipt) => {
-//       // Refetch la commande recoltes concernee.
-//       queryClient.invalidateQueries({
-//         queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
-//       });
+    onSuccess: (receipt) => {
+      // Refetch la commande lot produit concernee.
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: COMMANDES_LOTS_PRODUITS_KEYS.detail(receipt.idCommande),
+        });
+      }, 3000);
 
-//       console.log("✅ Transaction confirmée");
-//     },
+      console.log("✅ Transaction confirmée");
+    },
 
-//     onError: (error) => {
-//       const message =
-//         error.response?.data?.message ||
-//         "Erreur lors du paiement commande recolte";
-//       alert(message);
-//       console.error("Paiement commande recolte error:", error);
-//     },
-//   });
-// }
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors du paiement commande lot produit";
+      alert(message);
+      console.error("Paiement commande lot produit error:", error);
+    },
+  });
+}
