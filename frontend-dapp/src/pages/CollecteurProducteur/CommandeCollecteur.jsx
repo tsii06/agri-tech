@@ -12,6 +12,7 @@ import CommandeRecolteCard from "../../components/Tools/CommandeRecolteCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
+import { useValiderCommandeRecolte } from "../../hooks/mutations/mutationCommandesRecoltes";
 
 // Tab de tous les ids recoltes
 const compteurCommandes = Number(
@@ -58,6 +59,9 @@ function CommandeCollecteur() {
   // Check si on peut charger plus
   const hasMore = commandesRecoltesToShow < commandesRecoltesIDs.length;
 
+  // useMutation pour la validation commande
+  const validateMutation = useValiderCommandeRecolte();
+
   useEffect(() => {
     if (!window.ethereum) {
       alert("Veuillez installer Metamask pour accéder à vos commandes.");
@@ -103,9 +107,10 @@ function CommandeCollecteur() {
   const validerCommande = async (_idCommande, _valide) => {
     setBtnLoading(true);
     try {
-      const contract = await getCollecteurProducteurContract();
-      const tx = await contract.validerCommandeRecolte(_idCommande, _valide);
-      await tx.wait();
+      await validateMutation.mutateAsync({
+        id: _idCommande,
+        validate: _valide,
+      });
 
       // Nettoyer l'erreur associée le cas échéant
       setCommandeErrors((prev) => {

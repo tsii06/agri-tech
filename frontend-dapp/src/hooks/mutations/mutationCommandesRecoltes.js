@@ -106,3 +106,40 @@ export function useUpdateStatusTransportCommandeRecolte() {
     },
   });
 }
+
+// A l'enregistrement condition transport commande recolte
+export function useValiderCommandeRecolte() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurProducteurWrite();
+      const res = await contract.write("validerCommandeRecolte", [
+        args.id,
+        args.validate,
+      ]);
+      return { ...res, idCommandeRecolte: args.id };
+    },
+
+    onSuccess: (receipt) => {
+      // Refetch la commande recoltes concernee.
+      queryClient.invalidateQueries({
+        queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
+        refetchType: 'active',
+      });
+
+      console.log("✅ Transaction confirmée");
+    },
+
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors de la validation commande recolte";
+      alert(message);
+      console.error(
+        "Validation commande recolte error:",
+        error
+      );
+    },
+  });
+}
