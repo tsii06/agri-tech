@@ -104,38 +104,38 @@ export function useUpdateStatusTransportCommandeLotProduit() {
   });
 }
 
-// // A l'enregistrement condition transport commande recolte
-// export function useValiderCommandeRecolte() {
-//   const queryClient = useQueryClient();
+// A l'enregistrement condition transport commande lot produit
+export function useValiderCommandeLotProduit() {
+  const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: async (args) => {
-//       const contract = await getCollecteurProducteurWrite();
-//       const res = await contract.write("validerCommandeRecolte", [
-//         args.id,
-//         args.validate,
-//       ]);
-//       return { ...res, idCommandeRecolte: args.id };
-//     },
+  return useMutation({
+    mutationFn: async (args) => {
+      const contract = await getCollecteurExportateurWrite();
+      const res = await contract.write("mettreAJourStatutCommande", [
+        args.id,
+        args.validate,
+      ]);
+      return { ...res, idCommande: args.id };
+    },
 
-//     onSuccess: (receipt) => {
-//       // Refetch la commande recoltes concernee.
-//       queryClient.invalidateQueries({
-//         queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
-//       });
+    onSuccess: (receipt) => {
+      // Refetch la commande recoltes concernee.
+      queryClient.invalidateQueries({
+        queryKey: COMMANDES_LOTS_PRODUITS_KEYS.detail(receipt.idCommande),
+      });
 
-//       console.log("✅ Transaction confirmée");
-//     },
+      console.log("✅ Transaction confirmée");
+    },
 
-//     onError: (error) => {
-//       const message =
-//         error.response?.data?.message ||
-//         "Erreur lors de la validation commande recolte";
-//       alert(message);
-//       console.error("Validation commande recolte error:", error);
-//     },
-//   });
-// }
+    onError: (error) => {
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors de la validation commande lot produit";
+      alert(message);
+      console.error("Validation commande lot produit error:", error);
+    },
+  });
+}
 
 // // A l'enregistrement condition transport commande recolte
 // export function usePayerCommandeRecolte() {

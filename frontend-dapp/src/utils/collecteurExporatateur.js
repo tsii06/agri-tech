@@ -132,7 +132,7 @@ export const getCommandeProduit = async (_idCommande) => {
       enregistrerCondition: res.enregistrerCondition,
     };
   } catch (error) {
-    console.log("Recuperation commande lot produit : ", error);
+    console.error("Recuperation commande lot produit : ", error);
     return {};
   }
 };

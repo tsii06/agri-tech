@@ -27,6 +27,7 @@ import {
   useCommandesLotsProduitsIDs,
   useCommandesLotsProduitsUnAUn,
 } from "../../hooks/queries/useCommandesLotsProduits";
+import { useValiderCommandeLotProduit } from "../../hooks/mutations/mutationCommandesLotsProduits";
 
 // Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
@@ -43,7 +44,7 @@ function MesCommandesExportateur() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const { roles, account } = useUserContext();
 
   // Recuperation de tab listes des ids commandes recoltes
@@ -72,6 +73,9 @@ function MesCommandesExportateur() {
   // Check si on peut charger plus
   const hasMore =
     commandesLotsProduitsToShow < commandesLotsProduitsIDs?.length;
+
+  // useMutation pour validation commande
+  const validateMutation = useValiderCommandeLotProduit();
 
   // Déterminer si on est sur la page stock
   const isStockPage = location.pathname === "/stock";
@@ -113,17 +117,10 @@ function MesCommandesExportateur() {
 
   const handleValiderCommande = async (commandeId) => {
     try {
-      const contract = await getCollecteurExportateurContract();
-      const tx = await contract.mettreAJourStatutCommande(
-        Number(commandeId),
-        1
-      );
-      await tx.wait();
-      // Mettre à jour localement le statutProduit
-      const next = commandes.map((c) =>
-        c.id === commandeId ? { ...c, statutProduit: 1 } : c
-      );
-      setCommandes(next);
+      await validateMutation.mutateAsync({
+        id: Number(commandeId),
+        validate: 1,
+      });
     } catch (e) {
       console.error("Erreur lors de la validation de la commande:", e);
       setError(
@@ -314,8 +311,8 @@ function MesCommandesExportateur() {
                 <span className="small">
                   <strong>
                     {isStockPage
-                      ? commandes.filter((c) => c.payer).length
-                      : commandes.length}
+                      ? commandesFiltres.filter((q) => q.data?.payer).length
+                      : commandesFiltres.length}
                   </strong>{" "}
                   {isStockPage ? "commandes payées" : "commandes au total"}
                 </span>
