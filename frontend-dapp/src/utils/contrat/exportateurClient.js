@@ -24,6 +24,7 @@ import {
   enleveProducteurDeData,
 } from "../onChain/frontOnChainUtils";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
+import { hasRole } from "../roles";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
 
@@ -270,9 +271,14 @@ export const getConditionsTransportExpedition = async (_expedition) => {
 };
 
 // Recuperer expedition par id
-export const getExpedition = async (id) => {
+export const getExpedition = async (id, roles = [], account = "") => {
   try {
     const exp = await exportateurClientRead.read("getExpedition", id);
+
+    // ignore les expeditions n'appartenant pas a l'exportateur
+    if (hasRole(roles, 6) && account.toLowerCase() !== exp.exportateur.toLowerCase())
+      return { isProprietaire: false };
+
     const e = {
       id: Number(exp.id),
       ref: exp.ref,
