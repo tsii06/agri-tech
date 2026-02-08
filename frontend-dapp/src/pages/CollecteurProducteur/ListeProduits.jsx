@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  DEBUT_PRODUIT,
   getCollecteurExportateurContract,
 } from "../../utils/contract";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,18 +22,9 @@ import {
 } from "../../utils/ipfsUtils";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
-import { collecteurExportateurRead } from "../../config/onChain/frontContracts";
-import { useProduitsUnAUn } from "../../hooks/queries/useProduits";
+import { useProduitsIDs, useProduitsUnAUn } from "../../hooks/queries/useProduits";
 import { useEnregistrementProduit } from "../../hooks/mutations/mutationProduits";
 
-// Tab de tous les ids recoltes
-const compteurProduits = Number(
-  await collecteurExportateurRead.read("getCompteurProduit")
-);
-const produitsIDs = Array.from(
-  { length: compteurProduits - DEBUT_PRODUIT + 1 },
-  (_, i) => compteurProduits - i
-);
 // Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
 
@@ -49,20 +39,23 @@ function ListeProduits() {
   const { roles, account } = useUserContext();
   const nav = useNavigate();
 
+  // Recuperer tab des ids produits
+  const { data: produitsIDs } = useProduitsIDs();
+
   // Nbr de produtis par tranche
   const [produitsToShow, setProduitsToShow] = useState(NBR_ITEMS_PAR_PAGE);
-  const idsToFetch = produitsIDs.slice(0, produitsToShow);
+  const idsToFetch = produitsIDs?.slice(0, produitsToShow) || [];
 
   // Utiliser cache pour stocker liste produits. ================= //
   const produitsUnAUn = useProduitsUnAUn(idsToFetch, roles, account);
 
   // Charger 9 de plus
   const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
-    setProduitsToShow((prev) => Math.min(prev + plus, produitsIDs.length));
+    setProduitsToShow((prev) => Math.min(prev + plus, produitsIDs?.length));
   };
 
   // Check si on peut charger plus
-  const hasMore = produitsToShow < produitsIDs.length;
+  const hasMore = produitsToShow < produitsIDs?.length;
 
   // useMutation pour l'enregistrement de produit
   const enregistrementMutation = useEnregistrementProduit();

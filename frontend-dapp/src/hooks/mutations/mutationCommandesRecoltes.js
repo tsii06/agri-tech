@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { COMMANDES_RECOLTES_KEYS } from "../queries/useCommandesRecoltes";
 import { getCollecteurProducteurWrite } from "../../config/onChain/frontContracts";
+import { PRODUITS_KEYS } from "../queries/useProduits";
 
 // A la modification de prix d'une commande recotle
 export function useChoixTransporteurCommandeRecolte() {
@@ -157,6 +158,13 @@ export function usePayerCommandeRecolte() {
       queryClient.invalidateQueries({
         queryKey: COMMANDES_RECOLTES_KEYS.detail(receipt.idCommandeRecolte),
       });
+
+      // Refetch nbr de produits du collecteur.
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: PRODUITS_KEYS.compteur,
+        });
+      }, 3000);
 
       console.log("✅ Transaction confirmée");
     },
