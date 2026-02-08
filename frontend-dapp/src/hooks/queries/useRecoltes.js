@@ -1,8 +1,10 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   getRecolte,
 } from "../../utils/contrat/collecteurProducteur";
 import { hasRole } from "../../utils/roles";
+import { DEBUT_RECOLTE } from "../../utils/contract";
+import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 
 export const RECOLTES_KEYS = {
   all: ["madtx-recoltes"],
@@ -24,5 +26,23 @@ export function useRecoltesUnAUn(idsToFetch, roles = [], account = "") {
       queryFn: async () => await getRecolte(id, roles, account),
       enabled: !!idsToFetch,
     })),
+  });
+}
+
+// Recuperer tab des ids de parcelles
+export function useRecoltesIDs() {
+  return useQuery({
+    queryKey: RECOLTES_KEYS.compteur,
+    queryFn: async () => {
+      // Tab de tous les ids recoltes
+      const compteur = Number(
+        await collecteurProducteurRead.read("compteurRecoltes")
+      );
+      const tabIDs = Array.from(
+        { length: compteur - DEBUT_RECOLTE + 1 },
+        (_, i) => compteur - i
+      );
+      return tabIDs;
+    },
   });
 }

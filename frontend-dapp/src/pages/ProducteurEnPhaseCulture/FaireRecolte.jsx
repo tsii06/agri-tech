@@ -5,7 +5,6 @@ import {
   uploadToIPFS,
   deleteFromIPFSByCid,
 } from "../../utils/ipfsUtils";
-import { useUserContext } from "../../context/useContextt";
 import { getParcelle } from "../../utils/contrat/producteur";
 import { raccourcirChaine } from "../../utils/stringUtils";
 import { useCreateRecolte } from "../../hooks/mutations/mutationRecoltes";
@@ -25,10 +24,9 @@ function FaireRecolte() {
 
   // recupere l'id du parcelle
   const { id } = useParams();
-  const { account } = useUserContext();
 
   // useMutation pour la creation de recolte.
-  const addRecolteMutation = useCreateRecolte(account);
+  const addRecolteMutation = useCreateRecolte();
 
   useEffect(() => {
     chargerParcelle();

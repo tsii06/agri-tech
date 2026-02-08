@@ -5,7 +5,7 @@ import { getCollecteurProducteurWrite } from "../../config/onChain/frontContract
 import { COMMANDES_RECOLTES_KEYS } from "../queries/useCommandesRecoltes";
 
 // A la creation d'une recotle
-export function useCreateRecolte(account) {
+export function useCreateRecolte() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -13,12 +13,10 @@ export function useCreateRecolte(account) {
       await createRecolte(args.recolteData, args.parcelle),
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.lists() });
-      // Refetch la cache pour la liste de tous les parcelles du producteur.
-      queryClient.invalidateQueries({
-        queryKey: RECOLTES_KEYS.list({ producteur: account }),
-      });
+      // Refetch compteur recolte apres ajout d'une nouvelle
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: RECOLTES_KEYS.compteur });
+      }, 3000);
 
       console.log("✅ Transaction confirmée:", receipt);
     },

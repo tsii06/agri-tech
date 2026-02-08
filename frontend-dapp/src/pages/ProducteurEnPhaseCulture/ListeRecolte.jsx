@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { DEBUT_RECOLTE } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import { Search, ChevronDown } from "lucide-react";
 import { hasRole } from "../../utils/roles";
@@ -12,8 +11,8 @@ import {
   deleteFromIPFSByCid,
   uploadCertificatPhytosanitaire,
 } from "../../utils/ipfsUtils";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
 import {
+  useRecoltesIDs,
   useRecoltesUnAUn,
 } from "../../hooks/queries/useRecoltes";
 import {
@@ -22,14 +21,6 @@ import {
   useUpdatePrixRecolte,
 } from "../../hooks/mutations/mutationRecoltes";
 
-// Tab de tous les ids recoltes
-const compteurRecoltes = Number(
-  await collecteurProducteurRead.read("compteurRecoltes")
-);
-const recoltesIDs = Array.from(
-  { length: compteurRecoltes - DEBUT_RECOLTE + 1 },
-  (_, i) => compteurRecoltes - i
-);
 // Nbr de recoltes par chargement
 const NBR_RECOLTES_PAR_PAGE = 9;
 
@@ -39,9 +30,12 @@ function ListeRecoltes() {
   // Utilisation du tableau de rôles
   const { roles, account } = useUserContext();
 
+  // Recuperation tab des ids recoltes
+  const { data: recoltesIDs } = useRecoltesIDs();
+
   // Nbr de recoltes par tranche
   const [recoltesToShow, setRecoltesToShow] = useState(NBR_RECOLTES_PAR_PAGE);
-  const idsToFetch = recoltesIDs.slice(0, recoltesToShow);
+  const idsToFetch = recoltesIDs?.slice(0, recoltesToShow) || [];
 
   // Utiliser cache pour stocker liste recolte. ================= //
   // Si address est definie, recuperer les recoltes de l'address, si non celles de l'user.
@@ -52,11 +46,11 @@ function ListeRecoltes() {
 
   // Charger 9 de plus
   const chargerPlusDeRecoltes = (plus = NBR_RECOLTES_PAR_PAGE) => {
-    setRecoltesToShow((prev) => Math.min(prev + plus, recoltesIDs.length));
+    setRecoltesToShow((prev) => Math.min(prev + plus, recoltesIDs?.length));
   };
 
   // Check si on peut charger plus
-  const hasMore = recoltesToShow < recoltesIDs.length;
+  const hasMore = recoltesToShow < recoltesIDs?.length;
 
   const navigate = useNavigate();
   const [error, setError] = useState(null);
