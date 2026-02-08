@@ -7,11 +7,9 @@ import {
 import { useParams } from "react-router-dom";
 import { producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 import { useAddPhotoParcelle } from "../../hooks/mutations/mutationParcelles";
-import { useUserContext } from "../../context/useContextt";
 
 function PhotosParcelle() {
   const { id } = useParams(); // id de la parcelle
-  const { account } = useUserContext();
   const [selectedFile, setSelectedFile] = useState(null);
   const [ipfsUrl, setIpfsUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +18,7 @@ function PhotosParcelle() {
   const [photos, setPhotos] = useState([]);
 
   // UseMutation pou l'ajout de photo d'une parcelle
-  const addPhotoMutation = useAddPhotoParcelle(account);
+  const addPhotoMutation = useAddPhotoParcelle();
 
   useEffect(() => {
     chargerParcelle();

@@ -9,7 +9,7 @@ export const PARCELLES_KEYS = {
   lists: () => [...PARCELLES_KEYS.all, "list"],
   list: (filters) => [...PARCELLES_KEYS.lists(), filters],
   details: () => [...PARCELLES_KEYS.all, "detail"],
-  detail: (id) => [...PARCELLES_KEYS.details(), id],
+  detail: (id, filters = {}) => [...PARCELLES_KEYS.details(), id, filters],
   compteur: ["madtx-compteur-parcelles"]
 };
 

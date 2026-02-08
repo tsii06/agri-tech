@@ -135,8 +135,9 @@ function InspectionsParcelle() {
         "Inspection ajoutée et enregistrée sur la blockchain avec succès !"
       );
     } catch (e) {
+      console.error(e);
       setMessage(
-        "Erreur lors de l'ajout de l'inspection : " + (e?.message || e)
+        "Erreur lors de l'ajout de l'inspection : "
       );
     } finally {
       setLoading(false);

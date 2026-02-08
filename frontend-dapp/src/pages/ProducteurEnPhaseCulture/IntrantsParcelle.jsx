@@ -43,7 +43,7 @@ function IntrantsParcelle() {
   const numeroCertificat = useRef(null);
 
   // useMutation pour l'ajout d'intrant.
-  const addIntrantMutation = useAddIntantParcelle(account);
+  const addIntrantMutation = useAddIntantParcelle();
 
   useEffect(() => {
     chargerParcelle();
