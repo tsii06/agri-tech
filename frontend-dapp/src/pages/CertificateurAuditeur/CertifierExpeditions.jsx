@@ -1,26 +1,46 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState } from "react";
-import { DEBUT_EXPEDITION } from "../../utils/contract";
+import { useState } from "react";
 import { deleteFromIPFSByCid } from "../../utils/ipfsUtils";
 import { uploadToIPFS } from "../../utils/ipfsUtils";
 import { motion, AnimatePresence } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
-import { exportateurClientRead } from "../../config/onChain/frontContracts";
-import { getExpedition } from "../../utils/contrat/exportateurClient";
-import { useExpeditions } from "../../hooks/queries/useExpeditions";
+import {
+  useExpeditionsIDs,
+  useExpeditionsUnAUn,
+} from "../../hooks/queries/useExpeditions";
 import { useCertificateExpedition } from "../../hooks/mutations/mutationExpedition";
+import { useUserContext } from "../../context/useContextt";
+
+// Nbr de recoltes par chargement
+const NBR_ITEMS_PAR_PAGE = 9;
 
 export default function CertifierExpeditions() {
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const { roles, account } = useUserContext();
 
-  // Utilisation de cache pour la liste des expeditions.
-  const { data, isLoading, isRefetching } = useExpeditions();
-  const [expeditions, setExpeditions] = useState(() => {
-    if (!isLoading && !isRefetching) return data;
-    else return [];
-  });
+  // Recuperation de tab listes des ids commandes recoltes
+  const { data: expeditionsIDs } = useExpeditionsIDs();
+
+  // Nbr de recoltes par tranche
+  const [expeditionsToShow, setExpeditionsToShow] =
+    useState(NBR_ITEMS_PAR_PAGE);
+  const idsToFetch = expeditionsIDs?.slice(0, expeditionsToShow) || [];
+
+  // Utilisation cache pour la liste des commandes recoltes.
+  const expeditionsUnAUn = useExpeditionsUnAUn(idsToFetch, roles, account);
+
+  // Check si il y a encore des data en loading
+  const loading = expeditionsUnAUn.some((q) => q.isFetching);
+
+  // Charger 9 de plus
+  const chargerPlus = (plus = NBR_ITEMS_PAR_PAGE) => {
+    setExpeditionsToShow((prev) =>
+      Math.min(prev + plus, expeditionsIDs?.length)
+    );
+  };
+
+  // Check si on peut charger plus
+  const hasMore = expeditionsToShow < expeditionsIDs?.length;
 
   const [onlyPending, setOnlyPending] = useState(true);
   const [expeditionSelectionnee, setExpeditionSelectionnee] = useState(null);
@@ -34,52 +54,8 @@ export default function CertifierExpeditions() {
   const [region, setRegion] = useState("");
   const [btnLoading, setBtnLoading] = useState(false);
 
-  // Pour le chargement progressive des expeditions
-  const [dernierExpeditionCharger, setDernierExpeditionChanger] = useState(0);
-
   // useMutation pour la maj cache.
   const cerificateExpeditionMutation = useCertificateExpedition();
-
-  const loadExpeditions = async (reset = false) => {
-    let _dernierExpeditionCharger = dernierExpeditionCharger;
-    setLoading(true);
-    setMessage("");
-    try {
-      const count =
-        _dernierExpeditionCharger !== 0 && !reset
-          ? _dernierExpeditionCharger
-          : Number(await exportateurClientRead.read("compteurExpeditions"));
-      let i;
-      for (i = count; i >= DEBUT_EXPEDITION; i--) {
-        const exp = await getExpedition(i);
-        if (!exp || !exp.id) continue;
-        // Ajoute un a un les expeditions dans expeditions.
-        if (reset) {
-          setExpeditions([exp]);
-          reset = false;
-        } else setExpeditions((prev) => [...prev, exp]);
-      }
-      // Pour reconnaitre le dernier expedition charger.
-      setDernierExpeditionChanger(i);
-    } catch (e) {
-      setMessage("Erreur chargement expéditions: " + (e?.message || e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isLoading) loadExpeditions(true);
-    else setLoading(false);
-  }, [isLoading]);
-
-  // Maj cache si mutation expedition.
-  useEffect(() => {
-    if (isRefetching) {
-      console.log("Rafraichissement de la liste des expeditions.");
-      loadExpeditions(true);
-    }
-  }, [isRefetching]);
 
   const handleCertifier = async (e) => {
     e.preventDefault();
@@ -131,8 +107,6 @@ export default function CertifierExpeditions() {
         `Expédition #${expeditionSelectionnee.id} certifiée avec succès`
       );
       // Rafraichir la liste depuis le debut.
-      setDernierExpeditionChanger(0);
-      setExpeditions([]);
       setShowModalCertification(false);
     } catch (error) {
       setMessage(
@@ -144,9 +118,27 @@ export default function CertifierExpeditions() {
     setBtnLoading(false);
   };
 
-  const filtered = expeditions.filter((e) =>
-    onlyPending ? !e.certifier : true
-  );
+  const filtered = expeditionsUnAUn.filter((q) => {
+    const e = q.data;
+
+    // Ne pas filtrer si pas encore charger
+    if (q.isLoading || q.isRefetching) return true;
+
+    // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
+    if (e.isProprietaire && !e.isProprietaire) return false;
+
+    return onlyPending ? !e.certifier : true;
+  });
+
+  // Charger encore plus si le nbr de expedition filtrees === 0 ou si la page n'est pas pleine.
+  if (
+    hasMore &&
+    (filtered.length === 0 ||
+      filtered.length % NBR_ITEMS_PAR_PAGE !== 0)
+  )
+    chargerPlus(
+      NBR_ITEMS_PAR_PAGE - (filtered.length % NBR_ITEMS_PAR_PAGE)
+    );
 
   return (
     <div className="container mt-4">
@@ -185,47 +177,55 @@ export default function CertifierExpeditions() {
           </thead>
           <tbody>
             <AnimatePresence>
-              {filtered.map((e, index) => (
-                <motion.tr
-                  key={`expedition-${e.id}-${index}`}
-                  initial={{ opacity: 0, y: 0 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <td>{e.id}</td>
-                  <td>{e.ref || "-"}</td>
-                  <td>{e.nomProduit || "-"}</td>
-                  <td>{e.quantite}</td>
-                  <td>{e.prix} $</td>
-                  <td>{e.certifier ? "Oui" : "Non"}</td>
-                  <td>
-                    {!e.certifier ? (
-                      <button
-                        className="btn btn-success btn-sm"
-                        onClick={() => {
-                          setExpeditionSelectionnee(e);
-                          setShowModalCertification(true);
-                        }}
-                      >
-                        Certifier
-                      </button>
-                    ) : (
-                      <span className="text-muted">Déjà certifiée</span>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
-              {filtered.length === 0 && !loading && (
+              {filtered.map((q, index) => {
+                const e = q.data;
+
+                // Skeleton si encours de chargement
+                if (q.isLoading || q.isRefetching)
+                  return (
+                    <tr key={index}>
+                      <td colSpan={7} className="p-0 m-0">
+                        <Skeleton width={"100%"} height={"100%"} />
+                      </td>
+                    </tr>
+                  );
+
+                // Afficher expedition
+                return (
+                  <motion.tr
+                    key={`expedition-${e.id}-${index}`}
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <td>{e.id}</td>
+                    <td>{e.ref || "-"}</td>
+                    <td>{e.nomProduit || "-"}</td>
+                    <td>{e.quantite}</td>
+                    <td>{e.prix} $</td>
+                    <td>{e.certifier ? "Oui" : "Non"}</td>
+                    <td>
+                      {!e.certifier ? (
+                        <button
+                          className="btn btn-success btn-sm"
+                          onClick={() => {
+                            setExpeditionSelectionnee(e);
+                            setShowModalCertification(true);
+                          }}
+                        >
+                          Certifier
+                        </button>
+                      ) : (
+                        <span className="text-muted">Déjà certifiée</span>
+                      )}
+                    </td>
+                  </motion.tr>
+                );
+              })}
+              {loading === false && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center text-muted py-4">
                     Aucune expédition
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr>
-                  <td colSpan={7} className="p-0 m-0">
-                    <Skeleton width={"100%"} height={"100%"} />
                   </td>
                 </tr>
               )}

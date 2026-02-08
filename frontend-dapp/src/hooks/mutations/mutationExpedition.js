@@ -13,12 +13,12 @@ export function useCertificateExpedition() {
         args.id,
         args.cid,
       ]);
-      return tx;
+      return { ...tx, id: Number(args.id)};
     },
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: EXPEDITIONS_KEYS.lists() });
+      // Refetch la cache de l'expedition concernee
+      queryClient.invalidateQueries({ queryKey: EXPEDITIONS_KEYS.detail(receipt.id) });
 
       console.log("✅ Transaction confirmée:", receipt);
     },
