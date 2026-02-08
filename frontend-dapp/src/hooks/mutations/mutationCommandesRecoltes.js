@@ -13,7 +13,7 @@ export function useChoixTransporteurCommandeRecolte() {
         args.id,
         args.addrTransporteur,
       ]);
-      return { idRecolte: args.id };
+      return { idRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -46,7 +46,7 @@ export function useConditionTransportCommandeRecolte() {
         args.id,
         args.cid,
       ]);
-      return { ...res, idCommandeRecolte: args.id };
+      return { ...res, idCommandeRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -82,7 +82,7 @@ export function useUpdateStatusTransportCommandeRecolte() {
         args.id,
         args.status,
       ]);
-      return { ...res, idCommandeRecolte: args.id };
+      return { ...res, idCommandeRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -115,7 +115,7 @@ export function useValiderCommandeRecolte() {
         args.id,
         args.validate,
       ]);
-      return { ...res, idCommandeRecolte: args.id };
+      return { ...res, idCommandeRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -149,7 +149,7 @@ export function usePayerCommandeRecolte() {
         [args.id, args.prix, args.modePaiement],
         args.options
       );
-      return { ...res, idCommandeRecolte: args.id };
+      return { ...res, idCommandeRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
