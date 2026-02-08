@@ -7,19 +7,17 @@ import {
 } from "../../utils/ipfsUtils";
 
 // A la creation d'une parcelle
-export function useCreateParcelle(account) {
+export function useCreateParcelle() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (args) => await createParcelle(...args),
 
     onSuccess: (receipt) => {
-      // Refetch la cache pour la liste de tous les parcelles
-      queryClient.invalidateQueries({ queryKey: PARCELLES_KEYS.lists() });
-      // Refetch la cache pour la liste de tous les parcelles du producteur.
-      queryClient.invalidateQueries({
-        queryKey: PARCELLES_KEYS.list({ producteur: account }),
-      });
+      // Refetch le compteur parcelles car ajout d'une nouvelle.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: PARCELLES_KEYS.compteur });
+      }, 3000);
 
       console.log("✅ Transaction confirmée:", receipt);
     },

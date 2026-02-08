@@ -1,4 +1,4 @@
-import {  producteurEnPhaseCultureRead, producteurEnPhaseCultureWrite } from "../../config/onChain/frontContracts";
+import {  getProducteurEnPhaseCultureWrite, producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
 import { DEBUT_PARCELLE } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
@@ -243,8 +243,8 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
 
     // CREATION PARCELLE avec le nouveau format
     console.log("🔗 Création parcelle sur blockchain...");
-    // const contract = await getProducteurEnPhaseCultureWrite();
-    const tx = await producteurEnPhaseCultureWrite.write("creerParcelle", [parcelleUpload.cid]);
+    const contract = await getProducteurEnPhaseCultureWrite();
+    const tx = await contract.write("creerParcelle", [parcelleUpload.cid]);
     console.log("⏳ Transaction envoyée:", tx.hash);
 
     // Vérifier le compteur après création

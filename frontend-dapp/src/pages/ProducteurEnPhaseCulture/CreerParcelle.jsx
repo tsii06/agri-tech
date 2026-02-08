@@ -4,7 +4,6 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { uploadCertificatPhytosanitaire } from "../../utils/ipfsUtils";
 import { useCreateParcelle } from "../../hooks/mutations/mutationParcelles";
-import { useUserContext } from "../../context/useContextt";
 
 const defaultCenter = {
   lat: -18.8792,
@@ -27,10 +26,9 @@ function CreerParcelle() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [location, setLocation] = useState(defaultCenter);
-  const { account } = useUserContext();
   
   // useMutation pour la creation de parcelle. Pour la maj de la cache
-  const createParcelle = useCreateParcelle(account);
+  const createParcelle = useCreateParcelle();
 
   // Données de la parcelle
   const [parcelleData, setParcelleData] = useState({
