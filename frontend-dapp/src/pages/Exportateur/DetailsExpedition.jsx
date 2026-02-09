@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllDataAnterieur,
-  getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
@@ -20,6 +19,7 @@ import QRCode from "react-qr-code";
 import {
   useConditionsTransportExpedition,
   useExpeditionByRef,
+  useLotsProduitsExpedition,
 } from "../../hooks/queries/useExpeditions";
 import Skeleton from "react-loading-skeleton";
 
@@ -27,18 +27,16 @@ const DetailsExpedition = () => {
   const { reference } = useParams();
   const [parcelles, setParcelles] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
-  const [lotProduits, setLotProduits] = useState([]);
   const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   // const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
   const [showRecoltes, setShowRecoltes] = useState(false);
-  const [showProduits, setShowProduits] = useState(false);
+  const [showProduits, setShowProduits] = useState(true);
   const [showLogistique, setShowLogistique] = useState(true);
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
-  const [isLoadingProduits, setIsLoadingProduits] = useState(true);
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
@@ -61,6 +59,10 @@ const DetailsExpedition = () => {
   // Recuperation cache conditions transport expedition
   const { data: conditionsTransport = [], isFetching: isLoadingLogistique } =
     useConditionsTransportExpedition(expedition);
+
+  // Recuperation cache lots produits expedition
+  const { data: lotProduits = [], isFetching: isLoadingProduits } =
+    useLotsProduitsExpedition(expedition);
 
   useEffect(() => {
     // renvoyer si le ref appartient a l'exclusion
@@ -90,18 +92,6 @@ const DetailsExpedition = () => {
     setRecoltes(recoltesExp);
     setIsLoadingRecoltes(false);
   };
-
-  const chargerLotProduits = async () => {
-    const lotProduitsExp = await getLotProduisExpedition(expedition);
-    setLotProduits(lotProduitsExp);
-    setIsLoadingProduits(false);
-  };
-
-  // const chargerConditionsTransport = async () => {
-  //   const conditionsExp = await getConditionsTransportExpedition(expedition);
-  //   setConditionsTransport(conditionsExp);
-  //   setIsLoadingLogistique(false);
-  // };
 
   // const copyToClipboard = (text) => {
   //   navigator.clipboard.writeText(text);
@@ -304,7 +294,6 @@ const DetailsExpedition = () => {
                 transition: "background-color 0.3s ease",
               }}
               onClick={() => {
-                if (!showProduits && isLoadingProduits) chargerLotProduits();
                 setShowProduits(!showProduits);
               }}
               onMouseEnter={(e) =>

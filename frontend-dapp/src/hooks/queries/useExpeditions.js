@@ -4,6 +4,7 @@ import {
   getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
   getExpedition,
+  getLotProduisExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { hasRole } from "../../utils/roles";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
@@ -80,11 +81,22 @@ export function useExpeditionByRef(ref) {
   });
 }
 
-// Recuperer expedition by ref
+// Recuperer conditions transport expedition
 export function useConditionsTransportExpedition(expedition) {
   return useQuery({
     queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "conditions-transport"),
     queryFn: async () => await getConditionsTransportExpedition(expedition),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
+    enabled: expedition !== undefined,
+  });
+}
+
+// Recuperer lots produits expedition
+export function useLotsProduitsExpedition(expedition) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "lots-produits"),
+    queryFn: async () => await getLotProduisExpedition(expedition),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
     enabled: expedition !== undefined,
