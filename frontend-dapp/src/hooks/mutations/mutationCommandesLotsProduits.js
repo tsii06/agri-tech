@@ -82,7 +82,7 @@ export function useUpdateStatusTransportCommandeLotProduit() {
         args.id,
         args.status,
       ]);
-      return { ...res, idCommandeRecolte: args.id };
+      return { ...res, idCommandeRecolte: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -117,7 +117,7 @@ export function useValiderCommandeLotProduit() {
         args.id,
         args.validate,
       ]);
-      return { ...res, idCommande: args.id };
+      return { ...res, idCommande: Number(args.id) };
     },
 
     onSuccess: (receipt) => {
@@ -151,7 +151,7 @@ export function usePayerCommandeLotProduit() {
         [args.id, args.prix, args.modePaiement],
         args.options
       );
-      return { ...res, idCommande: args.id };
+      return { ...res, idCommande: Number(args.id) };
     },
 
     onSuccess: (receipt) => {

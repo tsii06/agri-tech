@@ -21,8 +21,9 @@ import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import { createMerkleTree } from "../../utils/frontMerkleUtils";
 import {
-  enleveCollecteurDeData,
-  enleveProducteurDeData,
+  filtrerLotProduitData,
+  filtrerParcelleData,
+  filtrerRecolteData,
 } from "../../utils/onChain/frontOnChainUtils";
 import {
   useConditionsTransportExpedition,
@@ -66,6 +67,8 @@ function PassePortNumerique() {
   const { data: conditionsTransportVPS = [], isFetching: conditionTransportLoading = true } =
     useConditionsTransportExpedition(expeditionVPS);
 
+  console.log("Parcelles VPS : ", parcellesVPS);
+
   // Recuperation des acteurs
   let acteursVPS = [];
   // Producteur
@@ -104,9 +107,9 @@ function PassePortNumerique() {
     ) {
       // Recuperation de tous les donnees anterieurs a l'expedition
       let allData = [];
-      allData.push(...enleveProducteurDeData(parcellesVPS));
-      allData.push(...enleveProducteurDeData(recoltesVPS));
-      allData.push(...enleveCollecteurDeData(lotProduitsVPS));
+      allData.push(...filtrerParcelleData(parcellesVPS));
+      allData.push(...filtrerRecolteData(recoltesVPS));
+      allData.push(...filtrerLotProduitData(lotProduitsVPS));
       allData.push(...conditionsTransportVPS);
       allData = stringifyAll(allData);
       // Reconstruction de l'arbre de merkle

@@ -354,15 +354,6 @@ export const getRecolte = async (
       dateRecoltePrecedente =
         recolteIpfs.data.items.dateRecoltePrecedente || null;
 
-      console.log(
-        `📦 Intrants récupérés depuis IPFS pour récolte ${recolteComplet.id}:`,
-        {
-          count: intrantsUtilises.length,
-          source: "IPFS_STORED",
-          version: recolteIpfs.data.items.version || "2.0",
-        }
-      );
-
       return {
         ...recolteIpfs.data.items,
         ...recolteIpfs?.keyvalues,
@@ -378,11 +369,6 @@ export const getRecolte = async (
     }
     // Pour les anciennes recoltes
     else {
-      // Fallback: calcul dynamique pour les anciennes récoltes (version 1.0)
-      console.log(
-        `🔄 Calcul dynamique des intrants pour récolte ${recolteComplet.id} (version 1.0)`
-      );
-
       // Calculer la saison basée sur la date de récolte avec logique dynamique
       let [saison, numeroRecolte] = await getSaisonEtNumRecolte(
         recolteComplet,
@@ -703,12 +689,6 @@ const getIntrantUtiliseEtDateRecoltePrecedent = async (
             dateRecolteOriginal
           );
 
-          console.log(
-            `🌿 Parcelle ${idParcelle} - Récolte actuelle: ${dateRecolteOriginal}, Précédente: ${
-              dateRecoltePrecedente || "Aucune"
-            }`
-          );
-
           // Filtrer les intrants selon la nouvelle règle
           const intrantsFilters = filterIntrantsForHarvest(
             intrantsParcelle,
@@ -716,9 +696,6 @@ const getIntrantUtiliseEtDateRecoltePrecedent = async (
             dateRecoltePrecedente
           );
 
-          console.log(
-            `🌿 ${intrantsFilters.length} intrants validés pour la parcelle ${idParcelle}`
-          );
           intrantsUtilises.push(...intrantsFilters);
         }
       } catch (parcelleError) {

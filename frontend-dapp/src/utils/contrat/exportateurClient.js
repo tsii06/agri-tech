@@ -19,8 +19,9 @@ import { getConditionTransportPC, getRecolte } from "./collecteurProducteur";
 import { getActeur } from "./gestionnaireActeurs";
 import { getParcelle } from "./producteur";
 import {
-  enleveCollecteurDeData,
-  enleveProducteurDeData,
+  filtrerLotProduitData,
+  filtrerParcelleData,
+  filtrerRecolteData,
 } from "../onChain/frontOnChainUtils";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
 import { hasRole } from "../roles";
@@ -74,15 +75,15 @@ export const getAllDataAnterieur = async (_idCommandeProduits) => {
   const parcelles = await getParcellesExpedition({
     idCommandeProduit: _idCommandeProduits,
   });
-  allData.push(...enleveProducteurDeData(parcelles));
+  allData.push(...filtrerParcelleData(parcelles));
   const recoltes = await getRecoltesExpedition({
     idCommandeProduit: _idCommandeProduits,
   });
-  allData.push(...enleveProducteurDeData(recoltes));
+  allData.push(...filtrerRecolteData(recoltes));
   const lotProduits = await getLotProduisExpedition({
     idCommandeProduit: _idCommandeProduits,
   });
-  allData.push(...enleveCollecteurDeData(lotProduits));
+  allData.push(...filtrerLotProduitData(lotProduits));
   const conditionsTransport = await getConditionsTransportExpedition({
     idCommandeProduit: _idCommandeProduits,
   });

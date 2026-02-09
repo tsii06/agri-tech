@@ -1,4 +1,7 @@
-import {  getProducteurEnPhaseCultureWrite, producteurEnPhaseCultureRead } from "../../config/onChain/frontContracts";
+import {
+  getProducteurEnPhaseCultureWrite,
+  producteurEnPhaseCultureRead,
+} from "../../config/onChain/frontContracts";
 import { DEBUT_PARCELLE } from "../contract";
 import {
   ajouterKeyValuesFileIpfs,
@@ -15,7 +18,6 @@ import { getActeur } from "./gestionnaireActeurs";
  */
 export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
   let parcelleComplet = {};
-  console.log(`🔍 Début récupération parcelle ${_idParcelle}`);
 
   // Recuperer info on-chain
   try {
@@ -29,19 +31,9 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
       if (
         parcelleOnChain.producteur?.toLowerCase() !== _account?.toLowerCase()
       ) {
-        console.log(
-          `⏭️ Parcelle ${_idParcelle} ignorée: pas le bon propriétaire`
-        );
         return { isProprietaire: false };
       }
     }
-
-    console.log(`🔍 Parcelle ${_idParcelle} on-chain:`, {
-      id: Number(parcelleOnChain.id),
-      producteur: parcelleOnChain.producteur.toString(),
-      cid: parcelleOnChain.cid.toString(),
-      hashMerkle: parcelleOnChain.hashMerkle?.toString(),
-    });
 
     const producteurDetails = await getActeur(
       parcelleOnChain.producteur.toString()
@@ -72,7 +64,6 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
   }
 
   // recuperation data off-chain
-  console.log(`🌐 Récupération données IPFS pour CID: ${parcelleComplet.cid}`);
   const parcelleIpfs = await getFileFromPinata(parcelleComplet.cid);
 
   if (parcelleIpfs === false) {
@@ -82,15 +73,6 @@ export const getParcelle = async (_idParcelle, _roles = [], _account = "") => {
       dataOffChain: false,
     };
   }
-
-  console.log(`✅ Données IPFS récupérées pour parcelle ${_idParcelle}:`, {
-    data: parcelleIpfs?.data?.items
-      ? Object.keys(parcelleIpfs.data.items)
-      : "pas de data.items",
-    keyvalues: parcelleIpfs?.keyvalues
-      ? Object.keys(parcelleIpfs.keyvalues)
-      : "pas de keyvalues",
-  });
 
   return {
     ...parcelleComplet,
@@ -195,17 +177,8 @@ export const getParcellesProducteur = async (_account) => {
  */
 export const createParcelle = async (parcelleData, location, cidCertificat) => {
   let parcelleCid = "";
-  console.log("🌱 Début création parcelle:", {
-    parcelleData,
-    location,
-    cidCertificat,
-  });
 
   try {
-    // Vérifier le compteur avant création
-    const compteurAvant = await producteurEnPhaseCultureRead.read("getCompteurParcelle");
-    console.log("🗺️ Compteur parcelles avant création:", Number(compteurAvant));
-
     // Créer l'objet parcelle consolidé pour IPFS
     const parcelleConsolidee = {
       qualiteSemence: parcelleData.qualiteSemence,
@@ -222,8 +195,6 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
       timestamp: Date.now(),
     };
 
-    console.log("📝 Données parcelle à uploader:", parcelleConsolidee);
-
     // Upload des données consolidées de la parcelle sur IPFS
     const { uploadConsolidatedData } = await import("../../utils/ipfsUtils");
     const parcelleUpload = await uploadConsolidatedData(
@@ -231,11 +202,6 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
       "parcelle"
     );
     parcelleCid = parcelleUpload.cid;
-
-    console.log("🌐 Upload IPFS réussi:", {
-      cid: parcelleCid,
-      success: parcelleUpload.success,
-    });
 
     if (!parcelleUpload.success) {
       throw new Error("Erreur lors de l'upload des données de la parcelle");
@@ -246,11 +212,6 @@ export const createParcelle = async (parcelleData, location, cidCertificat) => {
     const contract = await getProducteurEnPhaseCultureWrite();
     const tx = await contract.write("creerParcelle", [parcelleUpload.cid]);
     console.log("⏳ Transaction envoyée:", tx.hash);
-
-    // Vérifier le compteur après création
-    const compteurApres = await producteurEnPhaseCultureRead.read("getCompteurParcelle");
-    console.log("🗺️ Compteur parcelles après création:", Number(compteurApres));
-    console.log("🎉 Nouvelle parcelle créée avec ID:", Number(compteurApres));
 
     // Ajouter la hash transaction dans le keyvalues du fichier sur ipfs
     await ajouterKeyValuesFileIpfs(parcelleCid, {
