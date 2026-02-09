@@ -195,7 +195,7 @@ function PassePortNumerique() {
 
   return (
     <div
-      className="row justify-content-center py-4"
+      className="row row-cols-1 justify-content-center py-4"
       style={{
         minHeight: "100vh",
         background:
@@ -213,7 +213,7 @@ function PassePortNumerique() {
         </div>
       ) : (
         <div
-          className="card border-0 shadow p-0"
+          className="card border-0 shadow p-0 col"
           style={{
             width: "90%",
             maxWidth: "900px",
@@ -422,7 +422,7 @@ function PassePortNumerique() {
                       {recoltesVPS.length > 0 &&
                         recoltesVPS.map((recolte) => (
                           <span
-                            className="badge"
+                            className="badge me-1 mb-1"
                             style={{ background: "var(--madtx-green)" }}
                             key={recolte.id}
                           >
@@ -439,7 +439,7 @@ function PassePortNumerique() {
                             href={getIPFSURL(recolte.certificatPhytosanitaire)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-sm me-1 text-white"
+                            className="btn btn-sm me-1 mb-1 text-white"
                             key={recolte.id}
                             style={{ background: "var(--madtx-green)" }}
                           >
@@ -525,11 +525,11 @@ function PassePortNumerique() {
                           href={getIPFSURL(condition.cidRapportTransport)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="col btn btn-sm me-1 text-white"
+                          className="col btn btn-sm me-1 mb-1 text-white"
                           key={index}
                           style={{ background: "var(--madtx-green)" }}
                         >
-                          Rapport #{index + 1}
+                          Rapport {index + 1}
                         </a>
                       ))}
                   </div>
@@ -593,7 +593,7 @@ function PassePortNumerique() {
         </div>
       )}
       {/* BTN DETAILS EXPEDITION */}
-      <div className="d-flex justify-content-center mt-5">
+      <div className="d-flex justify-content-center align-items-center mt-5 col">
         <Link
           className="btn btn-lg btn-agrichain"
           to={`/client-detail-expedition/${ref}`}
