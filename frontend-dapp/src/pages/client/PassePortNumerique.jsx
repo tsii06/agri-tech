@@ -16,7 +16,6 @@ import { timestampToDate } from "../../utils/date";
 import QRCode from "react-qr-code";
 import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
 import Skeleton from "react-loading-skeleton";
-import { getConditionsTransportExpedition } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
@@ -26,6 +25,7 @@ import {
   enleveProducteurDeData,
 } from "../../utils/onChain/frontOnChainUtils";
 import {
+  useConditionsTransportExpedition,
   useExpeditionByRef,
   useLotsProduitsExpedition,
   useParcellesExpedition,
@@ -39,13 +39,13 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
-  const [conditionTransportLoading, setConditionTransportLoading] =
+  // const [conditionTransportLoading, setConditionTransportLoading] =
     useState(true);
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
   const [acteursVPS, setActeursVPS] = useState([]);
-  const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
+  // const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
 
   // Recuperation cache de expeditions details
   const {
@@ -65,6 +65,10 @@ function PassePortNumerique() {
   // Recuperation cache lots produits expedition
   const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true } =
     useLotsProduitsExpedition(expeditionVPS);
+
+  // Recuperation cache lots produits expedition
+  const { data: conditionsTransportVPS = [], isFetching: conditionTransportLoading = true } =
+    useConditionsTransportExpedition(expeditionVPS);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -91,22 +95,6 @@ function PassePortNumerique() {
         ...lotProduitsVPS.map((produit) => produit.collecteur),
       ]);
   }, [lotProduitLoading]);
-
-  // Charger les conditions de transport de l'expedition.
-  useEffect(() => {
-    if (!expeditionVPSLoading)
-      chargerConditionsTransport()
-        .then((res) => {
-          setConditionsTransportVPS(res);
-          setConditionTransportLoading(false);
-        })
-        .catch((err) =>
-          console.error(
-            "Erreur recuperation condition transport expedition depuis VPS : ",
-            err
-          )
-        );
-  }, [expeditionVPSLoading]);
 
   // Afficher badge authentifier apres que tous les loading soient mis a false
   useEffect(() => {
@@ -142,13 +130,6 @@ function PassePortNumerique() {
     lotProduitLoading,
     conditionTransportLoading,
   ]);
-
-  // Les fonctions pour recuperer les data venant du VPS
-  const chargerConditionsTransport = async () => {
-    const conditionsExp = await getConditionsTransportExpedition(expeditionVPS);
-    console.log("Conditions de transport expedition : ", conditionsExp);
-    return conditionsExp;
-  };
 
   // Les fonctions utilitaires
   const handleMapRedirect = (parcelle) => {
