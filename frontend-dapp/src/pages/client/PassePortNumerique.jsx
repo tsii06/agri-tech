@@ -69,8 +69,6 @@ function PassePortNumerique() {
     isFetching: conditionTransportLoading = true,
   } = useConditionsTransportExpedition(expeditionVPS);
 
-  console.log("Parcelles VPS : ", parcellesVPS);
-
   // Recuperation des acteurs
   let acteursVPS = [];
   // Producteur

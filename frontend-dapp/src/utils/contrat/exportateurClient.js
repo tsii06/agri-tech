@@ -23,7 +23,10 @@ import {
   filtrerParcelleData,
   filtrerRecolteData,
 } from "../onChain/frontOnChainUtils";
-import { exportateurClientRead } from "../../config/onChain/frontContracts";
+import {
+  exportateurClientRead,
+  getExportateurClientWrite,
+} from "../../config/onChain/frontContracts";
 import { hasRole } from "../roles";
 
 const collecteurExportateur = await getCollecteurExportateurContract();
@@ -36,22 +39,24 @@ const collecteurExportateur = await getCollecteurExportateurContract();
  */
 export const ajouterExpedition = async (_idCommandeProduits, _prix, _cid) => {
   // CALCULER LE ROOT MERKLE A L'ARTICLE.
+  console.log("Recuperation des data pour merkle root...");
   const allData = await getAllDataAnterieur(_idCommandeProduits);
   const tree = await createMerkleTree(allData);
   const merkleRoot = tree.root;
+  console.log("Merkle root obtenue : ", merkleRoot);
 
-  const exportateurClient = await getExportateurClientContract();
+  const exportateurClient = await getExportateurClientWrite();
   try {
-    const res = await exportateurClient.ajouterExpedition(
+    const res = await exportateurClient.write("ajouterExpedition", [
       _idCommandeProduits,
       _prix,
       _cid,
-      merkleRoot
-    );
-    await res.wait();
+      merkleRoot,
+    ]);
 
     // ajouter hash transaction aux keyvalues du fichier sur ipfs
     await ajouterKeyValuesFileIpfs(_cid, { hashTransaction: res.hash });
+    console.log("Ajout de keyvalues a ipfs :", true);
 
     return res;
   } catch (error) {
@@ -277,7 +282,10 @@ export const getExpedition = async (id, roles = [], account = "") => {
     const exp = await exportateurClientRead.read("getExpedition", id);
 
     // ignore les expeditions n'appartenant pas a l'exportateur
-    if (hasRole(roles, 6) && account.toLowerCase() !== exp.exportateur.toLowerCase())
+    if (
+      hasRole(roles, 6) &&
+      account.toLowerCase() !== exp.exportateur.toLowerCase()
+    )
       return { isProprietaire: false };
 
     return await getDetailsExpeditionByRef(exp.ref);

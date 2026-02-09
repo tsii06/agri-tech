@@ -1,8 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useState } from "react";
-import {
-  URL_BLOCK_SCAN,
-} from "../../utils/contract";
+import { URL_BLOCK_SCAN } from "../../utils/contract";
 import { useUserContext } from "../../context/useContextt";
 import {
   Hash,
@@ -13,7 +11,6 @@ import {
   LucideTruck,
   Fingerprint,
 } from "lucide-react";
-import { ajouterExpedition } from "../../utils/contrat/exportateurClient";
 import { uploadExpedition } from "../../utils/ifps/exportateurClient";
 import { useNavigate } from "react-router-dom";
 import { deleteFromIPFSByCid, getIPFSURL } from "../../utils/ipfsUtils";
@@ -23,6 +20,7 @@ import {
   useCommandesLotsProduitsIDs,
   useCommandesLotsProduitsUnAUn,
 } from "../../hooks/queries/useCommandesLotsProduits";
+import { useCreateExpedition } from "../../hooks/mutations/mutationExpedition";
 
 // Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
@@ -105,6 +103,9 @@ function StockExportateur() {
       NBR_ITEMS_PAR_PAGE - (commandesFiltres.length % NBR_ITEMS_PAR_PAGE)
     );
 
+  // useMutation pour la creation de expedition
+  const createMutation = useCreateExpedition();
+
   const handleCheckboxChange = (id) => {
     setSelectedStocks((prev) =>
       prev.includes(id)
@@ -180,7 +181,11 @@ function StockExportateur() {
       cid = ipfsArticle.cid;
 
       // creer article on-chain
-      await ajouterExpedition(selectedStocks, prixVente, ipfsArticle.cid);
+      await createMutation.mutateAsync({
+        idCommandes: selectedStocks,
+        prix: prixVente,
+        cid: ipfsArticle.cid,
+      });
 
       setShowShipmentModal(false);
       setSelectedStocks([]);

@@ -29,24 +29,35 @@ let privateWsProvider;
 let exportateurClientContrat;
 export const listenExpedition = async () => {
   privateWsProvider = new ReconnectingWebSocketProvider(config.privateWs);
-  exportateurClientContrat = new SmartContractManager(
-    config.adresseExportateurClientContrat,
-    exportateurClientABI.abi,
-    privateWsProvider.getProvider()
-  );
+  
+  const setupListener = async () => {
+    console.log("Setup listener appeller.");
+    if (exportateurClientContrat) {
+      exportateurClientContrat.contract.removeAllListeners("AjouterExpedition");
+    }
+    
+    exportateurClientContrat = new SmartContractManager(
+      config.adresseExportateurClientContrat,
+      exportateurClientABI.abi,
+      privateWsProvider.getProvider()
+    );
 
-  // Ecouter l'event AjouterExpedition.
-  await exportateurClientContrat.contract.on("AjouterExpedition", handleAjouterExpedition);
-  console.log("Nbr de handler attacher a l'event AjouterExpedition : ", await exportateurClientContrat.contract.listenerCount());
-
-  // Nouvelle wsProvide et nouvel contrat si wsProvider tombe.
-  privateWsProvider.getProvider().websocket.on("close", async () => {
-    // Supprimer les ecouteurs de exportateur contrat
-    await exportateurClientContrat.contract.removeAllListeners();
-    await privateWsProvider.destroy();
-    setTimeout(listenExpedition, 3000);
+    // Ecouter l'event AjouterExpedition.
+    await exportateurClientContrat.contract.on("AjouterExpedition", handleAjouterExpedition);
+    console.log("Nbr de handler attacher a l'event AjouterExpedition : ", await exportateurClientContrat.contract.listenerCount());
+  };
+  privateWsProvider.on('reconnected', () => {
+    console.log("Event reconnected emis...");
+    setupListener();
   });
 
+  await setupListener();
+
+  // DEBUG - Fermer le WS après 5 sec pour tester
+  setTimeout(() => {
+    console.log("🔥 TEST: Fermeture forcée du WS");
+    privateWsProvider.provider.websocket.close();
+  }, 5000);
 };
 
 // Fermeture propre quand c'est fini

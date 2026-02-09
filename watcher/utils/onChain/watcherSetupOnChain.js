@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { EventEmitter } from "events";
 
 // RpcProvider avec retry automatique
 export function createRpcProvider(rpcUrl, maxRetries = 3) {
@@ -29,8 +30,9 @@ export function createRpcProvider(rpcUrl, maxRetries = 3) {
   return provider;
 }
 
-export class ReconnectingWebSocketProvider {
+export class ReconnectingWebSocketProvider extends EventEmitter {
   constructor(wsUrl, options = {}) {
+    super();
     this.wsUrl = wsUrl;
     this.maxRetries = options.maxRetries || Infinity;
     this.retryDelay = options.retryDelay || 3000;
@@ -46,11 +48,16 @@ export class ReconnectingWebSocketProvider {
 
     // Événements de connexion
     this.provider.websocket.on("open", () => {
-      console.log("WebSocket connecté");
-      this.provider.getNetwork().then(net => {
-        console.log("WebSocket Provider connecter au reseau : ", net.name, net.chainId);
+      console.log("\nWebSocket connecté");
+      this.provider.getNetwork().then((net) => {
+        console.log(
+          "WebSocket Provider connecter au reseau : ",
+          net.name,
+          net.chainId
+        );
       });
       this.reconnectAttempts = 0;
+      this.emit("reconnected");
     });
 
     this.provider.websocket.on("close", (code) => {
@@ -88,14 +95,6 @@ export class ReconnectingWebSocketProvider {
     return this.provider.getBalance(address);
   }
 
-  on(event, listener) {
-    return this.provider.on(event, listener);
-  }
-
-  off(event, listener) {
-    return this.provider.off(event, listener);
-  }
-
   // Fermeture propre
   destroy() {
     this.isManualClose = true;
@@ -125,7 +124,7 @@ export class SmartContractManager {
       // Convertit les BigInt en String
       return JSON.stringify(cleanRes, (_, value) =>
         typeof value === "bigint" ? value.toString() : value
-      )
+      );
     } catch (error) {
       throw this._handleError(error, "read", methodName);
     }
