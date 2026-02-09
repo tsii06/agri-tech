@@ -18,7 +18,6 @@ import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
 import Skeleton from "react-loading-skeleton";
 import {
   getConditionsTransportExpedition,
-  getDetailsExpeditionByRef,
   getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
@@ -27,7 +26,11 @@ import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import { createMerkleTree } from "../../utils/frontMerkleUtils";
-import { enleveCollecteurDeData, enleveProducteurDeData } from "../../utils/onChain/frontOnChainUtils";
+import {
+  enleveCollecteurDeData,
+  enleveProducteurDeData,
+} from "../../utils/onChain/frontOnChainUtils";
+import { useExpeditionByRef } from "../../hooks/queries/useExpeditions";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -35,7 +38,6 @@ function PassePortNumerique() {
   const [anchorExpedition, setAnchorExpedition] = useState(null);
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
-  const [expeditionVPSLoading, setExpeditionVPSLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
   const [parcelleLoading, setParcelleLoading] = useState(true);
   const [recolteLoading, setRecolteLoading] = useState(true);
@@ -46,12 +48,18 @@ function PassePortNumerique() {
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
-  const [expeditionVPS, setExpeditionVPS] = useState({});
   const [parcellesVPS, setParcellesVPS] = useState({});
   const [recoltesVPS, setRecoltesVPS] = useState({});
   const [lotProduitsVPS, setLotProduitsVPS] = useState({});
   const [acteursVPS, setActeursVPS] = useState([]);
   const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
+
+  // Recuperation cache de expeditions details
+  const {
+    data: expeditionVPS,
+    isError: isErrorExpeditionVPS,
+    isFetching: expeditionVPSLoading,
+  } = useExpeditionByRef(ref || "");
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -61,19 +69,14 @@ function PassePortNumerique() {
       setFirstLoading(false);
       setActeursVPS([]); // initialise la liste des acteurs a chaque rechargement;
     });
-  }, [ref]);
 
-  // Comparer rootMerkle du mainnet au blockchain privee
-  useEffect(() => {
-    if (!firstLoading) {
-      chargerDetailsExpedition().then((data) => {
-        setExpeditionVPS(data);
-        setExpeditionVPSLoading(false);
-        // Recuperer exportateur
-        setActeursVPS((prev) => [...prev, data.exportateur]);
-      });
+    // renvoyer si le ref appartient a l'exclusion
+    if (isErrorExpeditionVPS || (ref && EXCLUDE_EXPEDITION.includes(ref))) {
+      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+      nav("/espace-client");
+      return;
     }
-  }, [firstLoading]);
+  }, [ref]);
 
   // Afficher la section Origine & Producteurs certifiee
   useEffect(() => {
@@ -184,20 +187,6 @@ function PassePortNumerique() {
   ]);
 
   // Les fonctions pour recuperer les data venant du VPS
-  const chargerDetailsExpedition = async () => {
-    // renvoyer si le ref appartient a l'exclusion
-    if (ref && EXCLUDE_EXPEDITION.includes(ref)) {
-      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
-      nav("/espace-client");
-      return;
-    }
-    const detailsExpedition = await getDetailsExpeditionByRef(ref);
-    console.log(
-      "Reception expedition details depuis VPS : ",
-      detailsExpedition
-    );
-    return detailsExpedition;
-  };
   const chargerParcelles = async () => {
     const parcellesExp = await getParcellesExpedition(expeditionVPS);
     console.log("Parcelle recuperer depuis VPS : ", parcellesExp);
@@ -351,7 +340,9 @@ function PassePortNumerique() {
               <div className="col-md-8">
                 <p className="mb-2">
                   <span
-                    className={`badge ${getBackgroundBadgeAuthenticate(authenticatLoading)} ms-2 p-3 text-center`}
+                    className={`badge ${getBackgroundBadgeAuthenticate(
+                      authenticatLoading
+                    )} ms-2 p-3 text-center`}
                   >
                     {/* Texte du badge d'authentification */}
                     {getTextBadgeAuthentification(authenticatLoading)}
