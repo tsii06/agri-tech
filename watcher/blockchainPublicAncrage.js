@@ -46,18 +46,13 @@ export const listenExpedition = async () => {
     await exportateurClientContrat.contract.on("AjouterExpedition", handleAjouterExpedition);
     console.log("Nbr de handler attacher a l'event AjouterExpedition : ", await exportateurClientContrat.contract.listenerCount());
   };
+  
   privateWsProvider.on('reconnected', () => {
     console.log("Event reconnected emis...");
     setupListener();
   });
 
   await setupListener();
-
-  // DEBUG - Fermer le WS après 5 sec pour tester
-  setTimeout(() => {
-    console.log("🔥 TEST: Fermeture forcée du WS");
-    privateWsProvider.provider.websocket.close();
-  }, 5000);
 };
 
 // Fermeture propre quand c'est fini
