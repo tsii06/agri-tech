@@ -1,5 +1,9 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { getAllExpeditions, getExpedition } from "../../utils/contrat/exportateurClient";
+import {
+  getAllExpeditions,
+  getDetailsExpeditionByRef,
+  getExpedition,
+} from "../../utils/contrat/exportateurClient";
 import { hasRole } from "../../utils/roles";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
 import { DEBUT_EXPEDITION } from "../../utils/contract";
@@ -10,7 +14,8 @@ export const EXPEDITIONS_KEYS = {
   list: (filters) => [...EXPEDITIONS_KEYS.lists(), filters],
   details: () => [...EXPEDITIONS_KEYS.all, "detail"],
   detail: (id) => [...EXPEDITIONS_KEYS.details(), id],
-  compteur: ["madtx-compteur-expeditions"]
+  reference: (ref) => [...EXPEDITIONS_KEYS.all, { reference: ref }],
+  compteur: ["madtx-compteur-expeditions"],
 };
 
 // Recuperer tous les expeditions dans le cache
@@ -61,5 +66,15 @@ export function useExpeditionsIDs() {
       );
       return tabIDs;
     },
+  });
+}
+
+// Recuperer expedition by ref
+export function useExpeditionByRef(ref) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.reference(ref),
+    queryFn: async () => await getDetailsExpeditionByRef(ref),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
   });
 }

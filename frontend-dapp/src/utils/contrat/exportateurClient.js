@@ -12,7 +12,6 @@ import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
   getFileFromPinata,
-  getIPFSURL,
   stringifyAll,
 } from "../ipfsUtils";
 import { createMerkleTree } from "../frontMerkleUtils";
@@ -106,7 +105,7 @@ export const getDetailsExpeditionByRef = async (_ref) => {
   const idCommandeProduit = Object.values(expeditionOnChain.idCommandeProduit);
 
   let expeditionComplet = {
-    id: expeditionOnChain.id,
+    id: Number(expeditionOnChain.id),
     ref: expeditionOnChain.ref,
     idCommandeProduit: idCommandeProduit.map((el) => Number(el)),
     quantite: Number(expeditionOnChain.quantite),
@@ -279,34 +278,7 @@ export const getExpedition = async (id, roles = [], account = "") => {
     if (hasRole(roles, 6) && account.toLowerCase() !== exp.exportateur.toLowerCase())
       return { isProprietaire: false };
 
-    const e = {
-      id: Number(exp.id),
-      ref: exp.ref,
-      quantite: Number(exp.quantite),
-      prix: Number(exp.prix),
-      exportateur: exp.exportateur,
-      cid: exp.cid,
-      rootMerkle: exp.rootMerkle,
-      certifier: Boolean(exp.certifier),
-      cidCertificat: exp.cidCertificat,
-    };
-    // enrichir depuis IPFS si disponible
-    if (e.cid) {
-      try {
-        const res = await fetch(getIPFSURL(e.cid));
-        if (res.ok) {
-          const data = await res.json();
-          const root = data && data.items ? data.items : data;
-          e.ipfs = root;
-          e.nomProduit = root.nomProduit || root.nom || "";
-          e.destination = root.destination || "";
-          e.transporteur = root.transporteur || "";
-        }
-      } catch {
-        /* empty */
-      }
-    }
-    return e;
+    return await getDetailsExpeditionByRef(exp.ref);
   } catch {
     /* empty */
   }

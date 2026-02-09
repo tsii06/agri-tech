@@ -1,19 +1,14 @@
+/* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllDataAnterieur,
   getConditionsTransportExpedition,
-  getDetailsExpeditionByRef,
   getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
-import {
-  Box,
-  ChevronDown,
-  ChevronUp,
-  Truck,
-} from "lucide-react";
+import { Box, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
 import RecolteDetails from "../../components/Tools/expedition/RecolteDetails";
@@ -23,16 +18,16 @@ import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkle
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { EXCLUDE_EXPEDITION } from "../../utils/contract";
 import QRCode from "react-qr-code";
+import { useExpeditionByRef } from "../../hooks/queries/useExpeditions";
+import Skeleton from "react-loading-skeleton";
 
 const DetailsExpedition = () => {
   const { reference } = useParams();
-  const [expedition, setExpedition] = useState({});
   const [parcelles, setParcelles] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
   const [conditionsTransport, setConditionsTransport] = useState([]);
   const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
-  const [loading, setLoading] = useState(true);
   // const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(false);
@@ -48,25 +43,40 @@ const DetailsExpedition = () => {
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
   const [isLoadingProcess, setIsLoadingProcess] = useState(true);
-  const urlEspaceClient = window.location.protocol + '//' + window.location.host + '/client-detail-expedition/';
+  const urlEspaceClient =
+    window.location.protocol +
+    "//" +
+    window.location.host +
+    "/client-detail-expedition/";
 
   const nav = useNavigate();
 
-  const chargerDetailsExpedition = async () => {
-    setLoading(true);
+  const {
+    data: expedition,
+    isError,
+    isFetching: isFetchingExpedition,
+  } = useExpeditionByRef(reference || "0");
+
+  useEffect(() => {
     // renvoyer si le ref appartient a l'exclusion
-    if (reference && EXCLUDE_EXPEDITION.includes(reference)) {
+    if (isError || (reference && EXCLUDE_EXPEDITION.includes(reference))) {
       alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
       nav("/espace-client");
       return;
     }
-    const detailsExpedition = await getDetailsExpeditionByRef(reference);
-    setExpedition(detailsExpedition);
-    setLoading(false);
-  };
+  }, [isError, nav, reference]);
+
+  // const chargerDetailsExpedition = async () => {
+  //   setLoading(true);
+  //   const detailsExpedition = await getDetailsExpeditionByRef(reference);
+  //   // setExpedition(detailsExpedition);
+  //   setLoading(false);
+  // };
 
   const chargerAllHashesMerkle = async () => {
-    const dataAnterieur = await getAllDataAnterieur(expedition.idCommandeProduit);
+    const dataAnterieur = await getAllDataAnterieur(
+      expedition.idCommandeProduit
+    );
     setAllDataMerkle(dataAnterieur);
     setIsLoadingArbreMerkle(false);
   };
@@ -101,26 +111,32 @@ const DetailsExpedition = () => {
   //   setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   // };
 
-  useEffect(() => {
-    chargerDetailsExpedition().catch((e) => {
-      console.error("Erreur reseaux : ", e);
-      alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
-      nav("/espace-client");
-    });
-  }, []);
+  // useEffect(() => {
+  //   chargerDetailsExpedition().catch((e) => {
+  //     console.error("Erreur reseaux : ", e);
+  //     alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
+  //     nav("/espace-client");
+  //   });
+  // }, []);
 
   return (
     <div className="container py-4">
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-success" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : (
-        <div className="row">
-          <div className="col-12">
-            {/* Details expedition */}
+      <div className="row">
+        {console.log("Expedition : ", expedition)}
+        <div className="col-12">
+          {/* Details expedition */}
+          {isFetchingExpedition ? (
+            <div
+              className="card shadow-sm mb-4"
+              style={{ width: "100%", margin: "0 auto" }}
+            >
+              <Skeleton
+                width={"100%"}
+                height={"100%"}
+                style={{ minHeight: 200 }}
+              />
+            </div>
+          ) : (
             <div
               className="card shadow-sm p-4 mb-4 bg-light"
               style={{ width: "100%", margin: "0 auto" }}
@@ -234,277 +250,268 @@ const DetailsExpedition = () => {
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Bloc Visualisation des processus */}
+          {/* Bloc Logistique */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showLogistique && isLoadingLogistique)
+                  chargerConditionsTransport();
+                setShowLogistique(!showLogistique);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showProcess && isLoadingProcess)
-                    setIsLoadingProcess(false);
-                  setShowProcess(!showProcess)
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Visualisation des processus</h6>
-                {showProcess ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden`}
-                style={{
-                  maxHeight: showProcess ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {!isLoadingProcess && <ProcessusExpedition expedition={expedition} />}
-              </div>
+              <h6 className="mb-0 fw-bold">Logistique</h6>
+              {showLogistique ? <ChevronUp /> : <ChevronDown />}
             </div>
-
-            {/* Bloc Logistique */}
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className={`bg-light overflow-hidden px-4`}
+              style={{
+                maxHeight: showLogistique ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showLogistique && isLoadingLogistique)
-                    chargerConditionsTransport();
-                  setShowLogistique(!showLogistique);
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Logistique</h6>
-                {showLogistique ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden px-4`}
-                style={{
-                  maxHeight: showLogistique ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {isLoadingLogistique ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-grow text-success"></div>
-                  </div>
-                ) : (
-                  <>
-                    <h6 className="card-title text-start my-4">
-                      <span>
-                        <Truck size={18} className="text-primary" /> Logistique
-                      </span>
-                    </h6>
-                    {conditionsTransport.length > 0 &&
-                      conditionsTransport.map((condition, index) => (
-                        <LogistiqueDetails condition={condition} key={index} />
-                      ))}
-                  </>
-                )}
-              </div>
+              {isLoadingLogistique ? (
+                <div className="text-center py-4">
+                  <div className="spinner-grow text-success"></div>
+                </div>
+              ) : (
+                <>
+                  <h6 className="card-title text-start my-4">
+                    <span>
+                      <Truck size={18} className="text-primary" /> Logistique
+                    </span>
+                  </h6>
+                  {conditionsTransport.length > 0 &&
+                    conditionsTransport.map((condition, index) => (
+                      <LogistiqueDetails condition={condition} key={index} />
+                    ))}
+                </>
+              )}
             </div>
+          </div>
 
-            {/* Bloc produits collecter */}
+          {/* Bloc produits collecter */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showProduits && isLoadingProduits) chargerLotProduits();
+                setShowProduits(!showProduits);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showProduits && isLoadingProduits) chargerLotProduits();
-                  setShowProduits(!showProduits);
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Produits collecter</h6>
-                {showProduits ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden`}
-                style={{
-                  maxHeight: showProduits ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {isLoadingProduits ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-grow text-success"></div>
-                  </div>
-                ) : (
-                  lotProduits.length > 0 &&
-                  lotProduits.map((lotProduit) => (
-                    <LotProduitDetails
-                      lotProduit={lotProduit}
-                      key={lotProduit.id}
-                    />
-                  ))
-                )}
-              </div>
+              <h6 className="mb-0 fw-bold">Produits collecter</h6>
+              {showProduits ? <ChevronUp /> : <ChevronDown />}
             </div>
-
-            {/* Bloc iformation de recolte */}
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showProduits ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showRecoltes && isLoadingRecoltes) chargerRecoltes();
-                  setShowRecoltes(!showRecoltes);
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Informations de recolte</h6>
-                {showRecoltes ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden`}
-                style={{
-                  maxHeight: showRecoltes ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {isLoadingRecoltes ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-grow text-success"></div>
-                  </div>
-                ) : (
-                  recoltes.length > 0 &&
-                  recoltes.map((recolte) => (
-                    <RecolteDetails recolte={recolte} key={recolte.id} />
-                  ))
-                )}
-              </div>
+              {isLoadingProduits ? (
+                <div className="text-center py-4">
+                  <div className="spinner-grow text-success"></div>
+                </div>
+              ) : (
+                lotProduits.length > 0 &&
+                lotProduits.map((lotProduit) => (
+                  <LotProduitDetails
+                    lotProduit={lotProduit}
+                    key={lotProduit.id}
+                  />
+                ))
+              )}
             </div>
+          </div>
 
-            {/* Bloc Parcelle de production */}
+          {/* Bloc iformation de recolte */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showRecoltes && isLoadingRecoltes) chargerRecoltes();
+                setShowRecoltes(!showRecoltes);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showParcelleProduction && isLoadingParcelles)
-                    chargerParcelles();
-                  setShowParcelleProduction(!showParcelleProduction);
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Parcelles de production</h6>
-                {showParcelleProduction ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden`}
-                style={{
-                  maxHeight: showParcelleProduction ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {isLoadingParcelles ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-grow text-success"></div>
-                  </div>
-                ) : (
-                  parcelles.length > 0 &&
-                  parcelles.map((parcelle) => (
-                    <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
-                  ))
-                )}
-              </div>
+              <h6 className="mb-0 fw-bold">Informations de recolte</h6>
+              {showRecoltes ? <ChevronUp /> : <ChevronDown />}
             </div>
-
-            {/* Arbre de merkle */}
             <div
-              className="card shadow-sm"
-              style={{ width: "100%", margin: "0 auto" }}
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showRecoltes ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
             >
-              <div
-                className="d-flex align-items-center justify-content-between border-bottom p-4"
-                style={{
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                onClick={() => {
-                  if (!showArbreMerkle && isLoadingArbreMerkle)
-                    chargerAllHashesMerkle();
-                  setShowArbreMerkle(!showArbreMerkle);
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "")
-                }
-              >
-                <h6 className="mb-0 fw-bold">Arbre de merkle</h6>
-                {showArbreMerkle ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              <div
-                className={`bg-light overflow-hidden`}
-                style={{
-                  maxHeight: showArbreMerkle ? "1000px" : "0",
-                  transition: "max-height 0.5s ease-in-out",
-                }}
-              >
-                {isLoadingArbreMerkle ? (
-                  <div
-                    className="d-flex justify-content-center align-items-center"
-                    style={{ height: "400px" }}
-                  >
-                    <div className="custom-spinner"></div>
-                    <style>
-                      {`
+              {isLoadingRecoltes ? (
+                <div className="text-center py-4">
+                  <div className="spinner-grow text-success"></div>
+                </div>
+              ) : (
+                recoltes.length > 0 &&
+                recoltes.map((recolte) => (
+                  <RecolteDetails recolte={recolte} key={recolte.id} />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bloc Parcelle de production */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
+            <div
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showParcelleProduction && isLoadingParcelles)
+                  chargerParcelles();
+                setShowParcelleProduction(!showParcelleProduction);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+            >
+              <h6 className="mb-0 fw-bold">Parcelles de production</h6>
+              {showParcelleProduction ? <ChevronUp /> : <ChevronDown />}
+            </div>
+            <div
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showParcelleProduction ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
+            >
+              {isLoadingParcelles ? (
+                <div className="text-center py-4">
+                  <div className="spinner-grow text-success"></div>
+                </div>
+              ) : (
+                parcelles.length > 0 &&
+                parcelles.map((parcelle) => (
+                  <ParcelleDetails parcelle={parcelle} key={parcelle.id} />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bloc Visualisation des processus */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
+            <div
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showProcess && isLoadingProcess)
+                  setIsLoadingProcess(false);
+                setShowProcess(!showProcess);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+            >
+              <h6 className="mb-0 fw-bold">Visualisation des processus</h6>
+              {showProcess ? <ChevronUp /> : <ChevronDown />}
+            </div>
+            <div
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showProcess ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
+            >
+              {!isLoadingProcess && (
+                <ProcessusExpedition expedition={expedition} />
+              )}
+            </div>
+          </div>
+
+          {/* Arbre de merkle */}
+          <div
+            className="card shadow-sm"
+            style={{ width: "100%", margin: "0 auto" }}
+          >
+            <div
+              className="d-flex align-items-center justify-content-between border-bottom p-4"
+              style={{
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={() => {
+                if (!showArbreMerkle && isLoadingArbreMerkle)
+                  chargerAllHashesMerkle();
+                setShowArbreMerkle(!showArbreMerkle);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#f8f9fa")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+            >
+              <h6 className="mb-0 fw-bold">Arbre de merkle</h6>
+              {showArbreMerkle ? <ChevronUp /> : <ChevronDown />}
+            </div>
+            <div
+              className={`bg-light overflow-hidden`}
+              style={{
+                maxHeight: showArbreMerkle ? "1000px" : "0",
+                transition: "max-height 0.5s ease-in-out",
+              }}
+            >
+              {isLoadingArbreMerkle ? (
+                <div
+                  className="d-flex justify-content-center align-items-center"
+                  style={{ height: "400px" }}
+                >
+                  <div className="custom-spinner"></div>
+                  <style>
+                    {`
                         .custom-spinner {
                           width: 40px;
                           height: 40px;
@@ -523,16 +530,15 @@ const DetailsExpedition = () => {
                           }
                         }
                       `}
-                    </style>
-                  </div>
-                ) : (
-                  <VisualiserMerkleTree hashes={allDataMerkle} />
-                )}
-              </div>
+                  </style>
+                </div>
+              ) : (
+                <VisualiserMerkleTree hashes={allDataMerkle} />
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
