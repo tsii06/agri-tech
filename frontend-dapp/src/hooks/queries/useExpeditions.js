@@ -1,5 +1,6 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
+  getAllDataAnterieur,
   getAllExpeditions,
   getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
@@ -136,5 +137,16 @@ export function useVisualisationProccessExpedition(expedition) {
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
     enabled: expedition !== undefined,
+  });
+}
+
+// Recuperer all data anterieur expedition
+export function useAllDataAnterieurExpedition(id, idCommandesLotsProduits) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.detail(id, "all-data-anterieur"),
+    queryFn: async () => await getAllDataAnterieur(idCommandesLotsProduits),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
+    enabled: idCommandesLotsProduits != null,
   });
 }

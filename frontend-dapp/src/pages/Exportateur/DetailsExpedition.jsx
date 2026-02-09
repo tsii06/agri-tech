@@ -1,7 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getAllDataAnterieur } from "../../utils/contrat/exportateurClient";
 import { Box, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
@@ -13,6 +12,7 @@ import { getIPFSURL } from "../../utils/ipfsUtils";
 import { EXCLUDE_EXPEDITION } from "../../utils/contract";
 import QRCode from "react-qr-code";
 import {
+  useAllDataAnterieurExpedition,
   useConditionsTransportExpedition,
   useExpeditionByRef,
   useLotsProduitsExpedition,
@@ -23,7 +23,6 @@ import Skeleton from "react-loading-skeleton";
 
 const DetailsExpedition = () => {
   const { reference } = useParams();
-  const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   // const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(true);
@@ -31,9 +30,8 @@ const DetailsExpedition = () => {
   const [showRecoltes, setShowRecoltes] = useState(true);
   const [showProduits, setShowProduits] = useState(true);
   const [showLogistique, setShowLogistique] = useState(true);
-  const [showArbreMerkle, setShowArbreMerkle] = useState(false);
+  const [showArbreMerkle, setShowArbreMerkle] = useState(true);
 
-  const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
   const urlEspaceClient =
     window.location.protocol +
     "//" +
@@ -65,6 +63,10 @@ const DetailsExpedition = () => {
   const { data: parcelles = [], isFetching: isLoadingParcelles } =
     useParcellesExpedition(expedition);
 
+  // Recuperation cache all data anterieur expedition
+  const { data: allDataMerkle = [], isFetching: isLoadingArbreMerkle } =
+    useAllDataAnterieurExpedition(expedition?.id, expedition?.idCommandeProduit);
+
   useEffect(() => {
     // renvoyer si le ref appartient a l'exclusion
     if (isError || (reference && EXCLUDE_EXPEDITION.includes(reference))) {
@@ -73,14 +75,6 @@ const DetailsExpedition = () => {
       return;
     }
   }, [isError, nav, reference]);
-
-  const chargerAllHashesMerkle = async () => {
-    const dataAnterieur = await getAllDataAnterieur(
-      expedition.idCommandeProduit
-    );
-    setAllDataMerkle(dataAnterieur);
-    setIsLoadingArbreMerkle(false);
-  };
 
   // const copyToClipboard = (text) => {
   //   navigator.clipboard.writeText(text);
@@ -446,8 +440,6 @@ const DetailsExpedition = () => {
                 transition: "background-color 0.3s ease",
               }}
               onClick={() => {
-                if (!showArbreMerkle && isLoadingArbreMerkle)
-                  chargerAllHashesMerkle();
                 setShowArbreMerkle(!showArbreMerkle);
               }}
               onMouseEnter={(e) =>
@@ -494,7 +486,9 @@ const DetailsExpedition = () => {
                   </style>
                 </div>
               ) : (
-                <VisualiserMerkleTree hashes={allDataMerkle} />
+                allDataMerkle.length > 0 && (
+                  <VisualiserMerkleTree hashes={allDataMerkle} />
+                )
               )}
             </div>
           </div>
