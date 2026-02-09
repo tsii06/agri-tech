@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllDataAnterieur,
-  getConditionsTransportExpedition,
   getLotProduisExpedition,
   getParcellesExpedition,
   getRecoltesExpedition,
@@ -18,7 +17,10 @@ import VisualiserMerkleTree from "../../components/Tools/merkle/VisualiserMerkle
 import { getIPFSURL } from "../../utils/ipfsUtils";
 import { EXCLUDE_EXPEDITION } from "../../utils/contract";
 import QRCode from "react-qr-code";
-import { useExpeditionByRef } from "../../hooks/queries/useExpeditions";
+import {
+  useConditionsTransportExpedition,
+  useExpeditionByRef,
+} from "../../hooks/queries/useExpeditions";
 import Skeleton from "react-loading-skeleton";
 
 const DetailsExpedition = () => {
@@ -26,7 +28,6 @@ const DetailsExpedition = () => {
   const [parcelles, setParcelles] = useState([]);
   const [recoltes, setRecoltes] = useState([]);
   const [lotProduits, setLotProduits] = useState([]);
-  const [conditionsTransport, setConditionsTransport] = useState([]);
   const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   // const [copied, setCopied] = useState(false);
 
@@ -34,10 +35,9 @@ const DetailsExpedition = () => {
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
   const [showRecoltes, setShowRecoltes] = useState(false);
   const [showProduits, setShowProduits] = useState(false);
-  const [showLogistique, setShowLogistique] = useState(false);
+  const [showLogistique, setShowLogistique] = useState(true);
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
-  const [isLoadingLogistique, setIsLoadingLogistique] = useState(true);
   const [isLoadingProduits, setIsLoadingProduits] = useState(true);
   const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
@@ -51,11 +51,16 @@ const DetailsExpedition = () => {
 
   const nav = useNavigate();
 
+  // Recuperer details expedition dans cache si il y est.
   const {
     data: expedition,
     isError,
     isFetching: isFetchingExpedition,
   } = useExpeditionByRef(reference || "0");
+
+  // Recuperation cache conditions transport expedition
+  const { data: conditionsTransport = [], isFetching: isLoadingLogistique } =
+    useConditionsTransportExpedition(expedition);
 
   useEffect(() => {
     // renvoyer si le ref appartient a l'exclusion
@@ -65,13 +70,6 @@ const DetailsExpedition = () => {
       return;
     }
   }, [isError, nav, reference]);
-
-  // const chargerDetailsExpedition = async () => {
-  //   setLoading(true);
-  //   const detailsExpedition = await getDetailsExpeditionByRef(reference);
-  //   // setExpedition(detailsExpedition);
-  //   setLoading(false);
-  // };
 
   const chargerAllHashesMerkle = async () => {
     const dataAnterieur = await getAllDataAnterieur(
@@ -99,25 +97,17 @@ const DetailsExpedition = () => {
     setIsLoadingProduits(false);
   };
 
-  const chargerConditionsTransport = async () => {
-    const conditionsExp = await getConditionsTransportExpedition(expedition);
-    setConditionsTransport(conditionsExp);
-    setIsLoadingLogistique(false);
-  };
+  // const chargerConditionsTransport = async () => {
+  //   const conditionsExp = await getConditionsTransportExpedition(expedition);
+  //   setConditionsTransport(conditionsExp);
+  //   setIsLoadingLogistique(false);
+  // };
 
   // const copyToClipboard = (text) => {
   //   navigator.clipboard.writeText(text);
   //   setCopied(true);
   //   setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   // };
-
-  // useEffect(() => {
-  //   chargerDetailsExpedition().catch((e) => {
-  //     console.error("Erreur reseaux : ", e);
-  //     alert("Probleme de reseaux ou reference invalide. Veuillez reessayer.");
-  //     nav("/espace-client");
-  //   });
-  // }, []);
 
   return (
     <div className="container py-4">
@@ -264,8 +254,6 @@ const DetailsExpedition = () => {
                 transition: "background-color 0.3s ease",
               }}
               onClick={() => {
-                if (!showLogistique && isLoadingLogistique)
-                  chargerConditionsTransport();
                 setShowLogistique(!showLogistique);
               }}
               onMouseEnter={(e) =>
@@ -288,17 +276,18 @@ const DetailsExpedition = () => {
                   <div className="spinner-grow text-success"></div>
                 </div>
               ) : (
-                <>
-                  <h6 className="card-title text-start my-4">
-                    <span>
-                      <Truck size={18} className="text-primary" /> Logistique
-                    </span>
-                  </h6>
-                  {conditionsTransport.length > 0 &&
-                    conditionsTransport.map((condition, index) => (
+                conditionsTransport.length > 0 && (
+                  <>
+                    <h6 className="card-title text-start my-4">
+                      <span>
+                        <Truck size={18} className="text-primary" /> Logistique
+                      </span>
+                    </h6>
+                    {conditionsTransport.map((condition, index) => (
                       <LogistiqueDetails condition={condition} key={index} />
                     ))}
-                </>
+                  </>
+                )
               )}
             </div>
           </div>

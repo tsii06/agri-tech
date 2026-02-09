@@ -1,6 +1,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   getAllExpeditions,
+  getConditionsTransportExpedition,
   getDetailsExpeditionByRef,
   getExpedition,
 } from "../../utils/contrat/exportateurClient";
@@ -13,7 +14,7 @@ export const EXPEDITIONS_KEYS = {
   lists: () => [...EXPEDITIONS_KEYS.all, "list"],
   list: (filters) => [...EXPEDITIONS_KEYS.lists(), filters],
   details: () => [...EXPEDITIONS_KEYS.all, "detail"],
-  detail: (id) => [...EXPEDITIONS_KEYS.details(), id],
+  detail: (id, filters = {}) => [...EXPEDITIONS_KEYS.details(), id, filters],
   reference: (ref) => [...EXPEDITIONS_KEYS.all, { reference: ref }],
   compteur: ["madtx-compteur-expeditions"],
 };
@@ -76,5 +77,16 @@ export function useExpeditionByRef(ref) {
     queryFn: async () => await getDetailsExpeditionByRef(ref),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
+  });
+}
+
+// Recuperer expedition by ref
+export function useConditionsTransportExpedition(expedition) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "conditions-transport"),
+    queryFn: async () => await getConditionsTransportExpedition(expedition),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
+    enabled: expedition !== undefined,
   });
 }
