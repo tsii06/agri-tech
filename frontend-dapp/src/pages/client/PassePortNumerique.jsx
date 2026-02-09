@@ -16,11 +16,7 @@ import { timestampToDate } from "../../utils/date";
 import QRCode from "react-qr-code";
 import { EXCLUDE_EXPEDITION, URL_BLOCK_SCAN } from "../../utils/contract";
 import Skeleton from "react-loading-skeleton";
-import {
-  getConditionsTransportExpedition,
-  getLotProduisExpedition,
-  getRecoltesExpedition,
-} from "../../utils/contrat/exportateurClient";
+import { getConditionsTransportExpedition } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
 import { initialRoleActeur } from "../../utils/roles";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
@@ -31,6 +27,7 @@ import {
 } from "../../utils/onChain/frontOnChainUtils";
 import {
   useExpeditionByRef,
+  useLotsProduitsExpedition,
   useParcellesExpedition,
   useRecoltesExpedition,
 } from "../../hooks/queries/useExpeditions";
@@ -42,14 +39,11 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
-  const [lotProduitLoading, setLotProduitLoading] = useState(true);
-  const [acteurLoading, setActeurLoading] = useState(true);
   const [conditionTransportLoading, setConditionTransportLoading] =
     useState(true);
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
-  const [lotProduitsVPS, setLotProduitsVPS] = useState({});
   const [acteursVPS, setActeursVPS] = useState([]);
   const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
 
@@ -61,12 +55,16 @@ function PassePortNumerique() {
   } = useExpeditionByRef(ref || "");
 
   // Recuperation cache parcelles expedition
-  const { data: parcellesVPS = {}, isFetching: parcelleLoading = true } =
+  const { data: parcellesVPS = [], isFetching: parcelleLoading = true } =
     useParcellesExpedition(expeditionVPS);
 
   // Recuperation cache recoltes expedition
-  const { data: recoltesVPS = {}, isFetching: recolteLoading = true } =
+  const { data: recoltesVPS = [], isFetching: recolteLoading = true } =
     useRecoltesExpedition(expeditionVPS);
+
+  // Recuperation cache lots produits expedition
+  const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true } =
+    useLotsProduitsExpedition(expeditionVPS);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -85,24 +83,14 @@ function PassePortNumerique() {
     }
   }, [ref]);
 
-  // Charger liste lot produit expedition pour recuperer les collecteurs. Et puis afficher liste acteurs
+  // Recuperer les collecteurs.
   useEffect(() => {
-    if (!expeditionVPSLoading)
-      chargerLotProduits()
-        .then((res) => {
-          setLotProduitsVPS(res);
-          // Recuperer les collecteurs
-          setActeursVPS((prev) => [
-            ...prev,
-            ...res.map((produit) => produit.collecteur),
-          ]);
-          setLotProduitLoading(false);
-          setActeurLoading(false);
-        })
-        .catch((err) =>
-          console.error("Erreur recuperation lot de produit depuis VPS : ", err)
-        );
-  }, [expeditionVPSLoading]);
+    if (!lotProduitLoading && lotProduitsVPS.length > 0)
+      setActeursVPS((prev) => [
+        ...prev,
+        ...lotProduitsVPS.map((produit) => produit.collecteur),
+      ]);
+  }, [lotProduitLoading]);
 
   // Charger les conditions de transport de l'expedition.
   useEffect(() => {
@@ -128,7 +116,6 @@ function PassePortNumerique() {
       !parcelleLoading &&
       !recolteLoading &&
       !lotProduitLoading &&
-      !acteurLoading &&
       !conditionTransportLoading
     ) {
       // Recuperation de tous les donnees anterieurs a l'expedition
@@ -153,16 +140,10 @@ function PassePortNumerique() {
     parcelleLoading,
     recolteLoading,
     lotProduitLoading,
-    acteurLoading,
     conditionTransportLoading,
   ]);
 
   // Les fonctions pour recuperer les data venant du VPS
-  const chargerLotProduits = async () => {
-    const lotProduitsExp = await getLotProduisExpedition(expeditionVPS);
-    console.log("Lot de produits depuis VPS : ", lotProduitsExp);
-    return lotProduitsExp;
-  };
   const chargerConditionsTransport = async () => {
     const conditionsExp = await getConditionsTransportExpedition(expeditionVPS);
     console.log("Conditions de transport expedition : ", conditionsExp);
@@ -489,7 +470,7 @@ function PassePortNumerique() {
                 </div>
               )}
               {/* Infos sur les acteurs */}
-              {acteurLoading ? (
+              {acteursVPS.length <= 0 ? (
                 <div className="col-md-6">
                   <Skeleton
                     width={"100%"}
@@ -503,30 +484,29 @@ function PassePortNumerique() {
                     <strong>Acteurs:</strong>
                   </p>
                   <div className="row row-cols-4">
-                    {acteursVPS.length > 0 &&
-                      acteursVPS.map((acteur, index) => (
+                    {acteursVPS.map((acteur, index) => (
+                      <div
+                        key={index}
+                        className="col text-center"
+                        style={{ flex: "0 0 auto" }}
+                      >
                         <div
-                          key={index}
-                          className="col text-center"
-                          style={{ flex: "0 0 auto" }}
+                          className="rounded-circle text-white d-flex align-items-center justify-content-center mx-auto mb-2"
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            fontSize: "18px",
+                            fontWeight: "bold",
+                            background: "var(--madtx-blue)",
+                          }}
                         >
-                          <div
-                            className="rounded-circle text-white d-flex align-items-center justify-content-center mx-auto mb-2"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              fontSize: "18px",
-                              fontWeight: "bold",
-                              background: "var(--madtx-blue)",
-                            }}
-                          >
-                            {initialRoleActeur(acteur.roles[0])}
-                          </div>
-                          <small className="d-block text-muted">
-                            {acteur.nom}
-                          </small>
+                          {initialRoleActeur(acteur.roles[0])}
                         </div>
-                      ))}
+                        <small className="d-block text-muted">
+                          {acteur.nom}
+                        </small>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
