@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getAllDataAnterieur,
   getParcellesExpedition,
-  getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { Box, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
@@ -20,24 +19,23 @@ import {
   useConditionsTransportExpedition,
   useExpeditionByRef,
   useLotsProduitsExpedition,
+  useRecoltesExpedition,
 } from "../../hooks/queries/useExpeditions";
 import Skeleton from "react-loading-skeleton";
 
 const DetailsExpedition = () => {
   const { reference } = useParams();
   const [parcelles, setParcelles] = useState([]);
-  const [recoltes, setRecoltes] = useState([]);
   const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   // const [copied, setCopied] = useState(false);
 
   const [showProcess, setShowProcess] = useState(false);
   const [showParcelleProduction, setShowParcelleProduction] = useState(false);
-  const [showRecoltes, setShowRecoltes] = useState(false);
+  const [showRecoltes, setShowRecoltes] = useState(true);
   const [showProduits, setShowProduits] = useState(true);
   const [showLogistique, setShowLogistique] = useState(true);
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
-  const [isLoadingRecoltes, setIsLoadingRecoltes] = useState(true);
   const [isLoadingParcelles, setIsLoadingParcelles] = useState(true);
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
   const [isLoadingProcess, setIsLoadingProcess] = useState(true);
@@ -64,6 +62,10 @@ const DetailsExpedition = () => {
   const { data: lotProduits = [], isFetching: isLoadingProduits } =
     useLotsProduitsExpedition(expedition);
 
+  // Recuperation cache recoltes expedition
+  const { data: recoltes = [], isFetching: isLoadingRecoltes } =
+    useRecoltesExpedition(expedition);
+
   useEffect(() => {
     // renvoyer si le ref appartient a l'exclusion
     if (isError || (reference && EXCLUDE_EXPEDITION.includes(reference))) {
@@ -85,12 +87,6 @@ const DetailsExpedition = () => {
     const parcellesExp = await getParcellesExpedition(expedition);
     setParcelles(parcellesExp);
     setIsLoadingParcelles(false);
-  };
-
-  const chargerRecoltes = async () => {
-    const recoltesExp = await getRecoltesExpedition(expedition);
-    setRecoltes(recoltesExp);
-    setIsLoadingRecoltes(false);
   };
 
   // const copyToClipboard = (text) => {
@@ -339,7 +335,6 @@ const DetailsExpedition = () => {
                 transition: "background-color 0.3s ease",
               }}
               onClick={() => {
-                if (!showRecoltes && isLoadingRecoltes) chargerRecoltes();
                 setShowRecoltes(!showRecoltes);
               }}
               onMouseEnter={(e) =>

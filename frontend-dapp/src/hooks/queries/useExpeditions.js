@@ -5,6 +5,7 @@ import {
   getDetailsExpeditionByRef,
   getExpedition,
   getLotProduisExpedition,
+  getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { hasRole } from "../../utils/roles";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
@@ -97,6 +98,17 @@ export function useLotsProduitsExpedition(expedition) {
   return useQuery({
     queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "lots-produits"),
     queryFn: async () => await getLotProduisExpedition(expedition),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
+    enabled: expedition !== undefined,
+  });
+}
+
+// Recuperer recoltes expedition
+export function useRecoltesExpedition(expedition) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "recoltes"),
+    queryFn: async () => await getRecoltesExpedition(expedition),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
     enabled: expedition !== undefined,
