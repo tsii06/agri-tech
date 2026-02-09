@@ -19,7 +19,6 @@ import Skeleton from "react-loading-skeleton";
 import {
   getConditionsTransportExpedition,
   getLotProduisExpedition,
-  getParcellesExpedition,
   getRecoltesExpedition,
 } from "../../utils/contrat/exportateurClient";
 import { getIPFSURL, stringifyAll } from "../../utils/ipfsUtils";
@@ -30,7 +29,11 @@ import {
   enleveCollecteurDeData,
   enleveProducteurDeData,
 } from "../../utils/onChain/frontOnChainUtils";
-import { useExpeditionByRef } from "../../hooks/queries/useExpeditions";
+import {
+  useExpeditionByRef,
+  useParcellesExpedition,
+  useRecoltesExpedition,
+} from "../../hooks/queries/useExpeditions";
 
 // url : passe-port-numerique-client/:ref
 function PassePortNumerique() {
@@ -39,8 +42,6 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
-  const [parcelleLoading, setParcelleLoading] = useState(true);
-  const [recolteLoading, setRecolteLoading] = useState(true);
   const [lotProduitLoading, setLotProduitLoading] = useState(true);
   const [acteurLoading, setActeurLoading] = useState(true);
   const [conditionTransportLoading, setConditionTransportLoading] =
@@ -48,8 +49,6 @@ function PassePortNumerique() {
   // navigateur
   const nav = useNavigate();
   // valeurs utiles
-  const [parcellesVPS, setParcellesVPS] = useState({});
-  const [recoltesVPS, setRecoltesVPS] = useState({});
   const [lotProduitsVPS, setLotProduitsVPS] = useState({});
   const [acteursVPS, setActeursVPS] = useState([]);
   const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
@@ -60,6 +59,14 @@ function PassePortNumerique() {
     isError: isErrorExpeditionVPS,
     isFetching: expeditionVPSLoading,
   } = useExpeditionByRef(ref || "");
+
+  // Recuperation cache parcelles expedition
+  const { data: parcellesVPS = {}, isFetching: parcelleLoading = true } =
+    useParcellesExpedition(expeditionVPS);
+
+  // Recuperation cache recoltes expedition
+  const { data: recoltesVPS = {}, isFetching: recolteLoading = true } =
+    useRecoltesExpedition(expeditionVPS);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -77,42 +84,6 @@ function PassePortNumerique() {
       return;
     }
   }, [ref]);
-
-  // Afficher la section Origine & Producteurs certifiee
-  useEffect(() => {
-    if (!expeditionVPSLoading) {
-      chargerParcelles()
-        .then((res) => {
-          setParcellesVPS(res);
-          // Recuperer les producteurs
-          setActeursVPS((prev) => [
-            ...prev,
-            ...res.map((parcelle) => parcelle.producteur),
-          ]);
-          setParcelleLoading(false);
-        })
-        .catch((err) => {
-          console.error("Erreur recuperation parcelle depuis VPS : ", err);
-        });
-    }
-  }, [expeditionVPSLoading]);
-
-  // Afficher section recolte
-  useEffect(() => {
-    if (!expeditionVPSLoading) {
-      chargerRecoltes()
-        .then((res) => {
-          setRecoltesVPS(res);
-          setRecolteLoading(false);
-        })
-        .catch((err) => {
-          console.error(
-            "Erreur recuperation recolte expedition depuis VPS : ",
-            err
-          );
-        });
-    }
-  }, [expeditionVPSLoading]);
 
   // Charger liste lot produit expedition pour recuperer les collecteurs. Et puis afficher liste acteurs
   useEffect(() => {
@@ -187,16 +158,6 @@ function PassePortNumerique() {
   ]);
 
   // Les fonctions pour recuperer les data venant du VPS
-  const chargerParcelles = async () => {
-    const parcellesExp = await getParcellesExpedition(expeditionVPS);
-    console.log("Parcelle recuperer depuis VPS : ", parcellesExp);
-    return parcellesExp;
-  };
-  const chargerRecoltes = async () => {
-    const recoltesExp = await getRecoltesExpedition(expeditionVPS);
-    console.log("Recolte expedition depuis VPS : ", recoltesExp);
-    return recoltesExp;
-  };
   const chargerLotProduits = async () => {
     const lotProduitsExp = await getLotProduisExpedition(expeditionVPS);
     console.log("Lot de produits depuis VPS : ", lotProduitsExp);
