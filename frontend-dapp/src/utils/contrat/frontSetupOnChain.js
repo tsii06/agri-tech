@@ -122,10 +122,23 @@ export class SmartContractManager {
 
   // Lecture avec retry
   async read(methodName, ...args) {
-    try {
-      return await this.contract[methodName](...args);
-    } catch (error) {
-      throw this._handleError(error, "read", methodName);
+    const maxRetries = 5;
+    const delay = 3000; // 3s
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.contract[methodName](...args);
+      } catch (error) {
+        const shouldRetry = this._isProviderError(error);
+
+        // Ne pas retenter si pas error provider ou maxRetries atteint
+        if (!shouldRetry || attempt === maxRetries) {
+          throw this._handleError(error, "read", methodName);
+        }
+
+        console.log(`Retry ${attempt}/${maxRetries} pour ${methodName}...`);
+        await this._sleep(delay);
+      }
     }
   }
 
@@ -160,6 +173,23 @@ export class SmartContractManager {
     } catch (error) {
       throw this._handleError(error, "write", methodName);
     }
+  }
+
+  // Détecte si c'est une erreur provider
+  _isProviderError(error) {
+    return (
+      error.code === "NETWORK_ERROR" ||
+      error.code === "TIMEOUT" ||
+      error.code === "SERVER_ERROR" ||
+      error.message?.includes("network") ||
+      error.message?.includes("timeout") ||
+      error.message?.includes("could not detect network")
+    );
+  }
+
+  // Helper sleep
+  _sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // Gestion centralisée des erreurs

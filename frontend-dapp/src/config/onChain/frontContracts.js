@@ -37,12 +37,6 @@ export const collecteurExportateurRead = new SmartContractManager(
 );
 
 // Les contrats write ==================================================================================
-// const signerWallet = await getSignerWallet();
-// export const producteurEnPhaseCultureWrite = new SmartContractManager(
-//   config.addrProducteurEnPhaseCulture,
-//   producteurEnPhaseCultureABI.abi,
-//   signerWallet
-// );
 export async function getProducteurEnPhaseCultureWrite() {
   const signerWallet = await getSignerWallet();
   return new SmartContractManager(
