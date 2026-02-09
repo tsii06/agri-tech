@@ -39,13 +39,9 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
-  // const [conditionTransportLoading, setConditionTransportLoading] =
     useState(true);
   // navigateur
   const nav = useNavigate();
-  // valeurs utiles
-  const [acteursVPS, setActeursVPS] = useState([]);
-  // const [conditionsTransportVPS, setConditionsTransportVPS] = useState([]);
 
   // Recuperation cache de expeditions details
   const {
@@ -63,12 +59,22 @@ function PassePortNumerique() {
     useRecoltesExpedition(expeditionVPS);
 
   // Recuperation cache lots produits expedition
-  const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true } =
+  const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true, } =
     useLotsProduitsExpedition(expeditionVPS);
 
   // Recuperation cache lots produits expedition
   const { data: conditionsTransportVPS = [], isFetching: conditionTransportLoading = true } =
     useConditionsTransportExpedition(expeditionVPS);
+
+  // Recuperation des acteurs
+  let acteursVPS = [];
+  // Producteur
+  parcellesVPS.forEach(element => acteursVPS.push(element.producteur));
+  // Collecteurs
+  lotProduitsVPS.forEach(element => acteursVPS.push(element.collecteur));
+  // Exportateurs
+  if (expeditionVPS)
+    acteursVPS.push(expeditionVPS.exportateur);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -76,7 +82,6 @@ function PassePortNumerique() {
       console.log("Reponse watcher : ", res.data);
       setAnchorExpedition(res.data);
       setFirstLoading(false);
-      setActeursVPS([]); // initialise la liste des acteurs a chaque rechargement;
     });
 
     // renvoyer si le ref appartient a l'exclusion
@@ -86,15 +91,6 @@ function PassePortNumerique() {
       return;
     }
   }, [ref]);
-
-  // Recuperer les collecteurs.
-  useEffect(() => {
-    if (!lotProduitLoading && lotProduitsVPS.length > 0)
-      setActeursVPS((prev) => [
-        ...prev,
-        ...lotProduitsVPS.map((produit) => produit.collecteur),
-      ]);
-  }, [lotProduitLoading]);
 
   // Afficher badge authentifier apres que tous les loading soient mis a false
   useEffect(() => {
