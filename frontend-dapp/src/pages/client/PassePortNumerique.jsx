@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CheckCircle,
   MapPin,
@@ -40,7 +40,7 @@ function PassePortNumerique() {
   // les loadings flag
   const [firstLoading, setFirstLoading] = useState(true);
   const [authenticatLoading, setAuthenticateLoading] = useState("encours");
-    useState(true);
+  useState(true);
   // navigateur
   const nav = useNavigate();
 
@@ -60,24 +60,25 @@ function PassePortNumerique() {
     useRecoltesExpedition(expeditionVPS);
 
   // Recuperation cache lots produits expedition
-  const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true, } =
+  const { data: lotProduitsVPS = [], isFetching: lotProduitLoading = true } =
     useLotsProduitsExpedition(expeditionVPS);
 
   // Recuperation cache lots produits expedition
-  const { data: conditionsTransportVPS = [], isFetching: conditionTransportLoading = true } =
-    useConditionsTransportExpedition(expeditionVPS);
+  const {
+    data: conditionsTransportVPS = [],
+    isFetching: conditionTransportLoading = true,
+  } = useConditionsTransportExpedition(expeditionVPS);
 
   console.log("Parcelles VPS : ", parcellesVPS);
 
   // Recuperation des acteurs
   let acteursVPS = [];
   // Producteur
-  parcellesVPS.forEach(element => acteursVPS.push(element.producteur));
+  parcellesVPS.forEach((element) => acteursVPS.push(element.producteur));
   // Collecteurs
-  lotProduitsVPS.forEach(element => acteursVPS.push(element.collecteur));
+  lotProduitsVPS.forEach((element) => acteursVPS.push(element.collecteur));
   // Exportateurs
-  if (expeditionVPS)
-    acteursVPS.push(expeditionVPS.exportateur);
+  if (expeditionVPS) acteursVPS.push(expeditionVPS.exportateur);
 
   // Recuperer l'expedition ancrer dans le mainnet
   useEffect(() => {
@@ -194,7 +195,7 @@ function PassePortNumerique() {
 
   return (
     <div
-      className="d-flex justify-content-center py-4"
+      className="row justify-content-center py-4"
       style={{
         minHeight: "100vh",
         background:
@@ -212,7 +213,7 @@ function PassePortNumerique() {
         </div>
       ) : (
         <div
-          className="card border-0 shadow"
+          className="card border-0 shadow p-0"
           style={{
             width: "90%",
             maxWidth: "900px",
@@ -220,7 +221,7 @@ function PassePortNumerique() {
           }}
         >
           {/* Header */}
-          <div className="card-body bg-light">
+          <div className="card-body bg-light m-0">
             <div className="row align-items-center">
               <div className="col-md-6">
                 <h2 className="mb-0">
@@ -591,6 +592,15 @@ function PassePortNumerique() {
           </div>
         </div>
       )}
+      {/* BTN DETAILS EXPEDITION */}
+      <div className="d-flex justify-content-center mt-5">
+        <Link
+          className="btn btn-lg btn-agrichain"
+          to={`/client-detail-expedition/${ref}`}
+        >
+          Détails
+        </Link>
+      </div>
     </div>
   );
 }

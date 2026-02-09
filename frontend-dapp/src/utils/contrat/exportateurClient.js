@@ -87,6 +87,7 @@ export const getAllDataAnterieur = async (_idCommandeProduits) => {
   const conditionsTransport = await getConditionsTransportExpedition({
     idCommandeProduit: _idCommandeProduits,
   });
+  console.log("Conditions transport filtrers : ", conditionsTransport);
   allData.push(...conditionsTransport);
 
   return stringifyAll(allData);
