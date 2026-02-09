@@ -11,6 +11,7 @@ import {
 import { hasRole } from "../../utils/roles";
 import { exportateurClientRead } from "../../config/onChain/frontContracts";
 import { DEBUT_EXPEDITION } from "../../utils/contract";
+import creerNodesProcessus from "../../components/Tools/expedition/utilsProcessus";
 
 export const EXPEDITIONS_KEYS = {
   all: ["madtx-expeditions"],
@@ -121,6 +122,17 @@ export function useParcellesExpedition(expedition) {
   return useQuery({
     queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "parcelles"),
     queryFn: async () => await getParcellesExpedition(expedition),
+    // Gestion d'erreur custom
+    throwOnError: false, // Pas de throw, géré localement
+    enabled: expedition !== undefined,
+  });
+}
+
+// Recuperer data expedition pour visualisation proccessus
+export function useVisualisationProccessExpedition(expedition) {
+  return useQuery({
+    queryKey: EXPEDITIONS_KEYS.detail(expedition?.id, "proccess"),
+    queryFn: async () => await creerNodesProcessus(expedition),
     // Gestion d'erreur custom
     throwOnError: false, // Pas de throw, géré localement
     enabled: expedition !== undefined,

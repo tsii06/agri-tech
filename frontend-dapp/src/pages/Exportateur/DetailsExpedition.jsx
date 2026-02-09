@@ -1,9 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  getAllDataAnterieur,
-} from "../../utils/contrat/exportateurClient";
+import { getAllDataAnterieur } from "../../utils/contrat/exportateurClient";
 import { Box, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import ProcessusExpedition from "../../components/Tools/expedition/ProcessusExpedition";
 import ParcelleDetails from "../../components/Tools/expedition/ParcelleDetails";
@@ -28,7 +26,7 @@ const DetailsExpedition = () => {
   const [allDataMerkle, setAllDataMerkle] = useState(["0x1"]);
   // const [copied, setCopied] = useState(false);
 
-  const [showProcess, setShowProcess] = useState(false);
+  const [showProcess, setShowProcess] = useState(true);
   const [showParcelleProduction, setShowParcelleProduction] = useState(true);
   const [showRecoltes, setShowRecoltes] = useState(true);
   const [showProduits, setShowProduits] = useState(true);
@@ -36,7 +34,6 @@ const DetailsExpedition = () => {
   const [showArbreMerkle, setShowArbreMerkle] = useState(false);
 
   const [isLoadingArbreMerkle, setIsLoadingArbreMerkle] = useState(true);
-  const [isLoadingProcess, setIsLoadingProcess] = useState(true);
   const urlEspaceClient =
     window.location.protocol +
     "//" +
@@ -94,7 +91,6 @@ const DetailsExpedition = () => {
   return (
     <div className="container py-4">
       <div className="row">
-        {console.log("Expedition : ", expedition)}
         <div className="col-12">
           {/* Details expedition */}
           {isFetchingExpedition ? (
@@ -415,8 +411,6 @@ const DetailsExpedition = () => {
                 transition: "background-color 0.3s ease",
               }}
               onClick={() => {
-                if (!showProcess && isLoadingProcess)
-                  setIsLoadingProcess(false);
                 setShowProcess(!showProcess);
               }}
               onMouseEnter={(e) =>
@@ -434,7 +428,7 @@ const DetailsExpedition = () => {
                 transition: "max-height 0.5s ease-in-out",
               }}
             >
-              {!isLoadingProcess && (
+              {expedition !== undefined && !isFetchingExpedition && (
                 <ProcessusExpedition expedition={expedition} />
               )}
             </div>

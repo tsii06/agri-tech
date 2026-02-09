@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import ReactFlow, { MiniMap, Controls, Handle, Position } from "reactflow";
+/* eslint-disable react/prop-types */
+import ReactFlow, { MiniMap, Controls } from "reactflow";
 import "reactflow/dist/style.css";
-import creerNodesProcessus from "./utilsProcessus";
 import CustomNode, { ConditionNode, ExpeditionNode, LotProduitNode, ParcelleNode, RecolteNode } from "./CustomNode";
+import { useVisualisationProccessExpedition } from "../../../hooks/queries/useExpeditions";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -14,25 +14,9 @@ const nodeTypes = {
 };
 
 const ProcessusExpedition = ({ expedition, height="400px", background="" }) => {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // État pour le chargement
-
-  const chargerNodeEdge = async () => {
-    try {
-      const { nodesFinal, edgesFinal } = await creerNodesProcessus(expedition);
-      setNodes(nodesFinal);
-      setEdges(edgesFinal);
-    } catch (error) {
-      console.error("Erreur lors du chargement des nodes et edges:", error);
-    } finally {
-      setIsLoading(false); // Fin du chargement
-    }
-  };
-
-  useEffect(() => {
-    chargerNodeEdge();
-  }, []);
+  // Recuperation cache des nodes et edges.
+  const { data, isFetching: isLoading } = useVisualisationProccessExpedition(expedition);
+  const { nodesFinal: nodes = [], edgesFinal: edges = [] } = data || {};
 
   if (isLoading) {
     return (
