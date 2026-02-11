@@ -1,16 +1,6 @@
 import { useState } from "react";
-import { getGestionnaireActeursContract } from "../../utils/contract";
-
-const ROLES = [
-  "Producteur",
-  "Fournisseur",
-  "Certificateur",
-  "Collecteur",
-  "Auditeur",
-  "Transporteur",
-  "Exportateur",
-  "Administration"
-];
+import { ROLES } from "../../utils/contrat/gestionnaireActeurs";
+import { useCreateActeur } from "../../hooks/mutations/mutationActeurs";
 
 const TYPES_ENTITE = ["Individu", "Organisation"];
 
@@ -23,10 +13,13 @@ export default function AdminRegisterActeur() {
     nifOuCin: "",
     adresseOfficielle: "",
     email: "",
-    telephone: ""
+    telephone: "",
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // useMutation pour la creation d'acteurs
+  const createMutation = useCreateActeur();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,18 +40,16 @@ export default function AdminRegisterActeur() {
       return;
     }
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.enregistrerActeur(
-        form.adresse,
-        Number(form.role),
-        Number(form.typeEntite),
-        form.nom,
-        form.nifOuCin,
-        form.adresseOfficielle,
-        form.email,
-        form.telephone
-      );
-      await tx.wait();
+      await createMutation.mutateAsync({
+        adresse: form.adresse,
+        role: Number(form.role),
+        typeEntite: Number(form.typeEntite),
+        nom: form.nom,
+        nifOuCin: form.nifOuCin,
+        adresseOfficielle: form.adresseOfficielle,
+        email: form.email,
+        telephone: form.telephone,
+      });
       setMessage("Acteur enregistré avec succès !");
     } catch (err) {
       console.error("Enregistrement acteur : ", err);
@@ -187,4 +178,4 @@ export default function AdminRegisterActeur() {
       </div>
     </div>
   );
-}  
+}
