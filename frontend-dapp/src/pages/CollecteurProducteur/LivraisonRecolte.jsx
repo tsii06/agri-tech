@@ -95,7 +95,7 @@ function LivraisonRecolte() {
     if (q.isLoading || q.isRefetching) return true;
 
     // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
-    if (commande.isProprietaire && !commande.isProprietaire) return false;
+    if (commande.isProprietaire !== undefined && !commande.isProprietaire) return false;
 
     return true;
   });
@@ -156,7 +156,7 @@ function LivraisonRecolte() {
       if (q.isLoading || q.isRefetching) return true;
 
       // Ne pas garder les commandes qui n'apartient pas a l'user si user est collecteur
-      if (commande.isProprietaire && !commande.isProprietaire) return false;
+      if (commande.isProprietaire !== undefined && !commande.isProprietaire) return false;
 
       return true;
     }

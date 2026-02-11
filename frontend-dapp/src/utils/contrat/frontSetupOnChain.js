@@ -156,6 +156,8 @@ export class SmartContractManager {
 
       // Envoi
       const tx = await this.contract[methodName](...args, {
+        maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+        maxFeePerGas: ethers.parseUnits("40", "gwei"),
         ...options,
         gasLimit,
       });
