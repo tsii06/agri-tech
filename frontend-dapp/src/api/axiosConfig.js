@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const axiosReady = axios.create({
-  baseURL: `http://${import.meta.env.VITE_SERVER_WATCHER || "localhost:3000"}`,
+  baseURL: `${import.meta.env.VITE_SERVER_WATCHER ?? "http://localhost:3000"}`,
+  timeout: 60000, // 60s pour attendre le back si wake up.
   headers: {
     "Content-Type": "application/json",
   },

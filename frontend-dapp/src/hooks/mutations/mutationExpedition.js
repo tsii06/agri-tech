@@ -25,9 +25,9 @@ export function useCreateExpedition() {
     onError: (error) => {
       const message =
         error.response?.data?.message ||
-        "Erreur lors de la certification expedition";
+        "Erreur lors de la creation expedition";
       alert(message);
-      console.error("Certificate expedition error:", error);
+      console.error("Creation expedition error:", error);
     },
   });
 }
