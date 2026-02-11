@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getGestionnaireActeursContract } from "../../utils/contract";
+import { getGestionnaireActeursWrite } from "../../config/onChain/frontContracts";
 
 const ROLES = [
   { value: 0, label: "Producteur" },
@@ -24,9 +24,8 @@ const AjouterRoleActeur = () => {
     setError("");
     setMessage("");
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.ajouterRole(adresse, Number(role));
-      await tx.wait();
+      const contract = await getGestionnaireActeursWrite();
+      await contract.write("ajouterRole", [adresse, Number(role)]);
       setMessage("Rôle ajouté avec succès à l'acteur !");
       setIsLoading(false);
     } catch (err) {
@@ -44,7 +43,7 @@ const AjouterRoleActeur = () => {
           type="text"
           className="form-control"
           value={adresse}
-          onChange={e => setAdresse(e.target.value)}
+          onChange={(e) => setAdresse(e.target.value)}
           placeholder="0x..."
           disabled={isLoading}
         />
@@ -54,16 +53,22 @@ const AjouterRoleActeur = () => {
         <select
           className="form-select"
           value={role}
-          onChange={e => setRole(e.target.value)}
+          onChange={(e) => setRole(e.target.value)}
           disabled={isLoading}
         >
           <option value="">Sélectionner un rôle</option>
-          {ROLES.map(r => (
-            <option key={r.value} value={r.value}>{r.label}</option>
+          {ROLES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
           ))}
         </select>
       </div>
-      <button className="btn-agrichain" onClick={handleAjouterRole} disabled={!adresse || role === "" || isLoading}>
+      <button
+        className="btn-agrichain"
+        onClick={handleAjouterRole}
+        disabled={!adresse || role === "" || isLoading}
+      >
         Ajouter le rôle
       </button>
       {isLoading && <div>Traitement en cours...</div>}
@@ -73,4 +78,4 @@ const AjouterRoleActeur = () => {
   );
 };
 
-export default AjouterRoleActeur; 
+export default AjouterRoleActeur;

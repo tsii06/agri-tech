@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getGestionnaireActeursContract } from "../../utils/contract";
+import { gestionnaireActeursRead, getGestionnaireActeursWrite } from "../../config/onChain/frontContracts";
 
 const ActiverDesactiverActeur = () => {
   const [adresse, setAdresse] = useState("");
@@ -14,8 +14,7 @@ const ActiverDesactiverActeur = () => {
     setError("");
     setMessage("");
     try {
-      const contract = await getGestionnaireActeursContract();
-      const details = await contract.getDetailsActeur(adresse);
+      const details = await gestionnaireActeursRead.read("getDetailsActeur", adresse);
       // details[2] correspond à actif (bool)
       setStatut(details[2]);
       setIsLoading(false);
@@ -32,9 +31,8 @@ const ActiverDesactiverActeur = () => {
     setError("");
     setMessage("");
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.activerActeur(adresse);
-      await tx.wait();
+      const contract = await getGestionnaireActeursWrite();
+      await contract.write("activerActeur", adresse);
       setMessage("Acteur activé avec succès !");
       await verifierStatut();
       setIsLoading(false);
@@ -50,9 +48,8 @@ const ActiverDesactiverActeur = () => {
     setError("");
     setMessage("");
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.desactiverActeur(adresse);
-      await tx.wait();
+      const contract = await getGestionnaireActeursWrite();
+      await contract.write("desactiverActeur", adresse);
       setMessage("Acteur désactivé avec succès !");
       await verifierStatut();
       setIsLoading(false);

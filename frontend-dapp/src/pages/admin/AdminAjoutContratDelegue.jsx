@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { getGestionnaireActeursContract } from "../../utils/contract";
+import { getGestionnaireActeursWrite } from "../../config/onChain/frontContracts";
 
 export default function AdminAjoutContratDelegue() {
   const [form, setForm] = useState({
     acteur: "",
-    contratDelegue: ""
+    contratDelegue: "",
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -28,12 +28,11 @@ export default function AdminAjoutContratDelegue() {
       return;
     }
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.ajouterContratDelegue(
+      const contract = await getGestionnaireActeursWrite();
+      await contract.write("ajouterContratDelegue", [
         form.acteur,
-        form.contratDelegue
-      );
-      await tx.wait();
+        form.contratDelegue,
+      ]);
       setMessage("Contrat délégué ajouté avec succès !");
     } catch (err) {
       console.error("Ajout contrat deleguer :", err);
@@ -44,7 +43,9 @@ export default function AdminAjoutContratDelegue() {
   return (
     <div className="card mt-4" style={{ maxWidth: 600, margin: "auto" }}>
       <div className="card-body">
-        <h4 className="card-title mb-4">Ajouter un contrat délégué à un acteur</h4>
+        <h4 className="card-title mb-4">
+          Ajouter un contrat délégué à un acteur
+        </h4>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Adresse de l&apos;acteur</label>
@@ -70,20 +71,13 @@ export default function AdminAjoutContratDelegue() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-agrichain"
-          >
+          <button type="submit" disabled={loading} className="btn-agrichain">
             {loading ? "Ajout..." : "Ajouter"}
           </button>
         </form>
 
-        {message && (
-          <div className="alert alert-info mt-3">{message}</div>
-        )}
+        {message && <div className="alert alert-info mt-3">{message}</div>}
       </div>
     </div>
-
   );
-} 
+}
