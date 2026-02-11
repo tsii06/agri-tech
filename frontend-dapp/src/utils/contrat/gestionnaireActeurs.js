@@ -1,5 +1,16 @@
 import { gestionnaireActeursRead } from "../../config/onChain/frontContracts";
 
+export const ROLES = [
+  "Producteur",
+  "Fournisseur",
+  "Certificateur",
+  "Collecteur",
+  "Auditeur",
+  "Transporteur",
+  "Exportateur",
+  "Administration"
+];
+
 /**
  *
  * @param {string} _address

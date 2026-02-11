@@ -1,8 +1,5 @@
 import { useState } from "react";
 import {
-  DEBUT_COMMANDE_RECOLTE,
-} from "../../utils/contract";
-import {
   ajouterKeyValuesFileIpfs,
   deleteFromIPFSByCid,
   getIPFSURL,
@@ -22,8 +19,7 @@ import {
 import { useUserContext } from "../../context/useContextt";
 import Skeleton from "react-loading-skeleton";
 import { AnimatePresence, motion } from "framer-motion";
-import { collecteurProducteurRead } from "../../config/onChain/frontContracts";
-import { useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
+import { useCommandesRecoltesIDs, useCommandesRecoltesUnAUn } from "../../hooks/queries/useCommandesRecoltes";
 import {
   useConditionTransportCommandeRecolte,
   useUpdateStatusTransportCommandeRecolte,
@@ -36,15 +32,6 @@ import {
   useConditionTransportCommandeLotProduit,
   useUpdateStatusTransportCommandeLotProduit,
 } from "../../hooks/mutations/mutationCommandesLotsProduits";
-
-// Tab de tous les ids recoltes
-const compteurCommandesRecoltes = Number(
-  await collecteurProducteurRead.read("compteurCommandes")
-);
-const commandesRecoltesIDs = Array.from(
-  { length: compteurCommandesRecoltes - DEBUT_COMMANDE_RECOLTE + 1 },
-  (_, i) => compteurCommandesRecoltes - i
-);
 
 // Nbr de recoltes par chargement
 const NBR_ITEMS_PAR_PAGE = 9;
@@ -64,6 +51,8 @@ function LivraisonRecolte() {
   const { roles, account } = useUserContext();
 
   // COMMANDES RECOLTES ==================================================================
+  // Recuperer le tab qui contient tous les ids commandes recoltes
+  const { data: commandesRecoltesIDs = [] } = useCommandesRecoltesIDs();
   // Nbr de commandes recoltes par tranche
   const [commandesRecoltesToShow, setCommandesRecoltesToShow] =
     useState(NBR_ITEMS_PAR_PAGE);
