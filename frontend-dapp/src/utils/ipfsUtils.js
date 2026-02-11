@@ -1,6 +1,3 @@
-import {
-  apiUploadConsolidatedData,
-} from "../api/frontApiPinata";
 import { getProducteurEnPhaseCultureWrite } from "../config/onChain/frontContracts";
 import myPinataSDK from "./pinata";
 
@@ -556,7 +553,21 @@ export const createConsolidatedIPFSData = (items, type) => {
  */
 export const uploadConsolidatedData = async (data, type, _metadata = {}) => {
   try {
-    return await apiUploadConsolidatedData(data, type, _metadata);
+    const consolidatedData = createConsolidatedIPFSData(data, type);
+    const blob = new Blob([JSON.stringify(consolidatedData)], {
+      type: "application/json",
+    });
+    const file = new File([blob], `${type}-${Date.now()}.json`, {
+      type: "application/json",
+    });
+
+    const metadata = {
+      type: `consolidated-${type}`,
+      timestamp: Date.now().toString(),
+      ..._metadata,
+    };
+
+    return await uploadToIPFS(file, metadata, type);
   } catch (error) {
     console.error("Erreur lors de l'upload des données consolidées:", error);
     return {
