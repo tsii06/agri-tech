@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { getGestionnaireActeursContract } from "../../utils/contract";
 import { ROLES } from "../../utils/contrat/gestionnaireActeurs";
 import {
   useActeursUnAUn,
@@ -7,6 +6,7 @@ import {
 } from "../../hooks/queries/useActeurs";
 import Skeleton from "react-loading-skeleton";
 import { raccourcirChaine } from "../../utils/stringUtils";
+import { useUpdateActeur } from "../../hooks/mutations/mutationActeurs";
 
 const TYPES_ENTITE = ["Individu", "Organisation"];
 
@@ -22,9 +22,12 @@ export default function AdminListeActeurs() {
   // Recuperer tous les acteurs un a un
   const acteurs = useActeursUnAUn(tabAddress);
 
+  // useMutation pour update acteur
+  const updateMutation = useUpdateActeur();
+
   function handleEdit(index) {
     setEditIndex(index);
-    setEditForm({ ...acteurs[index] });
+    setEditForm({ ...acteurs[index].data });
     setEditMessage("");
   }
 
@@ -47,16 +50,14 @@ export default function AdminListeActeurs() {
       return;
     }
     try {
-      const contract = await getGestionnaireActeursContract();
-      const tx = await contract.modifierActeur(
-        editForm.adresse,
-        editForm.nom,
-        editForm.nifOuCin,
-        editForm.adresseOfficielle,
-        editForm.email,
-        editForm.telephone
-      );
-      await tx.wait();
+      await updateMutation.mutateAsync({
+        adresse: editForm.adresse,
+        nom: editForm.nom,
+        nifOuCin: editForm.nifOuCin,
+        adresseOfficielle: editForm.adresseOfficielle,
+        email: editForm.email,
+        telephone: editForm.telephone,
+      });
       setEditMessage("Acteur modifié avec succès !");
       // await fetchActeurs();
       setEditIndex(null);
@@ -91,6 +92,7 @@ export default function AdminListeActeurs() {
             </tr>
           )}
 
+          {/* LISTES DES ACTEURS */}
           {acteurs.map((q, i) => {
             const acteur = q.data;
 
@@ -125,7 +127,7 @@ export default function AdminListeActeurs() {
             );
           })}
 
-          {/* Si aucun acteur n'est pas encore enregistrer */}
+          {/* Si aucun acteur n'est pas encore enregistrer (cas vraiment improbable) */}
           {!isLoading && acteurs.length === 0 && (
             <tr>
               <td colSpan={7} className="text-center">

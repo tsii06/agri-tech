@@ -69,3 +69,11 @@ export async function getCollecteurExportateurWrite() {
     signerWallet
   );
 }
+export async function getGestionnaireActeursWrite() {
+  const signerWallet = await getSignerWallet();
+  return new SmartContractManager(
+    config.addrGestionnaireActeurs,
+    gestionnaireActeursABI.abi,
+    signerWallet
+  );
+}
